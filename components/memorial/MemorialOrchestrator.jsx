@@ -8,10 +8,19 @@ import BreathTransition from './BreathTransition';
 import ProgressBar from './ProgressBar';
 import BackButton from './BackButton';
 
-// Mapa de etapas para componentes (importação dinâmica/placeholder para Steps existentes)
+// Mapa de etapas → componentes (lazy loading para code-splitting)
 const STEP_COMPONENTS = {
   Step00Casal: React.lazy(() => import('./steps/Step00Casal')),
   Step01Modo: React.lazy(() => import('./steps/Step01Modo')),
+  Step07Cerimonia: React.lazy(() => import('./steps/Step07Cerimonia')),
+  Step08Local: React.lazy(() => import('./steps/Step08Local')),
+  Step10Horario: React.lazy(() => import('./steps/Step10Horario')),
+  Step12Estilo: React.lazy(() => import('./steps/Step12Estilo')),
+  Step14Paleta: React.lazy(() => import('./steps/Step14Paleta')),
+  Step17Flores: React.lazy(() => import('./steps/Step17Flores')),
+  Step23Toalha: React.lazy(() => import('./steps/Step23Toalha')),
+  Step30Entrada: React.lazy(() => import('./steps/Step30Entrada')),
+  Step38Coquetel: React.lazy(() => import('./steps/Step38Coquetel')),
 };
 
 function PlaceholderStep({ titulo }) {
