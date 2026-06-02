@@ -3,7 +3,7 @@
 
 import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { sugerirPaleta } from '../../utils/sugestoes';
+import { sugerirPaleta } from '../../../utils/sugestoes';
 
 export default function Step05Paleta({ onSelect, estadoAtual }) {
   const estilo = estadoAtual?.estilo;

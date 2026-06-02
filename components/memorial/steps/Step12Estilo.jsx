@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
-import { sugerirPaleta } from '../../utils/sugestoes';
+import { sugerirPaleta } from '../../../utils/sugestoes';
 
 const ESTILOS = [
   { valor: 'classico', label: 'Clássico', desc: 'Elegante · Atemporal' },
