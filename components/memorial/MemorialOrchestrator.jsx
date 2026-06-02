@@ -1,8 +1,11 @@
 // Orquestrador do fluxo do memorial — mapa completo de todos os steps
-// Dependências diretas: React, useMemorial, algoritmo.js, BreathTransition, ProgressBar, BackButton
+// Dependências diretas: React, useMemorial, useAuth, useAutoSave, algoritmo.js, next/router, BreathTransition, ProgressBar, BackButton
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import useMemorial from '../../hooks/useMemorial';
+import { useAuth } from '../../hooks/useAuth';
+import useAutoSave from '../../hooks/useAutoSave';
 import { calcularProximaEtapa, calcularEtapasTotais, deveExibirLoginAgora, getEtapaPorIndice } from '../../utils/algoritmo';
 import BreathTransition from './BreathTransition';
 import ProgressBar from './ProgressBar';
@@ -50,9 +53,28 @@ function PlaceholderStep({ titulo }) {
 }
 
 export default function MemorialOrchestrator() {
-  const { estado, setRespostas, avancarEtapa, voltarEtapa } = useMemorial();
+  const router = useRouter();
+  const { estado, setRespostas, avancarEtapa, voltarEtapa, resetarMemorial } = useMemorial();
+  const { usuario } = useAuth();
+  const { salvandoAgora, temDraft, carregarDraft, limparDraft } = useAutoSave(estado, usuario);
+
   const [transicionando, setTransicionando] = useState(false);
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
+  const [oferecerDraft, setOferecerDraft] = useState(false);
+
+  // Redireciona para conclusão se memorial já foi finalizado
+  useEffect(() => {
+    if (estado.memorialConcluido) {
+      router.push('/memorial/conclusao');
+    }
+  }, [estado.memorialConcluido, router]);
+
+  // Ao montar: oferece continuar draft do localStorage se usuário anônimo
+  useEffect(() => {
+    if (!usuario && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
+      setOferecerDraft(true);
+    }
+  }, [usuario, temDraft, estado.etapaAtual, estado.perfilCasal]);
 
   const etapasTotais = calcularEtapasTotais(estado);
   const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
@@ -62,14 +84,17 @@ export default function MemorialOrchestrator() {
   const handleSelect = useCallback((campo, valor) => {
     setRespostas(campo, valor);
     setTransicionando(true);
+
     setTimeout(() => {
       const proxima = calcularProximaEtapa(estado, estado.etapaAtual);
       const etapaId = getEtapaPorIndice(proxima)?.id;
+
       if (deveExibirLoginAgora(estado, etapaId)) {
         setMostrandoLogin(true);
         setTransicionando(false);
         return;
       }
+
       avancarEtapa();
       setTransicionando(false);
     }, 220);
@@ -79,6 +104,19 @@ export default function MemorialOrchestrator() {
     if (estado.historicoEtapas.length > 0) voltarEtapa();
   }, [estado.historicoEtapas.length, voltarEtapa]);
 
+  const handleContinuarDraft = () => {
+    const draft = carregarDraft();
+    if (draft) {
+      Object.entries(draft).forEach(([k, v]) => setRespostas(k, v));
+    }
+    setOferecerDraft(false);
+  };
+
+  const handleDescartarDraft = () => {
+    limparDraft();
+    setOferecerDraft(false);
+  };
+
   const StepComponent = etapaAtualObj
     ? (STEP_COMPONENTS[etapaAtualObj.componente] || (() => <PlaceholderStep titulo={etapaAtualObj.titulo} />))
     : () => <PlaceholderStep titulo="Memorial Concluído" />;
@@ -86,19 +124,84 @@ export default function MemorialOrchestrator() {
   return (
     <BreathTransition ativa={transicionando} cor="var(--color-brand-lighter)">
       <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden', backgroundColor: 'var(--color-off-white)' }}>
-        <ProgressBar etapaAtual={estado.etapaAtual} etapasTotais={etapasTotais} blocoAtual={blocoAtual} nomeBlocoAtual={nomeBlocoAtual} />
+        <ProgressBar
+          etapaAtual={estado.etapaAtual}
+          etapasTotais={etapasTotais}
+          blocoAtual={blocoAtual}
+          nomeBlocoAtual={nomeBlocoAtual}
+        />
+
+        {/* Indicador de salvamento */}
+        {salvandoAgora && (
+          <div style={{ position: 'fixed', top: '4px', right: 'var(--space-4)', zIndex: 'var(--z-sticky)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-brand)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <style jsx>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
+            Salvando...
+          </div>
+        )}
+
         <main style={{ flex: 1, overflowY: 'auto', paddingTop: 'var(--space-12)', paddingBottom: 'var(--space-20)', paddingLeft: 'var(--space-4)', paddingRight: 'var(--space-4)' }}>
-          <React.Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><span style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando...</span></div>}>
+          <React.Suspense
+            fallback={
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <span style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando...</span>
+              </div>
+            }
+          >
             <StepComponent onSelect={handleSelect} estadoAtual={estado} />
           </React.Suspense>
         </main>
+
         <BackButton onClick={handleBack} disabled={estado.historicoEtapas.length === 0} />
+
+        {/* Modal: continuar draft? */}
+        {oferecerDraft && (
+          <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }}>
+            <div style={{ backgroundColor: 'var(--color-white)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-8)', maxWidth: '420px', width: '100%', boxShadow: 'var(--shadow-xl)' }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-3)', color: 'var(--color-text-primary)' }}>Continuar onde parou?</h2>
+              <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)', lineHeight: 'var(--leading-relaxed)' }}>
+                Encontramos um memorial salvo neste dispositivo. Deseja continuar de onde parou?
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                <button
+                  onClick={handleContinuarDraft}
+                  style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: 'none', backgroundColor: 'var(--color-brand)', color: 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}
+                >
+                  Sim, continuar
+                </button>
+                <button
+                  onClick={handleDescartarDraft}
+                  style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-border-strong)', backgroundColor: 'transparent', color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', cursor: 'pointer' }}
+                >
+                  Não, começar do zero
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: pedir login */}
         {mostrandoLogin && (
           <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }}>
             <div style={{ backgroundColor: 'var(--color-white)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-8)', maxWidth: '400px', width: '100%', boxShadow: 'var(--shadow-xl)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-4)' }}>Quase lá!</h2>
-              <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)' }}>Para salvar seu memorial e continuar personalizando, faça login ou crie uma conta.</p>
-              <button onClick={() => setMostrandoLogin(false)} style={{ fontFamily: 'var(--font-body)', padding: 'var(--space-3) var(--space-6)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-border-strong)', backgroundColor: 'transparent', cursor: 'pointer', color: 'var(--color-text-primary)' }}>Continuar sem login</button>
+              <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)' }}>
+                Para salvar seu memorial na nuvem e acessar de qualquer lugar, faça login ou crie uma conta.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                <button
+                  onClick={() => router.push(`/login?redirect=${encodeURIComponent('/memorial')}`)}
+                  style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: 'none', backgroundColor: 'var(--color-brand)', color: 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}
+                >
+                  Fazer login
+                </button>
+                <button
+                  onClick={() => setMostrandoLogin(false)}
+                  style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-border-strong)', backgroundColor: 'transparent', color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', cursor: 'pointer' }}
+                >
+                  Continuar sem login
+                </button>
+              </div>
             </div>
           </div>
         )}
