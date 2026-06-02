@@ -136,3 +136,4 @@ create policy "Usuários atualizam tarefas"
   on public.tarefas for update to authenticated using (auth.uid() = user_id);
 create policy "Usuários deletam tarefas"
   on public.tarefas for delete to authenticated using (auth.uid() = user_id);
+  
