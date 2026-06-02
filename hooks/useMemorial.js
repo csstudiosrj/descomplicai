@@ -1,10 +1,9 @@
 /**
  * Hook central que gerencia todo o estado do questionário do memorial
  * @module hooks/useMemorial
- * @dependencies React, useAutoSave (a ser criado), algoritmo.js, sugestoes.js
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
 const ESTADO_INICIAL = {
   perfilCasal: null,
@@ -97,25 +96,12 @@ const ESTADO_INICIAL = {
 };
 
 export default function useMemorial() {
-  const [estado, setEstado] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const draft = localStorage.getItem('descomplicai-memorial-draft');
-      if (draft) {
-        try {
-          return { ...ESTADO_INICIAL, ...JSON.parse(draft) };
-        } catch {
-          return ESTADO_INICIAL;
-        }
-      }
-    }
-    return ESTADO_INICIAL;
-  });
+  const [estado, setEstado] = useState(ESTADO_INICIAL);
 
   const setRespostas = useCallback((campo, valor) => {
     setEstado((prev) => {
       const next = { ...prev, [campo]: valor };
       if (campo === 'cidadeEvento' && valor) {
-        // Inferir região pela cidade — placeholder para integração futura com IBGE
         next.regiaoEvento = '';
       }
       return next;
@@ -146,26 +132,16 @@ export default function useMemorial() {
   }, []);
 
   const getSugestoes = useCallback((categoria) => {
-    // Integração com sugestoes.js — placeholder para importação futura
     return [];
   }, []);
 
   const resetarMemorial = useCallback(() => {
     setEstado(ESTADO_INICIAL);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('descomplicai-memorial-draft');
-    }
   }, []);
 
   const exportarDados = useCallback(() => {
     const { etapaAtual, etapasTotais, historicoEtapas, loginFeito, memorialConcluido, ...dadosLimpos } = estado;
     return dadosLimpos;
-  }, [estado]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
-    }
   }, [estado]);
 
   return {
