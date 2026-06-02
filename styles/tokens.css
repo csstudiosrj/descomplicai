@@ -1,1 +1,100 @@
 /* Tokens de design — cores, espaçamentos, tipografia e sombras */
+
+:root {
+    /* Cores base (neutras) */
+    --color-white: #FFFFFF;
+    --color-off-white: #F9F7F4;
+    --color-surface: #F3F0EC;
+    --color-border: #E5E0D9;
+    --color-border-strong: #C8BFB4;
+    --color-text-primary: #1A1714;
+    --color-text-secondary: #5C534A;
+    --color-text-muted: #9C9087;
+    --color-overlay: rgba(26, 23, 20, 0.5);
+  
+    /* Cor de marca */
+    --color-brand: #8B6F5E;
+    --color-brand-light: #C4A898;
+    --color-brand-lighter: #EDE4DE;
+    --color-brand-dark: #5C3D2E;
+  
+    /* Semânticas */
+    --color-success: #4A7C5F;
+    --color-success-light: #D4EBE0;
+    --color-warning: #C47B2B;
+    --color-warning-light: #F5E6CF;
+    --color-danger: #B84C4C;
+    --color-danger-light: #F5DCDC;
+    --color-info: #3D6B8C;
+    --color-info-light: #D4E6F5;
+  
+    /* Tipografia */
+    --font-display: 'Cormorant Garamond', Georgia, serif;
+    --font-body: 'DM Sans', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+    --text-4xl: 2.25rem;
+    --text-5xl: 3rem;
+  
+    --leading-tight: 1.2;
+    --leading-snug: 1.375;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.625;
+  
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+  
+    /* Espaçamento */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+    --space-16: 4rem;
+    --space-20: 5rem;
+    --space-24: 6rem;
+  
+    /* Bordas */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-full: 9999px;
+  
+    /* Sombras */
+    --shadow-sm: 0 1px 3px rgba(26,23,20,0.08), 0 1px 2px rgba(26,23,20,0.04);
+    --shadow-md: 0 4px 12px rgba(26,23,20,0.1), 0 2px 6px rgba(26,23,20,0.06);
+    --shadow-lg: 0 10px 30px rgba(26,23,20,0.12), 0 4px 12px rgba(26,23,20,0.08);
+    --shadow-xl: 0 20px 50px rgba(26,23,20,0.15);
+  
+    /* Transições */
+    --transition-fast: 150ms ease;
+    --transition-base: 220ms ease;
+    --transition-slow: 400ms ease;
+    --transition-breath: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  
+    /* Z-index */
+    --z-base: 0;
+    --z-dropdown: 100;
+    --z-sticky: 200;
+    --z-modal: 300;
+    --z-toast: 400;
+    --z-vlibras: 500;
+  }
+  
+  /* Breakpoints (como variáveis de referência — usadas via media queries no CSS) */
+  /* mobile-first: min-width 390px é o design base */
+  /* sm: 640px | md: 768px | lg: 1024px | xl: 1280px */
