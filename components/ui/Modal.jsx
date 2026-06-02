@@ -1,20 +1,9 @@
-// Componente de modal/diálogo — overlay e foco trap
 // Componente Modal acessível com trap de foco, fechamento por ESC e backdrop
 // Dependências diretas: React, PropTypes
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
-/**
- * Modal — diálogo acessível com gerenciamento de foco e animação
- *
- * @param {boolean} isOpen - controla visibilidade do modal
- * @param {function} onClose - handler chamado ao fechar o modal
- * @param {string} title - título exibido no header (usado para aria-labelledby)
- * @param {string} size - 'sm' | 'md' | 'lg' | 'full'
- * @param {React.ReactNode} children - conteúdo do modal
- * @param {boolean} hideCloseButton - oculta o botão X e impede fechamento por backdrop
- */
 export default function Modal({
   isOpen,
   onClose,
@@ -206,30 +195,14 @@ export default function Modal({
                 e.currentTarget.style.color = 'var(--color-text-muted)';
               }}
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M18 6L6 18M6 6l12 12" />
               </svg>
             </button>
           )}
         </div>
 
-        <div
-          style={{
-            padding: 'var(--space-6)',
-            overflowY: 'auto',
-            flex: 1,
-          }}
-        >
+        <div style={{ padding: 'var(--space-6)', overflowY: 'auto', flex: 1 }}>
           {children}
         </div>
       </div>

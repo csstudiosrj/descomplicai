@@ -1,7 +1,5 @@
-/* Tokens de design — importação das variáveis CSS do sistema */
 @import './tokens.css';
 
-/* Reset moderno */
 *,
 *::before,
 *::after {
@@ -10,7 +8,10 @@
   padding: 0;
 }
 
-/* Base do body */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: var(--font-body);
   color: var(--color-text-primary);
@@ -21,7 +22,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Tipografia base */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   font-weight: var(--font-semibold);
@@ -29,31 +29,13 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-text-primary);
 }
 
-h1 {
-  font-size: var(--text-4xl);
-}
+h1 { font-size: var(--text-4xl); }
+h2 { font-size: var(--text-3xl); }
+h3 { font-size: var(--text-2xl); }
+h4 { font-size: var(--text-xl); }
+h5 { font-size: var(--text-lg); }
+h6 { font-size: var(--text-base); }
 
-h2 {
-  font-size: var(--text-3xl);
-}
-
-h3 {
-  font-size: var(--text-2xl);
-}
-
-h4 {
-  font-size: var(--text-xl);
-}
-
-h5 {
-  font-size: var(--text-lg);
-}
-
-h6 {
-  font-size: var(--text-base);
-}
-
-/* Links */
 a {
   color: var(--color-brand);
   text-decoration: none;
@@ -63,13 +45,11 @@ a:hover {
   text-decoration: underline;
 }
 
-/* Foco visível — nunca remova outline para acessibilidade */
 :focus-visible {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;
 }
 
-/* Scrollbar customizada (webkit) */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -88,7 +68,6 @@ a:hover {
   background-color: var(--color-border-strong);
 }
 
-/* Alto contraste */
 @media (prefers-contrast: high) {
   :root {
     --color-text-primary: #000000;
@@ -96,13 +75,11 @@ a:hover {
     --color-border: #5C534A;
     --color-border-strong: #1A1714;
   }
-
   * {
     border-color: var(--color-border-strong) !important;
   }
 }
 
-/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

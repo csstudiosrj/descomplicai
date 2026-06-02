@@ -4,9 +4,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-/**
- * Spinner SVG animado inline — usado no estado de loading
- */
 function LoadingSpinner() {
   return (
     <svg
@@ -16,9 +13,7 @@ function LoadingSpinner() {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
-      style={{
-        animation: 'spin 1s linear infinite',
-      }}
+      style={{ animation: 'spin 1s linear infinite' }}
     >
       <circle
         cx="10"
@@ -39,29 +34,13 @@ function LoadingSpinner() {
       />
       <style jsx>{`
         @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </svg>
   );
 }
 
-/**
- * Button — botão reutilizável com variantes visuais e estados
- *
- * @param {string} variant - 'primary' | 'secondary' | 'ghost' | 'danger'
- * @param {string} size - 'sm' | 'md' | 'lg'
- * @param {boolean} fullWidth - ocupa 100% da largura do container
- * @param {boolean} loading - exibe spinner e desabilita interação
- * @param {boolean} disabled - desabilita o botão
- * @param {function} onClick - handler de clique
- * @param {string} type - 'button' | 'submit' | 'reset'
- * @param {React.ReactNode} children - conteúdo do botão
- * @param {string} ariaLabel - obrigatório quando children for apenas ícone
- * @param {string} className - classes CSS extras
- */
 export default function Button({
   variant = 'primary',
   size = 'md',
@@ -94,44 +73,16 @@ export default function Button({
   };
 
   const sizeStyles = {
-    sm: {
-      padding: 'var(--space-2) var(--space-3)',
-      fontSize: 'var(--text-sm)',
-      minHeight: '36px',
-    },
-    md: {
-      padding: 'var(--space-3) var(--space-4)',
-      fontSize: 'var(--text-base)',
-      minHeight: '44px',
-    },
-    lg: {
-      padding: 'var(--space-4) var(--space-6)',
-      fontSize: 'var(--text-lg)',
-      minHeight: '52px',
-    },
+    sm: { padding: 'var(--space-2) var(--space-3)', fontSize: 'var(--text-sm)', minHeight: '36px' },
+    md: { padding: 'var(--space-3) var(--space-4)', fontSize: 'var(--text-base)', minHeight: '44px' },
+    lg: { padding: 'var(--space-4) var(--space-6)', fontSize: 'var(--text-lg)', minHeight: '52px' },
   };
 
   const variantStyles = {
-    primary: {
-      backgroundColor: 'var(--color-brand)',
-      color: 'var(--color-white)',
-      borderColor: 'var(--color-brand)',
-    },
-    secondary: {
-      backgroundColor: 'transparent',
-      color: 'var(--color-text-primary)',
-      borderColor: 'var(--color-border-strong)',
-    },
-    ghost: {
-      backgroundColor: 'transparent',
-      color: 'var(--color-text-primary)',
-      borderColor: 'transparent',
-    },
-    danger: {
-      backgroundColor: 'var(--color-danger)',
-      color: 'var(--color-white)',
-      borderColor: 'var(--color-danger)',
-    },
+    primary: { backgroundColor: 'var(--color-brand)', color: 'var(--color-white)', borderColor: 'var(--color-brand)' },
+    secondary: { backgroundColor: 'transparent', color: 'var(--color-text-primary)', borderColor: 'var(--color-border-strong)' },
+    ghost: { backgroundColor: 'transparent', color: 'var(--color-text-primary)', borderColor: 'transparent' },
+    danger: { backgroundColor: 'var(--color-danger)', color: 'var(--color-white)', borderColor: 'var(--color-danger)' },
   };
 
   const hoverStyles = {
@@ -141,15 +92,11 @@ export default function Button({
     danger: { backgroundColor: '#9A3A3A' },
   };
 
-  const activeStyles = {
-    transform: 'scale(0.98)',
-  };
-
   const [isHovered, setIsHovered] = React.useState(false);
   const [isActive, setIsActive] = React.useState(false);
 
   const dynamicHover = isHovered && !isDisabled ? hoverStyles[variant] : {};
-  const dynamicActive = isActive && !isDisabled ? activeStyles : {};
+  const dynamicActive = isActive && !isDisabled ? { transform: 'scale(0.98)' } : {};
 
   const combinedStyles = {
     ...baseStyles,
@@ -169,35 +116,17 @@ export default function Button({
       className={className}
       style={combinedStyles}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setIsActive(false);
-      }}
+      onMouseLeave={() => { setIsHovered(false); setIsActive(false); }}
       onMouseDown={() => setIsActive(true)}
       onMouseUp={() => setIsActive(false)}
       {...rest}
     >
       {loading && (
-        <span
-          style={{
-            position: 'absolute',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
+        <span style={{ position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <LoadingSpinner />
         </span>
       )}
-      <span
-        style={{
-          opacity: loading ? 0 : 1,
-          transition: 'opacity var(--transition-fast)',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 'var(--space-2)',
-        }}
-      >
+      <span style={{ opacity: loading ? 0 : 1, transition: 'opacity var(--transition-fast)', display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)' }}>
         {children}
       </span>
     </button>

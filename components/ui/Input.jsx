@@ -1,27 +1,9 @@
-// Componente de input reutilizável — text, number, textarea, etc.
 // Componente Input — campo de texto com label, prefixo, sufixo e feedback integrados
 // Dependências diretas: React, PropTypes
 
 import React, { useId } from 'react';
 import PropTypes from 'prop-types';
 
-/**
- * Input — campo de texto acessível com estados visuais
- *
- * @param {string} label - texto do label acima do campo
- * @param {string} type - tipo do input: text | email | password | tel | number | date | search
- * @param {string} placeholder - placeholder do campo
- * @param {string} value - valor controlado
- * @param {function} onChange - handler de mudança
- * @param {string} error - mensagem de erro (ativa estado de erro)
- * @param {string} hint - texto de ajuda abaixo do campo
- * @param {boolean} disabled - desabilita o campo
- * @param {boolean} required - campo obrigatório
- * @param {React.ReactNode} prefix - ícone ou texto antes do input
- * @param {React.ReactNode} suffix - ícone ou texto após o input
- * @param {string} id - id do input (gerado automaticamente se omitido)
- * @param {string} className - classes CSS extras
- */
 export default function Input({
   label,
   type = 'text',
@@ -69,11 +51,7 @@ export default function Input({
     fontSize: 'var(--text-base)',
     color: 'var(--color-text-primary)',
     backgroundColor: disabled ? 'var(--color-surface)' : 'var(--color-white)',
-    border: `1.5px solid ${
-      hasError
-        ? 'var(--color-danger)'
-        : 'var(--color-border)'
-    }`,
+    border: `1.5px solid ${hasError ? 'var(--color-danger)' : 'var(--color-border)'}`,
     borderRadius: 'var(--radius-md)',
     transition: 'border-color var(--transition-fast), box-shadow var(--transition-fast)',
     outline: 'none',
@@ -102,9 +80,7 @@ export default function Input({
   const handleFocus = (e) => {
     if (!disabled) {
       e.currentTarget.style.borderColor = hasError ? 'var(--color-danger)' : 'var(--color-brand)';
-      e.currentTarget.style.boxShadow = `0 0 0 3px ${
-        hasError ? 'var(--color-danger-light)' : 'var(--color-brand-lighter)'
-      }`;
+      e.currentTarget.style.boxShadow = `0 0 0 3px ${hasError ? 'var(--color-danger-light)' : 'var(--color-brand-lighter)'}`;
     }
   };
 
@@ -119,31 +95,16 @@ export default function Input({
         <label htmlFor={id} style={labelStyles}>
           {label}
           {required && (
-            <span
-              aria-hidden="true"
-              style={{ color: 'var(--color-danger)', marginLeft: 'var(--space-1)' }}
-            >
+            <span aria-hidden="true" style={{ color: 'var(--color-danger)', marginLeft: 'var(--space-1)' }}>
               *
             </span>
           )}
         </label>
       )}
 
-      <div
-        style={fieldStyles}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-      >
+      <div style={fieldStyles} onFocus={handleFocus} onBlur={handleBlur}>
         {prefix && (
-          <span
-            aria-hidden="true"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              color: 'var(--color-text-muted)',
-              flexShrink: 0,
-            }}
-          >
+          <span aria-hidden="true" style={{ display: 'flex', alignItems: 'center', color: 'var(--color-text-muted)', flexShrink: 0 }}>
             {prefix}
           </span>
         )}
@@ -163,15 +124,7 @@ export default function Input({
         />
 
         {suffix && (
-          <span
-            aria-hidden="true"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              color: 'var(--color-text-muted)',
-              flexShrink: 0,
-            }}
-          >
+          <span aria-hidden="true" style={{ display: 'flex', alignItems: 'center', color: 'var(--color-text-muted)', flexShrink: 0 }}>
             {suffix}
           </span>
         )}

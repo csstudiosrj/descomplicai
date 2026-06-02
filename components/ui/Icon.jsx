@@ -4,15 +4,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-/**
- * Icon — componente de ícone com SVGs inline desenhados manualmente
- *
- * @param {string} name - nome do ícone
- * @param {number|string} size - tamanho em px (default: 24)
- * @param {string} color - cor do stroke (default: 'currentColor')
- * @param {boolean} ariaHidden - esconde de leitores de tela (default: true para decorativos)
- * @param {string} ariaLabel - descrição para ícones com significado semântico
- */
 const ICONS = {
   'arrow-left': <path d="M19 12H5M12 19l-7-7 7-7" />,
   'arrow-right': <path d="M5 12h14M12 5l7 7-7 7" />,
