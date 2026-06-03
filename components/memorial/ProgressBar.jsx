@@ -1,20 +1,19 @@
-// Barra de progresso do questionário com informação de bloco
+// Barra de progresso do questionário — visual minimalista, sem números
 // Dependências diretas: React, PropTypes
 
 import React from 'react';
 import PropTypes from 'prop-types';
 
-export default function ProgressBar({ etapaAtual, etapasTotais, blocoAtual, nomeBlocoAtual }) {
+export default function ProgressBar({ etapaAtual, etapasTotais, nomeBlocoAtual }) {
   const progresso = etapasTotais > 0 ? (etapaAtual / etapasTotais) * 100 : 0;
-  const etapaReal = Math.min(etapaAtual + 1, etapasTotais);
 
   return (
     <div
       role="progressbar"
-      aria-valuenow={etapaReal}
+      aria-valuenow={etapaAtual}
       aria-valuemin={0}
       aria-valuemax={etapasTotais}
-      aria-label={`Progresso do memorial: etapa ${etapaReal} de ${etapasTotais}`}
+      aria-label={`Progresso: ${nomeBlocoAtual || 'Memorial'}`}
       style={{
         position: 'fixed',
         top: 0,
@@ -24,6 +23,7 @@ export default function ProgressBar({ etapaAtual, etapasTotais, blocoAtual, nome
         backgroundColor: 'var(--color-white)',
       }}
     >
+      {/* Barra visual */}
       <div
         style={{
           height: '4px',
@@ -43,29 +43,27 @@ export default function ProgressBar({ etapaAtual, etapasTotais, blocoAtual, nome
         />
       </div>
 
-      <div
-        style={{
-          padding: 'var(--space-2) var(--space-4)',
-          fontFamily: 'var(--font-body)',
-          fontSize: 'var(--text-sm)',
-          color: 'var(--color-text-muted)',
-          display: 'none',
-        }}
-        className="progress-info-desktop"
-      >
-        Etapa {etapaReal} de {etapasTotais}
-        {nomeBlocoAtual ? ` · ${nomeBlocoAtual}` : ''}
-      </div>
+      {/* Nome do bloco — sem números */}
+      {nomeBlocoAtual && (
+        <div
+          style={{
+            padding: 'var(--space-2) var(--space-4)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-xs)',
+            fontWeight: 'var(--font-medium)',
+            color: 'var(--color-text-muted)',
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+          }}
+        >
+          {nomeBlocoAtual}
+        </div>
+      )}
 
       <style jsx>{`
-        @media (min-width: 390px) {
-          .progress-info-desktop {
-            display: block !important;
-          }
-        }
         @media (max-width: 389px) {
-          .progress-info-desktop {
-            display: none !important;
+          div[style*="padding: var(--space-2)"] {
+            display: none;
           }
         }
       `}</style>
@@ -76,7 +74,6 @@ export default function ProgressBar({ etapaAtual, etapasTotais, blocoAtual, nome
 ProgressBar.propTypes = {
   etapaAtual: PropTypes.number.isRequired,
   etapasTotais: PropTypes.number.isRequired,
-  blocoAtual: PropTypes.string,
   nomeBlocoAtual: PropTypes.string,
 };
 

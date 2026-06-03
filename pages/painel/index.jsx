@@ -1,8 +1,10 @@
 // Dashboard principal do casal — visão geral do planejamento
-// Dependências diretas: React, next/head, useAuth
+// Protegido: redireciona para /memorial se não logado ou sem assinatura ativa
+// Dependências diretas: React, next/head, next/router, useAuth
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuth } from '../../hooks/useAuth';
 import Card from '../../components/ui/Card';
@@ -17,12 +19,31 @@ const MENU = [
 ];
 
 export default function PainelPage() {
-  const { usuario, logout, carregando } = useAuth();
+  const router = useRouter();
+  const { usuario, logout, carregando, assinaturaAtiva } = useAuth();
 
-  if (carregando) {
+  // Proteção de rota: não logado OU sem assinatura ativa → /memorial
+  useEffect(() => {
+    if (!carregando) {
+      if (!usuario || !assinaturaAtiva) {
+        router.replace('/memorial');
+      }
+    }
+  }, [carregando, usuario, assinaturaAtiva, router]);
+
+  // Não renderiza nada enquanto valida ou redireciona
+  if (carregando || !usuario || !assinaturaAtiva) {
     return (
-      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>
-        Carregando...
+      <div style={{
+        minHeight: '100dvh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'var(--font-body)',
+        color: 'var(--color-text-muted)',
+        backgroundColor: 'var(--color-off-white)',
+      }}>
+        Verificando acesso...
       </div>
     );
   }

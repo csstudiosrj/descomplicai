@@ -7,17 +7,22 @@ import { supabase } from '../lib/supabase';
 export default function useAuth() {
   const [usuario, setUsuario] = useState(null);
   const [carregando, setCarregando] = useState(true);
+  const [assinaturaAtiva, setAssinaturaAtiva] = useState(false);
 
   useEffect(() => {
     const getSessao = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      setUsuario(session?.user || null);
+      const user = session?.user || null;
+      setUsuario(user);
+      setAssinaturaAtiva(user?.user_metadata?.assinatura_ativa === true);
       setCarregando(false);
     };
     getSessao();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUsuario(session?.user || null);
+      const user = session?.user || null;
+      setUsuario(user);
+      setAssinaturaAtiva(user?.user_metadata?.assinatura_ativa === true);
     });
 
     return () => {
@@ -42,6 +47,7 @@ export default function useAuth() {
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setUsuario(null);
+    setAssinaturaAtiva(false);
   }, []);
 
   const loginSocial = useCallback(async (provider) => {
@@ -49,7 +55,7 @@ export default function useAuth() {
     return { data, error };
   }, []);
 
-  return { usuario, carregando, login, cadastrar, logout, loginSocial };
+  return { usuario, carregando, assinaturaAtiva, login, cadastrar, logout, loginSocial };
 }
 
 export { useAuth };
