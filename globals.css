@@ -1,0 +1,142 @@
+/* Logo */
+.logo-root {
+    display: inline-flex;
+    align-items: baseline;
+    font-size: 1.5rem;
+    line-height: 1;
+    user-select: none;
+  }
+  
+  .logo-descomplica {
+    font-family: var(--font-display);
+    font-weight: 300;
+    color: var(--color-brand);
+  }
+  
+  .logo-i {
+    font-family: var(--font-tech);
+    font-style: italic;
+    font-weight: 400;
+    color: var(--color-tech);
+  }
+  
+  /* Header */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--color-background);
+    border-bottom: 1px solid var(--color-border);
+  }
+  
+  .header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0.75rem 1rem;
+  }
+  
+  .header-logo-link {
+    text-decoration: none;
+  }
+  
+  .header-nav {
+    display: none;
+  }
+  
+  .header-nav-list {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .header-nav-link {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  
+  .header-nav-link:hover {
+    color: var(--color-text-primary);
+  }
+  
+  .header-nav-link--primary {
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    background: var(--color-brand);
+    color: #fff;
+  }
+  
+  .header-nav-link--primary:hover {
+    background: #7a6050;
+    color: #fff;
+  }
+  
+  .header-menu-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .header-menu-bar {
+    display: block;
+    width: 1.25rem;
+    height: 2px;
+    background: var(--color-text-primary);
+    border-radius: 1px;
+  }
+  
+  .header-mobile-menu {
+    padding: 0.5rem 1rem 1rem;
+    border-top: 1px solid var(--color-border);
+  }
+  
+  .header-mobile-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .header-mobile-link {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    padding: 0.5rem 0;
+  }
+  
+  .header-mobile-link--primary {
+    color: var(--color-brand);
+    font-weight: 600;
+  }
+  
+  @media (min-width: 768px) {
+    .header-nav {
+      display: block;
+    }
+  
+    .header-menu-toggle {
+      display: none;
+    }
+  
+    .header-mobile-menu {
+      display: none;
+    }
+  }

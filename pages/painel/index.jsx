@@ -1,12 +1,13 @@
 // Dashboard principal do casal — visão geral do planejamento
 // Protegido: redireciona para /memorial se não logado ou sem assinatura ativa
-// Dependências diretas: React, next/head, next/router, useAuth
+// Dependências diretas: React, next/head, next/router, useAuth, Header, Card, Badge
 
 import React, { useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuth } from '../../hooks/useAuth';
+import Header from '../../components/ui/Header';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 
@@ -22,7 +23,6 @@ export default function PainelPage() {
   const router = useRouter();
   const { usuario, logout, carregando, assinaturaAtiva } = useAuth();
 
-  // Proteção de rota: não logado OU sem assinatura ativa → /memorial
   useEffect(() => {
     if (!carregando) {
       if (!usuario || !assinaturaAtiva) {
@@ -31,7 +31,6 @@ export default function PainelPage() {
     }
   }, [carregando, usuario, assinaturaAtiva, router]);
 
-  // Não renderiza nada enquanto valida ou redireciona
   if (carregando || !usuario || !assinaturaAtiva) {
     return (
       <div style={{
@@ -55,24 +54,23 @@ export default function PainelPage() {
       </Head>
 
       <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-off-white)' }}>
-        <header style={{ backgroundColor: 'var(--color-white)', borderBottom: '1px solid var(--color-border)', padding: 'var(--space-4) var(--space-6)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)' }}>
-            Painel
-          </h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
-              {usuario?.email || 'Visitante'}
-            </span>
-            <button
-              onClick={logout}
-              style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-danger)', background: 'none', border: 'none', cursor: 'pointer' }}
-            >
-              Sair
-            </button>
-          </div>
-        </header>
+        <Header logoSize="md">
+          <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
+            {usuario?.email}
+          </span>
+          <button
+            onClick={logout}
+            style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-danger)', background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            Sair
+          </button>
+        </Header>
 
         <main style={{ maxWidth: '960px', margin: '0 auto', padding: 'var(--space-8) var(--space-4)' }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-6)' }}>
+            Painel
+          </h1>
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 'var(--space-4)' }}>
             {MENU.map((item) => (
               <Link key={item.href} href={item.href} legacyBehavior>
