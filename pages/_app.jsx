@@ -1,13 +1,26 @@
-// Provider global e importação de estilos
-// Dependências diretas: React, next/app, MemorialProvider, globals.css
-
+import React from 'react';
+import { useRouter } from 'next/router';
+import MainLayout from '../components/layout/MainLayout';
+import '../styles/tokens.css';
 import '../styles/globals.css';
-import { MemorialProvider } from '../context/MemorialContext';
 
-export default function App({ Component, pageProps }) {
+const NO_HEADER_ROUTES = ['/memorial', '/memorial/[...slug]'];
+
+function MyApp({ Component, pageProps }) {
+  const router = useRouter();
+  const hideHeader = NO_HEADER_ROUTES.some((route) =>
+    router.pathname.startsWith(route.replace('[...slug]', ''))
+  );
+
+  if (hideHeader) {
+    return <Component {...pageProps} />;
+  }
+
   return (
-    <MemorialProvider>
+    <MainLayout>
       <Component {...pageProps} />
-    </MemorialProvider>
+    </MainLayout>
   );
 }
+
+export default MyApp;
