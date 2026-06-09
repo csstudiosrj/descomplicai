@@ -1,6 +1,4 @@
-// Orquestrador do fluxo do memorial — mapa completo de todos os steps
-// Dependências diretas: React, useMemorial, useAuth, useAutoSave, algoritmo.js, next/router, BreathTransition, ProgressBar, BackButton
-
+// components/memorial/MemorialOrchestrator.jsx
 import React, { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import useMemorial from '../../hooks/useMemorial';
@@ -43,6 +41,20 @@ const STEP_COMPONENTS = {
   Step60Fornecedores: React.lazy(() => import('./steps/Step60Fornecedores')),
 };
 
+const BLOCK_NAMES = {
+  'A': 'Bloco A — Perfil do Casal',
+  'B': 'Bloco B — Cerimônia',
+  'C': 'Bloco C — Local e Estrutura',
+  'D': 'Bloco D — Identidade Visual',
+  'E': 'Bloco E — Decoração',
+  'F': 'Bloco F — Mesa Posta',
+  'G': 'Bloco G — Alimentação e Bebidas',
+  'H': 'Bloco H — Entretenimento',
+  'I': 'Bloco I — Vestuário e Beleza',
+  'J': 'Bloco J — Papelaria e Identidade',
+  'K': 'Bloco K — Fornecedores',
+};
+
 function PlaceholderStep({ titulo }) {
   return (
     <div style={{ padding: 'var(--space-8)', textAlign: 'center', fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>
@@ -62,14 +74,12 @@ export default function MemorialOrchestrator() {
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
 
-  // Redireciona para conclusão se memorial já foi finalizado
   useEffect(() => {
     if (estado.memorialConcluido) {
       router.push('/memorial/conclusao');
     }
   }, [estado.memorialConcluido, router]);
 
-  // Ao montar: oferece continuar draft do localStorage se usuário anônimo
   useEffect(() => {
     if (!usuario && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
       setOferecerDraft(true);
@@ -79,7 +89,8 @@ export default function MemorialOrchestrator() {
   const etapasTotais = calcularEtapasTotais(estado);
   const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
   const blocoAtual = etapaAtualObj?.bloco || '';
-  const nomeBlocoAtual = etapaAtualObj?.titulo || '';
+  const progress = etapasTotais > 0 ? (estado.etapaAtual / etapasTotais) * 100 : 0;
+  const blockName = BLOCK_NAMES[blocoAtual] || '';
 
   const handleSelect = useCallback((campo, valor) => {
     setRespostas(campo, valor);
@@ -125,13 +136,10 @@ export default function MemorialOrchestrator() {
     <BreathTransition ativa={transicionando} cor="var(--color-brand-lighter)">
       <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden', backgroundColor: 'var(--color-off-white)' }}>
         <ProgressBar
-          etapaAtual={estado.etapaAtual}
-          etapasTotais={etapasTotais}
-          blocoAtual={blocoAtual}
-          nomeBlocoAtual={nomeBlocoAtual}
+          progress={progress}
+          blockName={blockName}
         />
 
-        {/* Indicador de salvamento */}
         {salvandoAgora && (
           <div style={{ position: 'fixed', top: '4px', right: 'var(--space-4)', zIndex: 'var(--z-sticky)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-brand)', animation: 'pulse 1.5s ease-in-out infinite' }} />
@@ -154,7 +162,6 @@ export default function MemorialOrchestrator() {
 
         <BackButton onClick={handleBack} disabled={estado.historicoEtapas.length === 0} />
 
-        {/* Modal: continuar draft? */}
         {oferecerDraft && (
           <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }}>
             <div style={{ backgroundColor: 'var(--color-white)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-8)', maxWidth: '420px', width: '100%', boxShadow: 'var(--shadow-xl)' }}>
@@ -180,7 +187,6 @@ export default function MemorialOrchestrator() {
           </div>
         )}
 
-        {/* Modal: pedir login */}
         {mostrandoLogin && (
           <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }}>
             <div style={{ backgroundColor: 'var(--color-white)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-8)', maxWidth: '400px', width: '100%', boxShadow: 'var(--shadow-xl)' }}>
