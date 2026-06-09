@@ -1,13 +1,17 @@
+// components/memorial/BreathTransition.jsx
 // Animação de "respiro visual" entre etapas do questionário
-// Dependências diretas: React, PropTypes
+// Overlay: opacidade 0 → 0.12 → 0 em 220ms
+// Card selecionado: scale 1 → 1.02 → 1 em 220ms
+// Respeita prefers-reduced-motion
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 export default function BreathTransition({ ativa, cor, children }) {
-  const [prefersReduced, setPrefersReduced] = React.useState(false);
+  const [prefersReduced, setPrefersReduced] = useState(false);
+  const [animState, setAnimState] = useState('idle'); // idle | active | fading
 
-  React.useEffect(() => {
+  useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReduced(mq.matches);
     const handler = (e) => setPrefersReduced(e.matches);
@@ -15,22 +19,45 @@ export default function BreathTransition({ ativa, cor, children }) {
     return () => mq.removeEventListener('change', handler);
   }, []);
 
+  useEffect(() => {
+    if (!ativa || prefersReduced) return;
+
+    setAnimState('active');
+    const fadeTimeout = setTimeout(() => setAnimState('fading'), 110);
+    const endTimeout = setTimeout(() => setAnimState('idle'), 220);
+
+    return () => {
+      clearTimeout(fadeTimeout);
+      clearTimeout(endTimeout);
+    };
+  }, [ativa, prefersReduced]);
+
   if (prefersReduced) return <>{children}</>;
 
-  const overlayStyles = {
+  const overlayOpacity = animState === 'active' ? 0.12 : 0;
+  const wrapperTransform =
+    animState === 'active' || animState === 'fading' ? 'scale(1.02)' : 'scale(1)';
+
+  const wrapperStyle = {
+    position: 'relative',
+    transform: wrapperTransform,
+    transition: 'transform 220ms ease',
+  };
+
+  const overlayStyle = {
     position: 'fixed',
     inset: 0,
     zIndex: 'var(--z-modal)',
     backgroundColor: cor || 'var(--color-brand)',
-    opacity: ativa ? 0.15 : 0,
+    opacity: overlayOpacity,
     pointerEvents: 'none',
-    transition: 'opacity var(--transition-breath)',
+    transition: 'opacity 110ms ease',
   };
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={wrapperStyle}>
       {children}
-      <div aria-hidden="true" style={overlayStyles} />
+      <div aria-hidden="true" style={overlayStyle} />
     </div>
   );
 }
