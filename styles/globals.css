@@ -1,5 +1,6 @@
-@import './tokens.css';
+/* styles/globals.css */
 
+/* ========== RESET ========== */
 *,
 *::before,
 *::after {
@@ -9,84 +10,153 @@
 }
 
 html {
-  scroll-behavior: smooth;
-}
-
-body {
-  font-family: var(--font-body);
-  color: var(--color-text-primary);
-  background-color: var(--color-off-white);
-  font-size: var(--text-base);
-  line-height: var(--leading-normal);
+  font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display);
-  font-weight: var(--font-semibold);
-  line-height: var(--leading-tight);
+body {
+  font-family: var(--font-body);
+  font-weight: var(--font-normal);
   color: var(--color-text-primary);
+  background-color: var(--color-off-white);
+  line-height: var(--leading-normal);
+  min-height: 100vh;
 }
 
-h1 { font-size: var(--text-4xl); }
-h2 { font-size: var(--text-3xl); }
-h3 { font-size: var(--text-2xl); }
-h4 { font-size: var(--text-xl); }
-h5 { font-size: var(--text-lg); }
-h6 { font-size: var(--text-base); }
-
 a {
-  color: var(--color-brand);
+  color: inherit;
   text-decoration: none;
 }
 
-a:hover {
-  text-decoration: underline;
+button {
+  font-family: inherit;
+  cursor: pointer;
 }
 
-:focus-visible {
-  outline: 2px solid var(--color-brand);
-  outline-offset: 2px;
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* ========== UTILITÁRIOS ========== */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
+/* ========== LOGO ========== */
+.logo-root {
+  display: inline-flex;
+  align-items: baseline;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-::-webkit-scrollbar-thumb {
-  background-color: var(--color-border);
-  border-radius: var(--radius-full);
+.logo-descomplica {
+  font-family: var(--font-display);
+  font-weight: 300;
+  color: var(--color-brand);
+  font-size: inherit;
+  line-height: 1;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-border-strong);
+.logo-i {
+  font-family: var(--font-mono);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--color-tech);
+  font-size: inherit;
+  line-height: 1;
 }
 
-@media (prefers-contrast: high) {
-  :root {
-    --color-text-primary: #000000;
-    --color-text-secondary: #1A1714;
-    --color-border: #5C534A;
-    --color-border-strong: #1A1714;
+/* ========== HEADER ========== */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  background: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+  z-index: var(--z-sticky);
+}
+
+.header-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  height: 100%;
+  padding: 0 var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-logo-link {
+  text-decoration: none;
+  font-size: 22px;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+}
+
+.header-nav-list {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.header-nav-link {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.header-nav-link:hover {
+  color: var(--color-text-primary);
+}
+
+.header-nav-link--primary {
+  color: var(--color-brand);
+  font-weight: var(--font-medium);
+}
+
+.header-menu-toggle {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .header-nav {
+    display: none;
   }
-  * {
-    border-color: var(--color-border-strong) !important;
+  .header-menu-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--space-2);
   }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+  .header-menu-bar {
+    width: 22px;
+    height: 2px;
+    background: var(--color-text-primary);
+    border-radius: 2px;
   }
 }
