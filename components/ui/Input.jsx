@@ -1,158 +1,27 @@
-// Componente Input — campo de texto com label, prefixo, sufixo e feedback integrados
-// Dependências diretas: React, PropTypes
-
-import React, { useId } from 'react';
-import PropTypes from 'prop-types';
-
-export default function Input({
-  label,
-  type = 'text',
-  placeholder,
-  value,
-  onChange,
-  error,
-  hint,
-  disabled = false,
-  required = false,
-  prefix,
-  suffix,
-  id: idProp,
-  className = '',
-  ...rest
-}) {
-  const generatedId = useId();
-  const id = idProp || generatedId;
-  const hasError = !!error;
-
-  const wrapperStyles = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 'var(--space-1)',
-    width: '100%',
-    opacity: disabled ? 0.5 : 1,
-  };
-
-  const labelStyles = {
-    fontFamily: 'var(--font-body)',
-    fontSize: 'var(--text-sm)',
-    fontWeight: 'var(--font-medium)',
-    color: hasError ? 'var(--color-danger)' : 'var(--color-text-secondary)',
-    marginBottom: 'var(--space-1)',
-  };
-
-  const fieldStyles = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 'var(--space-2)',
-    width: '100%',
-    minHeight: '44px',
-    padding: 'var(--space-3) var(--space-4)',
-    fontFamily: 'var(--font-body)',
-    fontSize: 'var(--text-base)',
-    color: 'var(--color-text-primary)',
-    backgroundColor: disabled ? 'var(--color-surface)' : 'var(--color-white)',
-    border: `1.5px solid ${hasError ? 'var(--color-danger)' : 'var(--color-border)'}`,
-    borderRadius: 'var(--radius-md)',
-    transition: 'border-color var(--transition-fast), box-shadow var(--transition-fast)',
-    outline: 'none',
-    cursor: disabled ? 'not-allowed' : 'text',
-  };
-
-  const inputStyles = {
-    flex: 1,
-    border: 'none',
-    background: 'transparent',
-    fontFamily: 'inherit',
-    fontSize: 'inherit',
-    color: 'inherit',
-    outline: 'none',
-    cursor: disabled ? 'not-allowed' : 'text',
-    minWidth: 0,
-  };
-
-  const feedbackStyles = {
-    fontFamily: 'var(--font-body)',
-    fontSize: 'var(--text-sm)',
-    color: hasError ? 'var(--color-danger)' : 'var(--color-text-muted)',
-    minHeight: '1.25rem',
-  };
-
-  const handleFocus = (e) => {
-    if (!disabled) {
-      e.currentTarget.style.borderColor = hasError ? 'var(--color-danger)' : 'var(--color-brand)';
-      e.currentTarget.style.boxShadow = `0 0 0 3px ${hasError ? 'var(--color-danger-light)' : 'var(--color-brand-lighter)'}`;
-    }
-  };
-
-  const handleBlur = (e) => {
-    e.currentTarget.style.borderColor = hasError ? 'var(--color-danger)' : 'var(--color-border)';
-    e.currentTarget.style.boxShadow = 'none';
-  };
-
+export default function Input({ label, type = 'text', placeholder, value, onChange, required, hint }) {
   return (
-    <div className={className} style={wrapperStyles}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
       {label && (
-        <label htmlFor={id} style={labelStyles}>
+        <label style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-primary)' }}>
           {label}
-          {required && (
-            <span aria-hidden="true" style={{ color: 'var(--color-danger)', marginLeft: 'var(--space-1)' }}>
-              *
-            </span>
-          )}
         </label>
       )}
-
-      <div style={fieldStyles} onFocus={handleFocus} onBlur={handleBlur}>
-        {prefix && (
-          <span aria-hidden="true" style={{ display: 'flex', alignItems: 'center', color: 'var(--color-text-muted)', flexShrink: 0 }}>
-            {prefix}
-          </span>
-        )}
-
-        <input
-          id={id}
-          type={type}
-          placeholder={placeholder}
-          value={value}
-          onChange={onChange}
-          disabled={disabled}
-          required={required}
-          aria-invalid={hasError}
-          aria-describedby={hasError ? `${id}-feedback` : hint ? `${id}-feedback` : undefined}
-          style={inputStyles}
-          {...rest}
-        />
-
-        {suffix && (
-          <span aria-hidden="true" style={{ display: 'flex', alignItems: 'center', color: 'var(--color-text-muted)', flexShrink: 0 }}>
-            {suffix}
-          </span>
-        )}
-      </div>
-
-      {(error || hint) && (
-        <div id={`${id}-feedback`} style={feedbackStyles} role={hasError ? 'alert' : undefined}>
-          {error || hint}
-        </div>
-      )}
+      <input
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        required={required}
+        style={{
+          padding: 'var(--space-3)',
+          borderRadius: 'var(--radius-md)',
+          border: '1.5px solid var(--color-border-strong)',
+          fontFamily: 'var(--font-body)',
+          fontSize: 'var(--text-base)',
+          outline: 'none',
+        }}
+      />
+      {hint && <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{hint}</span>}
     </div>
   );
 }
-
-Input.propTypes = {
-  label: PropTypes.string,
-  type: PropTypes.oneOf(['text', 'email', 'password', 'tel', 'number', 'date', 'search']),
-  placeholder: PropTypes.string,
-  value: PropTypes.string,
-  onChange: PropTypes.func,
-  error: PropTypes.string,
-  hint: PropTypes.string,
-  disabled: PropTypes.bool,
-  required: PropTypes.bool,
-  prefix: PropTypes.node,
-  suffix: PropTypes.node,
-  id: PropTypes.string,
-  className: PropTypes.string,
-};
-
-export { Input };

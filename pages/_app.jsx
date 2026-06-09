@@ -1,5 +1,7 @@
+// pages/_app.jsx
 import React from 'react';
 import { useRouter } from 'next/router';
+import { AuthProvider } from '../context/AuthContext';
 import MainLayout from '../components/layout/MainLayout';
 import '../styles/tokens.css';
 import '../styles/globals.css';
@@ -12,15 +14,15 @@ function MyApp({ Component, pageProps }) {
     router.pathname.startsWith(route.replace('[...slug]', ''))
   );
 
-  if (hideHeader) {
-    return <Component {...pageProps} />;
-  }
-
-  return (
+  const content = hideHeader ? (
+    <Component {...pageProps} />
+  ) : (
     <MainLayout>
       <Component {...pageProps} />
     </MainLayout>
   );
+
+  return <AuthProvider>{content}</AuthProvider>;
 }
 
 export default MyApp;
