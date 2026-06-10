@@ -1,5 +1,5 @@
 // components/memorial/MemorialOrchestrator.jsx
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import useMemorial from '../../hooks/useMemorial';
 import { useAuth } from '../../hooks/useAuth';
@@ -66,13 +66,19 @@ function PlaceholderStep({ titulo }) {
 
 export default function MemorialOrchestrator() {
   const router = useRouter();
-  const { estado, setRespostas, avancarEtapa, voltarEtapa, resetarMemorial } = useMemorial();
+  const { estado, setRespostas, carregarEstado, avancarEtapa, voltarEtapa, resetarMemorial } = useMemorial();
   const { usuario } = useAuth();
   const { salvandoAgora, temDraft, carregarDraft, limparDraft } = useAutoSave(estado, usuario);
 
   const [transicionando, setTransicionando] = useState(false);
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
+
+  // Ref para manter o estado mais atualizado nos callbacks
+  const estadoRef = useRef(estado);
+  useEffect(() => {
+    estadoRef.current = estado;
+  }, [estado]);
 
   useEffect(() => {
     if (estado.memorialConcluido) {
@@ -93,14 +99,16 @@ export default function MemorialOrchestrator() {
   const blockName = BLOCK_NAMES[blocoAtual] || '';
 
   const handleSelect = useCallback((campo, valor) => {
+    // Cria o novo estado previsto
+    const novoEstado = { ...estadoRef.current, [campo]: valor };
     setRespostas(campo, valor);
     setTransicionando(true);
 
     setTimeout(() => {
-      const proxima = calcularProximaEtapa(estado, estado.etapaAtual);
+      const proxima = calcularProximaEtapa(novoEstado, estadoRef.current.etapaAtual);
       const etapaId = getEtapaPorIndice(proxima)?.id;
 
-      if (deveExibirLoginAgora(estado, etapaId)) {
+      if (deveExibirLoginAgora(novoEstado, etapaId)) {
         setMostrandoLogin(true);
         setTransicionando(false);
         return;
@@ -109,7 +117,7 @@ export default function MemorialOrchestrator() {
       avancarEtapa();
       setTransicionando(false);
     }, 220);
-  }, [estado, setRespostas, avancarEtapa]);
+  }, [setRespostas, avancarEtapa]); // Não depende mais de estado diretamente
 
   const handleBack = useCallback(() => {
     if (estado.historicoEtapas.length > 0) voltarEtapa();
@@ -118,7 +126,7 @@ export default function MemorialOrchestrator() {
   const handleContinuarDraft = () => {
     const draft = carregarDraft();
     if (draft) {
-      Object.entries(draft).forEach(([k, v]) => setRespostas(k, v));
+      carregarEstado(draft); // aplica o estado completo de uma vez
     }
     setOferecerDraft(false);
   };

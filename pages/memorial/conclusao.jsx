@@ -1,5 +1,4 @@
 // pages/memorial/conclusao.jsx
-// Tela de conclusão do memorial — geração via IA e oferta dos planos (PDF/Assinatura)
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -12,10 +11,11 @@ export default function ConclusaoPage() {
   const router = useRouter();
   const { estado } = useMemorial();
   const { usuario } = useAuth();
-
   const [status, setStatus] = useState('carregando'); // carregando | pronto | erro
   const [memorial, setMemorial] = useState('');
   const [erro, setErro] = useState('');
+  const [pagando, setPagando] = useState(false);
+  const { pagamento: statusPagamento, tipo: tipoProduto } = router.query;
 
   useEffect(() => {
     if (!estado || !estado.etapaAtual) {
@@ -48,6 +48,35 @@ export default function ConclusaoPage() {
     gerarMemorial();
   }, [estado, router]);
 
+  const iniciarPagamento = async (tipo) => {
+    setPagando(true);
+    try {
+      const dadosEvento = {
+        ...montarPayloadParaAPI(estado),
+        email: usuario?.email || null,
+      };
+
+      const resposta = await fetch('/api/pagamento/criar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo, dadosEvento }),
+      });
+
+      const data = await resposta.json();
+      if (!resposta.ok || !data.sucesso) {
+        throw new Error(data.erro || 'Erro ao criar pagamento');
+      }
+
+      // Redireciona para o checkout do Mercado Pago
+      window.location.href = data.checkoutUrl;
+    } catch (err) {
+      console.error(err);
+      alert('Não foi possível iniciar o pagamento. Tente novamente.');
+    } finally {
+      setPagando(false);
+    }
+  };
+
   if (status === 'carregando') {
     return (
       <div className="conclusao-container" style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-4)', backgroundColor: 'var(--color-off-white)' }}>
@@ -73,7 +102,6 @@ export default function ConclusaoPage() {
     );
   }
 
-  // Exibe preview com blur abaixo da dobra
   const previewVisivel = memorial.substring(0, 800);
   const previewOculto = memorial.substring(800);
 
@@ -85,30 +113,40 @@ export default function ConclusaoPage() {
       <div style={{ maxWidth: '600px', margin: '0 auto', padding: 'var(--space-6) var(--space-4) var(--space-24)', fontFamily: 'var(--font-body)' }}>
         <div style={{ marginBottom: 'var(--space-8)' }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-4xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>Memorial pronto!</h1>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-lg)' }}>
-            Ele foi gerado com base nas suas escolhas. Confira um trecho:
-          </p>
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-lg)' }}>Ele foi gerado com base nas suas escolhas. Confira um trecho:</p>
         </div>
 
         <div style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', padding: 'var(--space-6)', backgroundColor: 'var(--color-white)', marginBottom: 'var(--space-8)' }}>
-          <div style={{ whiteSpace: 'pre-wrap', lineHeight: 'var(--leading-relaxed)' }}>
-            {previewVisivel}
-          </div>
+          <div style={{ whiteSpace: 'pre-wrap', lineHeight: 'var(--leading-relaxed)' }}>{previewVisivel}</div>
           {previewOculto && (
-            <div style={{ filter: 'blur(4px)', opacity: 0.4, marginTop: 'var(--space-4)', whiteSpace: 'pre-wrap', lineHeight: 'var(--leading-relaxed)' }}>
-              {previewOculto}
-            </div>
+            <div style={{ filter: 'blur(4px)', opacity: 0.4, marginTop: 'var(--space-4)', whiteSpace: 'pre-wrap', lineHeight: 'var(--leading-relaxed)' }}>{previewOculto}</div>
           )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-          <Button variant="primary" size="lg" fullWidth onClick={() => router.push('/planos?produto=pdf')}>
-            Baixar PDF completo — R$197
+          <Button variant="primary" size="lg" fullWidth loading={pagando} onClick={() => iniciarPagamento('memorial_pdf')}>
+            {pagando ? 'Redirecionando...' : 'Baixar PDF completo — R$197'}
           </Button>
-          <Button variant="secondary" size="lg" fullWidth onClick={() => router.push('/planos?produto=assinatura')}>
-            Gerenciar meu casamento — R$29,90/mês
+          <Button variant="secondary" size="lg" fullWidth loading={pagando} onClick={() => iniciarPagamento('assinatura')}>
+            {pagando ? 'Redirecionando...' : 'Gerenciar meu casamento — R$29,90/mês'}
           </Button>
         </div>
+
+        {statusPagamento === 'sucesso' && (
+          <div style={{ marginTop: 'var(--space-6)', padding: 'var(--space-4)', backgroundColor: 'var(--color-success-light)', borderRadius: 'var(--radius-md)', color: 'var(--color-success)', fontFamily: 'var(--font-body)' }}>
+            Pagamento aprovado! Seu {tipoProduto === 'assinatura' ? 'plano de gestão' : 'PDF'} está liberado.
+          </div>
+        )}
+        {statusPagamento === 'pendente' && (
+          <div style={{ marginTop: 'var(--space-6)', padding: 'var(--space-4)', backgroundColor: 'var(--color-warning-light)', borderRadius: 'var(--radius-md)', color: 'var(--color-warning-dark)', fontFamily: 'var(--font-body)' }}>
+            Pagamento em processamento. Assim que confirmado, você receberá o acesso.
+          </div>
+        )}
+        {statusPagamento === 'erro' && (
+          <div style={{ marginTop: 'var(--space-6)', padding: 'var(--space-4)', backgroundColor: 'var(--color-danger-light)', borderRadius: 'var(--radius-md)', color: 'var(--color-danger)', fontFamily: 'var(--font-body)' }}>
+            O pagamento não foi concluído. Tente novamente.
+          </div>
+        )}
 
         <p style={{ textAlign: 'center', marginTop: 'var(--space-6)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
           Seu memorial ficará salvo por 7 dias. Depois é só assinar para manter o acesso.

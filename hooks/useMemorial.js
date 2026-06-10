@@ -1,8 +1,4 @@
-/**
- * Hook central que gerencia todo o estado do questionário do memorial
- * @module hooks/useMemorial
- */
-
+// hooks/useMemorial.js
 import { useState, useCallback } from 'react';
 
 const ESTADO_INICIAL = {
@@ -89,7 +85,6 @@ const ESTADO_INICIAL = {
   padronizarPadrinhos: null,
   fornecedoresNecessarios: [],
   etapaAtual: 0,
-  etapasTotais: 0,
   historicoEtapas: [],
   loginFeito: false,
   memorialConcluido: false,
@@ -108,11 +103,37 @@ export default function useMemorial() {
     });
   }, []);
 
+  // NOVA função para carregar um estado completo (draft)
+  const carregarEstado = useCallback((novoEstado) => {
+    setEstado((prev) => ({
+      ...prev,
+      ...novoEstado,
+      // Garante que os arrays sejam mesclados corretamente, não sobrescritos com undefined
+      paleta: novoEstado.paleta || prev.paleta,
+      tomsIdentidade: novoEstado.tomsIdentidade || prev.tomsIdentidade,
+      referenciasVisuais: novoEstado.referenciasVisuais || prev.referenciasVisuais,
+      locaisFlores: novoEstado.locaisFlores || prev.locaisFlores,
+      elementosCerimonia: novoEstado.elementosCerimonia || prev.elementosCerimonia,
+      papeisCriancas: novoEstado.papeisCriancas || prev.papeisCriancas,
+      rituaisSimbolicos: novoEstado.rituaisSimbolicos || prev.rituaisSimbolicos,
+      estiloMusical: novoEstado.estiloMusical || prev.estiloMusical,
+      atividadesEntretenimento: novoEstado.atividadesEntretenimento || prev.atividadesEntretenimento,
+      itensKitSaida: novoEstado.itensKitSaida || prev.itensKitSaida,
+      sinalizacaoEvento: novoEstado.sinalizacaoEvento || prev.sinalizacaoEvento,
+      fontesIdentidade: novoEstado.fontesIdentidade || prev.fontesIdentidade,
+      itensDigitais: novoEstado.itensDigitais || prev.itensDigitais,
+      acessorios: novoEstado.acessorios || prev.acessorios,
+      fornecedoresNecessarios: novoEstado.fornecedoresNecessarios || prev.fornecedoresNecessarios,
+      historicoEtapas: novoEstado.historicoEtapas || prev.historicoEtapas,
+    }));
+  }, []);
+
   const avancarEtapa = useCallback(() => {
-    setEstado((prev) => {
-      const historico = [...prev.historicoEtapas, prev.etapaAtual];
-      return { ...prev, historicoEtapas: historico, etapaAtual: prev.etapaAtual + 1 };
-    });
+    setEstado((prev) => ({
+      ...prev,
+      historicoEtapas: [...prev.historicoEtapas, prev.etapaAtual],
+      etapaAtual: prev.etapaAtual + 1,
+    }));
   }, []);
 
   const voltarEtapa = useCallback(() => {
@@ -147,6 +168,7 @@ export default function useMemorial() {
   return {
     estado,
     setRespostas,
+    carregarEstado,
     avancarEtapa,
     voltarEtapa,
     pularEtapa,
