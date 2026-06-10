@@ -44,85 +44,39 @@ export default function useAutoSave(estado, usuario = null) {
     setErro(null);
 
     try {
-      // Garante que a sessão está ativa
+      // Garante sessão ativa
       const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id;
       if (!userId) throw new Error('Sessão não encontrada');
 
-      // 1. Obtém ou cria um evento para o usuário
-      const { data: eventos, error: errEventos } = await supabase
-        .from('eventos')
-        .select('id')
-        .eq('usuario_id', userId)
-        .order('criado_em', { ascending: false })
-        .limit(1);
-
-      if (errEventos) throw errEventos;
-
-      let eventoId;
-      if (eventos && eventos.length > 0) {
-        eventoId = eventos[0].id;
-      } else {
-        const { data: novoEvento, error: errNovo } = await supabase
-          .from('eventos')
-          .insert({
-            usuario_id: userId,
-            nome_evento: dados.nomePessoa1 && dados.nomePessoa2
-              ? `${dados.nomePessoa1} & ${dados.nomePessoa2}`
-              : 'Novo evento',
-            status: 'rascunho',
-            plano: 'gratuito',
-            assinatura_ativa: false,
-          })
-          .select('id')
-          .single();
-
-        if (errNovo) throw errNovo;
-        eventoId = novoEvento.id;
-      }
-
-      // 2. Salva o memorial com lógica de dois passos (buscar → update ou insert)
+      // 1. Busca existente com maybeSingle (não quebra se não achar)
       const { data: existente, error: errBusca } = await supabase
         .from('memoriais')
         .select('id')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
-      if (errBusca && errBusca.code !== 'PGRST116') throw errBusca; // Ignora erro de "não encontrado"
+      if (errBusca) throw errBusca;
 
       if (existente) {
-        // Atualiza registro existente
+        // Atualiza o registro existente
         const { error: errUpdate } = await supabase
           .from('memoriais')
           .update({
-            evento_id: eventoId,
-            dados: dados,
-            paleta: dados.paleta || [],
-            identidade: {
-              estilo: dados.estilo,
-              formalidade: dados.formalidade,
-            },
-            etapa_atual: dados.etapaAtual || 0,
+            estado: dados,
             atualizado_em: new Date().toISOString(),
           })
           .eq('id', existente.id);
 
         if (errUpdate) throw errUpdate;
       } else {
-        // Insere novo registro
+        // Insere novo registro com payload mínimo
         const { error: errInsert } = await supabase
           .from('memoriais')
           .insert({
             user_id: userId,
-            evento_id: eventoId,
-            dados: dados,
-            paleta: dados.paleta || [],
-            identidade: {
-              estilo: dados.estilo,
-              formalidade: dados.formalidade,
-            },
-            etapa_atual: dados.etapaAtual || 0,
-            atualizado_em: new Date().toISOString(),
+            estado: dados,
+            concluido: false,
           });
 
         if (errInsert) throw errInsert;
