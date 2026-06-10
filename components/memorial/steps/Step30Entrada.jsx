@@ -6,6 +6,26 @@ import useEtapaInterna from '../../../hooks/useEtapaInterna';
 
 const CHAVES_ETAPA = ['entradaNoivos', 'musicaCerimonia', 'padrinhos', 'saidaNoivos'];
 
+const ELEMENTOS = [
+  { nome: 'Véu', desc: 'Tecido leve que cobre o rosto ou os ombros, tradicional em cerimônias clássicas.' },
+  { nome: 'Lágrimas de alegria', desc: 'Lenços ou frascos para guardar as lágrimas emocionadas dos noivos e convidados.' },
+  { nome: 'Cesta de flores', desc: 'Cestas com pétalas ou pequenos arranjos carregadas por crianças ou madrinhas.' },
+  { nome: 'Incenso', desc: 'Aroma suave que perfuma o ambiente, comum em cerimônias espirituais ou ao ar livre.' },
+  { nome: 'Pétalas', desc: 'Pétalas de flores naturais jogadas no caminho ou sobre os noivos na saída.' },
+  { nome: 'Luz de velas', desc: 'Velas acesas ao redor do altar, criando uma atmosfera íntima e acolhedora.' },
+];
+
+const PAPEIS = ['Daminha', 'Pajem', 'Porta-alianças', 'Florista'];
+
+const RITUAIS = [
+  { nome: 'Areia', desc: 'Os noivos despejam areia colorida em um recipiente único, simbolizando a união.' },
+  { nome: 'Vela', desc: 'Cada noivo acende uma vela e juntos acendem uma terceira, representando a nova família.' },
+  { nome: 'Vinho', desc: 'Os noivos bebem do mesmo cálice, selando a partilha da vida.' },
+  { nome: 'Rosas', desc: 'Troca de rosas como símbolo de amor e compromisso.' },
+  { nome: 'Cordas de mãos', desc: 'As mãos são atadas com uma corda ou fita, simbolizando o laço eterno.' },
+  { nome: 'Árvore', desc: 'Os noivos plantam uma muda ou regam uma árvore, representando o crescimento do amor.' },
+];
+
 export default function Step30Entrada({ onSelect, estadoAtual }) {
   const { etapa: etapaInterna, avancar: avancar } = useEtapaInterna(estadoAtual, CHAVES_ETAPA);
   const [dados, setDados] = useState({
@@ -31,10 +51,6 @@ export default function Step30Entrada({ onSelect, estadoAtual }) {
     Object.entries(dados).forEach(([k, v]) => onSelect(k, v));
   };
 
-  const ELEMENTOS = ['Véu', 'Lágrimas de alegria', 'Cesta de flores', 'Incenso', 'Pétalas', 'Luz de velas'];
-  const PAPEIS = ['Daminha', 'Pajem', 'Porta-alianças', 'Florista'];
-  const RITUAIS = ['Areia', 'Vela', 'Vinho', 'Rosas', 'Cordas de mãos', 'Árvore'];
-
   const etapas = [
     // G1-G2: Entrada
     <div key="g1" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
@@ -58,7 +74,7 @@ export default function Step30Entrada({ onSelect, estadoAtual }) {
       <ButtonAvancar onClick={avancar} disabled={!dados.entradaNoivos || !dados.acompanhamento} />
     </div>,
 
-    // G3-G4: Música e elementos
+    // G3-G4: Música e elementos (COM DESCRIÇÕES)
     <div key="g3" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>Música e elementos</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
@@ -71,12 +87,56 @@ export default function Step30Entrada({ onSelect, estadoAtual }) {
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
         <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Elementos da cerimônia</label>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-          {ELEMENTOS.map(e => (
-            <button key={e} onClick={() => toggleArray('elementosCerimonia', e)} style={{ padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--radius-md)', border: dados.elementosCerimonia.includes(e) ? '2px solid var(--color-brand)' : '1.5px solid var(--color-border)', background: dados.elementosCerimonia.includes(e) ? 'var(--color-brand-lighter)' : 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', cursor: 'pointer', color: 'var(--color-text-primary)' }}>
-              {e}
-            </button>
-          ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          {ELEMENTOS.map(el => {
+            const isSelected = dados.elementosCerimonia.includes(el.nome);
+            return (
+              <button
+                key={el.nome}
+                onClick={() => toggleArray('elementosCerimonia', el.nome)}
+                style={{
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 'var(--space-3)',
+                  padding: 'var(--space-4)',
+                  borderRadius: 'var(--radius-md)',
+                  border: isSelected ? '2px solid var(--color-brand)' : '1px solid var(--color-border)',
+                  background: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-white)',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 'var(--text-base)',
+                  cursor: 'pointer',
+                  color: 'var(--color-text-primary)',
+                  width: '100%',
+                }}
+              >
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '22px',
+                  height: '22px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: isSelected ? '2px solid var(--color-brand)' : '2px solid var(--color-border)',
+                  background: isSelected ? 'var(--color-brand)' : 'transparent',
+                  color: isSelected ? 'var(--color-white)' : 'transparent',
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: 'var(--font-bold)',
+                  marginTop: '1px',
+                }} aria-hidden="true">
+                  {isSelected ? '✓' : ''}
+                </span>
+                <div>
+                  <div style={{ fontFamily: 'var(--font-body)', fontWeight: isSelected ? 'var(--font-semibold)' : 'var(--font-normal)', marginBottom: 'var(--space-1)' }}>
+                    {el.nome}
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: '1.4' }}>
+                    {el.desc}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
       <ButtonAvancar onClick={avancar} disabled={!dados.musicaCerimonia} />
@@ -116,18 +176,62 @@ export default function Step30Entrada({ onSelect, estadoAtual }) {
       <ButtonAvancar onClick={avancar} disabled={dados.padrinhos === null || dados.criancasCerimonia === null} />
     </div>,
 
-    // G7-G8: Rituais e saída
+    // G7-G8: Rituais e saída (COM DESCRIÇÕES NOS RITUAIS)
     <div key="g7" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>Rituais e saída</h2>
       {(estadoAtual?.tipoCerimonia !== 'catolica' && estadoAtual?.tipoCerimonia !== 'evangelica') && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Rituais simbólicos</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-            {RITUAIS.map(r => (
-              <button key={r} onClick={() => toggleArray('rituaisSimbolicos', r)} style={{ padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--radius-md)', border: dados.rituaisSimbolicos.includes(r) ? '2px solid var(--color-brand)' : '1.5px solid var(--color-border)', background: dados.rituaisSimbolicos.includes(r) ? 'var(--color-brand-lighter)' : 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', cursor: 'pointer', color: 'var(--color-text-primary)' }}>
-                {r}
-              </button>
-            ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            {RITUAIS.map(ritual => {
+              const isSelected = dados.rituaisSimbolicos.includes(ritual.nome);
+              return (
+                <button
+                  key={ritual.nome}
+                  onClick={() => toggleArray('rituaisSimbolicos', ritual.nome)}
+                  style={{
+                    textAlign: 'left',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 'var(--space-3)',
+                    padding: 'var(--space-4)',
+                    borderRadius: 'var(--radius-md)',
+                    border: isSelected ? '2px solid var(--color-brand)' : '1px solid var(--color-border)',
+                    background: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-white)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-base)',
+                    cursor: 'pointer',
+                    color: 'var(--color-text-primary)',
+                    width: '100%',
+                  }}
+                >
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minWidth: '22px',
+                    height: '22px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: isSelected ? '2px solid var(--color-brand)' : '2px solid var(--color-border)',
+                    background: isSelected ? 'var(--color-brand)' : 'transparent',
+                    color: isSelected ? 'var(--color-white)' : 'transparent',
+                    fontSize: 'var(--text-xs)',
+                    fontWeight: 'var(--font-bold)',
+                    marginTop: '1px',
+                  }} aria-hidden="true">
+                    {isSelected ? '✓' : ''}
+                  </span>
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontWeight: isSelected ? 'var(--font-semibold)' : 'var(--font-normal)', marginBottom: 'var(--space-1)' }}>
+                      {ritual.nome}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: '1.4' }}>
+                      {ritual.desc}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
