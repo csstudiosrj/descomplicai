@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
-import { sugerirBolo } from '../../../utils/sugestoes';
+import { sugerirBolo, sugerirSaboresBolo } from '../../../utils/sugestoes';
 import useEtapaInterna from '../../../hooks/useEtapaInterna';
 
 const CHAVES_ETAPA = ['tipoJantar', 'tipoBar', 'musicaFesta'];
@@ -49,73 +49,12 @@ const ESTILOS_MUSICA = ['Sertanejo', 'Funk', 'Pop', 'Rock', 'Eletrônica', 'Samb
 const ATIVIDADES = ['Cabine de fotos', 'DJ', 'Banda ao vivo', 'Fogos de artifício', 'Lanternas de papel', 'Dança surpresa', 'Jogos/Quiz'];
 const ITENS_KIT = ['Chinelos', 'Lanche da madrugada', 'Água/energético', 'Protetor solar', 'Lenços de papel', 'Doces'];
 
-const SABORES_BOLO = {
-  classico: [
-    'Bolo branco com buttercream',
-    'Bolo de nozes com chantilly',
-    'Bolo de baunilha com frutas vermelhas',
-    'Bolo de amêndoas com doce de leite',
-  ],
-  rustico: [
-    'Naked cake com frutas',
-    'Bolo de cenoura com chocolate',
-    'Bolo de mel com especiarias',
-    'Bolo de laranja com calda de laranja',
-  ],
-  boho: [
-    'Bolo semi-naked com flores',
-    'Bolo de lavanda com limão',
-    'Bolo de coco com abacaxi',
-    'Bolo de cenoura com nozes',
-  ],
-  moderno: [
-    'Bolo geométrico com pasta americana',
-    'Bolo de chocolate amargo com ganache',
-    'Bolo de mármore com drip',
-    'Bolo de baunilha com mousse de maracujá',
-  ],
-  minimalista: [
-    'Bolo liso com buttercream',
-    'Bolo de baunilha com recheio de frutas',
-    'Bolo de iogurte com calda cítrica',
-  ],
-  industrial: [
-    'Bolo de concreto aparente (efeito)',
-    'Bolo de chocolate com caramelo salgado',
-    'Bolo de baunilha com cobertura de caramelo',
-  ],
-  tropical: [
-    'Bolo com frutas tropicais',
-    'Bolo de coco com maracujá',
-    'Bolo de manga com hortelã',
-    'Bolo de abacaxi caramelizado',
-  ],
-  romantico: [
-    'Bolo com rosas de buttercream',
-    'Bolo de framboesa com pistache',
-    'Bolo de baunilha com lavanda',
-    'Bolo de morango com chantilly',
-  ],
-  gotico: [
-    'Bolo preto com drip vermelho',
-    'Bolo de chocolate com cereja',
-    'Bolo de veludo vermelho',
-    'Bolo de chocolate com pimenta',
-  ],
-  vintage: [
-    'Bolo com renda de açúcar',
-    'Bolo de nozes com damasco',
-    'Bolo de baunilha com creme de confeiteiro',
-    'Bolo de laranja com especiarias',
-  ],
-};
-
 export default function Step38Coquetel({ onSelect, estadoAtual }) {
   const estilo = estadoAtual?.estilo || 'classico';
   const { etapa: etapaInterna, avancar: avancar, storageKey } = useEtapaInterna(
     estadoAtual,
     CHAVES_ETAPA,
-    'H'  // blocoId para persistência
+    'H'
   );
   const [dados, setDados] = useState({
     coquetel: estadoAtual?.coquetel ?? null,
@@ -138,10 +77,13 @@ export default function Step38Coquetel({ onSelect, estadoAtual }) {
     itensKitSaida: estadoAtual?.itensKitSaida || [],
   });
 
+  // Sabores de bolo dinâmicos vindos do sugestoes.js
   const opcoesBolo = useMemo(() => {
-    const base = SABORES_BOLO[estilo] || SABORES_BOLO.classico;
-    const sugestaoPrincipal = sugerirBolo(estilo) || base[0];
-    return [sugestaoPrincipal, ...base.filter(s => s !== sugestaoPrincipal)];
+    const sugestaoPrincipal = sugerirBolo(estilo);
+    const sabores = sugerirSaboresBolo(estilo) || [];
+    // Garante que a sugestão principal apareça primeiro, sem duplicatas
+    const lista = [sugestaoPrincipal, ...sabores.filter(s => s !== sugestaoPrincipal)];
+    return lista;
   }, [estilo]);
 
   const toggleArray = (field, val) => {
@@ -169,7 +111,6 @@ export default function Step38Coquetel({ onSelect, estadoAtual }) {
   };
 
   const confirmar = () => {
-    // Limpa a etapa interna do localStorage ao sair do bloco
     if (typeof window !== 'undefined') {
       localStorage.removeItem(storageKey);
     }
