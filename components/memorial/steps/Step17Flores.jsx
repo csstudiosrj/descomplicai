@@ -7,6 +7,15 @@ import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import { sugerirFlores, sugerirIluminacao, sugerirVelas, sugerirMobiliario } from '../../../utils/sugestoes';
 
+const OPCOES_ILUMINACAO = [
+  { valor: 'Spots quentes', desc: 'Luz direcionada em tons amarelados, ideal para destacar elementos como altar, bolo e mesas.' },
+  { valor: 'Spots frios', desc: 'Luz direcionada em tons brancos/azulados, usada para criar contraste ou ambiente moderno.' },
+  { valor: 'Fairy lights', desc: 'Pequenas luzes pendentes (tipo estrelas), muito usadas em ambientes externos e rústicos.' },
+  { valor: 'Lustres', desc: 'Peças centrais elegantes que pendem do teto, criando um ponto focal sofisticado.' },
+  { valor: 'Velas predominantes', desc: 'Iluminação suave e romântica com velas como fonte principal de luz.' },
+  { valor: 'Luz natural', desc: 'Aproveitamento da luz do dia para cerimônias diurnas, sem necessidade de iluminação extra.' },
+];
+
 export default function Step17Flores({ onSelect, estadoAtual }) {
   const estilo = estadoAtual?.estilo;
   const [etapaInterna, setEtapaInterna] = useState(0);
@@ -70,18 +79,64 @@ export default function Step17Flores({ onSelect, estadoAtual }) {
       <ButtonAvancar onClick={avancarInterno} disabled={floresSim === null} />
     </div>,
 
-    // E2: Iluminação
+    // E2: Iluminação (com descrições)
     <div key="e2" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>Iluminação</h2>
       <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
         Sugestão: {ilumSugerida?.tipo || 'Spots quentes'}
       </p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-3)' }}>
-        {['Spots quentes', 'Spots frios', 'Fairy lights', 'Lustres', 'Velas predominantes', 'Luz natural'].map(o => (
-          <Card key={o} interactive selected={iluminacao === o} padding="md" onClick={() => setIluminacao(o)} role="radio" aria-checked={iluminacao === o}>
-            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)' }}>{o}</span>
-          </Card>
-        ))}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+        {OPCOES_ILUMINACAO.map((opcao) => {
+          const isSelected = iluminacao === opcao.valor;
+          return (
+            <button
+              key={opcao.valor}
+              onClick={() => setIluminacao(opcao.valor)}
+              style={{
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 'var(--space-3)',
+                padding: 'var(--space-4)',
+                borderRadius: 'var(--radius-md)',
+                border: isSelected ? '2px solid var(--color-brand)' : '1px solid var(--color-border)',
+                background: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-white)',
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--text-base)',
+                cursor: 'pointer',
+                color: 'var(--color-text-primary)',
+                width: '100%',
+              }}
+              role="radio"
+              aria-checked={isSelected}
+            >
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: '22px',
+                height: '22px',
+                borderRadius: 'var(--radius-sm)',
+                border: isSelected ? '2px solid var(--color-brand)' : '2px solid var(--color-border)',
+                background: isSelected ? 'var(--color-brand)' : 'transparent',
+                color: isSelected ? 'var(--color-white)' : 'transparent',
+                fontSize: 'var(--text-xs)',
+                fontWeight: 'var(--font-bold)',
+                marginTop: '1px',
+              }} aria-hidden="true">
+                {isSelected ? '✓' : ''}
+              </span>
+              <div>
+                <div style={{ fontFamily: 'var(--font-body)', fontWeight: isSelected ? 'var(--font-semibold)' : 'var(--font-normal)', marginBottom: 'var(--space-1)' }}>
+                  {opcao.valor}
+                </div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: '1.4' }}>
+                  {opcao.desc}
+                </div>
+              </div>
+            </button>
+          );
+        })}
       </div>
       <ButtonAvancar onClick={avancarInterno} disabled={!iluminacao} />
     </div>,
