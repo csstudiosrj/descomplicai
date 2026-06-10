@@ -73,9 +73,6 @@ export default function MemorialOrchestrator() {
   const [transicionando, setTransicionando] = useState(false);
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
-  
-  // Flag para evitar exibir o modal múltiplas vezes
-  const modalDraftExibido = useRef(false);
 
   const estadoRef = useRef(estado);
   useEffect(() => {
@@ -88,17 +85,27 @@ export default function MemorialOrchestrator() {
     }
   }, [estado.memorialConcluido, router]);
 
-  // Efeito para exibir o modal "Continuar onde parou?" caso exista draft
+  // Lógica de restauração de draft:
+  // - Se o usuário estiver logado e houver draft, restaura automaticamente (sem modal).
+  // - Se for anônimo e houver draft, mostra o modal para decidir.
   useEffect(() => {
-    // Não exibe se já foi exibido ou se ainda está carregando auth
-    if (modalDraftExibido.current || carregandoAuth) return;
-    
-    // Se tem draft e o estado atual é o inicial (etapa 0, sem perfil), exibe o modal
-    if (temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
+    // Aguarda o carregamento do auth para tomar a decisão
+    if (carregandoAuth) return;
+
+    // Se o estado já foi restaurado ou o usuário já interagiu, não faz nada
+    if (estado.etapaAtual !== 0 || estado.perfilCasal) return;
+
+    if (usuario) {
+      // Logado: restaura automaticamente
+      const draft = carregarDraft();
+      if (draft) {
+        carregarEstado(draft);
+      }
+    } else if (temDraft) {
+      // Anônimo com draft: pergunta
       setOferecerDraft(true);
-      modalDraftExibido.current = true;
     }
-  }, [temDraft, estado.etapaAtual, estado.perfilCasal, carregandoAuth]);
+  }, [carregandoAuth, usuario, temDraft, estado.etapaAtual, estado.perfilCasal, carregarDraft, carregarEstado]);
 
   const etapasTotais = calcularEtapasTotais(estado);
   const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
