@@ -1,6 +1,4 @@
-// Autenticação — login de usuários com redirect automático
-// Dependências diretas: React, next/router, useAuth, Input, Button
-
+// pages/login.jsx
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -17,8 +15,8 @@ export default function LoginPage() {
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
 
-  // Redirect automático após login
-  const redirect = router.query.redirect || '/painel';
+  // Redirect: prioridade ao param da URL, senão /memorial
+  const redirect = router.query.redirect || '/memorial';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -88,7 +86,7 @@ export default function LoginPage() {
 
           <p style={{ textAlign: 'center', marginTop: 'var(--space-6)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
             Ainda não tem conta?{' '}
-            <Link href={`/cadastro${redirect !== '/painel' ? `?redirect=${encodeURIComponent(redirect)}` : ''}`} legacyBehavior>
+            <Link href={`/cadastro?redirect=${encodeURIComponent(redirect)}`} legacyBehavior>
               <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Cadastre-se</a>
             </Link>
           </p>

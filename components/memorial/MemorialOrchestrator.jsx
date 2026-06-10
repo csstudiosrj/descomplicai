@@ -79,6 +79,20 @@ export default function MemorialOrchestrator() {
     estadoRef.current = estado;
   }, [estado]);
 
+  // Ao detectar que o usuário logou, carrega automaticamente o rascunho sem perguntar.
+  const usuarioAnterior = useRef(usuario);
+  useEffect(() => {
+    if (!usuarioAnterior.current && usuario) {
+      // Usuário acabou de logar
+      const draft = carregarDraft();
+      if (draft) {
+        carregarEstado(draft);
+        setOferecerDraft(false);
+      }
+    }
+    usuarioAnterior.current = usuario;
+  }, [usuario, carregarDraft, carregarEstado]);
+
   useEffect(() => {
     if (estado.memorialConcluido) {
       router.push('/memorial/conclusao');
@@ -207,7 +221,6 @@ export default function MemorialOrchestrator() {
               backgroundColor: 'var(--color-overlay)',
               padding: 'var(--space-4)',
             }}
-            // impede fechar clicando fora
             onClick={(e) => e.stopPropagation()}
           >
             <div

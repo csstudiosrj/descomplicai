@@ -1,6 +1,4 @@
-// Registro de novos usuários
-// Dependências diretas: React, next/router, useAuth, Input, Button
-
+// pages/cadastro.jsx
 import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -18,6 +16,8 @@ export default function CadastroPage() {
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
 
+  const redirect = router.query.redirect || '/memorial';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErro('');
@@ -27,7 +27,8 @@ export default function CadastroPage() {
     if (error) {
       setErro(error.message || 'Erro ao criar conta.');
     } else {
-      router.push('/painel');
+      // Se a confirmação de email estiver desabilitada, o cadastro já cria a sessão.
+      router.push(redirect);
     }
   };
 
@@ -67,7 +68,7 @@ export default function CadastroPage() {
 
           <p style={{ textAlign: 'center', marginTop: 'var(--space-6)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
             Já tem conta?{' '}
-            <Link href="/login" legacyBehavior>
+            <Link href={`/login?redirect=${encodeURIComponent(redirect)}`} legacyBehavior>
               <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Entrar</a>
             </Link>
           </p>
