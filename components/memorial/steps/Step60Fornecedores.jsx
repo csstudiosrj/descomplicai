@@ -10,7 +10,6 @@ export default function Step60Fornecedores({ onSelect, estadoAtual }) {
     [estadoAtual]
   );
 
-  // Agrupa por categoria para exibição organizada
   const agrupados = useMemo(() => {
     const grupos = {};
     fornecedores.forEach((f) => {
@@ -20,7 +19,8 @@ export default function Step60Fornecedores({ onSelect, estadoAtual }) {
     return Object.entries(grupos);
   }, [fornecedores]);
 
-  const handleConfirmar = () => {
+  const handleConfirmar = (event) => {
+    event.preventDefault();
     onSelect('fornecedoresNecessarios', fornecedores);
     onSelect('memorialConcluido', true);
   };
@@ -132,6 +132,7 @@ export default function Step60Fornecedores({ onSelect, estadoAtual }) {
       </div>
 
       <button
+        type="button"
         onClick={handleConfirmar}
         style={{
           alignSelf: 'flex-start',

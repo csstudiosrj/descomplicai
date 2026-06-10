@@ -42,27 +42,21 @@ export default function useAutoSave(estado, usuario = null) {
     if (!usuario?.id) return;
     setSalvandoAgora(true);
     setErro(null);
-    try {
-      // DEBUG TEMPORÁRIO solicitado pelo Claude
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('usuario logado:', session?.user?.id);
 
-      const { data, error } = await supabase
+    try {
+      // 1. Obtém ou cria um evento para o usuário
+      const { data: eventos, error: errEventos } = await supabase
         .from('eventos')
         .select('id')
-        .eq('usuario_id', session?.user?.id)
+        .eq('usuario_id', usuario.id)
         .order('criado_em', { ascending: false })
         .limit(1);
 
-      console.log('resultado:', data);
-      console.log('erro:', error);
-      // FIM DO DEBUG
-
-      if (error) throw error;
+      if (errEventos) throw errEventos;
 
       let eventoId;
-      if (data && data.length > 0) {
-        eventoId = data[0].id;
+      if (eventos && eventos.length > 0) {
+        eventoId = eventos[0].id;
       } else {
         const { data: novoEvento, error: errNovo } = await supabase
           .from('eventos')
@@ -82,10 +76,12 @@ export default function useAutoSave(estado, usuario = null) {
         eventoId = novoEvento.id;
       }
 
+      // 2. Salva o memorial — upsert por user_id (unique constraint real)
       const { error: errMemorial } = await supabase
         .from('memoriais')
         .upsert(
           {
+            user_id: usuario.id,
             evento_id: eventoId,
             dados: dados,
             paleta: dados.paleta || [],
@@ -96,7 +92,7 @@ export default function useAutoSave(estado, usuario = null) {
             etapa_atual: dados.etapaAtual || 0,
             atualizado_em: new Date().toISOString(),
           },
-          { onConflict: 'evento_id' }
+          { onConflict: 'user_id' }
         );
 
       if (errMemorial) throw errMemorial;
