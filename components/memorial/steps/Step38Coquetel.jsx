@@ -33,6 +33,18 @@ const DURACOES_COQUETEL = [
   { valor: 'Aperitivos apenas', desc: 'Sem bebidas alcoólicas, apenas finger foods.' },
 ];
 
+const RESTRICOES_COMUNS = [
+  'Vegetariano',
+  'Vegano',
+  'Intolerância a lactose',
+  'Intolerância a glúten',
+  'Alergia a nozes',
+  'Alergia a frutos do mar',
+  'Kosher',
+  'Halal',
+  'Nenhuma restrição',
+];
+
 const ESTILOS_MUSICA = ['Sertanejo', 'Funk', 'Pop', 'Rock', 'Eletrônica', 'Samba/Pagode', 'Jazz', 'MPB', 'Forró'];
 const ATIVIDADES = ['Cabine de fotos', 'DJ', 'Banda ao vivo', 'Fogos de artifício', 'Lanternas de papel', 'Dança surpresa', 'Jogos/Quiz'];
 const ITENS_KIT = ['Chinelos', 'Lanche da madrugada', 'Água/energético', 'Protetor solar', 'Lenços de papel', 'Doces'];
@@ -44,7 +56,8 @@ export default function Step38Coquetel({ onSelect, estadoAtual }) {
     coquetel: estadoAtual?.coquetel ?? null,
     duracaoCoquetel: estadoAtual?.duracaoCoquetel || '',
     tipoJantar: estadoAtual?.tipoJantar || '',
-    restricoesAlimentares: estadoAtual?.restricoesAlimentares || '',
+    restricoesAlimentares: estadoAtual?.restricoesAlimentares || [],
+    restricaoOutra: '',  // texto extra se selecionar "Outra"
     bolo: estadoAtual?.bolo ?? null,
     saborBolo: estadoAtual?.saborBolo || '',
     mesaDoces: estadoAtual?.mesaDoces ?? null,
@@ -66,13 +79,39 @@ export default function Step38Coquetel({ onSelect, estadoAtual }) {
     }));
   };
 
+  // Gerencia a seleção de restrições, tratando "Nenhuma restrição" como exclusivo
+  const handleRestricaoToggle = (r) => {
+    setDados(prev => {
+      let novas = [...prev.restricoesAlimentares];
+      if (r === 'Nenhuma restrição') {
+        novas = prev.restricoesAlimentares.includes('Nenhuma restrição') ? [] : ['Nenhuma restrição'];
+      } else {
+        // Se selecionar qualquer outra, remove "Nenhuma"
+        novas = novas.filter(x => x !== 'Nenhuma restrição');
+        if (novas.includes(r)) {
+          novas = novas.filter(x => x !== r);
+        } else {
+          novas.push(r);
+        }
+      }
+      return { ...prev, restricoesAlimentares: novas };
+    });
+  };
+
   const confirmar = () => {
-    Object.entries(dados).forEach(([k, v]) => onSelect(k, v));
+    // Monta o campo de restrições como string final (para compatibilidade com o banco atual)
+    const restricoes = dados.restricoesAlimentares.includes('Outra')
+      ? [...dados.restricoesAlimentares.filter(r => r !== 'Outra'), dados.restricaoOutra].filter(Boolean)
+      : dados.restricoesAlimentares;
+    onSelect('restricoesAlimentares', restricoes);
+    // Salva os demais campos
+    Object.entries(dados).forEach(([k, v]) => {
+      if (k !== 'restricoesAlimentares' && k !== 'restricaoOutra') onSelect(k, v);
+    });
   };
 
   const boloSugerido = estilo ? sugerirBolo(estilo) : 'Bolo branco clássico';
 
-  // Renderiza um card com opções e descrições
   const renderOpcoes = (lista, campo, titulo, subtitulo) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
       {titulo && (
@@ -156,15 +195,66 @@ export default function Step38Coquetel({ onSelect, estadoAtual }) {
 
       {renderOpcoes(TIPOS_JANTAR, 'tipoJantar', 'Tipo de jantar', 'Cada estilo cria uma experiência diferente para os convidados.')}
 
+      {/* Restrições alimentares como chips selecionáveis */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-        <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Restrições alimentares dos convidados?</label>
-        <input
-          type="text"
-          value={dados.restricoesAlimentares}
-          onChange={(e) => setDados(p => ({ ...p, restricoesAlimentares: e.target.value }))}
-          placeholder="Vegetarianos, veganos, alérgicos a glúten/nozes..."
-          style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-border)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', outline: 'none' }}
-        />
+        <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>
+          Restrições alimentares dos convidados
+        </label>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+          {RESTRICOES_COMUNS.map(r => {
+            const selected = dados.restricoesAlimentares.includes(r);
+            return (
+              <button
+                key={r}
+                onClick={() => handleRestricaoToggle(r)}
+                style={{
+                  padding: 'var(--space-2) var(--space-3)',
+                  borderRadius: 'var(--radius-full)',
+                  border: selected ? '2px solid var(--color-brand)' : '1px solid var(--color-border)',
+                  background: selected ? 'var(--color-brand-lighter)' : 'var(--color-white)',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 'var(--text-sm)',
+                  cursor: 'pointer',
+                  color: 'var(--color-text-primary)',
+                }}
+              >
+                {r}
+              </button>
+            );
+          })}
+          <button
+            onClick={() => handleRestricaoToggle('Outra')}
+            style={{
+              padding: 'var(--space-2) var(--space-3)',
+              borderRadius: 'var(--radius-full)',
+              border: dados.restricoesAlimentares.includes('Outra') ? '2px solid var(--color-brand)' : '1px solid var(--color-border)',
+              background: dados.restricoesAlimentares.includes('Outra') ? 'var(--color-brand-lighter)' : 'var(--color-white)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-sm)',
+              cursor: 'pointer',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            Outra
+          </button>
+        </div>
+        {dados.restricoesAlimentares.includes('Outra') && (
+          <input
+            type="text"
+            value={dados.restricaoOutra}
+            onChange={(e) => setDados(p => ({ ...p, restricaoOutra: e.target.value }))}
+            placeholder="Descreva a restrição adicional"
+            style={{
+              marginTop: 'var(--space-2)',
+              padding: 'var(--space-3)',
+              borderRadius: 'var(--radius-md)',
+              border: '1.5px solid var(--color-border)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-base)',
+              outline: 'none',
+            }}
+          />
+        )}
       </div>
       <ButtonAvancar onClick={avancar} disabled={dados.coquetel === null || !dados.tipoJantar} />
     </div>,
@@ -229,66 +319,13 @@ export default function Step38Coquetel({ onSelect, estadoAtual }) {
     <div key="h8" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>Festa e lembranças</h2>
       
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-        <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Música da festa</label>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-          {[
-            { valor: 'Banda ao vivo', desc: 'Músicos profissionais tocam durante toda a festa, com repertório personalizado.' },
-            { valor: 'DJ', desc: 'Discotecagem profissional, com luzes e efeitos, sem intervalos.' },
-            { valor: 'Banda + DJ', desc: 'Banda ao vivo nos momentos principais, DJ no restante da festa.' },
-            { valor: 'Playlist própria', desc: 'Você monta a playlist e alguém controla o som durante a festa.' },
-            { valor: 'Ainda não sei', desc: 'Vou decidir mais tarde.' },
-          ].map(op => {
-            const isSelected = dados.musicaFesta === op.valor;
-            return (
-              <button
-                key={op.valor}
-                onClick={() => setDados(p => ({ ...p, musicaFesta: op.valor }))}
-                style={{
-                  textAlign: 'left',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 'var(--space-3)',
-                  padding: 'var(--space-4)',
-                  borderRadius: 'var(--radius-md)',
-                  border: isSelected ? '2px solid var(--color-brand)' : '1px solid var(--color-border)',
-                  background: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-white)',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 'var(--text-base)',
-                  cursor: 'pointer',
-                  color: 'var(--color-text-primary)',
-                  width: '100%',
-                }}
-              >
-                <span style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minWidth: '22px',
-                  height: '22px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: isSelected ? '2px solid var(--color-brand)' : '2px solid var(--color-border)',
-                  background: isSelected ? 'var(--color-brand)' : 'transparent',
-                  color: isSelected ? 'var(--color-white)' : 'transparent',
-                  fontSize: 'var(--text-xs)',
-                  fontWeight: 'var(--font-bold)',
-                  marginTop: '1px',
-                }} aria-hidden="true">
-                  {isSelected ? '✓' : ''}
-                </span>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontWeight: isSelected ? 'var(--font-semibold)' : 'var(--font-normal)', marginBottom: 'var(--space-1)' }}>
-                    {op.valor}
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: '1.4' }}>
-                    {op.desc}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {renderOpcoes([
+        { valor: 'Banda ao vivo', desc: 'Músicos profissionais tocam durante toda a festa, com repertório personalizado.' },
+        { valor: 'DJ', desc: 'Discotecagem profissional, com luzes e efeitos, sem intervalos.' },
+        { valor: 'Banda + DJ', desc: 'Banda ao vivo nos momentos principais, DJ no restante da festa.' },
+        { valor: 'Playlist própria', desc: 'Você monta a playlist e alguém controla o som durante a festa.' },
+        { valor: 'Ainda não sei', desc: 'Vou decidir mais tarde.' },
+      ], 'musicaFesta', 'Música da festa')}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
         <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Estilos musicais</label>
