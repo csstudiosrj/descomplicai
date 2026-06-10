@@ -41,17 +41,18 @@ const STEP_COMPONENTS = {
   Step60Fornecedores: React.lazy(() => import('./steps/Step60Fornecedores')),
 };
 
+// Nomes corrigidos de acordo com o conteúdo real dos blocos
 const BLOCK_NAMES = {
   'A': 'Bloco A — Perfil do Casal',
-  'B': 'Bloco B — Cerimônia',
+  'B': 'Bloco B — Dados do evento',
   'C': 'Bloco C — Local e Estrutura',
   'D': 'Bloco D — Identidade Visual',
   'E': 'Bloco E — Decoração',
   'F': 'Bloco F — Mesa Posta',
-  'G': 'Bloco G — Alimentação e Bebidas',
-  'H': 'Bloco H — Entretenimento',
-  'I': 'Bloco I — Vestuário e Beleza',
-  'J': 'Bloco J — Papelaria e Identidade',
+  'G': 'Bloco G — Cerimônia detalhada',
+  'H': 'Bloco H — Recepção',
+  'I': 'Bloco I — Papelaria e Identidade',
+  'J': 'Bloco J — Vestuário e Beleza',
   'K': 'Bloco K — Fornecedores',
 };
 
@@ -85,27 +86,11 @@ export default function MemorialOrchestrator() {
     }
   }, [estado.memorialConcluido, router]);
 
-  // Lógica de restauração de draft:
-  // - Se o usuário estiver logado e houver draft, restaura automaticamente (sem modal).
-  // - Se for anônimo e houver draft, mostra o modal para decidir.
   useEffect(() => {
-    // Aguarda o carregamento do auth para tomar a decisão
-    if (carregandoAuth) return;
-
-    // Se o estado já foi restaurado ou o usuário já interagiu, não faz nada
-    if (estado.etapaAtual !== 0 || estado.perfilCasal) return;
-
-    if (usuario) {
-      // Logado: restaura automaticamente
-      const draft = carregarDraft();
-      if (draft) {
-        carregarEstado(draft);
-      }
-    } else if (temDraft) {
-      // Anônimo com draft: pergunta
+    if (!usuario && !carregandoAuth && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
       setOferecerDraft(true);
     }
-  }, [carregandoAuth, usuario, temDraft, estado.etapaAtual, estado.perfilCasal, carregarDraft, carregarEstado]);
+  }, [usuario, carregandoAuth, temDraft, estado.etapaAtual, estado.perfilCasal]);
 
   const etapasTotais = calcularEtapasTotais(estado);
   const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
