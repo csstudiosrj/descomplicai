@@ -66,32 +66,19 @@ function PlaceholderStep({ titulo }) {
 
 export default function MemorialOrchestrator() {
   const router = useRouter();
-  const { estado, setRespostas, carregarEstado, irParaEtapa, voltarEtapa, resetarMemorial } = useMemorial();
+  const { estado, setRespostas, carregarEstado, irParaEtapa, voltarEtapa } = useMemorial();
   const { usuario } = useAuth();
   const { salvandoAgora, temDraft, carregarDraft, limparDraft } = useAutoSave(estado, usuario);
 
   const [transicionando, setTransicionando] = useState(false);
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
+  const draftRestaurado = useRef(false); // evita restaurar múltiplas vezes
 
   const estadoRef = useRef(estado);
   useEffect(() => {
     estadoRef.current = estado;
   }, [estado]);
-
-  // Ao detectar que o usuário logou, carrega automaticamente o rascunho sem perguntar.
-  const usuarioAnterior = useRef(usuario);
-  useEffect(() => {
-    if (!usuarioAnterior.current && usuario) {
-      // Usuário acabou de logar
-      const draft = carregarDraft();
-      if (draft) {
-        carregarEstado(draft);
-        setOferecerDraft(false);
-      }
-    }
-    usuarioAnterior.current = usuario;
-  }, [usuario, carregarDraft, carregarEstado]);
 
   useEffect(() => {
     if (estado.memorialConcluido) {
@@ -99,6 +86,20 @@ export default function MemorialOrchestrator() {
     }
   }, [estado.memorialConcluido, router]);
 
+  // Efeito para restaurar draft automaticamente para usuários logados (sem perguntar)
+  useEffect(() => {
+    if (draftRestaurado.current) return;
+    if (usuario && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
+      const draft = carregarDraft();
+      if (draft) {
+        carregarEstado(draft);
+        setOferecerDraft(false);
+        draftRestaurado.current = true;
+      }
+    }
+  }, [usuario, temDraft, estado.etapaAtual, estado.perfilCasal, carregarDraft, carregarEstado]);
+
+  // Efeito para oferecer draft para usuários anônimos com rascunho
   useEffect(() => {
     if (!usuario && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
       setOferecerDraft(true);
@@ -155,10 +156,7 @@ export default function MemorialOrchestrator() {
   return (
     <BreathTransition ativa={transicionando} cor="var(--color-brand-lighter)">
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', backgroundColor: 'var(--color-off-white)' }}>
-        <ProgressBar
-          progress={progress}
-          blockName={blockName}
-        />
+        <ProgressBar progress={progress} blockName={blockName} />
 
         {salvandoAgora && (
           <div style={{ position: 'fixed', top: '4px', right: 'var(--space-4)', zIndex: 'var(--z-sticky)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
@@ -169,13 +167,7 @@ export default function MemorialOrchestrator() {
         )}
 
         <main style={{ flex: 1, overflowY: 'auto', paddingTop: 'var(--space-6)', paddingBottom: 'var(--space-4)', paddingLeft: 'var(--space-4)', paddingRight: 'var(--space-4)' }}>
-          <React.Suspense
-            fallback={
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                <span style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando...</span>
-              </div>
-            }
-          >
+          <React.Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><span style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando...</span></div>}>
             <StepComponent onSelect={handleSelect} estadoAtual={estado} />
           </React.Suspense>
         </main>
@@ -186,94 +178,23 @@ export default function MemorialOrchestrator() {
           <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }}>
             <div style={{ backgroundColor: 'var(--color-white)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-8)', maxWidth: '420px', width: '100%', boxShadow: 'var(--shadow-xl)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-3)', color: 'var(--color-text-primary)' }}>Continuar onde parou?</h2>
-              <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)', lineHeight: 'var(--leading-relaxed)' }}>
-                Encontramos um memorial salvo neste dispositivo. Deseja continuar de onde parou?
-              </p>
+              <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)', lineHeight: 'var(--leading-relaxed)' }}>Encontramos um memorial salvo neste dispositivo. Deseja continuar de onde parou?</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                <button
-                  onClick={handleContinuarDraft}
-                  style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: 'none', backgroundColor: 'var(--color-brand)', color: 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}
-                >
-                  Sim, continuar
-                </button>
-                <button
-                  onClick={handleDescartarDraft}
-                  style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-border-strong)', backgroundColor: 'transparent', color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', cursor: 'pointer' }}
-                >
-                  Não, começar do zero
-                </button>
+                <button onClick={handleContinuarDraft} style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: 'none', backgroundColor: 'var(--color-brand)', color: 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}>Sim, continuar</button>
+                <button onClick={handleDescartarDraft} style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-border-strong)', backgroundColor: 'transparent', color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', cursor: 'pointer' }}>Não, começar do zero</button>
               </div>
             </div>
           </div>
         )}
 
         {mostrandoLogin && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 'var(--z-modal)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'var(--color-overlay)',
-              padding: 'var(--space-4)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              style={{
-                backgroundColor: 'var(--color-white)',
-                borderRadius: 'var(--radius-lg)',
-                padding: 'var(--space-8)',
-                maxWidth: '400px',
-                width: '100%',
-                boxShadow: 'var(--shadow-xl)',
-              }}
-            >
-              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-4)' }}>
-                Quase lá!
-              </h2>
-              <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)' }}>
-                Para continuar seu memorial na nuvem e acessar de qualquer lugar, faça login ou crie sua conta.
-              </p>
+          <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ backgroundColor: 'var(--color-white)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-8)', maxWidth: '400px', width: '100%', boxShadow: 'var(--shadow-xl)' }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-4)' }}>Quase lá!</h2>
+              <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)' }}>Para continuar seu memorial na nuvem e acessar de qualquer lugar, faça login ou crie sua conta.</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                <button
-                  onClick={() => router.push(`/login?redirect=${encodeURIComponent('/memorial')}`)}
-                  style={{
-                    width: '100%',
-                    padding: 'var(--space-3)',
-                    borderRadius: 'var(--radius-md)',
-                    border: 'none',
-                    backgroundColor: 'var(--color-brand)',
-                    color: 'var(--color-white)',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 'var(--text-base)',
-                    fontWeight: 'var(--font-medium)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Fazer login
-                </button>
-                <button
-                  onClick={() => router.push(`/cadastro?redirect=${encodeURIComponent('/memorial')}`)}
-                  style={{
-                    width: '100%',
-                    padding: 'var(--space-3)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1.5px solid var(--color-brand)',
-                    backgroundColor: 'transparent',
-                    color: 'var(--color-brand)',
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 'var(--text-base)',
-                    fontWeight: 'var(--font-medium)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Criar conta
-                </button>
+                <button onClick={() => router.push(`/login?redirect=${encodeURIComponent('/memorial')}`)} style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: 'none', backgroundColor: 'var(--color-brand)', color: 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}>Fazer login</button>
+                <button onClick={() => router.push(`/cadastro?redirect=${encodeURIComponent('/memorial')}`)} style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-brand)', backgroundColor: 'transparent', color: 'var(--color-brand)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}>Criar conta</button>
               </div>
             </div>
           </div>
