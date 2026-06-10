@@ -67,13 +67,13 @@ function PlaceholderStep({ titulo }) {
 export default function MemorialOrchestrator() {
   const router = useRouter();
   const { estado, setRespostas, carregarEstado, irParaEtapa, voltarEtapa } = useMemorial();
-  const { usuario } = useAuth();
+  const { usuario, carregando: carregandoAuth } = useAuth();
   const { salvandoAgora, temDraft, carregarDraft, limparDraft } = useAutoSave(estado, usuario);
 
   const [transicionando, setTransicionando] = useState(false);
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
-  const draftRestaurado = useRef(false); // evita restaurar múltiplas vezes
+  const draftRestaurado = useRef(false);
 
   const estadoRef = useRef(estado);
   useEffect(() => {
@@ -86,25 +86,25 @@ export default function MemorialOrchestrator() {
     }
   }, [estado.memorialConcluido, router]);
 
-  // Efeito para restaurar draft automaticamente para usuários logados (sem perguntar)
+  // Restaura draft automaticamente para usuários logados (sem perguntar)
   useEffect(() => {
     if (draftRestaurado.current) return;
     if (usuario && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
       const draft = carregarDraft();
       if (draft) {
         carregarEstado(draft);
-        setOferecerDraft(false);
         draftRestaurado.current = true;
       }
+      setOferecerDraft(false);
     }
   }, [usuario, temDraft, estado.etapaAtual, estado.perfilCasal, carregarDraft, carregarEstado]);
 
-  // Efeito para oferecer draft para usuários anônimos com rascunho
+  // Oferece draft para anônimos
   useEffect(() => {
-    if (!usuario && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
+    if (!usuario && !carregandoAuth && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
       setOferecerDraft(true);
     }
-  }, [usuario, temDraft, estado.etapaAtual, estado.perfilCasal]);
+  }, [usuario, carregandoAuth, temDraft, estado.etapaAtual, estado.perfilCasal]);
 
   const etapasTotais = calcularEtapasTotais(estado);
   const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
@@ -121,7 +121,8 @@ export default function MemorialOrchestrator() {
       const proxima = calcularProximaEtapa(novoEstado, estadoRef.current.etapaAtual);
       const etapaId = getEtapaPorIndice(proxima)?.id;
 
-      if (deveExibirLoginAgora(novoEstado, etapaId)) {
+      // Só exibe o modal de login se o usuário NÃO estiver autenticado
+      if (!usuario && deveExibirLoginAgora(novoEstado, etapaId)) {
         setMostrandoLogin(true);
         setTransicionando(false);
         return;
@@ -130,7 +131,7 @@ export default function MemorialOrchestrator() {
       irParaEtapa(proxima);
       setTransicionando(false);
     }, 220);
-  }, [setRespostas, irParaEtapa]);
+  }, [setRespostas, irParaEtapa, usuario]);
 
   const handleBack = useCallback(() => {
     if (estado.historicoEtapas.length > 0) voltarEtapa();
