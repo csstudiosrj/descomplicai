@@ -21,8 +21,10 @@ export default function Step60Fornecedores({ onSelect, estadoAtual }) {
 
   const handleConfirmar = (event) => {
     event.preventDefault();
+    console.log('1. botão clicado');
     onSelect('fornecedoresNecessarios', fornecedores);
     onSelect('memorialConcluido', true);
+    console.log('1b. após onSelect');
   };
 
   return (

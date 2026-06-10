@@ -42,14 +42,13 @@ export default function useAutoSave(estado, usuario = null) {
     if (!usuario?.id) return;
     setSalvandoAgora(true);
     setErro(null);
+    console.log('2. salvando no supabase (useAutoSave)');
 
     try {
-      // Garante sessão ativa
       const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id;
       if (!userId) throw new Error('Sessão não encontrada');
 
-      // 1. Busca existente com maybeSingle (não quebra se não achar)
       const { data: existente, error: errBusca } = await supabase
         .from('memoriais')
         .select('id')
@@ -59,7 +58,6 @@ export default function useAutoSave(estado, usuario = null) {
       if (errBusca) throw errBusca;
 
       if (existente) {
-        // Atualiza o registro existente
         const { error: errUpdate } = await supabase
           .from('memoriais')
           .update({
@@ -70,7 +68,6 @@ export default function useAutoSave(estado, usuario = null) {
 
         if (errUpdate) throw errUpdate;
       } else {
-        // Insere novo registro com payload mínimo
         const { error: errInsert } = await supabase
           .from('memoriais')
           .insert({
@@ -81,9 +78,11 @@ export default function useAutoSave(estado, usuario = null) {
 
         if (errInsert) throw errInsert;
       }
+      console.log('2b. supabase salvo com sucesso');
     } catch (e) {
+      console.log('2c. erro ao salvar no supabase:', e);
       setErro(e.message || 'Erro ao salvar no servidor');
-      salvarLocal(dados); // fallback para localStorage
+      salvarLocal(dados);
     } finally {
       setSalvandoAgora(false);
     }

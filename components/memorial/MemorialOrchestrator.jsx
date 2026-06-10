@@ -81,18 +81,18 @@ export default function MemorialOrchestrator() {
 
   useEffect(() => {
     if (estado.memorialConcluido) {
+      console.log('3. memorialConcluido = true, redirecionando...');
+      console.log('4. chamando router.push(/memorial/conclusao)');
       router.push('/memorial/conclusao');
     }
   }, [estado.memorialConcluido, router]);
 
-  // Efeito para oferecer modal "Continuar onde parou?" apenas para anônimos
   useEffect(() => {
     if (!usuario && !carregandoAuth && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
       setOferecerDraft(true);
     }
   }, [usuario, carregandoAuth, temDraft, estado.etapaAtual, estado.perfilCasal]);
 
-  // Efeito para restaurar automaticamente o progresso para usuários logados
   useEffect(() => {
     if (usuario && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
       const draft = carregarDraft();
