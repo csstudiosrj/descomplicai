@@ -112,7 +112,7 @@ export default function MemorialOrchestrator() {
         return;
       }
 
-      irParaEtapa(proxima); // agora vai para a etapa correta
+      irParaEtapa(proxima);
       setTransicionando(false);
     }, 220);
   }, [setRespostas, irParaEtapa]);
@@ -194,24 +194,72 @@ export default function MemorialOrchestrator() {
         )}
 
         {mostrandoLogin && (
-          <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }}>
-            <div style={{ backgroundColor: 'var(--color-white)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-8)', maxWidth: '400px', width: '100%', boxShadow: 'var(--shadow-xl)' }}>
-              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-4)' }}>Quase lá!</h2>
+          <div
+            role="dialog"
+            aria-modal="true"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 'var(--z-modal)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'var(--color-overlay)',
+              padding: 'var(--space-4)',
+            }}
+            // impede fechar clicando fora
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                backgroundColor: 'var(--color-white)',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-8)',
+                maxWidth: '400px',
+                width: '100%',
+                boxShadow: 'var(--shadow-xl)',
+              }}
+            >
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-4)' }}>
+                Quase lá!
+              </h2>
               <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)' }}>
-                Para salvar seu memorial na nuvem e acessar de qualquer lugar, faça login ou crie uma conta.
+                Para continuar seu memorial na nuvem e acessar de qualquer lugar, faça login ou crie sua conta.
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                 <button
                   onClick={() => router.push(`/login?redirect=${encodeURIComponent('/memorial')}`)}
-                  style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: 'none', backgroundColor: 'var(--color-brand)', color: 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--space-3)',
+                    borderRadius: 'var(--radius-md)',
+                    border: 'none',
+                    backgroundColor: 'var(--color-brand)',
+                    color: 'var(--color-white)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-base)',
+                    fontWeight: 'var(--font-medium)',
+                    cursor: 'pointer',
+                  }}
                 >
                   Fazer login
                 </button>
                 <button
-                  onClick={() => setMostrandoLogin(false)}
-                  style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-border-strong)', backgroundColor: 'transparent', color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', cursor: 'pointer' }}
+                  onClick={() => router.push(`/cadastro?redirect=${encodeURIComponent('/memorial')}`)}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--space-3)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1.5px solid var(--color-brand)',
+                    backgroundColor: 'transparent',
+                    color: 'var(--color-brand)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-base)',
+                    fontWeight: 'var(--font-medium)',
+                    cursor: 'pointer',
+                  }}
                 >
-                  Continuar sem login
+                  Criar conta
                 </button>
               </div>
             </div>
