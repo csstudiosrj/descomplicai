@@ -1,4 +1,4 @@
-// components/memorial/steps/Step30Entrada.jsx
+// Bloco G — Cerimônia detalhada: entrada, música, padrinhos, crianças, rituais, saída
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
@@ -27,7 +27,11 @@ const RITUAIS = [
 ];
 
 export default function Step30Entrada({ onSelect, estadoAtual }) {
-  const { etapa: etapaInterna, avancar: avancar } = useEtapaInterna(estadoAtual, CHAVES_ETAPA);
+  const { etapa: etapaInterna, avancar: avancar, storageKey } = useEtapaInterna(
+    estadoAtual,
+    CHAVES_ETAPA,
+    'G'
+  );
   const [dados, setDados] = useState({
     entradaNoivos: estadoAtual?.entradaNoivos || '',
     acompanhamento: estadoAtual?.acompanhamento || '',
@@ -36,19 +40,14 @@ export default function Step30Entrada({ onSelect, estadoAtual }) {
     padrinhos: estadoAtual?.padrinhos ?? null,
     criancasCerimonia: estadoAtual?.criancasCerimonia ?? null,
     papeisCriancas: estadoAtual?.papeisCriancas || [],
-    // iniciar sempre vazio, mas a seção só aparece se necessário
     rituaisSimbolicos: [],
     saidaNoivos: estadoAtual?.saidaNoivos || '',
   });
 
-  // Verifica se os rituais simbólicos já foram definidos em etapa anterior
   const rituaisJaDefinidos =
     Array.isArray(estadoAtual?.rituaisSimbolicos) &&
     estadoAtual.rituaisSimbolicos.length > 0;
 
-  // Mostrar seção de rituais apenas se:
-  // - A cerimônia não for católica nem evangélica
-  // - E os rituais ainda não tiverem sido definidos
   const mostrarRituais =
     estadoAtual?.tipoCerimonia !== 'catolica' &&
     estadoAtual?.tipoCerimonia !== 'evangelica' &&
@@ -62,7 +61,9 @@ export default function Step30Entrada({ onSelect, estadoAtual }) {
   };
 
   const confirmar = () => {
-    // Se os rituais já estavam definidos, mantemos os do estado, não sobrescrevemos com vazio
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(storageKey);
+    }
     const payload = { ...dados };
     if (rituaisJaDefinidos) {
       payload.rituaisSimbolicos = estadoAtual.rituaisSimbolicos;
@@ -93,7 +94,7 @@ export default function Step30Entrada({ onSelect, estadoAtual }) {
       <ButtonAvancar onClick={avancar} disabled={!dados.entradaNoivos || !dados.acompanhamento} />
     </div>,
 
-    // G3-G4: Música e elementos (COM DESCRIÇÕES)
+    // G3-G4: Música e elementos
     <div key="g3" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>Música e elementos</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>

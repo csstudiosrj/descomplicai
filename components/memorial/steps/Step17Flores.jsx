@@ -1,11 +1,10 @@
-// components/memorial/steps/Step17Flores.jsx
-import React, { useState } from 'react';
+// Bloco E — Decoração: flores, iluminação, velas, mobiliário, backdrop, têxteis
+import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import { sugerirFlores, sugerirIluminacao, sugerirVelas, sugerirMobiliario } from '../../../utils/sugestoes';
 import useEtapaInterna from '../../../hooks/useEtapaInterna';
 
-// As chaves na ordem em que as perguntas aparecem
 const CHAVES_ETAPA = ['flores', 'iluminacao', 'velas', 'mobiliarioEspecial'];
 
 const OPCOES_ILUMINACAO = [
@@ -19,7 +18,11 @@ const OPCOES_ILUMINACAO = [
 
 export default function Step17Flores({ onSelect, estadoAtual }) {
   const estilo = estadoAtual?.estilo;
-  const { etapa: etapaInterna, avancar: avancarInterno } = useEtapaInterna(estadoAtual, CHAVES_ETAPA);
+  const { etapa: etapaInterna, avancar: avancar, storageKey } = useEtapaInterna(
+    estadoAtual,
+    CHAVES_ETAPA,
+    'E'
+  );
 
   const [floresSim, setFloresSim] = useState(estadoAtual?.flores ?? null);
   const [locaisFlores, setLocaisFlores] = useState(estadoAtual?.locaisFlores || []);
@@ -29,10 +32,13 @@ export default function Step17Flores({ onSelect, estadoAtual }) {
   const [backdrop, setBackdrop] = useState(estadoAtual?.backdrop || false);
   const [tecidos, setTecidos] = useState(estadoAtual?.tecidos || false);
 
-  const floresSugeridas = estilo ? sugerirFlores(estilo) : [];
-  const ilumSugerida = estilo && estadoAtual?.horarioCasamento ? sugerirIluminacao(estilo, estadoAtual.horarioCasamento) : null;
-  const velasSugeridas = estilo ? sugerirVelas(estilo) : [];
-  const mobSugerido = estilo ? sugerirMobiliario(estilo) : null;
+  const floresSugeridas = useMemo(() => (estilo ? sugerirFlores(estilo) : []), [estilo]);
+  const ilumSugerida = useMemo(
+    () => (estilo && estadoAtual?.horarioCasamento ? sugerirIluminacao(estilo, estadoAtual.horarioCasamento) : null),
+    [estilo, estadoAtual?.horarioCasamento]
+  );
+  const velasSugeridas = useMemo(() => (estilo ? sugerirVelas(estilo) : []), [estilo]);
+  const mobSugerido = useMemo(() => (estilo ? sugerirMobiliario(estilo) : null), [estilo]);
 
   const LOCAIS = ['Entrada', 'Altar', 'Mesas dos convidados', 'Mesa do bolo', 'Lounge', 'Banheiros'];
 
@@ -41,6 +47,9 @@ export default function Step17Flores({ onSelect, estadoAtual }) {
   };
 
   const confirmarTudo = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(storageKey);
+    }
     onSelect('flores', floresSim);
     if (floresSim) onSelect('locaisFlores', locaisFlores);
     onSelect('iluminacao', iluminacao || ilumSugerida?.tipo || 'Spots quentes');
@@ -77,10 +86,10 @@ export default function Step17Flores({ onSelect, estadoAtual }) {
           </div>
         </div>
       )}
-      <ButtonAvancar onClick={avancarInterno} disabled={floresSim === null} />
+      <ButtonAvancar onClick={avancar} disabled={floresSim === null} />
     </div>,
 
-    // E2: Iluminação
+    // E2: Iluminação (com descrições)
     <div key="e2" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>Iluminação</h2>
       <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
@@ -139,7 +148,7 @@ export default function Step17Flores({ onSelect, estadoAtual }) {
           );
         })}
       </div>
-      <ButtonAvancar onClick={avancarInterno} disabled={!iluminacao} />
+      <ButtonAvancar onClick={avancar} disabled={!iluminacao} />
     </div>,
 
     // E3: Velas
@@ -153,7 +162,7 @@ export default function Step17Flores({ onSelect, estadoAtual }) {
           </Card>
         ))}
       </div>
-      <ButtonAvancar onClick={avancarInterno} disabled={velasSim === null} />
+      <ButtonAvancar onClick={avancar} disabled={velasSim === null} />
     </div>,
 
     // E4-E6: Mobiliário, Backdrop, Têxteis

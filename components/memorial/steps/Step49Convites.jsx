@@ -9,7 +9,11 @@ const CHAVES_ETAPA = ['formatoConvite', 'monograma'];
 
 export default function Step49Convites({ onSelect, estadoAtual }) {
   const estilo = estadoAtual?.estilo;
-  const { etapa: etapaInterna, avancar: avancar } = useEtapaInterna(estadoAtual, CHAVES_ETAPA);
+  const { etapa: etapaInterna, avancar: avancar, storageKey } = useEtapaInterna(
+    estadoAtual,
+    CHAVES_ETAPA,
+    'I'
+  );
   const [dados, setDados] = useState({
     formatoConvite: estadoAtual?.formatoConvite || '',
     saveTheDate: estadoAtual?.saveTheDate ?? null,
@@ -29,6 +33,9 @@ export default function Step49Convites({ onSelect, estadoAtual }) {
   };
 
   const confirmar = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(storageKey);
+    }
     Object.entries(dados).forEach(([k, v]) => onSelect(k, v));
   };
 
