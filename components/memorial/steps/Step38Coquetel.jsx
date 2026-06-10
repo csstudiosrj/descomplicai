@@ -1,15 +1,15 @@
 // Bloco H — Recepção: coquetel, jantar, bolo, bar, música, lembrancinhas, kit saída
-// Mapeia: Step38Coquetel(H1-H1a), Step39TipoJantar(H2), Step40Restricoes(H3), Step41Bolo(H4), Step42Doces(H5), Step43Bar(H6), Step44Bartender(H7), Step45MusicaFesta(H8), Step46Atividades(H9), Step47Lembrancinhas(H10), Step48KitSaida(H11-H11a)
-// Dependências diretas: React, PropTypes, Card, sugestoes.js
-
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import { sugerirBolo } from '../../../utils/sugestoes';
+import useEtapaInterna from '../../../hooks/useEtapaInterna';
+
+const CHAVES_ETAPA = ['tipoJantar', 'tipoBar', 'musicaFesta'];
 
 export default function Step38Coquetel({ onSelect, estadoAtual }) {
   const estilo = estadoAtual?.estilo;
-  const [etapaInterna, setEtapaInterna] = useState(0);
+  const { etapa: etapaInterna, avancar: avancar } = useEtapaInterna(estadoAtual, CHAVES_ETAPA);
   const [dados, setDados] = useState({
     coquetel: estadoAtual?.coquetel ?? null,
     duracaoCoquetel: estadoAtual?.duracaoCoquetel || '',
@@ -36,7 +36,6 @@ export default function Step38Coquetel({ onSelect, estadoAtual }) {
     }));
   };
 
-  const avancar = () => setEtapaInterna(p => p + 1);
   const confirmar = () => {
     Object.entries(dados).forEach(([k, v]) => onSelect(k, v));
   };

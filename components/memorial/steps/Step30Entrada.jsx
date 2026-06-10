@@ -1,20 +1,20 @@
 // Bloco G — Cerimônia detalhada: entrada, música, padrinhos, crianças, rituais, saída
-// Mapeia: Step30Entrada(G1), Step31Acompanhamento(G2), Step32MusicaCerimonia(G3), Step33Elementos(G4), Step34Padrinhos(G5), Step35Criancas(G6), Step36Rituais(G7), Step37Saida(G8)
-// Dependências diretas: React, PropTypes, Card
-
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
+import useEtapaInterna from '../../../hooks/useEtapaInterna';
+
+const CHAVES_ETAPA = ['entradaNoivos', 'musicaCerimonia', 'padrinhos', 'saidaNoivos'];
 
 export default function Step30Entrada({ onSelect, estadoAtual }) {
-  const [etapaInterna, setEtapaInterna] = useState(0);
+  const { etapa: etapaInterna, avancar: avancar } = useEtapaInterna(estadoAtual, CHAVES_ETAPA);
   const [dados, setDados] = useState({
     entradaNoivos: estadoAtual?.entradaNoivos || '',
     acompanhamento: estadoAtual?.acompanhamento || '',
     musicaCerimonia: estadoAtual?.musicaCerimonia || '',
     elementosCerimonia: estadoAtual?.elementosCerimonia || [],
-    padrinhos: estadoAtual?.padrinhos || null,
-    criancasCerimonia: estadoAtual?.criancasCerimonia || null,
+    padrinhos: estadoAtual?.padrinhos ?? null,
+    criancasCerimonia: estadoAtual?.criancasCerimonia ?? null,
     papeisCriancas: estadoAtual?.papeisCriancas || [],
     rituaisSimbolicos: estadoAtual?.rituaisSimbolicos || [],
     saidaNoivos: estadoAtual?.saidaNoivos || '',
@@ -27,7 +27,6 @@ export default function Step30Entrada({ onSelect, estadoAtual }) {
     }));
   };
 
-  const avancar = () => setEtapaInterna(p => p + 1);
   const confirmar = () => {
     Object.entries(dados).forEach(([k, v]) => onSelect(k, v));
   };

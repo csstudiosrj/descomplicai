@@ -1,10 +1,12 @@
-// Bloco E — Decoração: flores, iluminação, velas, mobiliário, backdrop, têxteis
-// Dependências diretas: React, PropTypes, Card, sugestoes.js
-
+// components/memorial/steps/Step17Flores.jsx
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import { sugerirFlores, sugerirIluminacao, sugerirVelas, sugerirMobiliario } from '../../../utils/sugestoes';
+import useEtapaInterna from '../../../hooks/useEtapaInterna';
+
+// As chaves na ordem em que as perguntas aparecem
+const CHAVES_ETAPA = ['flores', 'iluminacao', 'velas', 'mobiliarioEspecial'];
 
 const OPCOES_ILUMINACAO = [
   { valor: 'Spots quentes', desc: 'Luz direcionada em tons amarelados, ideal para destacar elementos como altar, bolo e mesas.' },
@@ -15,25 +17,10 @@ const OPCOES_ILUMINACAO = [
   { valor: 'Luz natural', desc: 'Aproveitamento da luz do dia para cerimônias diurnas, sem necessidade de iluminação extra.' },
 ];
 
-/**
- * Determina a etapa interna inicial com base nas respostas já salvas.
- * Ordem: Flores (1) → Iluminação (2) → Velas (3) → Mobiliário (4)
- */
-function calcularEtapaInicial(estado) {
-  if (!estado) return 0;
-  // Se flores ainda não foi respondida, começa em 0 (Flores)
-  if (estado.flores === null) return 0;
-  // Se flores respondida, mas iluminação vazia, vai para 1 (Iluminação)
-  if (!estado.iluminacao) return 1;
-  // Se iluminação respondida, mas velas não, vai para 2 (Velas)
-  if (estado.velas === null) return 2;
-  // Caso contrário, já passou de velas, então está no mobiliário (3)
-  return 3;
-}
-
 export default function Step17Flores({ onSelect, estadoAtual }) {
   const estilo = estadoAtual?.estilo;
-  const [etapaInterna, setEtapaInterna] = useState(() => calcularEtapaInicial(estadoAtual));
+  const { etapa: etapaInterna, avancar: avancarInterno } = useEtapaInterna(estadoAtual, CHAVES_ETAPA);
+
   const [floresSim, setFloresSim] = useState(estadoAtual?.flores ?? null);
   const [locaisFlores, setLocaisFlores] = useState(estadoAtual?.locaisFlores || []);
   const [iluminacao, setIluminacao] = useState(estadoAtual?.iluminacao || '');
@@ -52,8 +39,6 @@ export default function Step17Flores({ onSelect, estadoAtual }) {
   const toggleLocal = (l) => {
     setLocaisFlores(prev => prev.includes(l) ? prev.filter(x => x !== l) : [...prev, l]);
   };
-
-  const avancarInterno = () => setEtapaInterna(p => p + 1);
 
   const confirmarTudo = () => {
     onSelect('flores', floresSim);

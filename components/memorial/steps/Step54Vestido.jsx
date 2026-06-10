@@ -1,16 +1,16 @@
 // Bloco J — Vestuário e beleza: traje, atelier, acessórios, maquiagem/cabelo, padronização
-// Mapeia: Step54Vestido(J1), Step55Atelier(J2), Step56Acessorios(J3), Step57Beleza(J4), Step58Profissional(J5), Step59Padronizar(J6)
-// Dependências diretas: React, PropTypes, Card, sugestoes.js
-
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import { sugerirVestido } from '../../../utils/sugestoes';
+import useEtapaInterna from '../../../hooks/useEtapaInterna';
+
+const CHAVES_ETAPA = ['estiloVestido', 'padronizarMadrinhas'];
 
 export default function Step54Vestido({ onSelect, estadoAtual }) {
   const estilo = estadoAtual?.estilo;
   const perfil = estadoAtual?.perfilCasal;
-  const [etapaInterna, setEtapaInterna] = useState(0);
+  const { etapa: etapaInterna, avancar: avancar } = useEtapaInterna(estadoAtual, CHAVES_ETAPA);
   const [dados, setDados] = useState({
     estiloVestido: estadoAtual?.estiloVestido || '',
     atelierContratado: estadoAtual?.atelierContratado || '',
@@ -32,7 +32,6 @@ export default function Step54Vestido({ onSelect, estadoAtual }) {
     }));
   };
 
-  const avancar = () => setEtapaInterna(p => p + 1);
   const confirmar = () => {
     Object.entries(dados).forEach(([k, v]) => onSelect(k, v));
   };
@@ -51,7 +50,7 @@ export default function Step54Vestido({ onSelect, estadoAtual }) {
         <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Sugerimos: {opcoesVestido.join(', ')}</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
           {opcoesVestido.map(o => (
-            <button key={o} onClick={() => setDados(p => ({ ...p, estiloVestido: o }))} style={{ padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--radius-md)', border: dados.estiloVestido === o ? '2px solid var(--color-brand)' : '1.5px solid var(--color-border)', background: dados.estiloVestido === o ? 'var(--color-brand-lighter)' : 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', cursor: 'pointer', color: 'var(--var(--color-text-primary)' }}>
+            <button key={o} onClick={() => setDados(p => ({ ...p, estiloVestido: o }))} style={{ padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--radius-md)', border: dados.estiloVestido === o ? '2px solid var(--color-brand)' : '1.5px solid var(--color-border)', background: dados.estiloVestido === o ? 'var(--color-brand-lighter)' : 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', cursor: 'pointer', color: 'var(--color-text-primary)' }}>
               {o}
             </button>
           ))}

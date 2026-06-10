@@ -1,15 +1,15 @@
 // Bloco I — Papelaria: convites, save the date, sinalização, monograma, itens digitais
-// Mapeia: Step49Convites(I1), Step50SaveTheDate(I2), Step51Sinalizacao(I3), Step52Monograma(I4), Step53ItensDigitais(I5)
-// Dependências diretas: React, PropTypes, Card, sugestoes.js
-
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import { sugerirFontes } from '../../../utils/sugestoes';
+import useEtapaInterna from '../../../hooks/useEtapaInterna';
+
+const CHAVES_ETAPA = ['formatoConvite', 'monograma'];
 
 export default function Step49Convites({ onSelect, estadoAtual }) {
   const estilo = estadoAtual?.estilo;
-  const [etapaInterna, setEtapaInterna] = useState(0);
+  const { etapa: etapaInterna, avancar: avancar } = useEtapaInterna(estadoAtual, CHAVES_ETAPA);
   const [dados, setDados] = useState({
     formatoConvite: estadoAtual?.formatoConvite || '',
     saveTheDate: estadoAtual?.saveTheDate ?? null,
@@ -28,7 +28,6 @@ export default function Step49Convites({ onSelect, estadoAtual }) {
     }));
   };
 
-  const avancar = () => setEtapaInterna(p => p + 1);
   const confirmar = () => {
     Object.entries(dados).forEach(([k, v]) => onSelect(k, v));
   };
