@@ -73,7 +73,9 @@ export default function MemorialOrchestrator() {
   const [transicionando, setTransicionando] = useState(false);
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
-  const draftRestaurado = useRef(false);
+  
+  // Flag para evitar exibir o modal múltiplas vezes
+  const modalDraftExibido = useRef(false);
 
   const estadoRef = useRef(estado);
   useEffect(() => {
@@ -86,25 +88,17 @@ export default function MemorialOrchestrator() {
     }
   }, [estado.memorialConcluido, router]);
 
-  // Restaura draft automaticamente para usuários logados (sem perguntar)
+  // Efeito para exibir o modal "Continuar onde parou?" caso exista draft
   useEffect(() => {
-    if (draftRestaurado.current) return;
-    if (usuario && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
-      const draft = carregarDraft();
-      if (draft) {
-        carregarEstado(draft);
-        draftRestaurado.current = true;
-      }
-      setOferecerDraft(false);
-    }
-  }, [usuario, temDraft, estado.etapaAtual, estado.perfilCasal, carregarDraft, carregarEstado]);
-
-  // Oferece draft para anônimos
-  useEffect(() => {
-    if (!usuario && !carregandoAuth && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
+    // Não exibe se já foi exibido ou se ainda está carregando auth
+    if (modalDraftExibido.current || carregandoAuth) return;
+    
+    // Se tem draft e o estado atual é o inicial (etapa 0, sem perfil), exibe o modal
+    if (temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
       setOferecerDraft(true);
+      modalDraftExibido.current = true;
     }
-  }, [usuario, carregandoAuth, temDraft, estado.etapaAtual, estado.perfilCasal]);
+  }, [temDraft, estado.etapaAtual, estado.perfilCasal, carregandoAuth]);
 
   const etapasTotais = calcularEtapasTotais(estado);
   const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
@@ -121,7 +115,6 @@ export default function MemorialOrchestrator() {
       const proxima = calcularProximaEtapa(novoEstado, estadoRef.current.etapaAtual);
       const etapaId = getEtapaPorIndice(proxima)?.id;
 
-      // Só exibe o modal de login se o usuário NÃO estiver autenticado
       if (!usuario && deveExibirLoginAgora(novoEstado, etapaId)) {
         setMostrandoLogin(true);
         setTransicionando(false);
