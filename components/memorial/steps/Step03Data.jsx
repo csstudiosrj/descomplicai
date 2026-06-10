@@ -1,9 +1,9 @@
 // components/memorial/steps/Step03Data.jsx
 // B2 — Data do casamento com validação de data futura
+// Agora usa um <input> nativo para garantir o funcionamento do atributo min
 
 import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import Input from '../../ui/Input';
 
 function getDataMinima() {
   const hoje = new Date();
@@ -11,15 +11,6 @@ function getDataMinima() {
   const mes = String(hoje.getMonth() + 1).padStart(2, '0');
   const dia = String(hoje.getDate()).padStart(2, '0');
   return `${ano}-${mes}-${dia}`;
-}
-
-function inferirEstacao(dataISO) {
-  if (!dataISO) return '';
-  const mes = new Date(dataISO).getMonth(); // 0-11
-  if (mes === 11 || mes === 0 || mes === 1) return 'verao';
-  if (mes >= 2 && mes <= 4) return 'outono';
-  if (mes >= 5 && mes <= 7) return 'inverno';
-  return 'primavera';
 }
 
 export default function Step03Data({ onSelect, estadoAtual }) {
@@ -41,9 +32,8 @@ export default function Step03Data({ onSelect, estadoAtual }) {
 
   const handleConfirmar = () => {
     if (!dataValida || erro) return;
-    const periodo = inferirEstacao(data);
+    // Apenas um campo é enviado para evitar duplo avanço
     onSelect('dataEvento', data);
-    onSelect('periodoAno', periodo);
   };
 
   return (
@@ -74,15 +64,40 @@ export default function Step03Data({ onSelect, estadoAtual }) {
         Quando será o casamento?
       </h1>
 
-      <Input
-        label="Data do evento"
-        type="date"
-        value={data}
-        onChange={handleChange}
-        min={dataMinima}
-        required
-        aria-describedby={erro ? 'erro-data' : undefined}
-      />
+      {/* Campo de data nativo */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+        <label
+          htmlFor="data-evento"
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-sm)',
+            color: 'var(--color-text-primary)',
+            fontWeight: 'var(--font-medium)',
+          }}
+        >
+          Data do evento
+        </label>
+        <input
+          id="data-evento"
+          type="date"
+          value={data}
+          onChange={handleChange}
+          min={dataMinima}
+          required
+          aria-describedby={erro ? 'erro-data' : undefined}
+          style={{
+            padding: 'var(--space-3)',
+            borderRadius: 'var(--radius-md)',
+            border: '1.5px solid var(--color-border-strong)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-base)',
+            backgroundColor: 'var(--color-white)',
+            color: 'var(--color-text-primary)',
+            outline: 'none',
+            width: '100%',
+          }}
+        />
+      </div>
 
       {erro && (
         <p
