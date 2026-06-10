@@ -1,12 +1,10 @@
 // Bloco E — Decoração: flores, iluminação, velas, mobiliário, backdrop, têxteis
 // Dependências diretas: React, PropTypes, Card, sugestoes.js
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import { sugerirFlores, sugerirIluminacao, sugerirVelas, sugerirMobiliario } from '../../../utils/sugestoes';
-
-const STORAGE_KEY = 'descomplicai-deco-interna';
 
 const OPCOES_ILUMINACAO = [
   { valor: 'Spots quentes', desc: 'Luz direcionada em tons amarelados, ideal para destacar elementos como altar, bolo e mesas.' },
@@ -17,28 +15,25 @@ const OPCOES_ILUMINACAO = [
   { valor: 'Luz natural', desc: 'Aproveitamento da luz do dia para cerimônias diurnas, sem necessidade de iluminação extra.' },
 ];
 
-function carregarEtapaLocal() {
-  if (typeof window === 'undefined') return 0;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? parseInt(raw, 10) || 0 : 0;
-  } catch {
-    return 0;
-  }
-}
-
-function salvarEtapaLocal(valor) {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, String(valor));
-  } catch { /* ignore */ }
+/**
+ * Determina a etapa interna inicial com base nas respostas já salvas.
+ * Ordem: Flores (1) → Iluminação (2) → Velas (3) → Mobiliário (4)
+ */
+function calcularEtapaInicial(estado) {
+  if (!estado) return 0;
+  // Se flores ainda não foi respondida, começa em 0 (Flores)
+  if (estado.flores === null) return 0;
+  // Se flores respondida, mas iluminação vazia, vai para 1 (Iluminação)
+  if (!estado.iluminacao) return 1;
+  // Se iluminação respondida, mas velas não, vai para 2 (Velas)
+  if (estado.velas === null) return 2;
+  // Caso contrário, já passou de velas, então está no mobiliário (3)
+  return 3;
 }
 
 export default function Step17Flores({ onSelect, estadoAtual }) {
   const estilo = estadoAtual?.estilo;
-  // Inicializa etapa interna do localStorage (persiste recarregamentos)
-  const [etapaInterna, setEtapaInterna] = useState(carregarEtapaLocal);
-
+  const [etapaInterna, setEtapaInterna] = useState(() => calcularEtapaInicial(estadoAtual));
   const [floresSim, setFloresSim] = useState(estadoAtual?.flores ?? null);
   const [locaisFlores, setLocaisFlores] = useState(estadoAtual?.locaisFlores || []);
   const [iluminacao, setIluminacao] = useState(estadoAtual?.iluminacao || '');
@@ -58,11 +53,7 @@ export default function Step17Flores({ onSelect, estadoAtual }) {
     setLocaisFlores(prev => prev.includes(l) ? prev.filter(x => x !== l) : [...prev, l]);
   };
 
-  const avancarInterno = () => {
-    const nova = etapaInterna + 1;
-    setEtapaInterna(nova);
-    salvarEtapaLocal(nova);
-  };
+  const avancarInterno = () => setEtapaInterna(p => p + 1);
 
   const confirmarTudo = () => {
     onSelect('flores', floresSim);
@@ -73,8 +64,6 @@ export default function Step17Flores({ onSelect, estadoAtual }) {
     onSelect('mobiliarioEspecial', mobiliario);
     onSelect('backdrop', backdrop);
     onSelect('tecidos', tecidos);
-    // Limpa etapa interna ao sair do bloco
-    salvarEtapaLocal(0);
   };
 
   const etapas = [
@@ -106,7 +95,7 @@ export default function Step17Flores({ onSelect, estadoAtual }) {
       <ButtonAvancar onClick={avancarInterno} disabled={floresSim === null} />
     </div>,
 
-    // E2: Iluminação (com descrições)
+    // E2: Iluminação
     <div key="e2" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>Iluminação</h2>
       <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
