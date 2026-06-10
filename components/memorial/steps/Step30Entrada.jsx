@@ -36,7 +36,9 @@ export default function Step30Entrada({ onSelect, estadoAtual }) {
     padrinhos: estadoAtual?.padrinhos ?? null,
     criancasCerimonia: estadoAtual?.criancasCerimonia ?? null,
     papeisCriancas: estadoAtual?.papeisCriancas || [],
-    rituaisSimbolicos: estadoAtual?.rituaisSimbolicos || [],
+    // Rituais simbólicos sempre começam vazios nesta etapa,
+    // para não conflitar com a escolha feita no Step07dSimbolica.
+    rituaisSimbolicos: [],
     saidaNoivos: estadoAtual?.saidaNoivos || '',
   });
 
