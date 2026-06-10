@@ -41,7 +41,6 @@ const STEP_COMPONENTS = {
   Step60Fornecedores: React.lazy(() => import('./steps/Step60Fornecedores')),
 };
 
-// Nomes corrigidos de acordo com o conteúdo real dos blocos
 const BLOCK_NAMES = {
   'A': 'Bloco A — Perfil do Casal',
   'B': 'Bloco B — Dados do evento',
@@ -86,11 +85,23 @@ export default function MemorialOrchestrator() {
     }
   }, [estado.memorialConcluido, router]);
 
+  // Efeito para oferecer modal "Continuar onde parou?" apenas para anônimos
   useEffect(() => {
     if (!usuario && !carregandoAuth && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
       setOferecerDraft(true);
     }
   }, [usuario, carregandoAuth, temDraft, estado.etapaAtual, estado.perfilCasal]);
+
+  // Efeito para restaurar automaticamente o progresso para usuários logados
+  useEffect(() => {
+    if (usuario && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
+      const draft = carregarDraft();
+      if (draft) {
+        carregarEstado(draft);
+        setOferecerDraft(false);
+      }
+    }
+  }, [usuario, temDraft, estado.etapaAtual, estado.perfilCasal, carregarDraft, carregarEstado]);
 
   const etapasTotais = calcularEtapasTotais(estado);
   const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
