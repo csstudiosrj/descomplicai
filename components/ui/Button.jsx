@@ -1,52 +1,47 @@
-// lib/gemini.js
-// Cliente para a API do Google Gemini (gratuita via AI Studio)
-// Dependências: fetch nativo do Node.js
+// components/ui/Button.jsx
+// Botão reutilizável com variantes primary, secondary e estados de loading.
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent';
+export default function Button({
+  type = 'button',
+  variant = 'primary',
+  size = 'md',
+  fullWidth,
+  loading,
+  onClick,
+  children,
+}) {
+  const base = {
+    padding: size === 'lg' ? 'var(--space-4)' : 'var(--space-3)',
+    fontSize: size === 'lg' ? 'var(--text-lg)' : 'var(--text-base)',
+    borderRadius: 'var(--radius-md)',
+    border: 'none',
+    fontFamily: 'var(--font-body)',
+    fontWeight: 'var(--font-medium)',
+    cursor: loading ? 'not-allowed' : 'pointer',
+    width: fullWidth ? '100%' : undefined,
+    opacity: loading ? 0.6 : 1,
+  };
 
-/**
- * Chama a API do Gemini com um prompt
- * @param {string} prompt - Texto do prompt
- * @param {number} maxTokens - Máximo de tokens na resposta (default: 4000)
- * @returns {Promise<string>} - Texto gerado
- */
-export async function gerarTextoGemini(prompt, maxTokens = 4000) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY não configurada nas variáveis de ambiente');
-  }
-
-  const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
+  const variants = {
+    primary: {
+      backgroundColor: 'var(--color-brand)',
+      color: 'var(--color-white)',
     },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [{ text: prompt }]
-        }
-      ],
-      generationConfig: {
-        maxOutputTokens: maxTokens,
-        temperature: 0.7,
-        topP: 0.95,
-      }
-    })
-  });
+    secondary: {
+      backgroundColor: 'var(--color-white)',
+      color: 'var(--color-text-primary)',
+      border: '1.5px solid var(--color-border-strong)',
+    },
+  };
 
-  if (!response.ok) {
-    const erro = await response.json();
-    throw new Error(`Gemini API erro: ${erro.error?.message || response.statusText}`);
-  }
-
-  const data = await response.json();
-  const texto = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  
-  if (!texto) {
-    throw new Error('Gemini API não retornou texto');
-  }
-
-  return texto;
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={loading}
+      style={{ ...base, ...(variants[variant] || {}) }}
+    >
+      {loading ? 'Carregando...' : children}
+    </button>
+  );
 }
