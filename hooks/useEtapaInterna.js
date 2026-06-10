@@ -1,35 +1,55 @@
 // hooks/useEtapaInterna.js
-// Hook reutilizável para componentes com múltiplas sub-etapas baseadas em respostas.
-// Retorna a etapa atual (índice) e funções para navegar.
-
 import { useState, useCallback } from 'react';
 
+const STORAGE_PREFIX = 'descomplicai-etapa-';
+
 /**
+ * Hook reutilizável para componentes com múltiplas sub-etapas.
+ * Agora persiste a etapa no localStorage automaticamente.
+ *
  * @param {object} estadoAtual — estado completo do memorial
- * @param {string[]} chaves — lista de chaves de estado na ordem das sub-etapas.
- *   Ex: ['flores', 'iluminacao', 'velas', 'mobiliarioEspecial']
- * @returns {{ etapa: number, avancar: function, voltar: function }}
+ * @param {string[]} chaves — lista de chaves na ordem das sub-etapas
+ * @param {string} blocoId — identificador único do bloco (ex: 'G', 'H')
+ * @returns {{ etapa: number, avancar: function }}
  */
-export default function useEtapaInterna(estadoAtual, chaves = []) {
-  // Determina a etapa inicial: primeira chave que ainda não foi respondida.
-  const etapaInicial = chaves.findIndex((chave) => {
-    const valor = estadoAtual?.[chave];
-    // Se o valor for null ou undefined, significa que ainda não foi respondido.
-    return valor === null || valor === undefined;
-  });
+export default function useEtapaInterna(estadoAtual, chaves = [], blocoId = '') {
+  const storageKey = `${STORAGE_PREFIX}${blocoId}`;
 
-  // Se todas foram respondidas, assume a última etapa.
-  const indiceInicial = etapaInicial === -1 ? chaves.length - 1 : etapaInicial;
+  // Determina a etapa inicial:
+  // 1. Tenta recuperar do localStorage
+  // 2. Caso contrário, calcula a partir do estado (primeira chave não respondida)
+  const etapaInicial = (() => {
+    if (typeof window !== 'undefined') {
+      const salva = localStorage.getItem(storageKey);
+      if (salva !== null) {
+        const indice = parseInt(salva, 10);
+        if (!isNaN(indice) && indice >= 0 && indice < chaves.length) {
+          return indice;
+        }
+      }
+    }
+    // Fallback: primeira chave com valor nulo/undefined
+    const indice = chaves.findIndex((chave) => {
+      const valor = estadoAtual?.[chave];
+      return valor === null || valor === undefined;
+    });
+    return indice === -1 ? chaves.length - 1 : indice;
+  })();
 
-  const [etapa, setEtapa] = useState(indiceInicial);
+  const [etapa, setEtapa] = useState(etapaInicial);
 
   const avancar = useCallback(() => {
-    setEtapa((prev) => Math.min(prev + 1, chaves.length - 1));
-  }, [chaves.length]);
+    setEtapa((prev) => {
+      const nova = Math.min(prev + 1, chaves.length - 1);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(storageKey, String(nova));
+      }
+      return nova;
+    });
+  }, [chaves.length, storageKey]);
 
-  const voltar = useCallback(() => {
-    setEtapa((prev) => Math.max(prev - 1, 0));
-  }, []);
-
-  return { etapa, avancar, voltar };
+  // Limpa a chave ao desmontar o componente (quando sai do bloco)
+  // Isso é feito pelo próprio componente ao chamar confirmarTudo / confirmar
+  // Mas podemos exportar uma função para limpar
+  return { etapa, avancar, storageKey };
 }

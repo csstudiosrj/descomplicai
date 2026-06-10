@@ -49,7 +49,6 @@ const ESTILOS_MUSICA = ['Sertanejo', 'Funk', 'Pop', 'Rock', 'Eletrônica', 'Samb
 const ATIVIDADES = ['Cabine de fotos', 'DJ', 'Banda ao vivo', 'Fogos de artifício', 'Lanternas de papel', 'Dança surpresa', 'Jogos/Quiz'];
 const ITENS_KIT = ['Chinelos', 'Lanche da madrugada', 'Água/energético', 'Protetor solar', 'Lenços de papel', 'Doces'];
 
-// Sugestões de bolo por estilo
 const SABORES_BOLO = {
   classico: [
     'Bolo branco com buttercream',
@@ -113,7 +112,11 @@ const SABORES_BOLO = {
 
 export default function Step38Coquetel({ onSelect, estadoAtual }) {
   const estilo = estadoAtual?.estilo || 'classico';
-  const { etapa: etapaInterna, avancar: avancar } = useEtapaInterna(estadoAtual, CHAVES_ETAPA);
+  const { etapa: etapaInterna, avancar: avancar, storageKey } = useEtapaInterna(
+    estadoAtual,
+    CHAVES_ETAPA,
+    'H'  // blocoId para persistência
+  );
   const [dados, setDados] = useState({
     coquetel: estadoAtual?.coquetel ?? null,
     duracaoCoquetel: estadoAtual?.duracaoCoquetel || '',
@@ -122,7 +125,7 @@ export default function Step38Coquetel({ onSelect, estadoAtual }) {
     restricaoOutra: '',
     bolo: estadoAtual?.bolo ?? null,
     saborBolo: estadoAtual?.saborBolo || '',
-    saborBoloOutro: '', // texto extra se selecionar "Outro sabor"
+    saborBoloOutro: '',
     mesaDoces: estadoAtual?.mesaDoces ?? null,
     bemCasados: estadoAtual?.bemCasados ?? null,
     tipoBar: estadoAtual?.tipoBar || '',
@@ -135,13 +138,10 @@ export default function Step38Coquetel({ onSelect, estadoAtual }) {
     itensKitSaida: estadoAtual?.itensKitSaida || [],
   });
 
-  // Sugestões de bolo baseadas no estilo
   const opcoesBolo = useMemo(() => {
     const base = SABORES_BOLO[estilo] || SABORES_BOLO.classico;
     const sugestaoPrincipal = sugerirBolo(estilo) || base[0];
-    // Coloca a sugestão principal em primeiro
-    const lista = [sugestaoPrincipal, ...base.filter(s => s !== sugestaoPrincipal)];
-    return lista;
+    return [sugestaoPrincipal, ...base.filter(s => s !== sugestaoPrincipal)];
   }, [estilo]);
 
   const toggleArray = (field, val) => {
@@ -169,12 +169,16 @@ export default function Step38Coquetel({ onSelect, estadoAtual }) {
   };
 
   const confirmar = () => {
+    // Limpa a etapa interna do localStorage ao sair do bloco
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(storageKey);
+    }
+
     const restricoes = dados.restricoesAlimentares.includes('Outra')
       ? [...dados.restricoesAlimentares.filter(r => r !== 'Outra'), dados.restricaoOutra].filter(Boolean)
       : dados.restricoesAlimentares;
     onSelect('restricoesAlimentares', restricoes);
 
-    // Determina o sabor final do bolo
     let saborFinal = dados.saborBolo;
     if (dados.saborBolo === 'Outro sabor') {
       saborFinal = dados.saborBoloOutro || '';
@@ -273,7 +277,6 @@ export default function Step38Coquetel({ onSelect, estadoAtual }) {
 
       {renderOpcoes(TIPOS_JANTAR, 'tipoJantar', 'Tipo de jantar', 'Cada estilo cria uma experiência diferente para os convidados.')}
 
-      {/* Restrições alimentares como chips selecionáveis */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
         <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>
           Restrições alimentares dos convidados
@@ -353,7 +356,6 @@ export default function Step38Coquetel({ onSelect, estadoAtual }) {
         ))}
       </div>
 
-      {/* Opções de sabor do bolo quando Sim é selecionado */}
       {dados.bolo && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>
