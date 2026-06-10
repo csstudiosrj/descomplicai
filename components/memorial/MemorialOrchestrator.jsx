@@ -66,7 +66,7 @@ function PlaceholderStep({ titulo }) {
 
 export default function MemorialOrchestrator() {
   const router = useRouter();
-  const { estado, setRespostas, carregarEstado, avancarEtapa, voltarEtapa, resetarMemorial } = useMemorial();
+  const { estado, setRespostas, carregarEstado, irParaEtapa, voltarEtapa, resetarMemorial } = useMemorial();
   const { usuario } = useAuth();
   const { salvandoAgora, temDraft, carregarDraft, limparDraft } = useAutoSave(estado, usuario);
 
@@ -74,7 +74,6 @@ export default function MemorialOrchestrator() {
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
 
-  // Ref para manter o estado mais atualizado nos callbacks
   const estadoRef = useRef(estado);
   useEffect(() => {
     estadoRef.current = estado;
@@ -99,7 +98,6 @@ export default function MemorialOrchestrator() {
   const blockName = BLOCK_NAMES[blocoAtual] || '';
 
   const handleSelect = useCallback((campo, valor) => {
-    // Cria o novo estado previsto
     const novoEstado = { ...estadoRef.current, [campo]: valor };
     setRespostas(campo, valor);
     setTransicionando(true);
@@ -114,10 +112,10 @@ export default function MemorialOrchestrator() {
         return;
       }
 
-      avancarEtapa();
+      irParaEtapa(proxima); // agora vai para a etapa correta
       setTransicionando(false);
     }, 220);
-  }, [setRespostas, avancarEtapa]); // Não depende mais de estado diretamente
+  }, [setRespostas, irParaEtapa]);
 
   const handleBack = useCallback(() => {
     if (estado.historicoEtapas.length > 0) voltarEtapa();
@@ -126,7 +124,7 @@ export default function MemorialOrchestrator() {
   const handleContinuarDraft = () => {
     const draft = carregarDraft();
     if (draft) {
-      carregarEstado(draft); // aplica o estado completo de uma vez
+      carregarEstado(draft);
     }
     setOferecerDraft(false);
   };
@@ -142,7 +140,7 @@ export default function MemorialOrchestrator() {
 
   return (
     <BreathTransition ativa={transicionando} cor="var(--color-brand-lighter)">
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden', backgroundColor: 'var(--color-off-white)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', backgroundColor: 'var(--color-off-white)' }}>
         <ProgressBar
           progress={progress}
           blockName={blockName}
@@ -156,7 +154,7 @@ export default function MemorialOrchestrator() {
           </div>
         )}
 
-        <main style={{ flex: 1, overflowY: 'auto', paddingTop: 'var(--space-12)', paddingBottom: 'var(--space-20)', paddingLeft: 'var(--space-4)', paddingRight: 'var(--space-4)' }}>
+        <main style={{ flex: 1, overflowY: 'auto', paddingTop: 'var(--space-6)', paddingBottom: 'var(--space-4)', paddingLeft: 'var(--space-4)', paddingRight: 'var(--space-4)' }}>
           <React.Suspense
             fallback={
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>

@@ -103,12 +103,10 @@ export default function useMemorial() {
     });
   }, []);
 
-  // NOVA função para carregar um estado completo (draft)
   const carregarEstado = useCallback((novoEstado) => {
     setEstado((prev) => ({
       ...prev,
       ...novoEstado,
-      // Garante que os arrays sejam mesclados corretamente, não sobrescritos com undefined
       paleta: novoEstado.paleta || prev.paleta,
       tomsIdentidade: novoEstado.tomsIdentidade || prev.tomsIdentidade,
       referenciasVisuais: novoEstado.referenciasVisuais || prev.referenciasVisuais,
@@ -152,6 +150,18 @@ export default function useMemorial() {
     }));
   }, []);
 
+  // NOVA função para ir direto para um índice específico
+  const irParaEtapa = useCallback((indice) => {
+    setEstado((prev) => {
+      if (indice === prev.etapaAtual) return prev;
+      return {
+        ...prev,
+        historicoEtapas: [...prev.historicoEtapas, prev.etapaAtual],
+        etapaAtual: indice,
+      };
+    });
+  }, []);
+
   const getSugestoes = useCallback((categoria) => {
     return [];
   }, []);
@@ -172,6 +182,7 @@ export default function useMemorial() {
     avancarEtapa,
     voltarEtapa,
     pularEtapa,
+    irParaEtapa,
     getSugestoes,
     resetarMemorial,
     exportarDados,
