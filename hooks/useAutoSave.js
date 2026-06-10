@@ -44,11 +44,16 @@ export default function useAutoSave(estado, usuario = null) {
     setErro(null);
 
     try {
+      // Garante que a sessão está ativa
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) throw new Error('Sessão não encontrada');
+
       // 1. Obtém ou cria um evento para o usuário
       const { data: eventos, error: errEventos } = await supabase
         .from('eventos')
         .select('id')
-        .eq('usuario_id', usuario.id)
+        .eq('usuario_id', userId)
         .order('criado_em', { ascending: false })
         .limit(1);
 
@@ -61,7 +66,7 @@ export default function useAutoSave(estado, usuario = null) {
         const { data: novoEvento, error: errNovo } = await supabase
           .from('eventos')
           .insert({
-            usuario_id: usuario.id,
+            usuario_id: userId,
             nome_evento: dados.nomePessoa1 && dados.nomePessoa2
               ? `${dados.nomePessoa1} & ${dados.nomePessoa2}`
               : 'Novo evento',
@@ -76,12 +81,20 @@ export default function useAutoSave(estado, usuario = null) {
         eventoId = novoEvento.id;
       }
 
-      // 2. Salva o memorial — upsert por user_id (unique constraint real)
-      const { error: errMemorial } = await supabase
+      // 2. Salva o memorial com lógica de dois passos (buscar → update ou insert)
+      const { data: existente, error: errBusca } = await supabase
         .from('memoriais')
-        .upsert(
-          {
-            user_id: usuario.id,
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+
+      if (errBusca && errBusca.code !== 'PGRST116') throw errBusca; // Ignora erro de "não encontrado"
+
+      if (existente) {
+        // Atualiza registro existente
+        const { error: errUpdate } = await supabase
+          .from('memoriais')
+          .update({
             evento_id: eventoId,
             dados: dados,
             paleta: dados.paleta || [],
@@ -91,14 +104,32 @@ export default function useAutoSave(estado, usuario = null) {
             },
             etapa_atual: dados.etapaAtual || 0,
             atualizado_em: new Date().toISOString(),
-          },
-          { onConflict: 'user_id' }
-        );
+          })
+          .eq('id', existente.id);
 
-      if (errMemorial) throw errMemorial;
+        if (errUpdate) throw errUpdate;
+      } else {
+        // Insere novo registro
+        const { error: errInsert } = await supabase
+          .from('memoriais')
+          .insert({
+            user_id: userId,
+            evento_id: eventoId,
+            dados: dados,
+            paleta: dados.paleta || [],
+            identidade: {
+              estilo: dados.estilo,
+              formalidade: dados.formalidade,
+            },
+            etapa_atual: dados.etapaAtual || 0,
+            atualizado_em: new Date().toISOString(),
+          });
+
+        if (errInsert) throw errInsert;
+      }
     } catch (e) {
       setErro(e.message || 'Erro ao salvar no servidor');
-      salvarLocal(dados);
+      salvarLocal(dados); // fallback para localStorage
     } finally {
       setSalvandoAgora(false);
     }
