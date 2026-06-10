@@ -13,20 +13,29 @@ export default function Document() {
           href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Space+Mono:ital,wght@1,400&display=swap"
           rel="stylesheet"
         />
+        {/* Carrega o script do VLibras sem inicializar automaticamente */}
         <script src="https://vlibras.gov.br/app/vlibras-plugin.js" async />
       </Head>
       <body>
         <Main />
         <NextScript />
+        {/* Container do VLibras */}
         <div vw className="enabled">
           <div vw-access-button className="active" />
           <div vw-plugin-wrapper>
             <div className="vw-plugin-top-wrapper" />
           </div>
         </div>
+        {/* Inicialização segura: só executa se o script VLibras estiver carregado */}
         <script
           dangerouslySetInnerHTML={{
-            __html: 'new window.VLibras.Widget("https://vlibras.gov.br/app");',
+            __html: `
+              window.addEventListener('load', function() {
+                if (window.VLibras && window.VLibras.Widget) {
+                  new window.VLibras.Widget('https://vlibras.gov.br/app');
+                }
+              });
+            `,
           }}
         />
       </body>
