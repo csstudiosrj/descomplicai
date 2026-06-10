@@ -1,5 +1,5 @@
 // Bloco H — Recepção: coquetel, jantar, bolo, bar, música, lembrancinhas, kit saída
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import { sugerirBolo } from '../../../utils/sugestoes';
@@ -49,17 +49,80 @@ const ESTILOS_MUSICA = ['Sertanejo', 'Funk', 'Pop', 'Rock', 'Eletrônica', 'Samb
 const ATIVIDADES = ['Cabine de fotos', 'DJ', 'Banda ao vivo', 'Fogos de artifício', 'Lanternas de papel', 'Dança surpresa', 'Jogos/Quiz'];
 const ITENS_KIT = ['Chinelos', 'Lanche da madrugada', 'Água/energético', 'Protetor solar', 'Lenços de papel', 'Doces'];
 
+// Sugestões de bolo por estilo
+const SABORES_BOLO = {
+  classico: [
+    'Bolo branco com buttercream',
+    'Bolo de nozes com chantilly',
+    'Bolo de baunilha com frutas vermelhas',
+    'Bolo de amêndoas com doce de leite',
+  ],
+  rustico: [
+    'Naked cake com frutas',
+    'Bolo de cenoura com chocolate',
+    'Bolo de mel com especiarias',
+    'Bolo de laranja com calda de laranja',
+  ],
+  boho: [
+    'Bolo semi-naked com flores',
+    'Bolo de lavanda com limão',
+    'Bolo de coco com abacaxi',
+    'Bolo de cenoura com nozes',
+  ],
+  moderno: [
+    'Bolo geométrico com pasta americana',
+    'Bolo de chocolate amargo com ganache',
+    'Bolo de mármore com drip',
+    'Bolo de baunilha com mousse de maracujá',
+  ],
+  minimalista: [
+    'Bolo liso com buttercream',
+    'Bolo de baunilha com recheio de frutas',
+    'Bolo de iogurte com calda cítrica',
+  ],
+  industrial: [
+    'Bolo de concreto aparente (efeito)',
+    'Bolo de chocolate com caramelo salgado',
+    'Bolo de baunilha com cobertura de caramelo',
+  ],
+  tropical: [
+    'Bolo com frutas tropicais',
+    'Bolo de coco com maracujá',
+    'Bolo de manga com hortelã',
+    'Bolo de abacaxi caramelizado',
+  ],
+  romantico: [
+    'Bolo com rosas de buttercream',
+    'Bolo de framboesa com pistache',
+    'Bolo de baunilha com lavanda',
+    'Bolo de morango com chantilly',
+  ],
+  gotico: [
+    'Bolo preto com drip vermelho',
+    'Bolo de chocolate com cereja',
+    'Bolo de veludo vermelho',
+    'Bolo de chocolate com pimenta',
+  ],
+  vintage: [
+    'Bolo com renda de açúcar',
+    'Bolo de nozes com damasco',
+    'Bolo de baunilha com creme de confeiteiro',
+    'Bolo de laranja com especiarias',
+  ],
+};
+
 export default function Step38Coquetel({ onSelect, estadoAtual }) {
-  const estilo = estadoAtual?.estilo;
+  const estilo = estadoAtual?.estilo || 'classico';
   const { etapa: etapaInterna, avancar: avancar } = useEtapaInterna(estadoAtual, CHAVES_ETAPA);
   const [dados, setDados] = useState({
     coquetel: estadoAtual?.coquetel ?? null,
     duracaoCoquetel: estadoAtual?.duracaoCoquetel || '',
     tipoJantar: estadoAtual?.tipoJantar || '',
     restricoesAlimentares: estadoAtual?.restricoesAlimentares || [],
-    restricaoOutra: '',  // texto extra se selecionar "Outra"
+    restricaoOutra: '',
     bolo: estadoAtual?.bolo ?? null,
     saborBolo: estadoAtual?.saborBolo || '',
+    saborBoloOutro: '', // texto extra se selecionar "Outro sabor"
     mesaDoces: estadoAtual?.mesaDoces ?? null,
     bemCasados: estadoAtual?.bemCasados ?? null,
     tipoBar: estadoAtual?.tipoBar || '',
@@ -72,6 +135,15 @@ export default function Step38Coquetel({ onSelect, estadoAtual }) {
     itensKitSaida: estadoAtual?.itensKitSaida || [],
   });
 
+  // Sugestões de bolo baseadas no estilo
+  const opcoesBolo = useMemo(() => {
+    const base = SABORES_BOLO[estilo] || SABORES_BOLO.classico;
+    const sugestaoPrincipal = sugerirBolo(estilo) || base[0];
+    // Coloca a sugestão principal em primeiro
+    const lista = [sugestaoPrincipal, ...base.filter(s => s !== sugestaoPrincipal)];
+    return lista;
+  }, [estilo]);
+
   const toggleArray = (field, val) => {
     setDados(prev => ({
       ...prev,
@@ -79,14 +151,12 @@ export default function Step38Coquetel({ onSelect, estadoAtual }) {
     }));
   };
 
-  // Gerencia a seleção de restrições, tratando "Nenhuma restrição" como exclusivo
   const handleRestricaoToggle = (r) => {
     setDados(prev => {
       let novas = [...prev.restricoesAlimentares];
       if (r === 'Nenhuma restrição') {
         novas = prev.restricoesAlimentares.includes('Nenhuma restrição') ? [] : ['Nenhuma restrição'];
       } else {
-        // Se selecionar qualquer outra, remove "Nenhuma"
         novas = novas.filter(x => x !== 'Nenhuma restrição');
         if (novas.includes(r)) {
           novas = novas.filter(x => x !== r);
@@ -99,18 +169,24 @@ export default function Step38Coquetel({ onSelect, estadoAtual }) {
   };
 
   const confirmar = () => {
-    // Monta o campo de restrições como string final (para compatibilidade com o banco atual)
     const restricoes = dados.restricoesAlimentares.includes('Outra')
       ? [...dados.restricoesAlimentares.filter(r => r !== 'Outra'), dados.restricaoOutra].filter(Boolean)
       : dados.restricoesAlimentares;
     onSelect('restricoesAlimentares', restricoes);
-    // Salva os demais campos
+
+    // Determina o sabor final do bolo
+    let saborFinal = dados.saborBolo;
+    if (dados.saborBolo === 'Outro sabor') {
+      saborFinal = dados.saborBoloOutro || '';
+    }
+    onSelect('saborBolo', saborFinal);
+
     Object.entries(dados).forEach(([k, v]) => {
-      if (k !== 'restricoesAlimentares' && k !== 'restricaoOutra') onSelect(k, v);
+      if (!['restricoesAlimentares', 'restricaoOutra', 'saborBolo', 'saborBoloOutro'].includes(k)) {
+        onSelect(k, v);
+      }
     });
   };
-
-  const boloSugerido = estilo ? sugerirBolo(estilo) : 'Bolo branco clássico';
 
   const renderOpcoes = (lista, campo, titulo, subtitulo) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
@@ -167,9 +243,11 @@ export default function Step38Coquetel({ onSelect, estadoAtual }) {
                 <div style={{ fontFamily: 'var(--font-body)', fontWeight: isSelected ? 'var(--font-semibold)' : 'var(--font-normal)', marginBottom: 'var(--space-1)' }}>
                   {op.valor}
                 </div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: '1.4' }}>
-                  {op.desc}
-                </div>
+                {op.desc && (
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: '1.4' }}>
+                    {op.desc}
+                  </div>
+                )}
               </div>
             </button>
           );
@@ -265,21 +343,118 @@ export default function Step38Coquetel({ onSelect, estadoAtual }) {
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
         <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Bolo</label>
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Sugestão: {boloSugerido}</p>
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+          Sugestão: {opcoesBolo[0]}
+        </p>
         {[{v:true,l:'Sim'}, {v:false,l:'Não'}].map(o => (
           <Card key={String(o.v)} interactive selected={dados.bolo === o.v} padding="md" onClick={() => setDados(p => ({ ...p, bolo: o.v }))} role="radio" aria-checked={dados.bolo === o.v}>
             <span style={{ fontFamily: 'var(--font-body)' }}>{o.l}</span>
           </Card>
         ))}
       </div>
+
+      {/* Opções de sabor do bolo quando Sim é selecionado */}
       {dados.bolo && (
-        <input
-          type="text"
-          value={dados.saborBolo}
-          onChange={(e) => setDados(p => ({ ...p, saborBolo: e.target.value }))}
-          placeholder="Sabor ou descrição do bolo"
-          style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-border)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', outline: 'none' }}
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>
+            Escolha o sabor do bolo
+          </label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            {opcoesBolo.map(sabor => {
+              const isSelected = dados.saborBolo === sabor;
+              return (
+                <button
+                  key={sabor}
+                  onClick={() => setDados(p => ({ ...p, saborBolo: sabor, saborBoloOutro: '' }))}
+                  style={{
+                    textAlign: 'left',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-3)',
+                    padding: 'var(--space-3) var(--space-4)',
+                    borderRadius: 'var(--radius-md)',
+                    border: isSelected ? '2px solid var(--color-brand)' : '1px solid var(--color-border)',
+                    background: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-white)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-base)',
+                    cursor: 'pointer',
+                    color: 'var(--color-text-primary)',
+                    width: '100%',
+                  }}
+                >
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minWidth: '22px',
+                    height: '22px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: isSelected ? '2px solid var(--color-brand)' : '2px solid var(--color-border)',
+                    background: isSelected ? 'var(--color-brand)' : 'transparent',
+                    color: isSelected ? 'var(--color-white)' : 'transparent',
+                    fontSize: 'var(--text-xs)',
+                    fontWeight: 'var(--font-bold)',
+                  }} aria-hidden="true">
+                    {isSelected ? '✓' : ''}
+                  </span>
+                  <span>{sabor}</span>
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setDados(p => ({ ...p, saborBolo: 'Outro sabor', saborBoloOutro: '' }))}
+              style={{
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-3)',
+                padding: 'var(--space-3) var(--space-4)',
+                borderRadius: 'var(--radius-md)',
+                border: dados.saborBolo === 'Outro sabor' ? '2px solid var(--color-brand)' : '1px solid var(--color-border)',
+                background: dados.saborBolo === 'Outro sabor' ? 'var(--color-brand-lighter)' : 'var(--color-white)',
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--text-base)',
+                cursor: 'pointer',
+                color: 'var(--color-text-primary)',
+                width: '100%',
+              }}
+            >
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: '22px',
+                height: '22px',
+                borderRadius: 'var(--radius-sm)',
+                border: dados.saborBolo === 'Outro sabor' ? '2px solid var(--color-brand)' : '2px solid var(--color-border)',
+                background: dados.saborBolo === 'Outro sabor' ? 'var(--color-brand)' : 'transparent',
+                color: dados.saborBolo === 'Outro sabor' ? 'var(--color-white)' : 'transparent',
+                fontSize: 'var(--text-xs)',
+                fontWeight: 'var(--font-bold)',
+              }} aria-hidden="true">
+                {dados.saborBolo === 'Outro sabor' ? '✓' : ''}
+              </span>
+              <span>Outro sabor</span>
+            </button>
+          </div>
+          {dados.saborBolo === 'Outro sabor' && (
+            <input
+              type="text"
+              value={dados.saborBoloOutro}
+              onChange={(e) => setDados(p => ({ ...p, saborBoloOutro: e.target.value }))}
+              placeholder="Qual sabor de bolo?"
+              style={{
+                marginTop: 'var(--space-2)',
+                padding: 'var(--space-3)',
+                borderRadius: 'var(--radius-md)',
+                border: '1.5px solid var(--color-border)',
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--text-base)',
+                outline: 'none',
+              }}
+            />
+          )}
+        </div>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
