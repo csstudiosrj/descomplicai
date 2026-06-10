@@ -1,20 +1,15 @@
-/**
- * Hook que persiste o estado do memorial — localStorage (anônimo) ou Supabase (logado)
- * @module hooks/useAutoSave
- * @dependencies React, supabase.js
- */
-
+// hooks/useAutoSave.js
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
 const STORAGE_KEY = 'descomplicai-memorial-draft';
 const DEBOUNCE_MS = 1500;
 
-/**
- * @param {Object} estado — estado atual do memorial
- * @param {Object|null} usuario — usuário logado (null se anônimo)
- * @returns {{ salvar: function, carregarDraft: function, limparDraft: function, salvandoAgora: boolean, temDraft: boolean, erro: string|null }}
- */
+function draftValido(dados) {
+  // Considera válido se existir e tiver pelo menos a primeira resposta (perfilCasal)
+  return dados && dados.perfilCasal != null;
+}
+
 export default function useAutoSave(estado, usuario = null) {
   const [salvandoAgora, setSalvandoAgora] = useState(false);
   const [erro, setErro] = useState(null);
@@ -26,12 +21,19 @@ export default function useAutoSave(estado, usuario = null) {
   // Verifica se existe draft no localStorage ao montar
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const raw = localStorage.getItem(STORAGE_KEY);
-    setTemDraft(!!raw && raw !== '{}');
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const dados = raw ? JSON.parse(raw) : null;
+      setTemDraft(draftValido(dados));
+    } catch {
+      setTemDraft(false);
+    }
   }, []);
 
   const salvarLocal = useCallback((dados) => {
     if (typeof window === 'undefined') return;
+    // Só salva se houver progresso real (primeira pergunta respondida)
+    if (!draftValido(dados)) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
       setTemDraft(true);
@@ -58,7 +60,6 @@ export default function useAutoSave(estado, usuario = null) {
       if (error) throw error;
     } catch (e) {
       setErro(e.message || 'Erro ao salvar no servidor');
-      // Fallback: garante localStorage mesmo se Supabase falhar
       salvarLocal(dados);
     } finally {
       setSalvandoAgora(false);
@@ -67,8 +68,10 @@ export default function useAutoSave(estado, usuario = null) {
 
   const salvar = useCallback(() => {
     if (!estado || salvandoRef.current) return;
-    const serializado = JSON.stringify(estado);
+    // Não persiste se ainda não começou o questionário
+    if (!draftValido(estado)) return;
 
+    const serializado = JSON.stringify(estado);
     if (serializado === ultimoSalvoRef.current) return;
     ultimoSalvoRef.current = serializado;
 
@@ -77,7 +80,6 @@ export default function useAutoSave(estado, usuario = null) {
       return;
     }
 
-    // Logado: debounce para Supabase
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       salvarSupabase(estado);
@@ -86,10 +88,10 @@ export default function useAutoSave(estado, usuario = null) {
 
   const carregarDraft = useCallback(() => {
     if (typeof window === 'undefined') return null;
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
     try {
-      return JSON.parse(raw);
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const dados = raw ? JSON.parse(raw) : null;
+      return draftValido(dados) ? dados : null;
     } catch {
       return null;
     }
@@ -102,7 +104,6 @@ export default function useAutoSave(estado, usuario = null) {
     setTemDraft(false);
   }, []);
 
-  // Autosave automático a cada mudança de estado
   useEffect(() => {
     salvar();
     return () => {
