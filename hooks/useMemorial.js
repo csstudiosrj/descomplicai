@@ -86,6 +86,7 @@ const ESTADO_INICIAL = {
   fornecedoresNecessarios: [],
   etapaAtual: 0,
   historicoEtapas: [],
+  etapaInternaDeco: 0,   // NOVO: etapa interna do bloco de decoração
   loginFeito: false,
   memorialConcluido: false,
 };
@@ -123,6 +124,7 @@ export default function useMemorial() {
       acessorios: novoEstado.acessorios || prev.acessorios,
       fornecedoresNecessarios: novoEstado.fornecedoresNecessarios || prev.fornecedoresNecessarios,
       historicoEtapas: novoEstado.historicoEtapas || prev.historicoEtapas,
+      etapaInternaDeco: novoEstado.etapaInternaDeco ?? prev.etapaInternaDeco,
     }));
   }, []);
 
@@ -150,7 +152,6 @@ export default function useMemorial() {
     }));
   }, []);
 
-  // NOVA função para ir direto para um índice específico
   const irParaEtapa = useCallback((indice) => {
     setEstado((prev) => {
       if (indice === prev.etapaAtual) return prev;

@@ -1,5 +1,4 @@
 // Bloco E — Decoração: flores, iluminação, velas, mobiliário, backdrop, têxteis
-// Mapeia: Step17Flores(E1-E1b), Step18Iluminacao(E2), Step19Velas(E3), Step20Mobiliario(E4), Step21Backdrop(E5), Step22Tecidos(E6)
 // Dependências diretas: React, PropTypes, Card, sugestoes.js
 
 import React, { useState } from 'react';
@@ -18,7 +17,8 @@ const OPCOES_ILUMINACAO = [
 
 export default function Step17Flores({ onSelect, estadoAtual }) {
   const estilo = estadoAtual?.estilo;
-  const [etapaInterna, setEtapaInterna] = useState(0);
+  // Inicializa etapa interna com o valor salvo no estado global
+  const [etapaInterna, setEtapaInterna] = useState(estadoAtual?.etapaInternaDeco || 0);
   const [floresSim, setFloresSim] = useState(estadoAtual?.flores ?? null);
   const [locaisFlores, setLocaisFlores] = useState(estadoAtual?.locaisFlores || []);
   const [iluminacao, setIluminacao] = useState(estadoAtual?.iluminacao || '');
@@ -38,7 +38,12 @@ export default function Step17Flores({ onSelect, estadoAtual }) {
     setLocaisFlores(prev => prev.includes(l) ? prev.filter(x => x !== l) : [...prev, l]);
   };
 
-  const avancarInterno = () => setEtapaInterna(p => p + 1);
+  const avancarInterno = () => {
+    const nova = etapaInterna + 1;
+    setEtapaInterna(nova);
+    onSelect('etapaInternaDeco', nova); // Salva no estado global
+  };
+
   const confirmarTudo = () => {
     onSelect('flores', floresSim);
     if (floresSim) onSelect('locaisFlores', locaisFlores);
@@ -48,6 +53,7 @@ export default function Step17Flores({ onSelect, estadoAtual }) {
     onSelect('mobiliarioEspecial', mobiliario);
     onSelect('backdrop', backdrop);
     onSelect('tecidos', tecidos);
+    onSelect('etapaInternaDeco', 0); // Reseta ao concluir bloco
   };
 
   const etapas = [
