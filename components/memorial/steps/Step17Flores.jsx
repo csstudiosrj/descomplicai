@@ -1,10 +1,12 @@
 // Bloco E — Decoração: flores, iluminação, velas, mobiliário, backdrop, têxteis
 // Dependências diretas: React, PropTypes, Card, sugestoes.js
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import { sugerirFlores, sugerirIluminacao, sugerirVelas, sugerirMobiliario } from '../../../utils/sugestoes';
+
+const STORAGE_KEY = 'descomplicai-deco-interna';
 
 const OPCOES_ILUMINACAO = [
   { valor: 'Spots quentes', desc: 'Luz direcionada em tons amarelados, ideal para destacar elementos como altar, bolo e mesas.' },
@@ -15,10 +17,28 @@ const OPCOES_ILUMINACAO = [
   { valor: 'Luz natural', desc: 'Aproveitamento da luz do dia para cerimônias diurnas, sem necessidade de iluminação extra.' },
 ];
 
+function carregarEtapaLocal() {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? parseInt(raw, 10) || 0 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function salvarEtapaLocal(valor) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEY, String(valor));
+  } catch { /* ignore */ }
+}
+
 export default function Step17Flores({ onSelect, estadoAtual }) {
   const estilo = estadoAtual?.estilo;
-  // Inicializa etapa interna com o valor salvo no estado global
-  const [etapaInterna, setEtapaInterna] = useState(estadoAtual?.etapaInternaDeco || 0);
+  // Inicializa etapa interna do localStorage (persiste recarregamentos)
+  const [etapaInterna, setEtapaInterna] = useState(carregarEtapaLocal);
+
   const [floresSim, setFloresSim] = useState(estadoAtual?.flores ?? null);
   const [locaisFlores, setLocaisFlores] = useState(estadoAtual?.locaisFlores || []);
   const [iluminacao, setIluminacao] = useState(estadoAtual?.iluminacao || '');
@@ -41,7 +61,7 @@ export default function Step17Flores({ onSelect, estadoAtual }) {
   const avancarInterno = () => {
     const nova = etapaInterna + 1;
     setEtapaInterna(nova);
-    onSelect('etapaInternaDeco', nova); // Salva no estado global
+    salvarEtapaLocal(nova);
   };
 
   const confirmarTudo = () => {
@@ -53,7 +73,8 @@ export default function Step17Flores({ onSelect, estadoAtual }) {
     onSelect('mobiliarioEspecial', mobiliario);
     onSelect('backdrop', backdrop);
     onSelect('tecidos', tecidos);
-    onSelect('etapaInternaDeco', 0); // Reseta ao concluir bloco
+    // Limpa etapa interna ao sair do bloco
+    salvarEtapaLocal(0);
   };
 
   const etapas = [
