@@ -1,4 +1,4 @@
-// Bloco G — Cerimônia detalhada: entrada, música, padrinhos, crianças, rituais, saída
+// components/memorial/steps/Step30Entrada.jsx
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
@@ -36,11 +36,23 @@ export default function Step30Entrada({ onSelect, estadoAtual }) {
     padrinhos: estadoAtual?.padrinhos ?? null,
     criancasCerimonia: estadoAtual?.criancasCerimonia ?? null,
     papeisCriancas: estadoAtual?.papeisCriancas || [],
-    // Rituais simbólicos sempre começam vazios nesta etapa,
-    // para não conflitar com a escolha feita no Step07dSimbolica.
+    // iniciar sempre vazio, mas a seção só aparece se necessário
     rituaisSimbolicos: [],
     saidaNoivos: estadoAtual?.saidaNoivos || '',
   });
+
+  // Verifica se os rituais simbólicos já foram definidos em etapa anterior
+  const rituaisJaDefinidos =
+    Array.isArray(estadoAtual?.rituaisSimbolicos) &&
+    estadoAtual.rituaisSimbolicos.length > 0;
+
+  // Mostrar seção de rituais apenas se:
+  // - A cerimônia não for católica nem evangélica
+  // - E os rituais ainda não tiverem sido definidos
+  const mostrarRituais =
+    estadoAtual?.tipoCerimonia !== 'catolica' &&
+    estadoAtual?.tipoCerimonia !== 'evangelica' &&
+    !rituaisJaDefinidos;
 
   const toggleArray = (field, val) => {
     setDados(prev => ({
@@ -50,7 +62,12 @@ export default function Step30Entrada({ onSelect, estadoAtual }) {
   };
 
   const confirmar = () => {
-    Object.entries(dados).forEach(([k, v]) => onSelect(k, v));
+    // Se os rituais já estavam definidos, mantemos os do estado, não sobrescrevemos com vazio
+    const payload = { ...dados };
+    if (rituaisJaDefinidos) {
+      payload.rituaisSimbolicos = estadoAtual.rituaisSimbolicos;
+    }
+    Object.entries(payload).forEach(([k, v]) => onSelect(k, v));
   };
 
   const etapas = [
@@ -178,10 +195,10 @@ export default function Step30Entrada({ onSelect, estadoAtual }) {
       <ButtonAvancar onClick={avancar} disabled={dados.padrinhos === null || dados.criancasCerimonia === null} />
     </div>,
 
-    // G7-G8: Rituais e saída (COM DESCRIÇÕES NOS RITUAIS)
+    // G7-G8: Rituais e saída
     <div key="g7" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>Rituais e saída</h2>
-      {(estadoAtual?.tipoCerimonia !== 'catolica' && estadoAtual?.tipoCerimonia !== 'evangelica') && (
+      {mostrarRituais && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Rituais simbólicos</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
