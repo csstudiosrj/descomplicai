@@ -1,5 +1,5 @@
 // Bloco J — Vestuário e beleza: traje, atelier, acessórios, maquiagem/cabelo, padronização
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import { sugerirVestido } from '../../../utils/sugestoes';
@@ -7,16 +7,38 @@ import useEtapaInterna from '../../../hooks/useEtapaInterna';
 
 const CHAVES_ETAPA = ['estiloVestido', 'padronizarMadrinhas'];
 
-// Opções de vestido com descrições
-const VESTIDOS = {
-  'Clássico': 'Modelagem princesa ou evasê, com rendas e bordados delicados, véu longo.',
-  'Moderno': 'Corte reto ou sereia, tecidos lisos como crepe ou cetim, sem muitos detalhes.',
-  'Boho': 'Renda fluida, mangas soltas, saia evasê, coroa de flores ou cabelo solto.',
-  'Sereia': 'Justo até os joelhos e depois amplo, marcando a silhueta.',
-  'Princesa': 'Saia volumosa desde a cintura, corpete ajustado, muito romântico.',
-  'Minimalista': 'Linhas simples, sem bordados, tecido nobre e corte impecável.',
-  'Jumpsuit': 'Macacão de noiva, moderno e confortável para casamentos despojados.',
-  'Conjunto com capa': 'Saia ou calça com top e capa longa, para um visual impactante.',
+// Descrições para todos os estilos de vestido possíveis (referência para as sugestões)
+const DESCRICOES_VESTIDO = {
+  'Cauda longa': 'Vestido com cauda longa e imponente, clássico e elegante.',
+  'Renda francesa': 'Renda delicada e trabalhada, tradicionalmente usada em vestidos de noiva.',
+  'Cetim estruturado': 'Tecido nobre com caimento pesado, modelagem princesa ou evasê.',
+  'Renda boho': 'Renda mais solta e fluida, com mangas ou decote em V.',
+  'Cauda leve': 'Cauda curta ou removível, ideal para casamentos ao ar livre.',
+  'Tule natural': 'Tule macio e esvoaçante, com ar romântico e leve.',
+  'Vestido fluido em crepe': 'Tecido leve e solto, sem muitos volumes, moderno e confortável.',
+  'Detalhes em franja': 'Franjas aplicadas na saia ou mangas, com movimento e estilo boho.',
+  'Corte reto minimalista': 'Silhueta reta e clean, sem muitos detalhes, elegante na simplicidade.',
+  'Cetim pesado': 'Cetim encorpado com brilho sutil, modelagem arquitetônica.',
+  'Decote arquitetônico': 'Decote estruturado e moderno, com linhas geométricas.',
+  'Corte clean em crepe': 'Crepe de seda ou poliéster com corte impecável, sem rendas.',
+  'Sem renda': 'Visual totalmente liso, com foco na modelagem e no caimento.',
+  'Silhueta minimalista': 'Forma simples e elegante, com poucos detalhes visíveis.',
+  'Vestido em renda escura': 'Renda preta ou vinho para casamentos góticos ou noturnos.',
+  'Couro sintético': 'Toque moderno e ousado, para noivas que querem fugir do tradicional.',
+  'Detalhes em metal': 'Aplicações metálicas (prata, ouro) no corpete ou saia.',
+  'Vestido leve em chiffon': 'Chiffon esvoaçante, ideal para casamentos tropicais ou na praia.',
+  'Detalhes em renda floral': 'Renda com motivos florais, combinando com a temática tropical.',
+  'Princesa com saia volumosa': 'Corpete ajustado e saia ampla, o clássico vestido de princesa.',
+  'Renda de chantilly': 'Renda finíssima e delicada, típica de vestidos românticos.',
+  'Vestido escuro em renda': 'Renda preta ou bordô, para um visual dramático e gótico.',
+  'Detalhes em veludo': 'Veludo no corpete ou nas mangas, luxuoso e quente.',
+  'Cauda dramática': 'Cauda exageradamente longa, para uma entrada impactante.',
+  'Renda vintage': 'Renda de inspiração antiga, com mangas bufantes ou gola alta.',
+  'Detalhes em pérolas': 'Pérolas bordadas no vestido, acessório clássico e delicado.',
+  'Terno slim': 'Terno de corte ajustado, moderno e elegante.',
+  'Smoking moderno': 'Smoking com lapela de cetim, ideal para casamentos noturnos.',
+  'Traje de linho (se praia)': 'Linho leve e natural, perfeito para casamentos na praia ou diurnos.',
+  'Vestido complementar para segunda noiva': 'Modelagem que harmoniza com o vestido principal, podendo ser da mesma cor ou tecido.',
 };
 
 // Acessórios com descrições
@@ -52,13 +74,21 @@ const CABELOS = [
 ];
 
 export default function Step54Vestido({ onSelect, estadoAtual }) {
-  const estilo = estadoAtual?.estilo;
-  const perfil = estadoAtual?.perfilCasal;
+  const estilo = estadoAtual?.estilo || 'classico';
+  const perfil = estadoAtual?.perfilCasal || 'noiva-noivo';
   const { etapa: etapaInterna, avancar: avancar, storageKey } = useEtapaInterna(
     estadoAtual,
     CHAVES_ETAPA,
     'J'
   );
+
+  // Sugestões dinâmicas vindas do arquivo de sugestões
+  const opcoesVestido = useMemo(() => {
+    const sugestoes = sugerirVestido(estilo, perfil);
+    // Garante que retornamos um array, mesmo se for string única
+    return Array.isArray(sugestoes) ? sugestoes : [sugestoes];
+  }, [estilo, perfil]);
+
   const [dados, setDados] = useState({
     estiloVestido: estadoAtual?.estiloVestido || '',
     atelierContratado: estadoAtual?.atelierContratado ?? null,
@@ -70,18 +100,6 @@ export default function Step54Vestido({ onSelect, estadoAtual }) {
     padronizarMadrinhas: estadoAtual?.padronizarMadrinhas ?? null,
     padronizarPadrinhos: estadoAtual?.padronizarPadrinhos ?? null,
   });
-
-  // Sugestões de vestido baseadas no estilo e perfil
-  const opcoesVestido = (() => {
-    if (estilo && perfil) {
-      const sugeridos = sugerirVestido(estilo, perfil);
-      // Converte para array se for string única
-      const lista = Array.isArray(sugeridos) ? sugeridos : [sugeridos];
-      // Filtra apenas os que existem nas descrições
-      return lista.filter(v => VESTIDOS[v]);
-    }
-    return ['Clássico', 'Moderno', 'Boho'];
-  })();
 
   const mostrarBeleza = perfil !== 'dois-noivos';
 
@@ -96,7 +114,6 @@ export default function Step54Vestido({ onSelect, estadoAtual }) {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(storageKey);
     }
-    // Monta o campo atelierContratado como string para compatibilidade
     const atelierFinal = dados.atelierContratado === true ? dados.atelierNome : '';
     onSelect('atelierContratado', atelierFinal);
     Object.entries(dados).forEach(([k, v]) => {
@@ -175,6 +192,7 @@ export default function Step54Vestido({ onSelect, estadoAtual }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           {opcoesVestido.map(nome => {
             const isSelected = dados.estiloVestido === nome;
+            const descricao = DESCRICOES_VESTIDO[nome] || '';
             return (
               <button
                 key={nome}
@@ -215,9 +233,11 @@ export default function Step54Vestido({ onSelect, estadoAtual }) {
                   <div style={{ fontFamily: 'var(--font-body)', fontWeight: isSelected ? 'var(--font-semibold)' : 'var(--font-normal)', marginBottom: 'var(--space-1)' }}>
                     {nome}
                   </div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: '1.4' }}>
-                    {VESTIDOS[nome] || 'Estilo de vestido ou traje'}
-                  </div>
+                  {descricao && (
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: '1.4' }}>
+                      {descricao}
+                    </div>
+                  )}
                 </div>
               </button>
             );
