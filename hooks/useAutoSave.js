@@ -6,7 +6,6 @@ const STORAGE_KEY = 'descomplicai-memorial-draft';
 const DEBOUNCE_MS = 1500;
 
 function draftValido(dados) {
-  // Considera válido se existir e tiver pelo menos a primeira resposta (perfilCasal)
   return dados && dados.perfilCasal != null;
 }
 
@@ -16,9 +15,7 @@ export default function useAutoSave(estado, usuario = null) {
   const [temDraft, setTemDraft] = useState(false);
   const timerRef = useRef(null);
   const ultimoSalvoRef = useRef(null);
-  const salvandoRef = useRef(false);
 
-  // Verifica se existe draft no localStorage ao montar
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -32,7 +29,6 @@ export default function useAutoSave(estado, usuario = null) {
 
   const salvarLocal = useCallback((dados) => {
     if (typeof window === 'undefined') return;
-    // Só salva se houver progresso real (primeira pergunta respondida)
     if (!draftValido(dados)) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
@@ -47,43 +43,80 @@ export default function useAutoSave(estado, usuario = null) {
     setSalvandoAgora(true);
     setErro(null);
     try {
-      const { error } = await supabase
+      // 1. Obtém ou cria um evento para o usuário
+      const { data: eventos, error: errEventos } = await supabase
+        .from('eventos')
+        .select('id')
+        .eq('usuario_id', usuario.id)
+        .order('criado_em', { ascending: false })
+        .limit(1);
+
+      if (errEventos) throw errEventos;
+
+      let eventoId;
+      if (eventos && eventos.length > 0) {
+        eventoId = eventos[0].id;
+      } else {
+        // Cria um novo evento automaticamente
+        const { data: novoEvento, error: errNovo } = await supabase
+          .from('eventos')
+          .insert({
+            usuario_id: usuario.id,
+            nome_evento: dados.nomePessoa1 && dados.nomePessoa2
+              ? `${dados.nomePessoa1} & ${dados.nomePessoa2}`
+              : 'Novo evento',
+            status: 'rascunho',
+            plano: 'gratuito',
+            assinatura_ativa: false,
+          })
+          .select('id')
+          .single();
+
+        if (errNovo) throw errNovo;
+        eventoId = novoEvento.id;
+      }
+
+      // 2. Salva o estado do memorial na tabela "memoriais"
+      const { error: errMemorial } = await supabase
         .from('memoriais')
         .upsert(
           {
-            user_id: usuario.id,
-            estado: dados,
+            evento_id: eventoId,
+            dados: dados,
+            paleta: dados.paleta || [],
+            identidade: {
+              estilo: dados.estilo,
+              formalidade: dados.formalidade,
+            },
+            etapa_atual: dados.etapaAtual || 0,
             atualizado_em: new Date().toISOString(),
           },
-          { onConflict: 'user_id' }
+          { onConflict: 'evento_id' }
         );
-      if (error) throw error;
+
+      if (errMemorial) throw errMemorial;
     } catch (e) {
       setErro(e.message || 'Erro ao salvar no servidor');
-      salvarLocal(dados);
+      salvarLocal(dados); // fallback para localStorage
     } finally {
       setSalvandoAgora(false);
     }
   }, [usuario, salvarLocal]);
 
   const salvar = useCallback(() => {
-    if (!estado || salvandoRef.current) return;
-    // Não persiste se ainda não começou o questionário
-    if (!draftValido(estado)) return;
-
+    if (!estado || !draftValido(estado)) return;
     const serializado = JSON.stringify(estado);
     if (serializado === ultimoSalvoRef.current) return;
     ultimoSalvoRef.current = serializado;
 
-    if (!usuario) {
+    if (usuario) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        salvarSupabase(estado);
+      }, DEBOUNCE_MS);
+    } else {
       salvarLocal(estado);
-      return;
     }
-
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      salvarSupabase(estado);
-    }, DEBOUNCE_MS);
   }, [estado, usuario, salvarLocal, salvarSupabase]);
 
   const carregarDraft = useCallback(() => {
