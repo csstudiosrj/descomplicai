@@ -79,13 +79,8 @@ export default function MemorialOrchestrator() {
     estadoRef.current = estado;
   }, [estado]);
 
-  useEffect(() => {
-    if (estado.memorialConcluido) {
-      console.log('3. memorialConcluido = true, redirecionando...');
-      console.log('4. chamando router.push(/memorial/conclusao)');
-      router.push('/memorial/conclusao');
-    }
-  }, [estado.memorialConcluido, router]);
+  // Removido useEffect que redirecionava com memorialConcluido
+  // O redirecionamento agora é feito diretamente no Step60Fornecedores
 
   useEffect(() => {
     if (!usuario && !carregandoAuth && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
