@@ -1,43 +1,146 @@
-/**
- * API Route — Gera memorial completo via Claude AI
- * POST /api/ia/gerar-memorial
- * Body: { estado: Object (estado completo do memorial) }
- * Response: { memorial: string, fornecedores: string[] }
- */
+// pages/api/ia/gerar-memorial.js
+// Endpoint que recebe os dados do questionário e gera o memorial via Gemini
+// Dependências: lib/gemini.js
 
-import { montarMemorial } from '../../../utils/gerador-memorial';
-import { gerarMemorialIA } from '../../../lib/claude';
+import { gerarTextoGemini } from '../../../lib/gemini';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método não permitido. Use POST.' });
+    return res.status(405).json({ erro: 'Método não permitido' });
+  }
+
+  const dados = req.body;
+
+  if (!dados || Object.keys(dados).length === 0) {
+    return res.status(400).json({ erro: 'Dados do memorial não fornecidos' });
   }
 
   try {
-    const { estado } = req.body;
-
-    if (!estado || typeof estado !== 'object') {
-      return res.status(400).json({ error: 'Estado do memorial é obrigatório.' });
-    }
-
-    // Validação mínima — precisa ter pelo menos estilo e data
-    if (!estado.estilo || !estado.dataEvento) {
-      return res.status(400).json({ error: 'Memorial incompleto. Complete pelo menos estilo e data.' });
-    }
-
-    const dadosMemorial = montarMemorial(estado);
-    const resultado = await gerarMemorialIA(dadosMemorial);
-
-    return res.status(200).json({
-      sucesso: true,
-      memorial: resultado.memorial,
-      fornecedores: resultado.fornecedores,
+    const prompt = montarPromptMemorial(dados);
+    const memorial = await gerarTextoGemini(prompt, 4000);
+    
+    return res.status(200).json({ 
+      sucesso: true, 
+      memorial 
     });
+
   } catch (erro) {
-    console.error('[API gerar-memorial]', erro);
-    return res.status(500).json({
-      sucesso: false,
-      erro: erro.message || 'Erro ao gerar memorial. Tente novamente.',
+    console.error('Erro ao gerar memorial:', erro);
+    return res.status(500).json({ 
+      erro: 'Erro ao gerar memorial',
+      detalhe: erro.message 
     });
   }
+}
+
+function montarPromptMemorial(dados) {
+  const {
+    perfilCasal,
+    nomePessoa1,
+    nomePessoa2,
+    dataEvento,
+    cidadeEvento,
+    totalConvidados,
+    faixaOrcamento,
+    tipoCerimonia,
+    tipoLocal,
+    horarioCasamento,
+    estilo,
+    formalidade,
+    paleta,
+    flores,
+    iluminacao,
+    velas,
+    mobiliarioEspecial,
+    tipoJantar,
+    tipoBar,
+    musicaFesta,
+    atividadesEntretenimento,
+    formatoConvite,
+    estiloVestido,
+  } = dados;
+
+  const nomeCasal = nomePessoa1 && nomePessoa2 
+    ? `${nomePessoa1} e ${nomePessoa2}` 
+    : 'o casal';
+
+  const perfilTexto = {
+    'noiva-noivo': 'noiva e noivo',
+    'duas-noivas': 'duas noivas',
+    'dois-noivos': 'dois noivos',
+    'nao-especificar': 'casal'
+  }[perfilCasal] || 'casal';
+
+  const convidadosTexto = {
+    'micro': 'até 30 pessoas (micro wedding)',
+    'intimo': '30 a 80 pessoas',
+    'medio': '80 a 150 pessoas',
+    'grande': '150 a 300 pessoas',
+    'mega': 'acima de 300 pessoas'
+  }[totalConvidados] || totalConvidados;
+
+  return `Você é um especialista em casamentos brasileiros com 20 anos de experiência, conhecido pela capacidade de criar memoriais únicos e detalhados que capturam perfeitamente a essência de cada casal.
+
+Com base nas informações abaixo, crie um memorial completo, detalhado e personalizado para ${nomeCasal} (${perfilTexto}). O tom deve ser elegante, acolhedor e específico. Nunca genérico — use os detalhes fornecidos para criar algo verdadeiramente único.
+
+DADOS DO CASAMENTO:
+- Casal: ${nomeCasal} (${perfilTexto})
+- Data: ${dataEvento || 'a definir'}
+- Local: ${cidadeEvento || 'a definir'}, Brasil
+- Número de convidados: ${convidadosTexto}
+- Orçamento: ${faixaOrcamento || 'a definir'}
+- Tipo de cerimônia: ${tipoCerimonia || 'a definir'}
+- Tipo de espaço: ${tipoLocal || 'a definir'}
+- Horário: ${horarioCasamento || 'a definir'}
+- Estilo visual: ${estilo || 'a definir'}
+- Formalidade: ${formalidade || 'a definir'}
+- Paleta de cores: ${Array.isArray(paleta) ? paleta.join(', ') : (paleta || 'a definir')}
+- Flores: ${flores || 'a definir'}
+- Iluminação: ${iluminacao || 'a definir'}
+- Velas: ${velas || 'não'}
+- Mobiliário especial: ${mobiliarioEspecial || 'padrão'}
+- Tipo de jantar: ${tipoJantar || 'a definir'}
+- Bar: ${tipoBar || 'a definir'}
+- Música da festa: ${musicaFesta || 'a definir'}
+- Atividades: ${Array.isArray(atividadesEntretenimento) ? atividadesEntretenimento.join(', ') : 'nenhuma especial'}
+- Convites: ${formatoConvite || 'a definir'}
+- Traje principal: ${estiloVestido || 'a definir'}
+
+Gere o memorial completo em Markdown com EXATAMENTE estas seções:
+
+## Identidade Visual
+Descreva a paleta de cores, o estilo geral, a atmosfera e a identidade visual do casamento. Seja específico sobre como as cores e o estilo se manifestarão em cada elemento.
+
+## Cerimônia
+Descreva o ambiente, o roteiro sugerido, a música, os elementos decorativos e os momentos especiais da cerimônia. Adapte para o tipo de cerimônia escolhida.
+
+## Decoração
+Descreva em detalhes as flores por localização (altar, corredor, mesas, entrada), a iluminação, as velas quando aplicável, o mobiliário, os tecidos e o backdrop. Seja visual e específico.
+
+## Mesa Posta
+Descreva toalha, louças, talheres, taças, centro de mesa e guardanapos de forma coerente com a paleta e o estilo definidos.
+
+## Alimentação e Bebidas
+Descreva o coquetel de entrada, o jantar, o bolo, a mesa de doces e o bar de forma adequada ao estilo e ao orçamento.
+
+## Entretenimento
+Descreva a música da festa, as atividades especiais e a energia geral da celebração.
+
+## Vestuário e Beleza
+Descreva o estilo do traje principal, os acessórios sugeridos, o estilo de maquiagem e cabelo coerentes com o estilo visual do casamento.
+
+## Papelaria e Identidade
+Descreva os convites, a sinalização do evento e a identidade visual dos materiais impressos.
+
+## Fornecedores Necessários
+Liste todos os tipos de fornecedores necessários para este casamento, organizados por categoria, com uma nota sobre o que procurar em cada um.
+
+## Linha do Tempo
+Crie um cronograma mês a mês desde agora até o dia do casamento, com as principais tarefas e contratações a fazer em cada período.
+
+## Checklist de Decisões Pendentes
+Liste as principais decisões que ainda precisam ser tomadas, organizadas por urgência.
+
+## Estimativa de Orçamento por Categoria
+Com base no orçamento declarado de ${faixaOrcamento}, distribua percentualmente o orçamento pelas principais categorias, com valores estimados em reais.`;
 }
