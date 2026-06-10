@@ -43,21 +43,27 @@ export default function useAutoSave(estado, usuario = null) {
     setSalvandoAgora(true);
     setErro(null);
     try {
-      // 1. Obtém ou cria um evento para o usuário
-      const { data: eventos, error: errEventos } = await supabase
+      // DEBUG TEMPORÁRIO solicitado pelo Claude
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('usuario logado:', session?.user?.id);
+
+      const { data, error } = await supabase
         .from('eventos')
         .select('id')
-        .eq('usuario_id', usuario.id)
+        .eq('usuario_id', session?.user?.id)
         .order('criado_em', { ascending: false })
         .limit(1);
 
-      if (errEventos) throw errEventos;
+      console.log('resultado:', data);
+      console.log('erro:', error);
+      // FIM DO DEBUG
+
+      if (error) throw error;
 
       let eventoId;
-      if (eventos && eventos.length > 0) {
-        eventoId = eventos[0].id;
+      if (data && data.length > 0) {
+        eventoId = data[0].id;
       } else {
-        // Cria um novo evento automaticamente
         const { data: novoEvento, error: errNovo } = await supabase
           .from('eventos')
           .insert({
@@ -76,7 +82,6 @@ export default function useAutoSave(estado, usuario = null) {
         eventoId = novoEvento.id;
       }
 
-      // 2. Salva o estado do memorial na tabela "memoriais"
       const { error: errMemorial } = await supabase
         .from('memoriais')
         .upsert(
@@ -97,7 +102,7 @@ export default function useAutoSave(estado, usuario = null) {
       if (errMemorial) throw errMemorial;
     } catch (e) {
       setErro(e.message || 'Erro ao salvar no servidor');
-      salvarLocal(dados); // fallback para localStorage
+      salvarLocal(dados);
     } finally {
       setSalvandoAgora(false);
     }
