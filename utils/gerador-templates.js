@@ -1,8 +1,8 @@
 // utils/gerador-templates.js
-// Gerador interno de memorial — sem dependência de API externa
-// Biblioteca de 60+ memoriais reais gerados por 7 IAs diferentes
+// Gerador interno de memorial — templates extraídos de 60+ memoriais reais
 
 const TEMPLATES_POR_ESTILO = {
+    // ========== CLÁSSICO ==========
     classico: {
       identidade: [
         "A identidade visual do casamento de {{NOME_CASAL}} respira a atmosfera de um jardim secreto ao entardecer. A paleta {{PALETA}} nasce do desejo de unir pureza e profundidade. O estilo é clássico no que ele tem de mais tátil: rendas de algodão, veludos, papéis texturizados e a sensação de que o tempo desacelera.",
@@ -57,16 +57,128 @@ const TEMPLATES_POR_ESTILO = {
         "Buffet e open bar: 30%. Decoração e flores: 22%. Música e entretenimento: 12%. Vestuário e beleza: 8%. Fotografia e vídeo: 10%. Papelaria: 5%. Cerimonialista: 5%. Reserva para imprevistos: 8%."
       ]
     },
-    // Estilos adicionais serão populados com a mesma estrutura
-    // (rústico, boho, moderno, minimalista, industrial, tropical, romântico, gótico suave, vintage)
+  
+    // ========== RÚSTICO ==========
+    rustico: {
+      identidade: [
+        "A identidade visual de {{NOME_CASAL}} é uma homenagem à terra. A paleta {{PALETA}} evoca o interior do Brasil, com texturas de madeira recuperada, fibras naturais e o calor da cerâmica artesanal. A tipografia é serifada e robusta, inspirada em rótulos de produtos coloniais.",
+        "O estilo rústico se revela na paleta {{PALETA}} que remete às paisagens do campo. A identidade visual utiliza papel kraft, juta e linho cru, transmitindo autenticidade e aconchego. Detalhes em cobre envelhecido aparecem sutilmente, adicionando sofisticação terrosa ao conjunto.",
+        "A comunicação visual do casamento de {{NOME_CASAL}} abraça o natural: madeira de demolição, cerâmicas artesanais e fibras como ráfia e sisal. A paleta {{PALETA}} é suave e orgânica, como a terra, a palha e as folhas de oliveira."
+      ],
+      cerimonia: [
+        "A cerimônia será realizada em {{LOCAL}}, ao ar livre, durante o {{HORARIO}}. O altar é uma estrutura de troncos de eucalipto entrelaçados com flores do campo e ramos de oliveira. O caminho é forrado de tapetes de sisal, ladeado por velas em lanternas de ferro e bacias de cerâmica com velas flutuantes.",
+        "Sob a luz do {{HORARIO}}, a cerimônia {{CERIMONIA}} acontece em {{LOCAL}} com um altar de madeira rústica coberto por tecido de linho cru. Os convidados sentam-se em bancos de madeira ou cadeiras de palha, próximos à natureza. A música é tocada por um violonista e um violoncelista, em arranjos acústicos que ecoam pelo campo.",
+        "A celebração em {{LOCAL}} é marcada pela simplicidade e beleza natural. O altar é composto por uma mesa de madeira de demolição com arranjos de flores secas, trigo e lavanda. O {{HORARIO}} banha o espaço com luz dourada, e os noivos trocam votos sob um dossel de galhos e folhagens."
+      ],
+      decoracao: [
+        "A decoração é uma celebração do natural. Mesas de madeira maciça sem toalhas, expondo veios e marcas do tempo. Centros de mesa com flores do campo, ramos de eucalipto e velas em potes de vidro reciclado. Pendentes de macramê sustentam velas, e gambiarras de lâmpadas de filamento cruzam o terreiro.",
+        "A decoração rústica abraça imperfeições charmosas: cadeiras desencontradas, almofadas de linho, mantas de patchwork. Arranjos assimétricos combinam flores frescas com elementos secos como capim-dos-pampas. {{ILUMINACAO}} criam uma atmosfera íntima e acolhedora.",
+        "O espaço se transforma em um cenário bucólico com mobiliário de madeira rústica, centros de mesa com flores silvestres em vasos de barro, e iluminação de lampiões e velas. A natureza é a protagonista, com feixes de trigo seco e alfazema amarrados em colunas de madeira."
+      ],
+      mesaPosta: [
+        "A mesa posta é uma homenagem à simplicidade nobre. Sousplats de madeira natural, pratos de cerâmica artesanal em tons de areia, talheres de aço inoxidável com cabos de madeira. Guardanapos de linho cru amarrados com cordão de juta e raminhos de alecrim fresco.",
+        "Mesas longas de madeira recuperada sem toalhas, com corredores de folhas de eucalipto. Louça de barro esmaltado em tons terrosos, copos de vidro reciclado e talheres vintage. Cada lugar tem um cartão escrito à mão em papel kraft com um raminho de lavanda.",
+        "A mesa posta é despojada e autêntica: pratos de faiança com esmalte craquelado, talheres de aço escovado, copos de vidro grosso e guardanapos tingidos com pigmentos naturais. O marcador de lugar é uma plaquinha de madeira queimada com o nome pirografado."
+      ],
+      alimentacao: [
+        "O jantar valoriza a cozinha afetiva: fogão a lenha montado no local, panelas de barro com frango caipira, tutu de feijão, arroz com pequi e uma ilha de queijos artesanais. Saladas frescas da horta orgânica e pães de fermentação natural completam a experiência.",
+        "As estações gastronômicas oferecem uma viagem pela culinária regional: carnes na chapa, massas frescas, saladas orgânicas e uma mesa de queijos e embutidos locais. O bar de drinks autorais cria coquetéis com ingredientes da estação.",
+        "Buffet livre com comida caseira servida em panelas de barro, pães artesanais, queijos da região e doces tradicionais. Bebidas incluem espumante, sucos naturais e drinks à base de cachaça artesanal."
+      ],
+      entretenimento: [
+        "A música fica por conta de {{MUSICA}}, com repertório que mescla folk, MPB e samba de raiz. Uma fogueira central é acesa ao cair da noite, rodeada por puffs e mantas. {{ATIVIDADES}} completam o clima de festa no campo.",
+        "{{MUSICA}} comandam a pista com brasilidades e sucessos dançantes. {{ATIVIDADES}} garante diversão aos convidados. O terreiro se transforma naturalmente em pista de dança sob as estrelas.",
+        "A animação é orgânica: {{MUSICA}} toca durante toda a festa, enquanto {{ATIVIDADES}}. Ao redor de uma fogueira, os convidados assam marshmallows e ouvem causos, criando memórias afetivas."
+      ],
+      vestuario: [
+        "A noiva usa um vestido fluido com mangas de renda, cabelo semi-preso com flores do campo. O noivo veste terno de linho em tom areia, sem gravata, com sapatos de couro camurça. A maquiagem é natural, com pele iluminada e blush terracota.",
+        "Trajes leves e naturais: a noiva de vestido boho com bordados florais, o noivo de suspensórios e camisa de algodão cru. Ambos usam acessórios artesanais e flores na lapela ou no cabelo.",
+        "O casal adota o estilo rústico-chique: ela com vestido de renda e botas de couro, ele com terno slim em tons terrosos. A beleza é natural, com cabelos soltos e maquiagem suave em tons de terra."
+      ],
+      papelaria: [
+        "Convites em papel kraft com impressão letterpress em tons terrosos, envelopes forrados com papel estampado floral discreto. Menus em placas de madeira fina gravadas a laser. Place cards em pedras lisas pintadas manualmente.",
+        "A papelaria usa papel reciclado com impressão botânica (técnica de cianotipia com folhas de oliveira), envolto em tecido de algodão cru amarrado com ráfia. O site do casal traz timeline com ilustrações aquareladas.",
+        "Convites híbridos: versão física em papel kraft com letterpress e versão digital animada com ilustrações florais. Tags de agradecimento em papel semente que pode ser plantado após o evento."
+      ],
+      fornecedores: [
+        "Cerimonialista, Espaço ao ar livre, Buffet de cozinha regional, Decoração com flores do campo, Iluminação rústica, Música ao vivo, Fotografia documental, Mobiliário de madeira, Papelaria artesanal."
+      ],
+      linhaTempo: [
+        "14 meses antes: escolha do sítio e definição da data. 12 meses: fechar cerimonialista, buffet e iluminação. 9 meses: produção artesanal da papelaria e lembranças. 6 meses: prova do vestido e terno; degustação do buffet. 4 meses: envio dos convites. 1 mês: confirmação de presenças e visita técnica."
+      ],
+      checklist: [
+        "Confirmar a data na estação seca. Escolher as espécies de flores do campo que estarão na safra. Contratar banheiros ecológicos e gerador. Preparar plano B para chuva. Personalizar as mantas para os convidados."
+      ],
+      orcamento: [
+        "Espaço e infraestrutura: 15%. Buffet e bebidas: 25%. Decoração e flores: 20%. Música e entretenimento: 8%. Vestuário e beleza: 8%. Fotografia e vídeo: 10%. Papelaria artesanal: 4%. Cerimonialista: 5%. Reserva: 5%."
+      ]
+    },
+  
+    // ========== BOHO ==========
+    boho: {
+      identidade: [
+        "A identidade visual de {{NOME_CASAL}} é um poema de liberdade e autenticidade. A paleta {{PALETA}} evoca pores do sol e texturas naturais: macramê, tapeçarias, franjas e aquarelas florais. A tipografia é orgânica e fluida, como se escrita à mão pela natureza.",
+        "O estilo boho se traduz na paleta {{PALETA}} com uma atmosfera artística e descontraída. Elementos gráficos incluem ilustrações botânicas, penas estilizadas e padrões geométricos suaves. Texturas de linho lavado, rattan e papel reciclado dominam a comunicação.",
+        "A celebração de {{NOME_CASAL}} tem identidade livre e criativa, ancorada na paleta {{PALETA}}. As cores remetem a terras distantes e mercados de artesanato, com tipografia manuscrita e detalhes em aquarela que transmitem movimento e leveza."
+      ],
+      cerimonia: [
+        "A cerimônia será realizada em {{LOCAL}}, durante o {{HORARIO}}, com um altar assimétrico de madeira e macramê, adornado com flores secas, capim-dos-pampas e fitas esvoaçantes. Os convidados sentam-se em puffs, almofadas e bancos de madeira, próximos ao chão e à natureza.",
+        "Em {{LOCAL}}, sob a luz do {{HORARIO}}, a cerimônia {{CERIMONIA}} acontece em um círculo de pedras e tapetes persas. O arco é uma instalação de galhos secos e flores silvestres. A música é acústica, com violão, harpa e vozes suaves.",
+        "O ritual em {{LOCAL}} é íntimo e simbólico, com um altar montado sobre tapetes e almofadas. Flores secas e folhagens pendem de uma estrutura de bambu. Os noivos entram descalços, acompanhados por música folk instrumental."
+      ],
+      decoracao: [
+        "A decoração é uma explosão de texturas e camadas: lounges com puffs de couro e algodão cru, mesas baixas de madeira com tampos de mosaico, tapeçarias penduradas como cenário. {{ILUMINACAO}} criam uma atmosfera mágica e envolvente.",
+        "Arranjos desconstruídos de flores secas e frescas em vasos de cerâmica artesanal e vidros coloridos. Macramês suspensos sustentam velas e plantas. O espaço é preenchido por tapetes sobrepostos, almofadas bordadas e lanternas marroquinas.",
+        "A cenografia boho mescla elementos étnicos e naturais: tendas de tecido leve, sonhos de filtro dos sonhos, cadeiras de vime e muita vegetação. A iluminação é composta por {{ILUMINACAO}} que dançam com o vento."
+      ],
+      mesaPosta: [
+        "A mesa posta é um convite à descontração: pratos de cerâmica com esmalte irregular, talheres vintage garimpados, copos coloridos de vidro soprado. Guardanapos de algodão com estampas étnicas e argolas de madeira ou miçangas.",
+        "Mesas comunitárias de madeira clara, sem toalhas, decoradas com runners de macramê. Louça mix and match, taças de vidro colorido e sousplats de palha. Pequenos vasos com flores secas e velas flutuantes em potes de vidro.",
+        "Cada lugar tem um prato artesanal diferente, talheres com cabos de madrepérola e guardanapos tingidos artesanalmente. O centro de mesa é uma composição de garrafas coloridas com flores silvestres e velas em castiçais de latão."
+      ],
+      alimentacao: [
+        "Estações gastronômicas com comida de rua gourmet: tacos, espetinhos, mini bowls de açaí. Drinks autorais com ingredientes botânicos e frutas tropicais. Tudo servido em louças despojadas e copos de cerâmica.",
+        "O menu é uma viagem de sabores: finger foods criativos, tábuas de queijos e frios, e uma estação de chás e infusões. O bar oferece coquetéis com ervas frescas e flores comestíveis, servidos em taças de vidro colorido.",
+        "Comida afetiva em formato de coquetel estendido: mini porções de pratos caseiros, pães artesanais e antepastos. Bebidas incluem limonadas gourmet, espumantes e drinks à base de gin com infusões de hibisco."
+      ],
+      entretenimento: [
+        "{{MUSICA}} toca uma seleção de folk, indie e world music. {{ATIVIDADES}} garantem a diversão. Uma área de descanso com redes e almofadas convida à contemplação das estrelas.",
+        "A pista é livre e animada por {{MUSICA}}. {{ATIVIDADES}} registra momentos espontâneos. Um varal de fotos polaroid e uma mesa de desejos com fitas coloridas envolvem os convidados.",
+        "Música ambiente com {{MUSICA}} cria o clima perfeito. {{ATIVIDADES}} diverte adultos e crianças. Fogueira controlada e marshmallows encerram a noite com sabor de infância."
+      ],
+      vestuario: [
+        "A noiva veste um vestido fluido de renda com mangas amplas, coroa de flores secas e sandálias rasteiras. O noivo usa camisa de linho aberta, calça de sarja e alpargatas. Ambos têm estilo despojado e romântico.",
+        "Trajes leves e cheios de personalidade: a noiva de macacão de renda ou vestido assimétrico, o noivo de colete e gravata borboleta despojada. Acessórios artesanais, como colares de sementes e pulseiras de couro.",
+        "O casal adota o boho-chic: ela com vestido longo estampado e chapéu de palha, ele com terno de linho claro e flor na lapela. Maquiagem natural, cabelos soltos com ondas e tiaras de flores."
+      ],
+      papelaria: [
+        "Convites em papel texturizado com aquarelas florais, envelopes de papel craft com lacre de cera colorida. Menus em formato de leque e place cards em folhas secas com caligrafia manual.",
+        "Convite digital animado com ilustrações botânicas e trilha sonora acústica. A identidade se estende a tags de agradecimento, plaquinhas de mesa e um mapa ilustrado do local.",
+        "Papelaria ecológica: papel semente que pode ser plantado, amarrado com barbante de algodão. Convites em formato de marcador de livro com franjas e contas de madeira."
+      ],
+      fornecedores: [
+        "Cerimonialista, Espaço ao ar livre, Decorador boho, Florista especializado em flores secas, Serviço de coquetel, Bartender de drinks autorais, Música acústica, Fotógrafo fine art, Mobiliário lounge, Papelaria artesanal."
+      ],
+      linhaTempo: [
+        "12 meses antes: reserva do espaço e definição do conceito. 9 meses: fechamento dos fornecedores principais. 6 meses: escolha do vestido e produção da papelaria. 4 meses: envio dos convites. 2 meses: degustação e ajustes finais. 1 mês: confirmação de presenças."
+      ],
+      checklist: [
+        "Definir o plano B em caso de chuva. Selecionar as flores secas da estação. Confirmar a curadoria musical com o DJ/banda. Testar a iluminação de velas e fairy lights. Organizar transporte para convidados."
+      ],
+      orcamento: [
+        "Espaço e estrutura: 18%. Alimentação e bebidas: 28%. Decoração e flores: 20%. Música e entretenimento: 10%. Vestuário e beleza: 8%. Fotografia e vídeo: 8%. Papelaria: 3%. Cerimonialista: 5%."
+      ]
+    },
+  
+    // ========== MODERNO ==========
+    // ... (a ser preenchido)
   };
   
-  // Função auxiliar: escolhe um item aleatório de um array
+  // Funções auxiliares
   function aleatorio(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
   }
   
-  // Placeholders e seus valores extraídos do estado
   function preencherPlaceholders(texto, estado) {
     const nomeCasal = estado.nomePessoa1 && estado.nomePessoa2
       ? `${estado.nomePessoa1} e ${estado.nomePessoa2}`
@@ -102,18 +214,12 @@ const TEMPLATES_POR_ESTILO = {
       .replace(/\{\{VESTIDO\}\}/g, estado.estiloVestido || 'traje principal');
   }
   
-  // Fallback: templates genéricos quando o estilo não tem templates específicos
   function getTemplatesGenéricos() {
     const estilos = Object.keys(TEMPLATES_POR_ESTILO);
     const estiloAleatorio = aleatorio(estilos);
     return TEMPLATES_POR_ESTILO[estiloAleatorio];
   }
   
-  /**
-   * Gera o memorial completo usando templates internos
-   * @param {object} estado - Estado completo do memorial
-   * @returns {string} Memorial formatado em Markdown
-   */
   export function gerarMemorialLocal(estado) {
     if (!estado) return '';
   
