@@ -19,27 +19,27 @@ export default function ConclusaoPage() {
   const { pagamento: statusPagamento, tipo: tipoProduto, concluido } = router.query;
 
   useEffect(() => {
-    // Tenta recuperar estado do localStorage
+    // 1. Tenta carregar estado do localStorage
     try {
       const raw = localStorage.getItem('descomplicai-memorial-draft');
       if (raw) {
         const draft = JSON.parse(raw);
         if (draft && draft.perfilCasal) {
           carregarEstado(draft);
-          return;
+          return; // estado carregado, o próximo useEffect gera o memorial
         }
       }
     } catch (e) { /* ignora */ }
 
-    // Se não encontrou e não veio da conclusão, redireciona
+    // 2. Se não encontrou estado e a página foi acessada sem concluir, volta
     if (!concluido) {
       router.replace('/memorial');
       return;
     }
 
-    // Se veio da conclusão mas não tem estado, mostra erro
+    // 3. Se tem concluido mas não achou estado, erro
     setStatus('erro');
-    setErro('Dados do memorial não encontrados. Tente finalizar novamente.');
+    setErro('Dados do memorial não encontrados. Por favor, finalize novamente.');
   }, []);
 
   useEffect(() => {
@@ -73,6 +73,7 @@ export default function ConclusaoPage() {
   const iniciarPagamento = async (tipo) => {
     setPagando(true);
     try {
+      // Garante que o estado atual está salvo
       localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
 
       const resposta = await fetch('/api/pagamento/criar', {

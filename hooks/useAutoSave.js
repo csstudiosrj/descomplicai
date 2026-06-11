@@ -14,7 +14,7 @@ export default function useAutoSave(estado, usuario = null) {
   const timerRef = useRef(null);
   const ultimoSalvoRef = useRef(null);
 
-  // Verifica localStorage ao montar (síncrono, sem espera)
+  // Detecta draft no localStorage ao montar
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -43,7 +43,6 @@ export default function useAutoSave(estado, usuario = null) {
     if (serializado === ultimoSalvoRef.current) return;
     ultimoSalvoRef.current = serializado;
 
-    // Debounce para não salvar a cada digitação
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       salvarLocal(estado);

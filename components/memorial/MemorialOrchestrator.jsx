@@ -73,28 +73,30 @@ export default function MemorialOrchestrator() {
   const [transicionando, setTransicionando] = useState(false);
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
+  const draftJaOferecido = useRef(false); // evita repetir modal
 
   const estadoRef = useRef(estado);
   useEffect(() => {
     estadoRef.current = estado;
   }, [estado]);
 
-  // Oferece modal para anônimos com draft
+  // Restauração automática APENAS quando detectamos um draft e o estado ainda está inicial
   useEffect(() => {
-    if (!usuario && !carregandoAuth && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
-      setOferecerDraft(true);
-    }
-  }, [usuario, carregandoAuth, temDraft, estado.etapaAtual, estado.perfilCasal]);
+    // Ignora enquanto auth estiver carregando ou se já passou da etapa 0
+    if (carregandoAuth || estado.etapaAtual !== 0 || estado.perfilCasal) return;
 
-  // Restaura automaticamente para logados com draft
-  useEffect(() => {
-    if (usuario && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
+    if (usuario && temDraft) {
+      // Logado: restaura sem perguntar
       const draft = carregarDraft();
       if (draft) {
         carregarEstado(draft);
       }
+    } else if (!usuario && temDraft && !draftJaOferecido.current) {
+      // Anônimo: exibe modal uma única vez
+      setOferecerDraft(true);
+      draftJaOferecido.current = true;
     }
-  }, [usuario, temDraft, estado.etapaAtual, estado.perfilCasal, carregarDraft, carregarEstado]);
+  }, [carregandoAuth, usuario, temDraft, estado.etapaAtual, estado.perfilCasal, carregarDraft, carregarEstado]);
 
   const etapasTotais = calcularEtapasTotais(estado);
   const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
@@ -124,7 +126,7 @@ export default function MemorialOrchestrator() {
 
   const handleConcluirMemorial = useCallback((fornecedores) => {
     setRespostas('fornecedoresNecessarios', fornecedores);
-    // Salva imediatamente no localStorage antes de redirecionar
+    // Força salvamento imediato do estado atual no localStorage
     localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estadoRef.current));
     router.push('/memorial/conclusao?concluido=1');
   }, [setRespostas, router]);
@@ -143,6 +145,7 @@ export default function MemorialOrchestrator() {
 
   const handleDescartarDraft = () => {
     limparDraft();
+    draftJaOferecido.current = false; // permite que o modal apareça novamente se necessário
     setOferecerDraft(false);
   };
 
