@@ -1,12 +1,10 @@
 // Bloco K — Confirmação da lista automática de fornecedores gerada pelo algoritmo
 import React, { useMemo } from 'react';
-import { useRouter } from 'next/router';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import { listarFornecedoresNecessarios } from '../../../utils/gerador-memorial';
 
-export default function Step60Fornecedores({ onSelect, estadoAtual }) {
-  const router = useRouter();
+export default function Step60Fornecedores({ onSelect, onConcluir, estadoAtual }) {
   const fornecedores = useMemo(
     () => listarFornecedoresNecessarios(estadoAtual),
     [estadoAtual]
@@ -23,10 +21,10 @@ export default function Step60Fornecedores({ onSelect, estadoAtual }) {
 
   const handleConfirmar = (event) => {
     event.preventDefault();
+    // Apenas salva os dados, sem disparar o avanço de etapa
     onSelect('fornecedoresNecessarios', fornecedores);
-    onSelect('memorialConcluido', true);
-    // Redirecionamento direto, sem depender de useEffect
-    router.push('/memorial/conclusao');
+    // Usa a prop separada para redirecionar para a conclusão
+    if (onConcluir) onConcluir();
   };
 
   return (
@@ -160,6 +158,7 @@ export default function Step60Fornecedores({ onSelect, estadoAtual }) {
 
 Step60Fornecedores.propTypes = {
   onSelect: PropTypes.func.isRequired,
+  onConcluir: PropTypes.func,
   estadoAtual: PropTypes.object,
 };
 

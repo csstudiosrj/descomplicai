@@ -79,15 +79,14 @@ export default function MemorialOrchestrator() {
     estadoRef.current = estado;
   }, [estado]);
 
-  // Removido useEffect que redirecionava com memorialConcluido
-  // O redirecionamento agora é feito diretamente no Step60Fornecedores
-
+  // Restauração automática para anônimos
   useEffect(() => {
     if (!usuario && !carregandoAuth && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
       setOferecerDraft(true);
     }
   }, [usuario, carregandoAuth, temDraft, estado.etapaAtual, estado.perfilCasal]);
 
+  // Restauração automática para logados
   useEffect(() => {
     if (usuario && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
       const draft = carregarDraft();
@@ -123,6 +122,11 @@ export default function MemorialOrchestrator() {
       setTransicionando(false);
     }, 220);
   }, [setRespostas, irParaEtapa, usuario]);
+
+  // Função de conclusão passada para o Step final
+  const handleConcluirMemorial = useCallback(() => {
+    router.push('/memorial/conclusao');
+  }, [router]);
 
   const handleBack = useCallback(() => {
     if (estado.historicoEtapas.length > 0) voltarEtapa();
@@ -160,7 +164,11 @@ export default function MemorialOrchestrator() {
 
         <main style={{ flex: 1, overflowY: 'auto', paddingTop: 'var(--space-6)', paddingBottom: 'var(--space-4)', paddingLeft: 'var(--space-4)', paddingRight: 'var(--space-4)' }}>
           <React.Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><span style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando...</span></div>}>
-            <StepComponent onSelect={handleSelect} estadoAtual={estado} />
+            <StepComponent
+              onSelect={handleSelect}
+              estadoAtual={estado}
+              onConcluir={handleConcluirMemorial}
+            />
           </React.Suspense>
         </main>
 
