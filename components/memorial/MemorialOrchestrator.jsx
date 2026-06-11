@@ -79,9 +79,23 @@ export default function MemorialOrchestrator() {
     estadoRef.current = estado;
   }, [estado]);
 
+  // Logs de depuração
+  useEffect(() => {
+    console.log('[Orchestrator] estado:', {
+      usuario: !!usuario,
+      carregandoAuth,
+      temDraft,
+      etapaAtual: estado.etapaAtual,
+      perfilCasal: estado.perfilCasal,
+      oferecerDraft,
+      mostrandoLogin,
+    });
+  }, [usuario, carregandoAuth, temDraft, estado.etapaAtual, estado.perfilCasal, oferecerDraft, mostrandoLogin]);
+
   // Restauração automática para anônimos: exibe modal "Continuar onde parou?"
   useEffect(() => {
     if (!usuario && !carregandoAuth && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
+      console.log('[Orchestrator] Exibindo modal de draft para anônimo');
       setOferecerDraft(true);
     }
   }, [usuario, carregandoAuth, temDraft, estado.etapaAtual, estado.perfilCasal]);
@@ -92,9 +106,11 @@ export default function MemorialOrchestrator() {
       if (!usuario || !temDraft) return;
       if (estado.etapaAtual !== 0 || estado.perfilCasal) return; // já restaurado
 
+      console.log('[Orchestrator] Tentando restaurar progresso para logado...');
       // 1. Tenta carregar do localStorage
       const draftLocal = carregarDraft();
       if (draftLocal) {
+        console.log('[Orchestrator] Restaurando do localStorage');
         carregarEstado(draftLocal);
         setOferecerDraft(false);
         return;
@@ -103,18 +119,21 @@ export default function MemorialOrchestrator() {
       // 2. Se não achou local, busca no Supabase
       try {
         const { supabase } = await import('../../lib/supabase');
-        const { data: memoriais } = await supabase
+        const { data: memorias } = await supabase
           .from('memoriais')
           .select('estado')
           .eq('user_id', usuario.id)
           .maybeSingle();
-        if (memoriais?.estado) {
-          carregarEstado(memoriais.estado);
+        if (memorias?.estado) {
+          console.log('[Orchestrator] Restaurando do Supabase');
+          carregarEstado(memorias.estado);
           setOferecerDraft(false);
+          return;
         }
       } catch (e) {
-        console.warn('Falha ao buscar memorial no Supabase:', e);
+        console.warn('[Orchestrator] Falha ao buscar no Supabase:', e);
       }
+      console.log('[Orchestrator] Nenhum draft encontrado. Iniciando do zero.');
     }
 
     restaurarProgresso();
@@ -146,7 +165,6 @@ export default function MemorialOrchestrator() {
     }, 220);
   }, [setRespostas, irParaEtapa, usuario]);
 
-  // Função de conclusão passada para o Step final
   const handleConcluirMemorial = useCallback((fornecedores) => {
     setRespostas('fornecedoresNecessarios', fornecedores);
     router.push('/memorial/conclusao?concluido=1');

@@ -16,16 +16,45 @@ export default function useAutoSave(estado, usuario = null) {
   const timerRef = useRef(null);
   const ultimoSalvoRef = useRef(null);
 
+  // Verifica draft no localStorage e, se logado, no Supabase
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const dados = raw ? JSON.parse(raw) : null;
-      setTemDraft(draftValido(dados));
-    } catch {
+    async function verificarDrafts() {
+      // 1. Verifica localStorage
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          const dados = raw ? JSON.parse(raw) : null;
+          if (draftValido(dados)) {
+            setTemDraft(true);
+            return;
+          }
+        } catch (e) {
+          console.warn('Erro ao ler localStorage:', e);
+        }
+      }
+
+      // 2. Se logado, verifica Supabase
+      if (usuario?.id) {
+        try {
+          const { data: memorias } = await supabase
+            .from('memoriais')
+            .select('estado')
+            .eq('user_id', usuario.id)
+            .maybeSingle();
+          if (memorias?.estado && draftValido(memorias.estado)) {
+            setTemDraft(true);
+            return;
+          }
+        } catch (e) {
+          console.warn('Erro ao buscar draft no Supabase:', e);
+        }
+      }
+
       setTemDraft(false);
     }
-  }, []);
+
+    verificarDrafts();
+  }, [usuario]);
 
   const salvarLocal = useCallback((dados) => {
     if (typeof window === 'undefined') return;
@@ -42,45 +71,32 @@ export default function useAutoSave(estado, usuario = null) {
     if (!usuario?.id) return;
     setSalvandoAgora(true);
     setErro(null);
-    console.log('2. salvando no supabase (useAutoSave)');
-
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const userId = session?.user?.id;
-      if (!userId) throw new Error('Sessão não encontrada');
-
-      const { data: existente, error: errBusca } = await supabase
+      const { data: existente } = await supabase
         .from('memoriais')
         .select('id')
-        .eq('user_id', userId)
+        .eq('user_id', usuario.id)
         .maybeSingle();
 
-      if (errBusca) throw errBusca;
-
       if (existente) {
-        const { error: errUpdate } = await supabase
+        await supabase
           .from('memoriais')
           .update({
             estado: dados,
             atualizado_em: new Date().toISOString(),
           })
           .eq('id', existente.id);
-
-        if (errUpdate) throw errUpdate;
       } else {
-        const { error: errInsert } = await supabase
+        await supabase
           .from('memoriais')
           .insert({
-            user_id: userId,
+            user_id: usuario.id,
             estado: dados,
             concluido: false,
           });
-
-        if (errInsert) throw errInsert;
       }
-      console.log('2b. supabase salvo com sucesso');
+      setTemDraft(true);
     } catch (e) {
-      console.log('2c. erro ao salvar no supabase:', e);
       setErro(e.message || 'Erro ao salvar no servidor');
       salvarLocal(dados);
     } finally {
