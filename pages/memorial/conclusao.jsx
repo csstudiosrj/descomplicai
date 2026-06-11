@@ -11,14 +11,15 @@ export default function ConclusaoPage() {
   const router = useRouter();
   const { estado } = useMemorial();
   const { usuario } = useAuth();
-  const [status, setStatus] = useState('carregando'); // carregando | pronto | erro
+  const [status, setStatus] = useState('carregando');
   const [memorial, setMemorial] = useState('');
   const [erro, setErro] = useState('');
   const [pagando, setPagando] = useState(false);
-  const { pagamento: statusPagamento, tipo: tipoProduto } = router.query;
+  const { pagamento: statusPagamento, tipo: tipoProduto, concluido } = router.query;
 
   useEffect(() => {
-    if (!estado || !estado.etapaAtual) {
+    // Se a página foi acessada diretamente sem concluir o memorial, redireciona
+    if (!concluido && (!estado || !estado.etapaAtual)) {
       router.replace('/memorial');
       return;
     }
@@ -46,7 +47,7 @@ export default function ConclusaoPage() {
     };
 
     gerarMemorial();
-  }, [estado, router]);
+  }, [estado, router, concluido]);
 
   const iniciarPagamento = async (tipo) => {
     setPagando(true);
@@ -67,7 +68,6 @@ export default function ConclusaoPage() {
         throw new Error(data.erro || 'Erro ao criar pagamento');
       }
 
-      // Redireciona para o checkout do Mercado Pago
       window.location.href = data.checkoutUrl;
     } catch (err) {
       console.error(err);

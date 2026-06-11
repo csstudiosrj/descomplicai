@@ -21,7 +21,6 @@ export default function Step60Fornecedores({ onConcluir, estadoAtual }) {
 
   const handleConfirmar = (event) => {
     event.preventDefault();
-    // Envia os fornecedores diretamente para conclusão, sem passar pelo handleSelect
     if (onConcluir) onConcluir(fornecedores);
   };
 

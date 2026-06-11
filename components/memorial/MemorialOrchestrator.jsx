@@ -121,10 +121,9 @@ export default function MemorialOrchestrator() {
     }, 220);
   }, [setRespostas, irParaEtapa, usuario]);
 
-  // Função exclusiva para finalizar o memorial (sem setTimeout)
   const handleConcluirMemorial = useCallback((fornecedores) => {
     setRespostas('fornecedoresNecessarios', fornecedores);
-    router.push('/memorial/conclusao');
+    router.push('/memorial/conclusao?concluido=1');
   }, [setRespostas, router]);
 
   const handleBack = useCallback(() => {
