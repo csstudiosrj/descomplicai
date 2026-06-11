@@ -1,9 +1,18 @@
 // components/ui/Header.jsx
-
-import Logo from './Logo';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { useAuth } from '../../hooks/useAuth';
+import Logo from './Logo';
 
 export default function Header() {
+  const { usuario, carregando, logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/');
+  };
+
   return (
     <header className="header">
       <div className="header-container">
@@ -17,11 +26,36 @@ export default function Header() {
                 Planos
               </Link>
             </li>
-            <li>
-              <Link href="/login" className="header-nav-link header-nav-link--primary">
-                Entrar
-              </Link>
-            </li>
+            {carregando ? (
+              <li>
+                <span className="header-nav-link" style={{ opacity: 0.5 }}>
+                  Carregando...
+                </span>
+              </li>
+            ) : usuario ? (
+              <>
+                <li>
+                  <Link href="/painel" className="header-nav-link">
+                    Painel
+                  </Link>
+                </li>
+                <li>
+                  <button
+                    onClick={handleLogout}
+                    className="header-nav-link header-nav-link--primary"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                  >
+                    Sair
+                  </button>
+                </li>
+              </>
+            ) : (
+              <li>
+                <Link href="/login" className="header-nav-link header-nav-link--primary">
+                  Entrar
+                </Link>
+              </li>
+            )}
           </ul>
         </nav>
         <button className="header-menu-toggle" aria-label="Abrir menu">

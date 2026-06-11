@@ -9,6 +9,7 @@ export function AuthProvider({ children }) {
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
+    // Tenta recuperar a sessão ao montar
     const carregarSessao = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -22,9 +23,12 @@ export function AuthProvider({ children }) {
 
     carregarSessao();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUsuario(session?.user ?? null);
-    });
+    // Escuta mudanças de estado de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUsuario(session?.user ?? null);
+      }
+    );
 
     return () => {
       subscription?.unsubscribe();
@@ -32,14 +36,20 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (email, senha) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
+    setCarregando(true);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: senha,
+    });
     if (!error && data?.session) {
       setUsuario(data.session.user);
     }
+    setCarregando(false);
     return { data, error };
   }, []);
 
   const cadastrar = useCallback(async (email, senha, metadata = {}) => {
+    setCarregando(true);
     const { data, error } = await supabase.auth.signUp({
       email,
       password: senha,
@@ -48,6 +58,7 @@ export function AuthProvider({ children }) {
     if (!error && data?.session) {
       setUsuario(data.session.user);
     }
+    setCarregando(false);
     return { data, error };
   }, []);
 
@@ -59,14 +70,24 @@ export function AuthProvider({ children }) {
   const loginSocial = useCallback(async (provider) => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: window.location.origin },
+      options: {
+        redirectTo: typeof window !== 'undefined' ? window.location.origin + '/memorial' : undefined,
+      },
     });
     return { data, error };
   }, []);
 
   const assinaturaAtiva = usuario?.user_metadata?.assinatura_ativa === true;
 
-  const valor = { usuario, carregando, assinaturaAtiva, login, cadastrar, logout, loginSocial };
+  const valor = {
+    usuario,
+    carregando,
+    assinaturaAtiva,
+    login,
+    cadastrar,
+    logout,
+    loginSocial,
+  };
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;
 }
