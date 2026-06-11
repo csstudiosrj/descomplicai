@@ -1,5 +1,5 @@
 // utils/gerador-memorial.js
-// Monta o payload para a API e fornece lógica de fornecedores necessários.
+import { gerarMemorialLocal } from './gerador-templates';
 
 export function montarPayloadParaAPI(estado) {
   if (!estado) return {};
@@ -30,7 +30,11 @@ export function montarPayloadParaAPI(estado) {
   };
 }
 
-// Função que o Step60 precisa para listar os fornecedores com base no estado.
+export function montarMemorial(estado) {
+  if (!estado) return '';
+  return gerarMemorialLocal(estado);
+}
+
 export function listarFornecedoresNecessarios(estado) {
   if (!estado) return [];
   const lista = [];
@@ -42,17 +46,17 @@ export function listarFornecedoresNecessarios(estado) {
   adicionar('Buffet', 'Buffet');
   adicionar('Espaço', 'Espaço / Venue');
 
-  if (estado.tipoCerimonia === 'religiosa-catolica' || estado.tipoCerimonia === 'religiosa-evangelica' || estado.tipoCerimonia === 'religiosa-judaica')
+  if (['catolica', 'evangelica', 'judaica'].includes(estado.tipoCerimonia))
     adicionar('Oficializante', 'Oficializante');
   if (estado.tipoCerimonia === 'simbolica') adicionar('Celebrante', 'Celebrante laico');
   if (estado.flores) adicionar('Decoração', 'Floricultura / Decoração');
   if (estado.musicaFesta === 'dj') adicionar('Música', 'DJ');
   if (estado.musicaFesta === 'banda') adicionar('Música', 'Banda');
-  if (estado.tipoLocal && ['praia', 'sitio', 'jardim', 'rooftop', 'haras'].includes(estado.tipoLocal)) {
+  if (['praia', 'sitio', 'jardim', 'rooftop', 'haras'].includes(estado.tipoLocal)) {
     adicionar('Infraestrutura', 'Iluminação cênica');
     adicionar('Infraestrutura', 'Som profissional');
   }
-  if (estado.totalConvidados === 'grande' || estado.totalConvidados === 'mega') {
+  if (['grande', 'mega'].includes(estado.totalConvidados)) {
     adicionar('Segurança', 'Segurança');
     adicionar('Transporte', 'Transporte');
   }
