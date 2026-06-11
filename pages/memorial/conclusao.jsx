@@ -19,50 +19,27 @@ export default function ConclusaoPage() {
   const { pagamento: statusPagamento, tipo: tipoProduto, concluido } = router.query;
 
   useEffect(() => {
-    let timeout;
-    async function carregarEstadoPerdido() {
-      // 1. Tenta localStorage
-      try {
-        const raw = localStorage.getItem('descomplicai-memorial-draft');
-        if (raw) {
-          const draft = JSON.parse(raw);
-          if (draft && draft.perfilCasal) {
-            carregarEstado(draft);
-            return;
-          }
+    // Tenta recuperar estado do localStorage
+    try {
+      const raw = localStorage.getItem('descomplicai-memorial-draft');
+      if (raw) {
+        const draft = JSON.parse(raw);
+        if (draft && draft.perfilCasal) {
+          carregarEstado(draft);
+          return;
         }
-      } catch (e) { /* ignora */ }
-
-      // 2. Tenta Supabase se logado
-      if (usuario?.id) {
-        try {
-          const { supabase } = await import('../../lib/supabase');
-          const { data: memorias } = await supabase
-            .from('memoriais')
-            .select('estado')
-            .eq('user_id', usuario.id)
-            .maybeSingle();
-          if (memorias?.estado) {
-            carregarEstado(memoriais.estado);
-            return;
-          }
-        } catch (e) { /* ignora */ }
       }
+    } catch (e) { /* ignora */ }
 
-      // 3. Se não encontrou e não veio da conclusão, redireciona para o memorial
-      if (!concluido) {
-        router.replace('/memorial');
-      } else {
-        // Timeout de segurança: após 5s sem estado, mostra erro
-        timeout = setTimeout(() => {
-          setStatus('erro');
-          setErro('Não foi possível carregar os dados do memorial. Tente finalizar novamente.');
-        }, 5000);
-      }
+    // Se não encontrou e não veio da conclusão, redireciona
+    if (!concluido) {
+      router.replace('/memorial');
+      return;
     }
 
-    carregarEstadoPerdido();
-    return () => clearTimeout(timeout);
+    // Se veio da conclusão mas não tem estado, mostra erro
+    setStatus('erro');
+    setErro('Dados do memorial não encontrados. Tente finalizar novamente.');
   }, []);
 
   useEffect(() => {
@@ -96,7 +73,6 @@ export default function ConclusaoPage() {
   const iniciarPagamento = async (tipo) => {
     setPagando(true);
     try {
-      // Garante que o estado está salvo antes de redirecionar
       localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
 
       const resposta = await fetch('/api/pagamento/criar', {
@@ -238,11 +214,6 @@ export default function ConclusaoPage() {
         {statusPagamento === 'pendente' && (
           <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-3)', backgroundColor: '#FFF3E6', borderRadius: 'var(--radius-md)', color: 'var(--color-warning-dark)', fontFamily: 'var(--font-body)' }}>
             Pagamento em processamento. Assim que confirmado, você receberá o acesso.
-          </div>
-        )}
-        {statusPagamento === 'erro' && (
-          <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-3)', backgroundColor: '#FDEDED', borderRadius: 'var(--radius-md)', color: 'var(--color-danger)', fontFamily: 'var(--font-body)' }}>
-            O pagamento não foi concluído. Tente novamente.
           </div>
         )}
 

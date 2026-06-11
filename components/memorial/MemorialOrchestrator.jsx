@@ -68,7 +68,7 @@ export default function MemorialOrchestrator() {
   const router = useRouter();
   const { estado, setRespostas, carregarEstado, irParaEtapa, voltarEtapa } = useMemorial();
   const { usuario, carregando: carregandoAuth } = useAuth();
-  const { salvandoAgora, temDraft, carregarDraft, limparDraft, salvarAgora, verificandoDraft } = useAutoSave(estado, usuario);
+  const { salvandoAgora, temDraft, carregarDraft, limparDraft } = useAutoSave(estado, usuario);
 
   const [transicionando, setTransicionando] = useState(false);
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
@@ -79,36 +79,22 @@ export default function MemorialOrchestrator() {
     estadoRef.current = estado;
   }, [estado]);
 
-  // Só toma decisões sobre draft depois que a verificação terminar
+  // Oferece modal para anônimos com draft
   useEffect(() => {
-    if (verificandoDraft) return; // aguarda
-    if (estado.etapaAtual !== 0 || estado.perfilCasal) return; // já restaurado
-
-    if (!usuario && !carregandoAuth && temDraft) {
-      // Anônimo com draft: exibe modal
+    if (!usuario && !carregandoAuth && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
       setOferecerDraft(true);
-    } else if (usuario && temDraft) {
-      // Logado com draft: restaura automaticamente
-      const draftLocal = carregarDraft();
-      if (draftLocal) {
-        carregarEstado(draftLocal);
-        setOferecerDraft(false);
-        return;
-      }
-      // Tenta Supabase (já verificado pelo useAutoSave, mas tenta carregar o conteúdo)
-      import('../../lib/supabase').then(async ({ supabase }) => {
-        const { data: memorias } = await supabase
-          .from('memoriais')
-          .select('estado')
-          .eq('user_id', usuario.id)
-          .maybeSingle();
-        if (memorias?.estado) {
-          carregarEstado(memoriais.estado);
-          setOferecerDraft(false);
-        }
-      }).catch(() => {});
     }
-  }, [verificandoDraft, temDraft, usuario, carregandoAuth, estado.etapaAtual, estado.perfilCasal, carregarDraft, carregarEstado]);
+  }, [usuario, carregandoAuth, temDraft, estado.etapaAtual, estado.perfilCasal]);
+
+  // Restaura automaticamente para logados com draft
+  useEffect(() => {
+    if (usuario && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
+      const draft = carregarDraft();
+      if (draft) {
+        carregarEstado(draft);
+      }
+    }
+  }, [usuario, temDraft, estado.etapaAtual, estado.perfilCasal, carregarDraft, carregarEstado]);
 
   const etapasTotais = calcularEtapasTotais(estado);
   const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
@@ -136,11 +122,12 @@ export default function MemorialOrchestrator() {
     }, 220);
   }, [setRespostas, irParaEtapa, usuario]);
 
-  const handleConcluirMemorial = useCallback(async (fornecedores) => {
+  const handleConcluirMemorial = useCallback((fornecedores) => {
     setRespostas('fornecedoresNecessarios', fornecedores);
-    await salvarAgora();
+    // Salva imediatamente no localStorage antes de redirecionar
+    localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estadoRef.current));
     router.push('/memorial/conclusao?concluido=1');
-  }, [setRespostas, router, salvarAgora]);
+  }, [setRespostas, router]);
 
   const handleBack = useCallback(() => {
     if (estado.historicoEtapas.length > 0) voltarEtapa();

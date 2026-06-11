@@ -1,6 +1,5 @@
 // hooks/useAutoSave.js
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
 
 const STORAGE_KEY = 'descomplicai-memorial-draft';
 const DEBOUNCE_MS = 1500;
@@ -11,56 +10,21 @@ function draftValido(dados) {
 
 export default function useAutoSave(estado, usuario = null) {
   const [salvandoAgora, setSalvandoAgora] = useState(false);
-  const [erro, setErro] = useState(null);
   const [temDraft, setTemDraft] = useState(false);
-  const [verificandoDraft, setVerificandoDraft] = useState(true); // NOVO
   const timerRef = useRef(null);
   const ultimoSalvoRef = useRef(null);
 
+  // Verifica localStorage ao montar (síncrono, sem espera)
   useEffect(() => {
-    let ativo = true;
-    async function verificarDrafts() {
-      setVerificandoDraft(true);
-      // 1. Verifica localStorage (síncrono)
-      if (typeof window !== 'undefined') {
-        try {
-          const raw = localStorage.getItem(STORAGE_KEY);
-          const dados = raw ? JSON.parse(raw) : null;
-          if (draftValido(dados)) {
-            if (ativo) {
-              setTemDraft(true);
-              setVerificandoDraft(false);
-            }
-            return;
-          }
-        } catch (e) { /* ignora */ }
-      }
-
-      // 2. Se logado, verifica Supabase (assíncrono)
-      if (usuario?.id) {
-        try {
-          const { data: memorias } = await supabase
-            .from('memoriais')
-            .select('estado')
-            .eq('user_id', usuario.id)
-            .maybeSingle();
-          if (ativo && memorias?.estado && draftValido(memorias.estado)) {
-            setTemDraft(true);
-            setVerificandoDraft(false);
-            return;
-          }
-        } catch (e) { /* ignora */ }
-      }
-
-      if (ativo) {
-        setTemDraft(false);
-        setVerificandoDraft(false);
-      }
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const dados = raw ? JSON.parse(raw) : null;
+      setTemDraft(draftValido(dados));
+    } catch {
+      setTemDraft(false);
     }
-
-    verificarDrafts();
-    return () => { ativo = false; };
-  }, [usuario]); // reexecuta quando usuario muda
+  }, []);
 
   const salvarLocal = useCallback((dados) => {
     if (typeof window === 'undefined') return;
@@ -73,68 +37,18 @@ export default function useAutoSave(estado, usuario = null) {
     }
   }, []);
 
-  const salvarSupabase = useCallback(async (dados) => {
-    if (!usuario?.id) return;
-    setSalvandoAgora(true);
-    setErro(null);
-    try {
-      const { data: existente } = await supabase
-        .from('memoriais')
-        .select('id')
-        .eq('user_id', usuario.id)
-        .maybeSingle();
-
-      if (existente) {
-        await supabase
-          .from('memoriais')
-          .update({
-            estado: dados,
-            atualizado_em: new Date().toISOString(),
-          })
-          .eq('id', existente.id);
-      } else {
-        await supabase
-          .from('memoriais')
-          .insert({
-            user_id: usuario.id,
-            estado: dados,
-            concluido: false,
-          });
-      }
-      setTemDraft(true);
-    } catch (e) {
-      setErro(e.message || 'Erro ao salvar no servidor');
-      salvarLocal(dados);
-    } finally {
-      setSalvandoAgora(false);
-    }
-  }, [usuario, salvarLocal]);
-
   const salvar = useCallback(() => {
     if (!estado || !draftValido(estado)) return;
     const serializado = JSON.stringify(estado);
     if (serializado === ultimoSalvoRef.current) return;
     ultimoSalvoRef.current = serializado;
 
-    if (usuario) {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => {
-        salvarSupabase(estado);
-      }, DEBOUNCE_MS);
-    } else {
+    // Debounce para não salvar a cada digitação
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
       salvarLocal(estado);
-    }
-  }, [estado, usuario, salvarLocal, salvarSupabase]);
-
-  const salvarAgora = useCallback(async () => {
-    if (!estado || !draftValido(estado)) return;
-    ultimoSalvoRef.current = JSON.stringify(estado);
-    if (usuario) {
-      await salvarSupabase(estado);
-    } else {
-      salvarLocal(estado);
-    }
-  }, [estado, usuario, salvarLocal, salvarSupabase]);
+    }, DEBOUNCE_MS);
+  }, [estado, salvarLocal]);
 
   const carregarDraft = useCallback(() => {
     if (typeof window === 'undefined') return null;
@@ -161,7 +75,7 @@ export default function useAutoSave(estado, usuario = null) {
     };
   }, [salvar]);
 
-  return { salvar, carregarDraft, limparDraft, salvandoAgora, temDraft, erro, salvarAgora, verificandoDraft };
+  return { salvar, carregarDraft, limparDraft, salvandoAgora, temDraft };
 }
 
 export { useAutoSave };
