@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import ReactMarkdown from 'react-markdown';
 import { montarPayloadParaAPI } from '../../utils/gerador-memorial';
 import { useAuth } from '../../hooks/useAuth';
 import { useMemorial } from '../../hooks/useMemorial';
@@ -108,15 +109,39 @@ export default function ConclusaoPage() {
       <Head>
         <title>Seu memorial está pronto — Descomplicaí</title>
       </Head>
-      <div style={{ maxWidth: '600px', margin: '0 auto', padding: 'var(--space-6) var(--space-4) var(--space-8)', fontFamily: 'var(--font-body)' }}>
+      <div style={{ maxWidth: '640px', margin: '0 auto', padding: 'var(--space-6) var(--space-4) var(--space-8)', fontFamily: 'var(--font-body)' }}>
         <div style={{ marginBottom: 'var(--space-6)' }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-4xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>Memorial pronto!</h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-lg)' }}>Ele foi gerado com base nas suas escolhas. Confira um trecho:</p>
         </div>
 
         <div style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', padding: 'var(--space-6)', backgroundColor: 'var(--color-white)', marginBottom: 'var(--space-6)' }}>
-          <div style={{ whiteSpace: 'pre-wrap', lineHeight: 'var(--leading-relaxed)' }}>{previewVisivel}</div>
-          {/* Conteúdo completo NÃO é renderizado — apenas uma mensagem */}
+          <div className="memorial-preview" style={{ lineHeight: 'var(--leading-relaxed)', color: 'var(--color-text-primary)' }}>
+            <ReactMarkdown
+              components={{
+                h2: ({ node, ...props }) => (
+                  <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)', color: 'var(--color-brand)', marginTop: 'var(--space-5)', marginBottom: 'var(--space-3)', borderBottom: '1px solid var(--color-border)', paddingBottom: 'var(--space-2)' }} {...props} />
+                ),
+                h3: ({ node, ...props }) => (
+                  <h3 style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-semibold)', fontSize: 'var(--text-lg)', color: 'var(--color-text-primary)', marginTop: 'var(--space-4)', marginBottom: 'var(--space-2)' }} {...props} />
+                ),
+                p: ({ node, ...props }) => (
+                  <p style={{ marginBottom: 'var(--space-3)', fontSize: 'var(--text-base)' }} {...props} />
+                ),
+                strong: ({ node, ...props }) => (
+                  <strong style={{ fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }} {...props} />
+                ),
+                ul: ({ node, ...props }) => (
+                  <ul style={{ marginBottom: 'var(--space-3)', paddingLeft: 'var(--space-6)' }} {...props} />
+                ),
+                li: ({ node, ...props }) => (
+                  <li style={{ marginBottom: 'var(--space-1)', fontSize: 'var(--text-base)' }} {...props} />
+                ),
+              }}
+            >
+              {previewVisivel}
+            </ReactMarkdown>
+          </div>
           {memorial.length > 800 && (
             <div style={{
               marginTop: 'var(--space-4)',
