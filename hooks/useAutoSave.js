@@ -11,12 +11,15 @@ function draftValido(dados) {
 export default function useAutoSave(estado) {
   const [salvandoAgora, setSalvandoAgora] = useState(false);
   const [temDraft, setTemDraft] = useState(false);
-  const [isHydrated, setIsHydrated] = useState(false); // Bloqueio de renderização
-
+  const [isHydrated, setIsHydrated] = useState(false);
   const timerRef = useRef(null);
-  const estadoRef = useRef(estado); // Fonte única para o debounce
+  const estadoRef = useRef(estado);
 
-  // Hidratação única na montagem
+  useEffect(() => {
+    estadoRef.current = estado;
+  }, [estado]);
+
+  // Hidratação: só roda no cliente (useEffect só executa no browser)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -30,11 +33,6 @@ export default function useAutoSave(estado) {
     }
   }, []);
 
-  // Sincroniza o ref com o estado mais recente
-  useEffect(() => {
-    estadoRef.current = estado;
-  }, [estado]);
-
   const salvarLocal = useCallback((dados) => {
     if (typeof window === 'undefined') return;
     if (!draftValido(dados)) return;
@@ -46,7 +44,6 @@ export default function useAutoSave(estado) {
     }
   }, []);
 
-  // Debounce isolado do estado — lê do ref
   useEffect(() => {
     if (!estado || !draftValido(estado)) return;
     if (timerRef.current) clearTimeout(timerRef.current);

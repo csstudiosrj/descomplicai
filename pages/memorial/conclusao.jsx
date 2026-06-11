@@ -18,10 +18,16 @@ export default function ConclusaoPage() {
   const [erro, setErro] = useState('');
   const [pagando, setPagando] = useState(false);
   const [baixandoPDF, setBaixandoPDF] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const { pagamento: statusPagamento, tipo: tipoProduto, concluido } = router.query;
 
-  // GUARDA DE HIDRATAÇÃO
-  if (!isHydrated) {
+  // Evita hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // GUARDA: só renderiza depois de montado no cliente e hidratado
+  if (!isMounted || !isHydrated) {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-off-white)' }}>
         <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando...</p>
@@ -29,7 +35,7 @@ export default function ConclusaoPage() {
     );
   }
 
-  // ========== LÓGICA DE RECUPERAÇÃO DE ESTADO ==========
+  // LÓGICA DE RECUPERAÇÃO DE ESTADO
   useEffect(() => {
     const draft = carregarDraft();
     if (draft) {
@@ -40,9 +46,8 @@ export default function ConclusaoPage() {
       setStatus('erro');
       setErro('Dados do memorial não encontrados. Por favor, finalize novamente.');
     }
-  }, []); // executa apenas na montagem após hidratação
+  }, []);
 
-  // Gera memorial quando estado está disponível
   useEffect(() => {
     if (!estado || !estado.etapaAtual || status !== 'carregando') return;
 
@@ -95,7 +100,6 @@ export default function ConclusaoPage() {
   const baixarPDF = async () => {
     setBaixandoPDF(true);
     try {
-      // Validação backend-first: o endpoint verificará o pagamento
       const dadosEvento = montarPayloadParaAPI(estado);
       const resposta = await fetch('/api/gerar-pdf', {
         method: 'POST',

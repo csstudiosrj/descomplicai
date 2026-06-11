@@ -73,10 +73,16 @@ export default function MemorialOrchestrator() {
   const [transicionando, setTransicionando] = useState(false);
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const restauracaoFeita = useRef(false);
 
-  // GUARDA DE RENDERIZAÇÃO: não decide nada antes da hidratação
-  if (!isHydrated || carregandoAuth) {
+  // Marca montagem no cliente para evitar hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // GUARDA DE RENDERIZAÇÃO: segura até montagem no cliente e hidratação do draft
+  if (!isMounted || !isHydrated || carregandoAuth) {
     return (
       <div style={{ height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-off-white)' }}>
         <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Preparando seu memorial...</p>
@@ -84,17 +90,15 @@ export default function MemorialOrchestrator() {
     );
   }
 
-  // ========== LÓGICA DE RESTAURAÇÃO (executa apenas uma vez após hidratação) ==========
+  // LÓGICA DE RESTAURAÇÃO (executa apenas uma vez após montagem + hidratação)
   if (!restauracaoFeita.current) {
     restauracaoFeita.current = true;
 
     if (estado.etapaAtual === 0 && !estado.perfilCasal && temDraft) {
       if (usuario) {
-        // Logado: restaura automaticamente
         const draft = carregarDraft();
         if (draft) carregarEstado(draft);
       } else {
-        // Anônimo: exibe modal de draft
         setOferecerDraft(true);
       }
     }
