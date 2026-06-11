@@ -16,10 +16,8 @@ export default function useAutoSave(estado, usuario = null) {
   const timerRef = useRef(null);
   const ultimoSalvoRef = useRef(null);
 
-  // Verifica draft no localStorage e, se logado, no Supabase
   useEffect(() => {
     async function verificarDrafts() {
-      // 1. Verifica localStorage
       if (typeof window !== 'undefined') {
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
@@ -28,12 +26,8 @@ export default function useAutoSave(estado, usuario = null) {
             setTemDraft(true);
             return;
           }
-        } catch (e) {
-          console.warn('Erro ao ler localStorage:', e);
-        }
+        } catch (e) { /* ignora */ }
       }
-
-      // 2. Se logado, verifica Supabase
       if (usuario?.id) {
         try {
           const { data: memorias } = await supabase
@@ -45,14 +39,10 @@ export default function useAutoSave(estado, usuario = null) {
             setTemDraft(true);
             return;
           }
-        } catch (e) {
-          console.warn('Erro ao buscar draft no Supabase:', e);
-        }
+        } catch (e) { /* ignora */ }
       }
-
       setTemDraft(false);
     }
-
     verificarDrafts();
   }, [usuario]);
 
@@ -120,6 +110,17 @@ export default function useAutoSave(estado, usuario = null) {
     }
   }, [estado, usuario, salvarLocal, salvarSupabase]);
 
+  // NOVA FUNÇÃO: salvamento imediato, sem debounce
+  const salvarAgora = useCallback(async () => {
+    if (!estado || !draftValido(estado)) return;
+    ultimoSalvoRef.current = JSON.stringify(estado);
+    if (usuario) {
+      await salvarSupabase(estado);
+    } else {
+      salvarLocal(estado);
+    }
+  }, [estado, usuario, salvarLocal, salvarSupabase]);
+
   const carregarDraft = useCallback(() => {
     if (typeof window === 'undefined') return null;
     try {
@@ -145,7 +146,7 @@ export default function useAutoSave(estado, usuario = null) {
     };
   }, [salvar]);
 
-  return { salvar, carregarDraft, limparDraft, salvandoAgora, temDraft, erro };
+  return { salvar, carregarDraft, limparDraft, salvandoAgora, temDraft, erro, salvarAgora };
 }
 
 export { useAutoSave };

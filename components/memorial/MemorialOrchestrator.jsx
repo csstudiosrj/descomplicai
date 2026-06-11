@@ -68,7 +68,7 @@ export default function MemorialOrchestrator() {
   const router = useRouter();
   const { estado, setRespostas, carregarEstado, irParaEtapa, voltarEtapa } = useMemorial();
   const { usuario, carregando: carregandoAuth } = useAuth();
-  const { salvandoAgora, temDraft, carregarDraft, limparDraft } = useAutoSave(estado, usuario);
+  const { salvandoAgora, temDraft, carregarDraft, limparDraft, salvarAgora } = useAutoSave(estado, usuario);
 
   const [transicionando, setTransicionando] = useState(false);
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
@@ -79,44 +79,24 @@ export default function MemorialOrchestrator() {
     estadoRef.current = estado;
   }, [estado]);
 
-  // Logs de depuração
-  useEffect(() => {
-    console.log('[Orchestrator] estado:', {
-      usuario: !!usuario,
-      carregandoAuth,
-      temDraft,
-      etapaAtual: estado.etapaAtual,
-      perfilCasal: estado.perfilCasal,
-      oferecerDraft,
-      mostrandoLogin,
-    });
-  }, [usuario, carregandoAuth, temDraft, estado.etapaAtual, estado.perfilCasal, oferecerDraft, mostrandoLogin]);
-
-  // Restauração automática para anônimos: exibe modal "Continuar onde parou?"
   useEffect(() => {
     if (!usuario && !carregandoAuth && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
-      console.log('[Orchestrator] Exibindo modal de draft para anônimo');
       setOferecerDraft(true);
     }
   }, [usuario, carregandoAuth, temDraft, estado.etapaAtual, estado.perfilCasal]);
 
-  // Restauração automática para logados: busca draft local e depois Supabase
   useEffect(() => {
     async function restaurarProgresso() {
       if (!usuario || !temDraft) return;
-      if (estado.etapaAtual !== 0 || estado.perfilCasal) return; // já restaurado
+      if (estado.etapaAtual !== 0 || estado.perfilCasal) return;
 
-      console.log('[Orchestrator] Tentando restaurar progresso para logado...');
-      // 1. Tenta carregar do localStorage
       const draftLocal = carregarDraft();
       if (draftLocal) {
-        console.log('[Orchestrator] Restaurando do localStorage');
         carregarEstado(draftLocal);
         setOferecerDraft(false);
         return;
       }
 
-      // 2. Se não achou local, busca no Supabase
       try {
         const { supabase } = await import('../../lib/supabase');
         const { data: memorias } = await supabase
@@ -125,15 +105,12 @@ export default function MemorialOrchestrator() {
           .eq('user_id', usuario.id)
           .maybeSingle();
         if (memorias?.estado) {
-          console.log('[Orchestrator] Restaurando do Supabase');
-          carregarEstado(memorias.estado);
+          carregarEstado(memoriais.estado);
           setOferecerDraft(false);
-          return;
         }
       } catch (e) {
-        console.warn('[Orchestrator] Falha ao buscar no Supabase:', e);
+        console.warn('Falha ao buscar no Supabase:', e);
       }
-      console.log('[Orchestrator] Nenhum draft encontrado. Iniciando do zero.');
     }
 
     restaurarProgresso();
@@ -165,10 +142,12 @@ export default function MemorialOrchestrator() {
     }, 220);
   }, [setRespostas, irParaEtapa, usuario]);
 
-  const handleConcluirMemorial = useCallback((fornecedores) => {
+  const handleConcluirMemorial = useCallback(async (fornecedores) => {
     setRespostas('fornecedoresNecessarios', fornecedores);
+    // Salvamento imediato antes de redirecionar
+    await salvarAgora();
     router.push('/memorial/conclusao?concluido=1');
-  }, [setRespostas, router]);
+  }, [setRespostas, router, salvarAgora]);
 
   const handleBack = useCallback(() => {
     if (estado.historicoEtapas.length > 0) voltarEtapa();

@@ -18,8 +18,8 @@ export default function ConclusaoPage() {
   const [baixandoPDF, setBaixandoPDF] = useState(false);
   const { pagamento: statusPagamento, tipo: tipoProduto, concluido } = router.query;
 
-  // Recupera estado de qualquer fonte (localStorage, Supabase)
   useEffect(() => {
+    let timeout;
     async function carregarEstadoPerdido() {
       // 1. Tenta localStorage
       try {
@@ -49,16 +49,22 @@ export default function ConclusaoPage() {
         } catch (e) { /* ignora */ }
       }
 
-      // 3. Se não encontrou nada e não veio de conclusão, redireciona
+      // 3. Se não encontrou e não veio da conclusão, redireciona para o memorial
       if (!concluido) {
         router.replace('/memorial');
+      } else {
+        // Timeout de segurança: após 5s sem estado, mostra erro
+        timeout = setTimeout(() => {
+          setStatus('erro');
+          setErro('Não foi possível carregar os dados do memorial. Tente finalizar novamente.');
+        }, 5000);
       }
     }
 
     carregarEstadoPerdido();
-  }, []); // roda uma vez na montagem
+    return () => clearTimeout(timeout);
+  }, []);
 
-  // Gera o memorial assim que o estado estiver disponível
   useEffect(() => {
     if (!estado || !estado.etapaAtual) return;
 
@@ -90,7 +96,7 @@ export default function ConclusaoPage() {
   const iniciarPagamento = async (tipo) => {
     setPagando(true);
     try {
-      // Salva o estado no localStorage antes de redirecionar
+      // Garante que o estado está salvo antes de redirecionar
       localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
 
       const resposta = await fetch('/api/pagamento/criar', {
@@ -163,7 +169,7 @@ export default function ConclusaoPage() {
         <div style={{ textAlign: 'center', maxWidth: '400px' }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-danger)', marginBottom: 'var(--space-2)' }}>Ops!</h2>
           <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)' }}>{erro || 'Não foi possível gerar o memorial. Tente novamente.'}</p>
-          <Button variant="primary" onClick={() => router.reload()}>Tentar novamente</Button>
+          <Button variant="primary" onClick={() => router.push('/memorial')}>Voltar ao memorial</Button>
         </div>
       </div>
     );
@@ -182,7 +188,7 @@ export default function ConclusaoPage() {
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-4xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>Memorial pronto!</h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-lg)' }}>
             {pagamentoAprovado
-              ? 'Seu pagamento foi aprovado! Confira um trecho e baixe o PDF completo.'
+              ? 'Seu pagamento foi aprovado! Baixe o PDF completo.'
               : 'Ele foi gerado com base nas suas escolhas. Confira um trecho:'}
           </p>
         </div>
