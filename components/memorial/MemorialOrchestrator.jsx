@@ -68,41 +68,30 @@ export default function MemorialOrchestrator() {
   const router = useRouter();
   const { estado, setRespostas, carregarEstado, irParaEtapa, voltarEtapa } = useMemorial();
   const { usuario, carregando: carregandoAuth } = useAuth();
-  const { isHydrated, temDraft, carregarDraft, limparDraft, salvandoAgora } = useAutoSave(estado);
+  const { temDraft, carregarDraft, limparDraft, salvandoAgora } = useAutoSave(estado);
 
   const [transicionando, setTransicionando] = useState(false);
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
   const restauracaoFeita = useRef(false);
 
-  // Marca montagem no cliente para evitar hydration mismatch
+  // ⬇⬇⬇ TODA LÓGICA DE RESTAURAÇÃO ESTÁ AQUI DENTRO ⬇⬇⬇
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    if (restauracaoFeita.current) return;
+    if (carregandoAuth) return;
+    if (estado.etapaAtual !== 0 || estado.perfilCasal) return;
+    if (!temDraft) return;
 
-  // GUARDA DE RENDERIZAÇÃO: segura até montagem no cliente e hidratação do draft
-  if (!isMounted || !isHydrated || carregandoAuth) {
-    return (
-      <div style={{ height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-off-white)' }}>
-        <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Preparando seu memorial...</p>
-      </div>
-    );
-  }
-
-  // LÓGICA DE RESTAURAÇÃO (executa apenas uma vez após montagem + hidratação)
-  if (!restauracaoFeita.current) {
     restauracaoFeita.current = true;
 
-    if (estado.etapaAtual === 0 && !estado.perfilCasal && temDraft) {
-      if (usuario) {
-        const draft = carregarDraft();
-        if (draft) carregarEstado(draft);
-      } else {
-        setOferecerDraft(true);
-      }
+    if (usuario) {
+      const draft = carregarDraft();
+      if (draft) carregarEstado(draft);
+    } else {
+      setOferecerDraft(true);
     }
-  }
+  }, [carregandoAuth, estado.etapaAtual, estado.perfilCasal, temDraft, usuario, carregarDraft, carregarEstado]);
+  // ⬆⬆⬆ FIM DA LÓGICA DE RESTAURAÇÃO ⬆⬆⬆
 
   const etapasTotais = calcularEtapasTotais(estado);
   const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);

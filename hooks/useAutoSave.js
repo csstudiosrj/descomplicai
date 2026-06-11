@@ -12,14 +12,16 @@ export default function useAutoSave(estado) {
   const [salvandoAgora, setSalvandoAgora] = useState(false);
   const [temDraft, setTemDraft] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+
   const timerRef = useRef(null);
   const estadoRef = useRef(estado);
 
+  // Mantém o ref atualizado sem disparar efeitos
   useEffect(() => {
     estadoRef.current = estado;
   }, [estado]);
 
-  // Hidratação: só roda no cliente (useEffect só executa no browser)
+  // Hidratação única – só roda no cliente
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -44,6 +46,7 @@ export default function useAutoSave(estado) {
     }
   }, []);
 
+  // Debounce controlado – lê do ref, não depende de alterações de estado para disparar
   useEffect(() => {
     if (!estado || !draftValido(estado)) return;
     if (timerRef.current) clearTimeout(timerRef.current);
