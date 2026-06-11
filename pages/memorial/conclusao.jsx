@@ -18,9 +18,10 @@ export default function ConclusaoPage() {
   const [baixandoPDF, setBaixandoPDF] = useState(false);
   const { pagamento: statusPagamento, tipo: tipoProduto, concluido } = router.query;
 
-  // Carrega estado do localStorage ou Supabase ao montar
+  // Recupera estado de qualquer fonte (localStorage, Supabase)
   useEffect(() => {
     async function carregarEstadoPerdido() {
+      // 1. Tenta localStorage
       try {
         const raw = localStorage.getItem('descomplicai-memorial-draft');
         if (raw) {
@@ -32,29 +33,32 @@ export default function ConclusaoPage() {
         }
       } catch (e) { /* ignora */ }
 
+      // 2. Tenta Supabase se logado
       if (usuario?.id) {
         try {
           const { supabase } = await import('../../lib/supabase');
-          const { data: memoriais } = await supabase
+          const { data: memorias } = await supabase
             .from('memoriais')
             .select('estado')
             .eq('user_id', usuario.id)
             .maybeSingle();
-          if (memoriais?.estado) {
+          if (memorias?.estado) {
             carregarEstado(memoriais.estado);
             return;
           }
         } catch (e) { /* ignora */ }
       }
 
+      // 3. Se não encontrou nada e não veio de conclusão, redireciona
       if (!concluido) {
         router.replace('/memorial');
       }
     }
 
     carregarEstadoPerdido();
-  }, []);
+  }, []); // roda uma vez na montagem
 
+  // Gera o memorial assim que o estado estiver disponível
   useEffect(() => {
     if (!estado || !estado.etapaAtual) return;
 
@@ -81,11 +85,14 @@ export default function ConclusaoPage() {
     };
 
     gerarMemorial();
-  }, [estado, router, concluido]);
+  }, [estado]);
 
   const iniciarPagamento = async (tipo) => {
     setPagando(true);
     try {
+      // Salva o estado no localStorage antes de redirecionar
+      localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
+
       const resposta = await fetch('/api/pagamento/criar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

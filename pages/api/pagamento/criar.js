@@ -1,4 +1,4 @@
-// pages/api/pagamento/criar.js (versão de teste — sem Supabase)
+// pages/api/pagamento/criar.js
 import { client, Preference } from '../../../lib/mercadopago';
 
 export default async function handler(req, res) {
@@ -38,9 +38,9 @@ export default async function handler(req, res) {
       body: {
         items: [item],
         back_urls: {
-          success: `${process.env.NEXT_PUBLIC_URL}/memorial/conclusao?pagamento=sucesso&tipo=${tipo}`,
-          failure: `${process.env.NEXT_PUBLIC_URL}/memorial/conclusao?pagamento=erro`,
-          pending: `${process.env.NEXT_PUBLIC_URL}/memorial/conclusao?pagamento=pendente`,
+          success: `${process.env.NEXT_PUBLIC_URL}/memorial/conclusao?pagamento=sucesso&tipo=${tipo}&concluido=1`,
+          failure: `${process.env.NEXT_PUBLIC_URL}/memorial/conclusao?pagamento=erro&concluido=1`,
+          pending: `${process.env.NEXT_PUBLIC_URL}/memorial/conclusao?pagamento=pendente&concluido=1`,
         },
         auto_return: 'approved',
         notification_url: `${process.env.NEXT_PUBLIC_URL}/api/pagamento/webhook`,
