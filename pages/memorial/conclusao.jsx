@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import ReactMarkdown from 'react-markdown';
 import { montarPayloadParaAPI } from '../../utils/gerador-memorial';
 import { useAuth } from '../../hooks/useAuth';
 import { useMemorial } from '../../hooks/useMemorial';
@@ -10,7 +9,7 @@ import Button from '../../components/ui/Button';
 
 export default function ConclusaoPage() {
   const router = useRouter();
-  const { estado } = useMemorial();
+  const { estado, carregarEstado } = useMemorial();
   const { usuario } = useAuth();
   const [status, setStatus] = useState('carregando');
   const [memorial, setMemorial] = useState('');
@@ -19,14 +18,51 @@ export default function ConclusaoPage() {
   const { pagamento: statusPagamento, tipo: tipoProduto, concluido } = router.query;
 
   useEffect(() => {
-    if (!concluido && (!estado || !estado.etapaAtual)) {
-      router.replace('/memorial');
-      return;
+    async function carregarEstadoPerdido() {
+      // Tenta recuperar o estado do localStorage (draft anônimo)
+      try {
+        const raw = localStorage.getItem('descomplicai-memorial-draft');
+        if (raw) {
+          const draft = JSON.parse(raw);
+          if (draft && draft.perfilCasal) {
+            carregarEstado(draft);
+            return;
+          }
+        }
+      } catch (e) { /* ignora */ }
+
+      // Se o usuário estiver logado, busca no Supabase
+      if (usuario?.id) {
+        try {
+          const { supabase } = await import('../../lib/supabase');
+          const { data: memoriais } = await supabase
+            .from('memoriais')
+            .select('estado')
+            .eq('user_id', usuario.id)
+            .maybeSingle();
+          if (memoriais?.estado) {
+            carregarEstado(memoriais.estado);
+            return;
+          }
+        } catch (e) { /* ignora */ }
+      }
+
+      // Se não encontrou nada e não é retorno de conclusão, redireciona
+      if (!concluido) {
+        router.replace('/memorial');
+      }
     }
+
+    carregarEstadoPerdido();
+  }, []); // executa apenas na montagem
+
+  useEffect(() => {
+    if (!estado || !estado.etapaAtual) return; // ainda carregando estado
 
     const gerarMemorial = async () => {
       try {
         const payload = montarPayloadParaAPI(estado);
+        // Agora o endpoint usa o gerador interno (instantâneo)
         const resposta = await fetch('/api/ia/gerar-memorial', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -52,15 +88,10 @@ export default function ConclusaoPage() {
   const iniciarPagamento = async (tipo) => {
     setPagando(true);
     try {
-      const dadosEvento = {
-        ...montarPayloadParaAPI(estado),
-        email: usuario?.email || null,
-      };
-
       const resposta = await fetch('/api/pagamento/criar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipo, dadosEvento }),
+        body: JSON.stringify({ tipo }),
       });
 
       const data = await resposta.json();
@@ -84,7 +115,7 @@ export default function ConclusaoPage() {
           <div style={{ width: '40px', height: '40px', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-brand)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto var(--space-6)' }} />
           <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>Gerando seu memorial...</h2>
-          <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>Estamos criando cada detalhe com inteligência artificial. Isso pode levar alguns segundos.</p>
+          <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>Estamos criando cada detalhe. Isso leva apenas alguns segundos.</p>
         </div>
       </div>
     );
@@ -116,32 +147,7 @@ export default function ConclusaoPage() {
         </div>
 
         <div style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', padding: 'var(--space-6)', backgroundColor: 'var(--color-white)', marginBottom: 'var(--space-6)' }}>
-          <div className="memorial-preview" style={{ lineHeight: 'var(--leading-relaxed)', color: 'var(--color-text-primary)' }}>
-            <ReactMarkdown
-              components={{
-                h2: ({ node, ...props }) => (
-                  <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)', color: 'var(--color-brand)', marginTop: 'var(--space-5)', marginBottom: 'var(--space-3)', borderBottom: '1px solid var(--color-border)', paddingBottom: 'var(--space-2)' }} {...props} />
-                ),
-                h3: ({ node, ...props }) => (
-                  <h3 style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-semibold)', fontSize: 'var(--text-lg)', color: 'var(--color-text-primary)', marginTop: 'var(--space-4)', marginBottom: 'var(--space-2)' }} {...props} />
-                ),
-                p: ({ node, ...props }) => (
-                  <p style={{ marginBottom: 'var(--space-3)', fontSize: 'var(--text-base)' }} {...props} />
-                ),
-                strong: ({ node, ...props }) => (
-                  <strong style={{ fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }} {...props} />
-                ),
-                ul: ({ node, ...props }) => (
-                  <ul style={{ marginBottom: 'var(--space-3)', paddingLeft: 'var(--space-6)' }} {...props} />
-                ),
-                li: ({ node, ...props }) => (
-                  <li style={{ marginBottom: 'var(--space-1)', fontSize: 'var(--text-base)' }} {...props} />
-                ),
-              }}
-            >
-              {previewVisivel}
-            </ReactMarkdown>
-          </div>
+          <div style={{ whiteSpace: 'pre-wrap', lineHeight: 'var(--leading-relaxed)' }}>{previewVisivel}</div>
           {memorial.length > 800 && (
             <div style={{
               marginTop: 'var(--space-4)',
@@ -172,16 +178,6 @@ export default function ConclusaoPage() {
         {statusPagamento === 'sucesso' && (
           <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-3)', backgroundColor: '#E6F7EE', borderRadius: 'var(--radius-md)', color: 'var(--color-success)', fontFamily: 'var(--font-body)' }}>
             Pagamento aprovado! Seu {tipoProduto === 'assinatura' ? 'plano de gestão' : 'PDF'} está liberado.
-          </div>
-        )}
-        {statusPagamento === 'pendente' && (
-          <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-3)', backgroundColor: '#FFF3E6', borderRadius: 'var(--radius-md)', color: 'var(--color-warning-dark)', fontFamily: 'var(--font-body)' }}>
-            Pagamento em processamento. Assim que confirmado, você receberá o acesso.
-          </div>
-        )}
-        {statusPagamento === 'erro' && (
-          <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-3)', backgroundColor: '#FDEDED', borderRadius: 'var(--radius-md)', color: 'var(--color-danger)', fontFamily: 'var(--font-body)' }}>
-            O pagamento não foi concluído. Tente novamente.
           </div>
         )}
 

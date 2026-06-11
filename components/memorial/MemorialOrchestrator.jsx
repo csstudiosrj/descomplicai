@@ -79,20 +79,45 @@ export default function MemorialOrchestrator() {
     estadoRef.current = estado;
   }, [estado]);
 
+  // Restauração automática para anônimos: exibe modal "Continuar onde parou?"
   useEffect(() => {
     if (!usuario && !carregandoAuth && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
       setOferecerDraft(true);
     }
   }, [usuario, carregandoAuth, temDraft, estado.etapaAtual, estado.perfilCasal]);
 
+  // Restauração automática para logados: busca draft local e depois Supabase
   useEffect(() => {
-    if (usuario && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
-      const draft = carregarDraft();
-      if (draft) {
-        carregarEstado(draft);
+    async function restaurarProgresso() {
+      if (!usuario || !temDraft) return;
+      if (estado.etapaAtual !== 0 || estado.perfilCasal) return; // já restaurado
+
+      // 1. Tenta carregar do localStorage
+      const draftLocal = carregarDraft();
+      if (draftLocal) {
+        carregarEstado(draftLocal);
         setOferecerDraft(false);
+        return;
+      }
+
+      // 2. Se não achou local, busca no Supabase
+      try {
+        const { supabase } = await import('../../lib/supabase');
+        const { data: memoriais } = await supabase
+          .from('memoriais')
+          .select('estado')
+          .eq('user_id', usuario.id)
+          .maybeSingle();
+        if (memoriais?.estado) {
+          carregarEstado(memoriais.estado);
+          setOferecerDraft(false);
+        }
+      } catch (e) {
+        console.warn('Falha ao buscar memorial no Supabase:', e);
       }
     }
+
+    restaurarProgresso();
   }, [usuario, temDraft, estado.etapaAtual, estado.perfilCasal, carregarDraft, carregarEstado]);
 
   const etapasTotais = calcularEtapasTotais(estado);
@@ -121,6 +146,7 @@ export default function MemorialOrchestrator() {
     }, 220);
   }, [setRespostas, irParaEtapa, usuario]);
 
+  // Função de conclusão passada para o Step final
   const handleConcluirMemorial = useCallback((fornecedores) => {
     setRespostas('fornecedoresNecessarios', fornecedores);
     router.push('/memorial/conclusao?concluido=1');
