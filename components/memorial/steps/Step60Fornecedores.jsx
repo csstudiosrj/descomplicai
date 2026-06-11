@@ -21,10 +21,9 @@ export default function Step60Fornecedores({ onSelect, onConcluir, estadoAtual }
 
   const handleConfirmar = (event) => {
     event.preventDefault();
-    // Apenas salva os dados, sem disparar o avanço de etapa
-    onSelect('fornecedoresNecessarios', fornecedores);
-    // Usa a prop separada para redirecionar para a conclusão
+    // INVERTIDO: primeiro redireciona, depois salva o estado.
     if (onConcluir) onConcluir();
+    onSelect('fornecedoresNecessarios', fornecedores);
   };
 
   return (
