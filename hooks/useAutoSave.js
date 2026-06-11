@@ -5,16 +5,18 @@ const STORAGE_KEY = 'descomplicai-memorial-draft';
 const DEBOUNCE_MS = 1500;
 
 function draftValido(dados) {
-  return dados && dados.perfilCasal != null;
+  return dados && dados.perfilCasal != null && dados.etapaAtual != null;
 }
 
-export default function useAutoSave(estado, usuario = null) {
+export default function useAutoSave(estado) {
   const [salvandoAgora, setSalvandoAgora] = useState(false);
   const [temDraft, setTemDraft] = useState(false);
-  const timerRef = useRef(null);
-  const ultimoSalvoRef = useRef(null);
+  const [isHydrated, setIsHydrated] = useState(false); // Bloqueio de renderização
 
-  // Detecta draft no localStorage ao montar
+  const timerRef = useRef(null);
+  const estadoRef = useRef(estado); // Fonte única para o debounce
+
+  // Hidratação única na montagem
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -23,8 +25,15 @@ export default function useAutoSave(estado, usuario = null) {
       setTemDraft(draftValido(dados));
     } catch {
       setTemDraft(false);
+    } finally {
+      setIsHydrated(true);
     }
   }, []);
+
+  // Sincroniza o ref com o estado mais recente
+  useEffect(() => {
+    estadoRef.current = estado;
+  }, [estado]);
 
   const salvarLocal = useCallback((dados) => {
     if (typeof window === 'undefined') return;
@@ -37,16 +46,14 @@ export default function useAutoSave(estado, usuario = null) {
     }
   }, []);
 
-  const salvar = useCallback(() => {
+  // Debounce isolado do estado — lê do ref
+  useEffect(() => {
     if (!estado || !draftValido(estado)) return;
-    const serializado = JSON.stringify(estado);
-    if (serializado === ultimoSalvoRef.current) return;
-    ultimoSalvoRef.current = serializado;
-
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
-      salvarLocal(estado);
+      salvarLocal(estadoRef.current);
     }, DEBOUNCE_MS);
+    return () => clearTimeout(timerRef.current);
   }, [estado, salvarLocal]);
 
   const carregarDraft = useCallback(() => {
@@ -54,8 +61,13 @@ export default function useAutoSave(estado, usuario = null) {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       const dados = raw ? JSON.parse(raw) : null;
-      return draftValido(dados) ? dados : null;
+      if (!draftValido(dados)) {
+        localStorage.removeItem(STORAGE_KEY);
+        return null;
+      }
+      return dados;
     } catch {
+      localStorage.removeItem(STORAGE_KEY);
       return null;
     }
   }, []);
@@ -63,18 +75,8 @@ export default function useAutoSave(estado, usuario = null) {
   const limparDraft = useCallback(() => {
     if (typeof window === 'undefined') return;
     localStorage.removeItem(STORAGE_KEY);
-    ultimoSalvoRef.current = null;
     setTemDraft(false);
   }, []);
 
-  useEffect(() => {
-    salvar();
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [salvar]);
-
-  return { salvar, carregarDraft, limparDraft, salvandoAgora, temDraft };
+  return { isHydrated, temDraft, carregarDraft, limparDraft, salvandoAgora };
 }
-
-export { useAutoSave };

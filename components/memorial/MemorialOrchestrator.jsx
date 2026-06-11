@@ -68,35 +68,37 @@ export default function MemorialOrchestrator() {
   const router = useRouter();
   const { estado, setRespostas, carregarEstado, irParaEtapa, voltarEtapa } = useMemorial();
   const { usuario, carregando: carregandoAuth } = useAuth();
-  const { salvandoAgora, temDraft, carregarDraft, limparDraft } = useAutoSave(estado, usuario);
+  const { isHydrated, temDraft, carregarDraft, limparDraft, salvandoAgora } = useAutoSave(estado);
 
   const [transicionando, setTransicionando] = useState(false);
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
-  const draftJaOferecido = useRef(false); // evita repetir modal
+  const restauracaoFeita = useRef(false);
 
-  const estadoRef = useRef(estado);
-  useEffect(() => {
-    estadoRef.current = estado;
-  }, [estado]);
+  // GUARDA DE RENDERIZAÇÃO: não decide nada antes da hidratação
+  if (!isHydrated || carregandoAuth) {
+    return (
+      <div style={{ height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-off-white)' }}>
+        <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Preparando seu memorial...</p>
+      </div>
+    );
+  }
 
-  // Restauração automática APENAS quando detectamos um draft e o estado ainda está inicial
-  useEffect(() => {
-    // Ignora enquanto auth estiver carregando ou se já passou da etapa 0
-    if (carregandoAuth || estado.etapaAtual !== 0 || estado.perfilCasal) return;
+  // ========== LÓGICA DE RESTAURAÇÃO (executa apenas uma vez após hidratação) ==========
+  if (!restauracaoFeita.current) {
+    restauracaoFeita.current = true;
 
-    if (usuario && temDraft) {
-      // Logado: restaura sem perguntar
-      const draft = carregarDraft();
-      if (draft) {
-        carregarEstado(draft);
+    if (estado.etapaAtual === 0 && !estado.perfilCasal && temDraft) {
+      if (usuario) {
+        // Logado: restaura automaticamente
+        const draft = carregarDraft();
+        if (draft) carregarEstado(draft);
+      } else {
+        // Anônimo: exibe modal de draft
+        setOferecerDraft(true);
       }
-    } else if (!usuario && temDraft && !draftJaOferecido.current) {
-      // Anônimo: exibe modal uma única vez
-      setOferecerDraft(true);
-      draftJaOferecido.current = true;
     }
-  }, [carregandoAuth, usuario, temDraft, estado.etapaAtual, estado.perfilCasal, carregarDraft, carregarEstado]);
+  }
 
   const etapasTotais = calcularEtapasTotais(estado);
   const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
@@ -105,12 +107,12 @@ export default function MemorialOrchestrator() {
   const blockName = BLOCK_NAMES[blocoAtual] || '';
 
   const handleSelect = useCallback((campo, valor) => {
-    const novoEstado = { ...estadoRef.current, [campo]: valor };
     setRespostas(campo, valor);
     setTransicionando(true);
 
+    const novoEstado = { ...estado, [campo]: valor };
     setTimeout(() => {
-      const proxima = calcularProximaEtapa(novoEstado, estadoRef.current.etapaAtual);
+      const proxima = calcularProximaEtapa(novoEstado, estado.etapaAtual);
       const etapaId = getEtapaPorIndice(proxima)?.id;
 
       if (!usuario && deveExibirLoginAgora(novoEstado, etapaId)) {
@@ -122,14 +124,17 @@ export default function MemorialOrchestrator() {
       irParaEtapa(proxima);
       setTransicionando(false);
     }, 220);
-  }, [setRespostas, irParaEtapa, usuario]);
+  }, [estado, setRespostas, irParaEtapa, usuario]);
 
-  const handleConcluirMemorial = useCallback((fornecedores) => {
+  const handleConcluirMemorial = useCallback(async (fornecedores) => {
     setRespostas('fornecedoresNecessarios', fornecedores);
-    // Força salvamento imediato do estado atual no localStorage
-    localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estadoRef.current));
-    router.push('/memorial/conclusao?concluido=1');
-  }, [setRespostas, router]);
+    try {
+      localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
+      router.push('/memorial/conclusao?concluido=1');
+    } catch (erro) {
+      alert('Falha ao salvar o progresso. Tente novamente.');
+    }
+  }, [estado, setRespostas, router]);
 
   const handleBack = useCallback(() => {
     if (estado.historicoEtapas.length > 0) voltarEtapa();
@@ -137,15 +142,12 @@ export default function MemorialOrchestrator() {
 
   const handleContinuarDraft = () => {
     const draft = carregarDraft();
-    if (draft) {
-      carregarEstado(draft);
-    }
+    if (draft) carregarEstado(draft);
     setOferecerDraft(false);
   };
 
   const handleDescartarDraft = () => {
     limparDraft();
-    draftJaOferecido.current = false; // permite que o modal apareça novamente se necessário
     setOferecerDraft(false);
   };
 
@@ -168,11 +170,7 @@ export default function MemorialOrchestrator() {
 
         <main style={{ flex: 1, overflowY: 'auto', paddingTop: 'var(--space-6)', paddingBottom: 'var(--space-4)', paddingLeft: 'var(--space-4)', paddingRight: 'var(--space-4)' }}>
           <React.Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><span style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando...</span></div>}>
-            <StepComponent
-              onSelect={handleSelect}
-              estadoAtual={estado}
-              onConcluir={handleConcluirMemorial}
-            />
+            <StepComponent onSelect={handleSelect} estadoAtual={estado} onConcluir={handleConcluirMemorial} />
           </React.Suspense>
         </main>
 

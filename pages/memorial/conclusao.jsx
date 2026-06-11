@@ -5,12 +5,14 @@ import Head from 'next/head';
 import { montarPayloadParaAPI } from '../../utils/gerador-memorial';
 import { useAuth } from '../../hooks/useAuth';
 import { useMemorial } from '../../hooks/useMemorial';
+import useAutoSave from '../../hooks/useAutoSave';
 import Button from '../../components/ui/Button';
 
 export default function ConclusaoPage() {
   const router = useRouter();
   const { estado, carregarEstado } = useMemorial();
   const { usuario } = useAuth();
+  const { isHydrated, carregarDraft } = useAutoSave(estado);
   const [status, setStatus] = useState('carregando');
   const [memorial, setMemorial] = useState('');
   const [erro, setErro] = useState('');
@@ -18,32 +20,31 @@ export default function ConclusaoPage() {
   const [baixandoPDF, setBaixandoPDF] = useState(false);
   const { pagamento: statusPagamento, tipo: tipoProduto, concluido } = router.query;
 
-  useEffect(() => {
-    // 1. Tenta carregar estado do localStorage
-    try {
-      const raw = localStorage.getItem('descomplicai-memorial-draft');
-      if (raw) {
-        const draft = JSON.parse(raw);
-        if (draft && draft.perfilCasal) {
-          carregarEstado(draft);
-          return; // estado carregado, o próximo useEffect gera o memorial
-        }
-      }
-    } catch (e) { /* ignora */ }
+  // GUARDA DE HIDRATAÇÃO
+  if (!isHydrated) {
+    return (
+      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-off-white)' }}>
+        <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando...</p>
+      </div>
+    );
+  }
 
-    // 2. Se não encontrou estado e a página foi acessada sem concluir, volta
-    if (!concluido) {
+  // ========== LÓGICA DE RECUPERAÇÃO DE ESTADO ==========
+  useEffect(() => {
+    const draft = carregarDraft();
+    if (draft) {
+      carregarEstado(draft);
+    } else if (!concluido) {
       router.replace('/memorial');
-      return;
+    } else {
+      setStatus('erro');
+      setErro('Dados do memorial não encontrados. Por favor, finalize novamente.');
     }
+  }, []); // executa apenas na montagem após hidratação
 
-    // 3. Se tem concluido mas não achou estado, erro
-    setStatus('erro');
-    setErro('Dados do memorial não encontrados. Por favor, finalize novamente.');
-  }, []);
-
+  // Gera memorial quando estado está disponível
   useEffect(() => {
-    if (!estado || !estado.etapaAtual) return;
+    if (!estado || !estado.etapaAtual || status !== 'carregando') return;
 
     const gerarMemorial = async () => {
       try {
@@ -55,9 +56,7 @@ export default function ConclusaoPage() {
         });
 
         const data = await resposta.json();
-        if (!resposta.ok || !data.sucesso) {
-          throw new Error(data.erro || 'Erro desconhecido');
-        }
+        if (!resposta.ok || !data.sucesso) throw new Error(data.erro || 'Erro desconhecido');
 
         setMemorial(data.memorial);
         setStatus('pronto');
@@ -68,12 +67,11 @@ export default function ConclusaoPage() {
     };
 
     gerarMemorial();
-  }, [estado]);
+  }, [estado, status]);
 
   const iniciarPagamento = async (tipo) => {
     setPagando(true);
     try {
-      // Garante que o estado atual está salvo
       localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
 
       const resposta = await fetch('/api/pagamento/criar', {
@@ -83,9 +81,7 @@ export default function ConclusaoPage() {
       });
 
       const data = await resposta.json();
-      if (!resposta.ok || !data.sucesso) {
-        throw new Error(data.erro || 'Erro ao criar pagamento');
-      }
+      if (!resposta.ok || !data.sucesso) throw new Error(data.erro || 'Erro ao criar pagamento');
 
       window.location.href = data.checkoutUrl;
     } catch (err) {
@@ -99,15 +95,17 @@ export default function ConclusaoPage() {
   const baixarPDF = async () => {
     setBaixandoPDF(true);
     try {
+      // Validação backend-first: o endpoint verificará o pagamento
       const dadosEvento = montarPayloadParaAPI(estado);
       const resposta = await fetch('/api/gerar-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memorial, dadosEvento }),
+        body: JSON.stringify({ memorial, dadosEvento, userId: usuario?.id }),
       });
 
       if (!resposta.ok) {
-        throw new Error('Erro ao gerar PDF');
+        const err = await resposta.json();
+        throw new Error(err.erro || 'Erro ao gerar PDF');
       }
 
       const blob = await resposta.blob();
@@ -121,7 +119,7 @@ export default function ConclusaoPage() {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error(err);
-      alert('Não foi possível baixar o PDF. Tente novamente.');
+      alert(err.message || 'Não foi possível baixar o PDF. Tente novamente.');
     } finally {
       setBaixandoPDF(false);
     }
