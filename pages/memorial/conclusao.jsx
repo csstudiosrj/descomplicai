@@ -15,11 +15,12 @@ export default function ConclusaoPage() {
   const [memorial, setMemorial] = useState('');
   const [erro, setErro] = useState('');
   const [pagando, setPagando] = useState(false);
+  const [baixandoPDF, setBaixandoPDF] = useState(false);
   const { pagamento: statusPagamento, tipo: tipoProduto, concluido } = router.query;
 
+  // Carrega estado do localStorage ou Supabase ao montar
   useEffect(() => {
     async function carregarEstadoPerdido() {
-      // Tenta recuperar o estado do localStorage (draft anônimo)
       try {
         const raw = localStorage.getItem('descomplicai-memorial-draft');
         if (raw) {
@@ -31,7 +32,6 @@ export default function ConclusaoPage() {
         }
       } catch (e) { /* ignora */ }
 
-      // Se o usuário estiver logado, busca no Supabase
       if (usuario?.id) {
         try {
           const { supabase } = await import('../../lib/supabase');
@@ -47,22 +47,20 @@ export default function ConclusaoPage() {
         } catch (e) { /* ignora */ }
       }
 
-      // Se não encontrou nada e não é retorno de conclusão, redireciona
       if (!concluido) {
         router.replace('/memorial');
       }
     }
 
     carregarEstadoPerdido();
-  }, []); // executa apenas na montagem
+  }, []);
 
   useEffect(() => {
-    if (!estado || !estado.etapaAtual) return; // ainda carregando estado
+    if (!estado || !estado.etapaAtual) return;
 
     const gerarMemorial = async () => {
       try {
         const payload = montarPayloadParaAPI(estado);
-        // Agora o endpoint usa o gerador interno (instantâneo)
         const resposta = await fetch('/api/ia/gerar-memorial', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -108,6 +106,37 @@ export default function ConclusaoPage() {
     }
   };
 
+  const baixarPDF = async () => {
+    setBaixandoPDF(true);
+    try {
+      const dadosEvento = montarPayloadParaAPI(estado);
+      const resposta = await fetch('/api/gerar-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memorial, dadosEvento }),
+      });
+
+      if (!resposta.ok) {
+        throw new Error('Erro ao gerar PDF');
+      }
+
+      const blob = await resposta.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'memorial-descomplicai.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert('Não foi possível baixar o PDF. Tente novamente.');
+    } finally {
+      setBaixandoPDF(false);
+    }
+  };
+
   if (status === 'carregando') {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-4)', backgroundColor: 'var(--color-off-white)' }}>
@@ -134,6 +163,7 @@ export default function ConclusaoPage() {
   }
 
   const previewVisivel = memorial.substring(0, 800);
+  const pagamentoAprovado = statusPagamento === 'sucesso';
 
   return (
     <>
@@ -143,12 +173,16 @@ export default function ConclusaoPage() {
       <div style={{ maxWidth: '640px', margin: '0 auto', padding: 'var(--space-6) var(--space-4) var(--space-8)', fontFamily: 'var(--font-body)' }}>
         <div style={{ marginBottom: 'var(--space-6)' }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-4xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>Memorial pronto!</h1>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-lg)' }}>Ele foi gerado com base nas suas escolhas. Confira um trecho:</p>
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-lg)' }}>
+            {pagamentoAprovado
+              ? 'Seu pagamento foi aprovado! Confira um trecho e baixe o PDF completo.'
+              : 'Ele foi gerado com base nas suas escolhas. Confira um trecho:'}
+          </p>
         </div>
 
         <div style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', padding: 'var(--space-6)', backgroundColor: 'var(--color-white)', marginBottom: 'var(--space-6)' }}>
           <div style={{ whiteSpace: 'pre-wrap', lineHeight: 'var(--leading-relaxed)' }}>{previewVisivel}</div>
-          {memorial.length > 800 && (
+          {memorial.length > 800 && !pagamentoAprovado && (
             <div style={{
               marginTop: 'var(--space-4)',
               padding: 'var(--space-4)',
@@ -167,23 +201,43 @@ export default function ConclusaoPage() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
-          <Button variant="primary" size="lg" fullWidth loading={pagando} onClick={() => iniciarPagamento('memorial_pdf')}>
-            {pagando ? 'Redirecionando...' : 'Baixar PDF completo — R$197'}
-          </Button>
-          <Button variant="secondary" size="lg" fullWidth loading={pagando} onClick={() => iniciarPagamento('assinatura')}>
-            {pagando ? 'Redirecionando...' : 'Gerenciar meu casamento — R$29,90/mês'}
-          </Button>
+          {pagamentoAprovado ? (
+            <>
+              <Button variant="primary" size="lg" fullWidth loading={baixandoPDF} onClick={baixarPDF}>
+                {baixandoPDF ? 'Gerando PDF...' : 'Baixar PDF completo'}
+              </Button>
+              <p style={{ textAlign: 'center', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+                Seu PDF está liberado! Clique no botão acima para fazer o download.
+              </p>
+            </>
+          ) : (
+            <>
+              <Button variant="primary" size="lg" fullWidth loading={pagando} onClick={() => iniciarPagamento('memorial_pdf')}>
+                {pagando ? 'Redirecionando...' : 'Baixar PDF completo — R$197'}
+              </Button>
+              <Button variant="secondary" size="lg" fullWidth loading={pagando} onClick={() => iniciarPagamento('assinatura')}>
+                {pagando ? 'Redirecionando...' : 'Gerenciar meu casamento — R$29,90/mês'}
+              </Button>
+            </>
+          )}
         </div>
 
-        {statusPagamento === 'sucesso' && (
-          <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-3)', backgroundColor: '#E6F7EE', borderRadius: 'var(--radius-md)', color: 'var(--color-success)', fontFamily: 'var(--font-body)' }}>
-            Pagamento aprovado! Seu {tipoProduto === 'assinatura' ? 'plano de gestão' : 'PDF'} está liberado.
+        {statusPagamento === 'pendente' && (
+          <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-3)', backgroundColor: '#FFF3E6', borderRadius: 'var(--radius-md)', color: 'var(--color-warning-dark)', fontFamily: 'var(--font-body)' }}>
+            Pagamento em processamento. Assim que confirmado, você receberá o acesso.
+          </div>
+        )}
+        {statusPagamento === 'erro' && (
+          <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-3)', backgroundColor: '#FDEDED', borderRadius: 'var(--radius-md)', color: 'var(--color-danger)', fontFamily: 'var(--font-body)' }}>
+            O pagamento não foi concluído. Tente novamente.
           </div>
         )}
 
-        <p style={{ textAlign: 'center', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-          Seu memorial ficará salvo por 7 dias. Depois é só assinar para manter o acesso.
-        </p>
+        {!pagamentoAprovado && (
+          <p style={{ textAlign: 'center', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+            Seu memorial ficará salvo por 7 dias. Depois é só assinar para manter o acesso.
+          </p>
+        )}
       </div>
     </>
   );
