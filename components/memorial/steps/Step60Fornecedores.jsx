@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import { listarFornecedoresNecessarios } from '../../../utils/gerador-memorial';
 
-export default function Step60Fornecedores({ onSelect, onConcluir, estadoAtual }) {
+export default function Step60Fornecedores({ onConcluir, estadoAtual }) {
   const fornecedores = useMemo(
     () => listarFornecedoresNecessarios(estadoAtual),
     [estadoAtual]
@@ -21,9 +21,8 @@ export default function Step60Fornecedores({ onSelect, onConcluir, estadoAtual }
 
   const handleConfirmar = (event) => {
     event.preventDefault();
-    // INVERTIDO: primeiro redireciona, depois salva o estado.
-    if (onConcluir) onConcluir();
-    onSelect('fornecedoresNecessarios', fornecedores);
+    // Envia os fornecedores diretamente para conclusão, sem passar pelo handleSelect
+    if (onConcluir) onConcluir(fornecedores);
   };
 
   return (
@@ -156,8 +155,7 @@ export default function Step60Fornecedores({ onSelect, onConcluir, estadoAtual }
 }
 
 Step60Fornecedores.propTypes = {
-  onSelect: PropTypes.func.isRequired,
-  onConcluir: PropTypes.func,
+  onConcluir: PropTypes.func.isRequired,
   estadoAtual: PropTypes.object,
 };
 

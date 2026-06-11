@@ -79,14 +79,12 @@ export default function MemorialOrchestrator() {
     estadoRef.current = estado;
   }, [estado]);
 
-  // Restauração automática para anônimos
   useEffect(() => {
     if (!usuario && !carregandoAuth && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
       setOferecerDraft(true);
     }
   }, [usuario, carregandoAuth, temDraft, estado.etapaAtual, estado.perfilCasal]);
 
-  // Restauração automática para logados
   useEffect(() => {
     if (usuario && temDraft && estado.etapaAtual === 0 && !estado.perfilCasal) {
       const draft = carregarDraft();
@@ -123,10 +121,11 @@ export default function MemorialOrchestrator() {
     }, 220);
   }, [setRespostas, irParaEtapa, usuario]);
 
-  // Função de conclusão passada para o Step final
-  const handleConcluirMemorial = useCallback(() => {
+  // Função exclusiva para finalizar o memorial (sem setTimeout)
+  const handleConcluirMemorial = useCallback((fornecedores) => {
+    setRespostas('fornecedoresNecessarios', fornecedores);
     router.push('/memorial/conclusao');
-  }, [router]);
+  }, [setRespostas, router]);
 
   const handleBack = useCallback(() => {
     if (estado.historicoEtapas.length > 0) voltarEtapa();
