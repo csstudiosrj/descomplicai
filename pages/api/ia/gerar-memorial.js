@@ -1,7 +1,4 @@
 // pages/api/ia/gerar-memorial.js
-// Endpoint que recebe os dados do questionário e gera o memorial via Gemini
-// Dependências: lib/gemini.js
-
 import { gerarTextoGemini } from '../../../lib/gemini';
 
 export default async function handler(req, res) {
@@ -23,9 +20,8 @@ export default async function handler(req, res) {
       sucesso: true, 
       memorial 
     });
-
   } catch (erro) {
-    console.error('Erro ao gerar memorial:', erro);
+    console.error('Erro ao gerar memorial:', erro.message);
     return res.status(500).json({ 
       erro: 'Erro ao gerar memorial',
       detalhe: erro.message 
@@ -79,9 +75,7 @@ function montarPromptMemorial(dados) {
     'mega': 'acima de 300 pessoas'
   }[totalConvidados] || totalConvidados;
 
-  return `Você é um especialista em casamentos brasileiros com 20 anos de experiência, conhecido pela capacidade de criar memoriais únicos e detalhados que capturam perfeitamente a essência de cada casal.
-
-Com base nas informações abaixo, crie um memorial completo, detalhado e personalizado para ${nomeCasal} (${perfilTexto}). O tom deve ser elegante, acolhedor e específico. Nunca genérico — use os detalhes fornecidos para criar algo verdadeiramente único.
+  return `Com base nas informações abaixo, crie um memorial de casamento completo, detalhado e personalizado para ${nomeCasal} (${perfilTexto}). O tom deve ser elegante, acolhedor e específico. Nunca genérico — use os detalhes fornecidos para criar algo verdadeiramente único. Não se apresente como um especialista, apenas entregue o memorial diretamente.
 
 DADOS DO CASAMENTO:
 - Casal: ${nomeCasal} (${perfilTexto})
