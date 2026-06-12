@@ -5,10 +5,8 @@ import { sugerirFontes } from '../../utils/sugestoes';
 import path from 'path';
 import fs from 'fs';
 
-// ========== CAMINHO BASE DAS FONTES ==========
 const BASE_FONTS = path.resolve(process.cwd(), 'public', 'fonts');
 
-// ========== MAPEAMENTO DE FONTES (apenas peso regular) ==========
 const FONTES_LOCAIS = {
   'Cormorant Garamond': { regular: path.join(BASE_FONTS, 'cormorant-garamond-v21-latin-regular.woff2') },
   'Playfair Display': { regular: path.join(BASE_FONTS, 'playfair-display-v40-latin-regular.woff2') },
@@ -29,7 +27,6 @@ const FONTES_LOCAIS = {
   'Space Mono': { regular: path.join(BASE_FONTS, 'space-mono-v17-latin-regular.woff2') },
 };
 
-// ========== FUNÇÃO SEGURA DE REGISTRO DE FONTES ==========
 function registrarFontesLocais(estilo) {
   const fontes = sugerirFontes(estilo) || [];
   fontes.forEach((fonte) => {
@@ -44,7 +41,6 @@ function registrarFontesLocais(estilo) {
   });
 }
 
-// ========== MAPEAMENTO DE IMAGENS DE REFERÊNCIA ==========
 const IMAGENS = {
   flores: {
     'Rosas': 'https://images.unsplash.com/photo-1559563362-c667ba5f5480?w=400',
@@ -100,7 +96,6 @@ function getImagem(categoria, chave) {
   return IMAGENS[categoria]?.[chave] || IMAGENS[categoria]?.default || null;
 }
 
-// ========== UTILITÁRIOS ==========
 function getPaleta(dados) {
   if (dados?.paleta?.length) return dados.paleta;
   return ['#8B6F5E', '#E5E0D9', '#F9F7F4'];
@@ -112,6 +107,10 @@ function isCorEscura(hex) {
   const g = parseInt(hex.substring(3, 5), 16);
   const b = parseInt(hex.substring(5, 7), 16);
   return 0.299 * r + 0.587 * g + 0.114 * b < 128;
+}
+
+function getCorContraste(hex) {
+  return isCorEscura(hex) ? '#FFFFFF' : '#1A1714';
 }
 
 function getCorBorda(paleta) {
@@ -129,11 +128,9 @@ function formatarData(dataISO) {
   return `${dia}/${mes}/${ano}`;
 }
 
-// ========== COMPONENTE PRINCIPAL ==========
 export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false }) {
   const estilo = dadosEvento?.estilo || 'classico';
 
-  // Só registra fontes personalizadas se NÃO estiver no modo fallback
   if (!usarFontesNativas) {
     registrarFontesLocais(estilo);
   }
@@ -152,7 +149,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false }
   const dataFormatada = formatarData(dadosEvento?.dataEvento);
   const cidade = dadosEvento?.cidadeEvento || '';
 
-  // Fontes: personalizadas ou nativas
   const fontesSugeridas = !usarFontesNativas ? sugerirFontes(estilo) : [];
   const fonteDisplay = fontesSugeridas.find(f => f.uso === 'display')?.nome || 'Times-Roman';
   const fonteCorpo = fontesSugeridas.find(f => f.uso === 'corpo')?.nome || 'Helvetica';
@@ -163,35 +159,186 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false }
   const imagemMesa = getImagem('mesaPosta', estilo) || getImagem('mesaPosta', 'default');
   const imagemDecoracao = getImagem('decoracao', estilo) || getImagem('decoracao', 'default');
 
+  // Cores de contraste para capa
+  const corFundoCapa = corTerciaria;
+  const corTextoCapa = getCorContraste(corFundoCapa);
+  const corDetalheCapa = isCorEscura(corFundoCapa) ? corPrimaria : corBorda;
+
   const estilosPDF = StyleSheet.create({
-    capa: { backgroundColor: corTerciaria, height: '100%', alignItems: 'center', justifyContent: 'center', padding: 60 },
-    capaLinha: { width: 50, height: 1.5, backgroundColor: corPrimaria, marginBottom: 28 },
-    capaTitulo: { fontFamily: fonteDisplay, fontSize: 38, color: corTexto, textAlign: 'center', marginBottom: 16 },
-    capaSubtitulo: { fontFamily: fonteCorpo, fontSize: 13, color: corTextoSuave, textAlign: 'center', marginBottom: 10 },
-    capaData: { fontFamily: fonteCorpo, fontSize: 12, color: corPrimaria, textAlign: 'center', marginTop: 12 },
-    capaLocal: { fontFamily: fonteCorpo, fontSize: 12, color: corTextoSuave, textAlign: 'center', marginTop: 6 },
-    paletaContainer: { flexDirection: 'row', gap: 12, marginTop: 32, alignItems: 'center', justifyContent: 'center' },
-    corSwatch: { width: 30, height: 30, borderRadius: 15, borderWidth: 1.5, borderColor: corBorda },
-    pagina: { backgroundColor: '#FFFFFF', padding: 50, paddingBottom: 70 },
-    tituloSecao: { fontFamily: fonteDisplay, fontSize: 24, color: corPrimaria, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: corSecundaria, paddingBottom: 10 },
-    paragrafo: { fontFamily: fonteCorpo, fontSize: 11, color: corTexto, lineHeight: 1.8, marginBottom: 8 },
-    imagem: { width: 200, height: 150, alignSelf: 'center', marginVertical: 12, borderRadius: 4 },
-    rodape: { position: 'absolute', bottom: 20, left: 50, right: 50, flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 0.5, borderTopColor: corSecundaria, paddingTop: 6 },
-    rodapeTexto: { fontFamily: fonteCorpo, fontSize: 8, color: corTextoSuave },
-    tabela: { marginTop: 8, marginBottom: 8 },
-    tabelaLinha: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: corSecundaria, paddingVertical: 4 },
-    tabelaCelula: { fontFamily: fonteCorpo, fontSize: 10, color: corTexto, flex: 1 },
-    tabelaCelulaHeader: { fontFamily: fonteCorpo, fontSize: 10, fontWeight: 'bold', color: corPrimaria, flex: 1 },
-    ctaContainer: { alignItems: 'center', justifyContent: 'center', height: '100%', padding: 40 },
-    ctaTitulo: { fontFamily: fonteDisplay, fontSize: 24, color: corPrimaria, textAlign: 'center', marginBottom: 16 },
-    ctaTexto: { fontFamily: fonteCorpo, fontSize: 12, color: corTexto, textAlign: 'center', lineHeight: 1.8, marginBottom: 20 },
+    capa: {
+      backgroundColor: corFundoCapa,
+      height: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 60,
+    },
+    capaLinha: {
+      width: 50,
+      height: 1.5,
+      backgroundColor: corTextoCapa,
+      marginBottom: 28,
+    },
+    capaTitulo: {
+      fontFamily: fonteDisplay,
+      fontSize: 38,
+      color: corTextoCapa,
+      textAlign: 'center',
+      marginBottom: 16,
+    },
+    capaSubtitulo: {
+      fontFamily: fonteCorpo,
+      fontSize: 13,
+      color: corTextoCapa,
+      textAlign: 'center',
+      marginBottom: 10,
+    },
+    capaData: {
+      fontFamily: fonteCorpo,
+      fontSize: 12,
+      color: corTextoCapa,
+      textAlign: 'center',
+      marginTop: 12,
+    },
+    capaLocal: {
+      fontFamily: fonteCorpo,
+      fontSize: 12,
+      color: corTextoCapa,
+      textAlign: 'center',
+      marginTop: 6,
+    },
+    paletaContainer: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    corSwatch: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      borderWidth: 1.5,
+      borderColor: corBorda,
+    },
+    corLabel: {
+      fontSize: 8,
+      fontFamily: fonteCorpo,
+      color: corTextoCapa,
+      marginTop: 4,
+      textAlign: 'center',
+    },
+    pagina: {
+      backgroundColor: '#FFFFFF',
+      padding: 50,
+      paddingBottom: 70,
+    },
+    tituloSecao: {
+      fontFamily: fonteDisplay,
+      fontSize: 24,
+      color: corPrimaria,
+      marginBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: corSecundaria,
+      paddingBottom: 10,
+    },
+    tituloIndice: {
+      fontFamily: fonteDisplay,
+      fontSize: 24,
+      color: isCorEscura('#FFFFFF') ? '#FFFFFF' : '#1A1714',
+      marginBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: corSecundaria,
+      paddingBottom: 10,
+    },
+    paragrafo: {
+      fontFamily: fonteCorpo,
+      fontSize: 11,
+      color: corTexto,
+      lineHeight: 1.8,
+      marginBottom: 8,
+    },
+    indiceLinha: {
+      fontFamily: fonteCorpo,
+      fontSize: 11,
+      color: corTexto,
+      lineHeight: 1.8,
+      marginBottom: 4,
+      marginLeft: 20,
+    },
+    imagem: {
+      width: 200,
+      height: 150,
+      alignSelf: 'center',
+      marginVertical: 12,
+      borderRadius: 4,
+    },
+    rodape: {
+      position: 'absolute',
+      bottom: 20,
+      left: 50,
+      right: 50,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      borderTopWidth: 0.5,
+      borderTopColor: corSecundaria,
+      paddingTop: 6,
+    },
+    rodapeTexto: {
+      fontFamily: fonteCorpo,
+      fontSize: 8,
+      color: corTextoSuave,
+    },
+    tabela: {
+      marginTop: 8,
+      marginBottom: 8,
+    },
+    tabelaLinha: {
+      flexDirection: 'row',
+      borderBottomWidth: 0.5,
+      borderBottomColor: corSecundaria,
+      paddingVertical: 4,
+    },
+    tabelaCelula: {
+      fontFamily: fonteCorpo,
+      fontSize: 10,
+      color: corTexto,
+      flex: 1,
+    },
+    tabelaCelulaHeader: {
+      fontFamily: fonteCorpo,
+      fontSize: 10,
+      fontWeight: 'bold',
+      color: corPrimaria,
+      flex: 1,
+    },
+    ctaContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '100%',
+      padding: 40,
+    },
+    ctaTitulo: {
+      fontFamily: fonteDisplay,
+      fontSize: 24,
+      color: corPrimaria,
+      textAlign: 'center',
+      marginBottom: 16,
+    },
+    ctaTexto: {
+      fontFamily: fonteCorpo,
+      fontSize: 12,
+      color: corTexto,
+      textAlign: 'center',
+      lineHeight: 1.8,
+      marginBottom: 20,
+    },
   });
 
   function Rodape({ nome, pagina }) {
     return (
       <View style={estilosPDF.rodape} fixed>
         <Text style={estilosPDF.rodapeTexto}>{nome}</Text>
-        <Text style={estilosPDF.rodapeTexto}>gerado pelo descomplicaí · descomplicai.com.br</Text>
+        <Text style={estilosPDF.rodapeTexto}>Gerado pelo descomplicaí · arxum.csstudios.site/descomplicai</Text>
         <Text style={estilosPDF.rodapeTexto}>{pagina}</Text>
       </View>
     );
@@ -256,27 +403,29 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false }
         <View style={estilosPDF.paletaContainer}>
           {paleta.map((cor, i) => (
             <View key={i} style={{ alignItems: 'center' }}>
-              <View style={[estilosPDF.corSwatch, { backgroundColor: cor }]} />
-              <Text style={{ fontSize: 8, fontFamily: fonteCorpo, color: corTextoSuave, marginTop: 4 }}>{cor}</Text>
+              <View style={[estilosPDF.corSwatch, { backgroundColor: cor, borderColor: corBorda }]} />
+              <Text style={estilosPDF.corLabel}>{cor}</Text>
             </View>
           ))}
         </View>
         <Rodape nome={nomeCasal} pagina="1" />
       </Page>
 
-      {/* BOAS-VINDAS */}
+      {/* BOAS-VINDAS E ÍNDICE */}
       <Page size="A4" style={estilosPDF.pagina}>
-        <Text style={estilosPDF.tituloSecao}>Bem-vindos ao seu memorial</Text>
+        <Text style={estilosPDF.tituloIndice}>Bem-vindos ao seu memorial</Text>
         <Text style={estilosPDF.paragrafo}>
           Este memorial foi criado exclusivamente para {nomeCasal} pelo Descomplicaí. Ele reúne todas as decisões, referências e orientações práticas para tornar o planejamento do seu casamento uma experiência leve e organizada.
         </Text>
-        <Text style={{ ...estilosPDF.tituloSecao, fontSize: 16, marginTop: 20 }}>Índice</Text>
+        <Text style={[estilosPDF.tituloIndice, { fontSize: 16, marginTop: 20 }]}>Índice</Text>
         {secoes.map((s, i) => (
-          <Text key={i} style={estilosPDF.paragrafo}>{s.titulo} — pág. {basePagina + i}</Text>
+          <Text key={i} style={estilosPDF.indiceLinha}>
+            {s.titulo} — pág. {basePagina + i}
+          </Text>
         ))}
-        <Text style={estilosPDF.paragrafo}>Fornecedores — pág. {basePagina + secoes.length}</Text>
-        <Text style={estilosPDF.paragrafo}>Orçamento — pág. {basePagina + secoes.length + 1}</Text>
-        <Text style={estilosPDF.paragrafo}>Checklist — pág. {basePagina + secoes.length + 2}</Text>
+        <Text style={estilosPDF.indiceLinha}>Fornecedores — pág. {basePagina + secoes.length}</Text>
+        <Text style={estilosPDF.indiceLinha}>Orçamento — pág. {basePagina + secoes.length + 1}</Text>
+        <Text style={estilosPDF.indiceLinha}>Checklist — pág. {basePagina + secoes.length + 2}</Text>
         <Rodape nome={nomeCasal} pagina="2" />
       </Page>
 
@@ -365,7 +514,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false }
             Assine o Descomplicaí e faça a gestão total do seu casamento de forma inteligente e descomplicada. Você terá controle total de tudo — fornecedores, orçamento, convidados e cronograma — em um só lugar. E ainda pode convidar seu cerimonialista para colaborar.
           </Text>
           <Text style={[estilosPDF.ctaTexto, { fontWeight: 'bold', marginTop: 8 }]}>
-            Acesse descomplicai.com.br e comece agora.
+            Acesse arxum.csstudios.site/descomplicai e comece agora.
           </Text>
         </View>
         <Rodape nome={nomeCasal} pagina={String(basePagina + secoes.length + 3)} />
