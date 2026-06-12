@@ -128,12 +128,128 @@ function formatarData(dataISO) {
   return `${dia}/${mes}/${ano}`;
 }
 
+// Função para renderizar linhas de markdown em componentes PDF
+function renderizarLinha(linha, estilos, idx) {
+  // Títulos
+  if (linha.startsWith('### ')) {
+    return <Text key={idx} style={estilos.subtitulo}>{linha.replace('### ', '')}</Text>;
+  }
+  // Listas
+  if (linha.trim().startsWith('* ') || linha.trim().startsWith('- ')) {
+    const texto = linha.trim().substring(2).replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
+    return (
+      <View key={idx} style={{ flexDirection: 'row', marginBottom: 4, marginLeft: 20 }}>
+        <Text style={estilos.paragrafo}>• </Text>
+        <Text style={estilos.paragrafo}>{texto}</Text>
+      </View>
+    );
+  }
+  // Parágrafos normais com suporte a negrito
+  const texto = linha.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').trim();
+  if (!texto) return <View key={idx} style={{ height: 8 }} />; // linha em branco
+  return <Text key={idx} style={estilos.paragrafo}>{texto}</Text>;
+}
+
+function renderizarFornecedores(linhas, estilos) {
+  // Extrai categorias e nomes do texto markdown
+  const itens = [];
+  let categoriaAtual = '';
+  linhas.forEach(linha => {
+    const trimmed = linha.trim();
+    if (trimmed.startsWith('### ')) {
+      categoriaAtual = trimmed.replace('### ', '').replace(/\*\*/g, '');
+    } else if (trimmed.startsWith('* ') && categoriaAtual) {
+      const nome = trimmed.substring(2).replace(/\*\*/g, '');
+      itens.push({ categoria: categoriaAtual, nome });
+    }
+  });
+  if (itens.length === 0) return null;
+  return (
+    <View style={estilos.tabela}>
+      <View style={estilos.tabelaLinha}>
+        <Text style={estilos.tabelaCelulaHeader}>Categoria</Text>
+        <Text style={estilos.tabelaCelulaHeader}>Fornecedor</Text>
+        <Text style={estilos.tabelaCelulaHeader}>Contato</Text>
+        <Text style={estilos.tabelaCelulaHeader}>Status</Text>
+      </View>
+      {itens.map((item, i) => (
+        <View key={i} style={estilos.tabelaLinha}>
+          <Text style={estilos.tabelaCelula}>{item.categoria}</Text>
+          <Text style={estilos.tabelaCelula}>{item.nome}</Text>
+          <Text style={estilos.tabelaCelula}>________________</Text>
+          <Text style={estilos.tabelaCelula}>A contratar</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function renderizarOrcamento(linhas, estilos, cores) {
+  // Procura por padrões de percentual ou valor
+  const itens = [];
+  linhas.forEach(linha => {
+    const match = linha.match(/\*\*(.*?)\*\*:\s*(\d+)%/);
+    if (match) {
+      itens.push({ item: match[1], percentual: parseInt(match[2]) });
+    }
+  });
+  if (itens.length === 0) return null;
+  return (
+    <View style={estilos.tabela}>
+      <View style={estilos.tabelaLinha}>
+        <Text style={estilos.tabelaCelulaHeader}>Categoria</Text>
+        <Text style={estilos.tabelaCelulaHeader}>Percentual</Text>
+      </View>
+      {itens.map((item, i) => (
+        <View key={i} style={estilos.tabelaLinha}>
+          <Text style={estilos.tabelaCelula}>{item.item}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <View style={{ width: `${item.percentual}%`, height: 10, backgroundColor: cores[i % cores.length], marginRight: 8 }} />
+            <Text style={estilos.tabelaCelula}>{item.percentual}%</Text>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function renderizarChecklist(linhas, estilos) {
+  const itens = [];
+  linhas.forEach(linha => {
+    const trimmed = linha.trim();
+    if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+      const texto = trimmed.substring(2).replace(/\*\*/g, '');
+      // Exemplo: "Definir data do casamento (12 meses antes)"
+      const match = texto.match(/(.*?)\s*\((\d+.*?)\)/);
+      if (match) {
+        itens.push({ item: match[1].trim(), prazo: match[2].trim() });
+      } else {
+        itens.push({ item: texto, prazo: '' });
+      }
+    }
+  });
+  if (itens.length === 0) return null;
+  return (
+    <View style={estilos.tabela}>
+      <View style={estilos.tabelaLinha}>
+        <Text style={estilos.tabelaCelulaHeader}>Decisão</Text>
+        <Text style={estilos.tabelaCelulaHeader}>Prazo</Text>
+        <Text style={estilos.tabelaCelulaHeader}>✓</Text>
+      </View>
+      {itens.map((item, i) => (
+        <View key={i} style={estilos.tabelaLinha}>
+          <Text style={estilos.tabelaCelula}>{item.item}</Text>
+          <Text style={estilos.tabelaCelula}>{item.prazo}</Text>
+          <Text style={estilos.tabelaCelula}>[ ]</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false }) {
   const estilo = dadosEvento?.estilo || 'classico';
-
-  if (!usarFontesNativas) {
-    registrarFontesLocais(estilo);
-  }
+  if (!usarFontesNativas) registrarFontesLocais(estilo);
 
   const paleta = getPaleta(dadosEvento);
   const corPrimaria = paleta[0];
@@ -159,179 +275,33 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false }
   const imagemMesa = getImagem('mesaPosta', estilo) || getImagem('mesaPosta', 'default');
   const imagemDecoracao = getImagem('decoracao', estilo) || getImagem('decoracao', 'default');
 
-  // Cores de contraste para capa
   const corFundoCapa = corTerciaria;
   const corTextoCapa = getCorContraste(corFundoCapa);
-  const corDetalheCapa = isCorEscura(corFundoCapa) ? corPrimaria : corBorda;
 
   const estilosPDF = StyleSheet.create({
-    capa: {
-      backgroundColor: corFundoCapa,
-      height: '100%',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 60,
-    },
-    capaLinha: {
-      width: 50,
-      height: 1.5,
-      backgroundColor: corTextoCapa,
-      marginBottom: 28,
-    },
-    capaTitulo: {
-      fontFamily: fonteDisplay,
-      fontSize: 38,
-      color: corTextoCapa,
-      textAlign: 'center',
-      marginBottom: 16,
-    },
-    capaSubtitulo: {
-      fontFamily: fonteCorpo,
-      fontSize: 13,
-      color: corTextoCapa,
-      textAlign: 'center',
-      marginBottom: 10,
-    },
-    capaData: {
-      fontFamily: fonteCorpo,
-      fontSize: 12,
-      color: corTextoCapa,
-      textAlign: 'center',
-      marginTop: 12,
-    },
-    capaLocal: {
-      fontFamily: fonteCorpo,
-      fontSize: 12,
-      color: corTextoCapa,
-      textAlign: 'center',
-      marginTop: 6,
-    },
-    paletaContainer: {
-      flexDirection: 'row',
-      gap: 12,
-      marginTop: 32,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    corSwatch: {
-      width: 30,
-      height: 30,
-      borderRadius: 15,
-      borderWidth: 1.5,
-      borderColor: corBorda,
-    },
-    corLabel: {
-      fontSize: 8,
-      fontFamily: fonteCorpo,
-      color: corTextoCapa,
-      marginTop: 4,
-      textAlign: 'center',
-    },
-    pagina: {
-      backgroundColor: '#FFFFFF',
-      padding: 50,
-      paddingBottom: 70,
-    },
-    tituloSecao: {
-      fontFamily: fonteDisplay,
-      fontSize: 24,
-      color: corPrimaria,
-      marginBottom: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: corSecundaria,
-      paddingBottom: 10,
-    },
-    tituloIndice: {
-      fontFamily: fonteDisplay,
-      fontSize: 24,
-      color: isCorEscura('#FFFFFF') ? '#FFFFFF' : '#1A1714',
-      marginBottom: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: corSecundaria,
-      paddingBottom: 10,
-    },
-    paragrafo: {
-      fontFamily: fonteCorpo,
-      fontSize: 11,
-      color: corTexto,
-      lineHeight: 1.8,
-      marginBottom: 8,
-    },
-    indiceLinha: {
-      fontFamily: fonteCorpo,
-      fontSize: 11,
-      color: corTexto,
-      lineHeight: 1.8,
-      marginBottom: 4,
-      marginLeft: 20,
-    },
-    imagem: {
-      width: 200,
-      height: 150,
-      alignSelf: 'center',
-      marginVertical: 12,
-      borderRadius: 4,
-    },
-    rodape: {
-      position: 'absolute',
-      bottom: 20,
-      left: 50,
-      right: 50,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      borderTopWidth: 0.5,
-      borderTopColor: corSecundaria,
-      paddingTop: 6,
-    },
-    rodapeTexto: {
-      fontFamily: fonteCorpo,
-      fontSize: 8,
-      color: corTextoSuave,
-    },
-    tabela: {
-      marginTop: 8,
-      marginBottom: 8,
-    },
-    tabelaLinha: {
-      flexDirection: 'row',
-      borderBottomWidth: 0.5,
-      borderBottomColor: corSecundaria,
-      paddingVertical: 4,
-    },
-    tabelaCelula: {
-      fontFamily: fonteCorpo,
-      fontSize: 10,
-      color: corTexto,
-      flex: 1,
-    },
-    tabelaCelulaHeader: {
-      fontFamily: fonteCorpo,
-      fontSize: 10,
-      fontWeight: 'bold',
-      color: corPrimaria,
-      flex: 1,
-    },
-    ctaContainer: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: '100%',
-      padding: 40,
-    },
-    ctaTitulo: {
-      fontFamily: fonteDisplay,
-      fontSize: 24,
-      color: corPrimaria,
-      textAlign: 'center',
-      marginBottom: 16,
-    },
-    ctaTexto: {
-      fontFamily: fonteCorpo,
-      fontSize: 12,
-      color: corTexto,
-      textAlign: 'center',
-      lineHeight: 1.8,
-      marginBottom: 20,
-    },
+    capa: { backgroundColor: corFundoCapa, height: '100%', alignItems: 'center', justifyContent: 'center', padding: 60 },
+    capaLinha: { width: 50, height: 1.5, backgroundColor: corTextoCapa, marginBottom: 28 },
+    capaTitulo: { fontFamily: fonteDisplay, fontSize: 38, color: corTextoCapa, textAlign: 'center', marginBottom: 16 },
+    capaSubtitulo: { fontFamily: fonteCorpo, fontSize: 13, color: corTextoCapa, textAlign: 'center', marginBottom: 10 },
+    capaData: { fontFamily: fonteCorpo, fontSize: 12, color: corTextoCapa, textAlign: 'center', marginTop: 12 },
+    capaLocal: { fontFamily: fonteCorpo, fontSize: 12, color: corTextoCapa, textAlign: 'center', marginTop: 6 },
+    paletaContainer: { flexDirection: 'row', gap: 12, marginTop: 32, alignItems: 'center', justifyContent: 'center' },
+    corSwatch: { width: 30, height: 30, borderRadius: 15, borderWidth: 1.5, borderColor: corBorda },
+    corLabel: { fontSize: 8, fontFamily: fonteCorpo, color: corTextoCapa, marginTop: 4, textAlign: 'center' },
+    pagina: { backgroundColor: '#FFFFFF', padding: 50, paddingBottom: 70 },
+    tituloSecao: { fontFamily: fonteDisplay, fontSize: 24, color: corPrimaria, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: corSecundaria, paddingBottom: 10 },
+    subtitulo: { fontFamily: fonteCorpo, fontSize: 14, fontWeight: 'bold', color: corPrimaria, marginTop: 12, marginBottom: 6 },
+    paragrafo: { fontFamily: fonteCorpo, fontSize: 11, color: corTexto, lineHeight: 1.8, marginBottom: 6 },
+    imagem: { width: 200, height: 150, alignSelf: 'center', marginVertical: 12, borderRadius: 4 },
+    rodape: { position: 'absolute', bottom: 20, left: 50, right: 50, flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 0.5, borderTopColor: corSecundaria, paddingTop: 6 },
+    rodapeTexto: { fontFamily: fonteCorpo, fontSize: 8, color: corTextoSuave },
+    tabela: { marginTop: 8, marginBottom: 8 },
+    tabelaLinha: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: corSecundaria, paddingVertical: 4 },
+    tabelaCelula: { fontFamily: fonteCorpo, fontSize: 10, color: corTexto, flex: 1 },
+    tabelaCelulaHeader: { fontFamily: fonteCorpo, fontSize: 10, fontWeight: 'bold', color: corPrimaria, flex: 1 },
+    ctaContainer: { alignItems: 'center', justifyContent: 'center', height: '100%', padding: 40 },
+    ctaTitulo: { fontFamily: fonteDisplay, fontSize: 24, color: corPrimaria, textAlign: 'center', marginBottom: 16 },
+    ctaTexto: { fontFamily: fonteCorpo, fontSize: 12, color: corTexto, textAlign: 'center', lineHeight: 1.8, marginBottom: 20 },
   });
 
   function Rodape({ nome, pagina }) {
@@ -344,7 +314,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false }
     );
   }
 
-  // Parse markdown
+  // Parse do memorial em seções
   const secoes = [];
   const linhasMemorial = (memorial || '').split('\n');
   let atual = null;
@@ -358,37 +328,21 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false }
   }
   if (atual) secoes.push(atual);
 
-  const fornecedores = dadosEvento?.fornecedoresNecessarios || [
-    { categoria: 'Fotografia', nome: 'Fotógrafo' },
-    { categoria: 'Buffet', nome: 'Buffet' },
-    { categoria: 'Espaço', nome: 'Espaço / Venue' },
-  ];
+  // Identifica seções especiais
+  const secoesNormais = [];
+  let secaoFornecedores = null;
+  let secaoOrcamento = null;
+  let secaoChecklist = null;
 
-  const itensOrcamento = [
-    { item: 'Espaço e locação', percentual: 18, valorEstimado: 4500 },
-    { item: 'Buffet e alimentação', percentual: 28, valorEstimado: 7000 },
-    { item: 'Bebidas e bar', percentual: 10, valorEstimado: 2500 },
-    { item: 'Decoração e flores', percentual: 15, valorEstimado: 3750 },
-    { item: 'Fotografia e vídeo', percentual: 10, valorEstimado: 2500 },
-    { item: 'Música e entretenimento', percentual: 8, valorEstimado: 2000 },
-    { item: 'Vestuário e beleza', percentual: 6, valorEstimado: 1500 },
-    { item: 'Papelaria e convites', percentual: 3, valorEstimado: 750 },
-    { item: 'Transporte e logística', percentual: 2, valorEstimado: 500 },
-  ];
+  secoes.forEach(secao => {
+    const tituloLower = secao.titulo.toLowerCase();
+    if (tituloLower.includes('fornecedor')) secaoFornecedores = secao;
+    else if (tituloLower.includes('orçamento') || tituloLower.includes('orcamento')) secaoOrcamento = secao;
+    else if (tituloLower.includes('checklist') || tituloLower.includes('decisões pendentes')) secaoChecklist = secao;
+    else secoesNormais.push(secao);
+  });
 
-  const checklist = [
-    { item: 'Definir data do casamento', prazo: '12 meses antes' },
-    { item: 'Reservar local', prazo: '10 meses antes' },
-    { item: 'Contratar fotógrafo', prazo: '8 meses antes' },
-    { item: 'Provar vestido/traje', prazo: '6 meses antes' },
-    { item: 'Definir cardápio', prazo: '4 meses antes' },
-    { item: 'Enviar convites', prazo: '3 meses antes' },
-    { item: 'Prova de cabelo/maquiagem', prazo: '2 meses antes' },
-    { item: 'Confirmar presenças', prazo: '1 mês antes' },
-    { item: 'Ensaio geral', prazo: '1 semana antes' },
-  ];
-
-  const basePagina = 2;
+  let paginaAtual = 2;
 
   return (
     <Document>
@@ -403,7 +357,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false }
         <View style={estilosPDF.paletaContainer}>
           {paleta.map((cor, i) => (
             <View key={i} style={{ alignItems: 'center' }}>
-              <View style={[estilosPDF.corSwatch, { backgroundColor: cor, borderColor: corBorda }]} />
+              <View style={[estilosPDF.corSwatch, { backgroundColor: cor }]} />
               <Text style={estilosPDF.corLabel}>{cor}</Text>
             </View>
           ))}
@@ -411,100 +365,62 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false }
         <Rodape nome={nomeCasal} pagina="1" />
       </Page>
 
-      {/* BOAS-VINDAS E ÍNDICE */}
+      {/* ÍNDICE */}
       <Page size="A4" style={estilosPDF.pagina}>
-        <Text style={estilosPDF.tituloIndice}>Bem-vindos ao seu memorial</Text>
-        <Text style={estilosPDF.paragrafo}>
-          Este memorial foi criado exclusivamente para {nomeCasal} pelo Descomplicaí. Ele reúne todas as decisões, referências e orientações práticas para tornar o planejamento do seu casamento uma experiência leve e organizada.
-        </Text>
-        <Text style={[estilosPDF.tituloIndice, { fontSize: 16, marginTop: 20 }]}>Índice</Text>
-        {secoes.map((s, i) => (
-          <Text key={i} style={estilosPDF.indiceLinha}>
-            {s.titulo} — pág. {basePagina + i}
+        <Text style={estilosPDF.tituloSecao}>Índice</Text>
+        {secoesNormais.map((s, i) => (
+          <Text key={i} style={[estilosPDF.paragrafo, { marginLeft: 20 }]}>
+            {s.titulo} — pág. {paginaAtual + i}
           </Text>
         ))}
-        <Text style={estilosPDF.indiceLinha}>Fornecedores — pág. {basePagina + secoes.length}</Text>
-        <Text style={estilosPDF.indiceLinha}>Orçamento — pág. {basePagina + secoes.length + 1}</Text>
-        <Text style={estilosPDF.indiceLinha}>Checklist — pág. {basePagina + secoes.length + 2}</Text>
+        {secaoFornecedores && <Text style={[estilosPDF.paragrafo, { marginLeft: 20 }]}>Fornecedores — pág. {paginaAtual + secoesNormais.length}</Text>}
+        {secaoOrcamento && <Text style={[estilosPDF.paragrafo, { marginLeft: 20 }]}>Orçamento — pág. {paginaAtual + secoesNormais.length + (secaoFornecedores ? 1 : 0)}</Text>}
+        {secaoChecklist && <Text style={[estilosPDF.paragrafo, { marginLeft: 20 }]}>Checklist — pág. {paginaAtual + secoesNormais.length + (secaoFornecedores ? 1 : 0) + (secaoOrcamento ? 1 : 0)}</Text>}
         <Rodape nome={nomeCasal} pagina="2" />
       </Page>
 
-      {/* SEÇÕES */}
-      {secoes.map((secao, idx) => (
-        <Page key={idx} size="A4" style={estilosPDF.pagina}>
+      {/* SEÇÕES NORMAIS */}
+      {secoesNormais.map((secao, idx) => (
+        <Page key={`normal-${idx}`} size="A4" style={estilosPDF.pagina}>
           <Text style={estilosPDF.tituloSecao}>{secao.titulo}</Text>
-          {secao.linhas.map((l, i) => (
-            <Text key={i} style={estilosPDF.paragrafo}>{l.replace(/[*_]{1,2}/g, '').trim()}</Text>
-          ))}
+          {secao.linhas.map((linha, i) => renderizarLinha(linha, estilosPDF, i))}
           {secao.titulo.includes('Identidade Visual') && <Image style={estilosPDF.imagem} src={imagemDecoracao} />}
           {secao.titulo.includes('Decoração') && <Image style={estilosPDF.imagem} src={imagemFlores} />}
           {secao.titulo.includes('Mesa Posta') && <Image style={estilosPDF.imagem} src={imagemMesa} />}
           {secao.titulo.includes('Vestuário') && <Image style={estilosPDF.imagem} src={imagemVestido} />}
-          <Rodape nome={nomeCasal} pagina={String(basePagina + idx)} />
+          <Rodape nome={nomeCasal} pagina={String(paginaAtual + idx)} />
         </Page>
       ))}
 
       {/* FORNECEDORES */}
-      <Page size="A4" style={estilosPDF.pagina}>
-        <Text style={estilosPDF.tituloSecao}>Fornecedores Necessários</Text>
-        <View style={estilosPDF.tabela}>
-          <View style={estilosPDF.tabelaLinha}>
-            <Text style={estilosPDF.tabelaCelulaHeader}>Categoria</Text>
-            <Text style={estilosPDF.tabelaCelulaHeader}>Fornecedor</Text>
-            <Text style={estilosPDF.tabelaCelulaHeader}>Contato</Text>
-            <Text style={estilosPDF.tabelaCelulaHeader}>Status</Text>
-          </View>
-          {fornecedores.map((f, i) => (
-            <View key={i} style={estilosPDF.tabelaLinha}>
-              <Text style={estilosPDF.tabelaCelula}>{f.categoria}</Text>
-              <Text style={estilosPDF.tabelaCelula}>{f.nome}</Text>
-              <Text style={estilosPDF.tabelaCelula}>________________</Text>
-              <Text style={estilosPDF.tabelaCelula}>A contratar</Text>
-            </View>
-          ))}
-        </View>
-        <Rodape nome={nomeCasal} pagina={String(basePagina + secoes.length)} />
-      </Page>
+      {secaoFornecedores && (
+        <Page size="A4" style={estilosPDF.pagina}>
+          <Text style={estilosPDF.tituloSecao}>{secaoFornecedores.titulo}</Text>
+          {renderizarFornecedores(secaoFornecedores.linhas, estilosPDF) || 
+            secaoFornecedores.linhas.map((linha, i) => renderizarLinha(linha, estilosPDF, i))}
+          <Rodape nome={nomeCasal} pagina={String(paginaAtual + secoesNormais.length)} />
+        </Page>
+      )}
 
       {/* ORÇAMENTO */}
-      <Page size="A4" style={estilosPDF.pagina}>
-        <Text style={estilosPDF.tituloSecao}>Estimativa de Orçamento</Text>
-        <View style={estilosPDF.tabela}>
-          <View style={estilosPDF.tabelaLinha}>
-            <Text style={estilosPDF.tabelaCelulaHeader}>Item</Text>
-            <Text style={estilosPDF.tabelaCelulaHeader}>%</Text>
-            <Text style={estilosPDF.tabelaCelulaHeader}>Valor Estimado</Text>
-          </View>
-          {itensOrcamento.map((item, i) => (
-            <View key={i} style={estilosPDF.tabelaLinha}>
-              <Text style={estilosPDF.tabelaCelula}>{item.item}</Text>
-              <Text style={estilosPDF.tabelaCelula}>{item.percentual}%</Text>
-              <Text style={estilosPDF.tabelaCelula}>R$ {item.valorEstimado.toLocaleString('pt-BR')}</Text>
-            </View>
-          ))}
-        </View>
-        <Rodape nome={nomeCasal} pagina={String(basePagina + secoes.length + 1)} />
-      </Page>
+      {secaoOrcamento && (
+        <Page size="A4" style={estilosPDF.pagina}>
+          <Text style={estilosPDF.tituloSecao}>{secaoOrcamento.titulo}</Text>
+          {renderizarOrcamento(secaoOrcamento.linhas, estilosPDF, paleta) ||
+            secaoOrcamento.linhas.map((linha, i) => renderizarLinha(linha, estilosPDF, i))}
+          <Rodape nome={nomeCasal} pagina={String(paginaAtual + secoesNormais.length + (secaoFornecedores ? 1 : 0))} />
+        </Page>
+      )}
 
       {/* CHECKLIST */}
-      <Page size="A4" style={estilosPDF.pagina}>
-        <Text style={estilosPDF.tituloSecao}>Checklist de Decisões</Text>
-        <View style={estilosPDF.tabela}>
-          <View style={estilosPDF.tabelaLinha}>
-            <Text style={estilosPDF.tabelaCelulaHeader}>Decisão</Text>
-            <Text style={estilosPDF.tabelaCelulaHeader}>Prazo</Text>
-            <Text style={estilosPDF.tabelaCelulaHeader}>✓</Text>
-          </View>
-          {checklist.map((item, i) => (
-            <View key={i} style={estilosPDF.tabelaLinha}>
-              <Text style={estilosPDF.tabelaCelula}>{item.item}</Text>
-              <Text style={estilosPDF.tabelaCelula}>{item.prazo}</Text>
-              <Text style={estilosPDF.tabelaCelula}>[ ]</Text>
-            </View>
-          ))}
-        </View>
-        <Rodape nome={nomeCasal} pagina={String(basePagina + secoes.length + 2)} />
-      </Page>
+      {secaoChecklist && (
+        <Page size="A4" style={estilosPDF.pagina}>
+          <Text style={estilosPDF.tituloSecao}>{secaoChecklist.titulo}</Text>
+          {renderizarChecklist(secaoChecklist.linhas, estilosPDF) ||
+            secaoChecklist.linhas.map((linha, i) => renderizarLinha(linha, estilosPDF, i))}
+          <Rodape nome={nomeCasal} pagina={String(paginaAtual + secoesNormais.length + (secaoFornecedores ? 1 : 0) + (secaoOrcamento ? 1 : 0))} />
+        </Page>
+      )}
 
       {/* CONTRACAPA */}
       <Page size="A4" style={estilosPDF.pagina}>
@@ -517,7 +433,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false }
             Acesse arxum.csstudios.site/descomplicai e comece agora.
           </Text>
         </View>
-        <Rodape nome={nomeCasal} pagina={String(basePagina + secoes.length + 3)} />
+        <Rodape nome={nomeCasal} pagina={String(paginaAtual + secoesNormais.length + (secaoFornecedores ? 1 : 0) + (secaoOrcamento ? 1 : 0) + (secaoChecklist ? 1 : 0) + 1)} />
       </Page>
     </Document>
   );
