@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import useMemorial from '../../hooks/useMemorial';
 import { useAuth } from '../../hooks/useAuth';
 import useAutoSave from '../../hooks/useAutoSave';
+import { supabase } from '../../lib/supabase';
 import { calcularProximaEtapa, calcularEtapasTotais, deveExibirLoginAgora, getEtapaPorIndice } from '../../utils/algoritmo';
 import BreathTransition from './BreathTransition';
 import ProgressBar from './ProgressBar';
@@ -75,36 +76,39 @@ export default function MemorialOrchestrator() {
   const [oferecerDraft, setOferecerDraft] = useState(false);
   const restauracaoFeita = useRef(false);
 
-  // ========== RESTAURAÇÃO DE PROGRESSO ==========
+  // ========== RESTAURAÇÃO APÓS LOGIN VIA SUPABASE ==========
   useEffect(() => {
-    if (restauracaoFeita.current) return;
-    if (carregandoAuth) return;
+    if (!usuario) return;
     if (estado.etapaAtual !== 0 || estado.perfilCasal) return;
+    if (restauracaoFeita.current) return;
 
     restauracaoFeita.current = true;
 
-    // Prioridade 1: estado pré-login do sessionStorage
-    try {
-      const preLogin = sessionStorage.getItem('descomplicai-pre-login-state');
-      if (preLogin) {
-        const dados = JSON.parse(preLogin);
-        sessionStorage.removeItem('descomplicai-pre-login-state');
-        if (dados && dados.perfilCasal) {
-          carregarEstado(dados);
+    async function buscarDoSupabase() {
+      try {
+        const { data } = await supabase
+          .from('memoriais')
+          .select('estado, etapa_atual')
+          .eq('user_id', usuario.id)
+          .maybeSingle();
+
+        if (data?.estado && data.estado.perfilCasal) {
+          carregarEstado(data.estado);
           return;
         }
+      } catch (e) {
+        console.warn('Erro ao buscar memorial no Supabase:', e);
       }
-    } catch (e) {}
 
-    // Prioridade 2: draft do localStorage
-    if (!temDraft) return;
-    if (usuario) {
+      // Fallback: oferece draft local se existir
       const draft = carregarDraft();
-      if (draft) carregarEstado(draft);
-    } else {
-      setOferecerDraft(true);
+      if (draft) {
+        setOferecerDraft(true);
+      }
     }
-  }, [carregandoAuth, estado.etapaAtual, estado.perfilCasal, temDraft, usuario, carregarDraft, carregarEstado]);
+
+    buscarDoSupabase();
+  }, [usuario, estado.etapaAtual, estado.perfilCasal, carregarEstado, carregarDraft]);
 
   const etapasTotais = calcularEtapasTotais(estado);
   const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
