@@ -75,15 +75,29 @@ export default function MemorialOrchestrator() {
   const [oferecerDraft, setOferecerDraft] = useState(false);
   const restauracaoFeita = useRef(false);
 
-  // Restauração de progresso ao montar
+  // ========== RESTAURAÇÃO DE PROGRESSO ==========
   useEffect(() => {
     if (restauracaoFeita.current) return;
     if (carregandoAuth) return;
     if (estado.etapaAtual !== 0 || estado.perfilCasal) return;
-    if (!temDraft) return;
 
     restauracaoFeita.current = true;
 
+    // Prioridade 1: estado pré-login do sessionStorage
+    try {
+      const preLogin = sessionStorage.getItem('descomplicai-pre-login-state');
+      if (preLogin) {
+        const dados = JSON.parse(preLogin);
+        sessionStorage.removeItem('descomplicai-pre-login-state');
+        if (dados && dados.perfilCasal) {
+          carregarEstado(dados);
+          return;
+        }
+      }
+    } catch (e) {}
+
+    // Prioridade 2: draft do localStorage
+    if (!temDraft) return;
     if (usuario) {
       const draft = carregarDraft();
       if (draft) carregarEstado(draft);
@@ -118,24 +132,16 @@ export default function MemorialOrchestrator() {
     }, 220);
   }, [estado, setRespostas, irParaEtapa, usuario]);
 
-  // 🔧 CORREÇÃO: salva estado antes de redirecionar para login
-  const handleIrParaLogin = useCallback(() => {
+  // ========== SALVA ESTADO NO sessionStorage ANTES DE IR PARA LOGIN ==========
+  const handleIrParaLogin = (destino) => {
     try {
-      localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
-    } catch (e) {
-      console.warn('Falha ao salvar rascunho antes do login:', e);
-    }
-    router.push('/login?redirect=' + encodeURIComponent('/memorial'));
-  }, [estado, router]);
-
-  const handleIrParaCadastro = useCallback(() => {
-    try {
-      localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
-    } catch (e) {
-      console.warn('Falha ao salvar rascunho antes do cadastro:', e);
-    }
-    router.push('/cadastro?redirect=' + encodeURIComponent('/memorial'));
-  }, [estado, router]);
+      sessionStorage.setItem(
+        'descomplicai-pre-login-state',
+        JSON.stringify(estado)
+      );
+    } catch (e) {}
+    router.push(`${destino}?redirect=${encodeURIComponent('/memorial')}`);
+  };
 
   const handleConcluirMemorial = useCallback(async (fornecedores) => {
     setRespostas('fornecedoresNecessarios', fornecedores);
@@ -206,8 +212,8 @@ export default function MemorialOrchestrator() {
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-4)' }}>Quase lá!</h2>
               <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)' }}>Para continuar seu memorial na nuvem e acessar de qualquer lugar, faça login ou crie sua conta.</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                <button onClick={handleIrParaLogin} style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: 'none', backgroundColor: 'var(--color-brand)', color: 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}>Fazer login</button>
-                <button onClick={handleIrParaCadastro} style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-brand)', backgroundColor: 'transparent', color: 'var(--color-brand)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}>Criar conta</button>
+                <button onClick={() => handleIrParaLogin('/login')} style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: 'none', backgroundColor: 'var(--color-brand)', color: 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}>Fazer login</button>
+                <button onClick={() => handleIrParaLogin('/cadastro')} style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-brand)', backgroundColor: 'transparent', color: 'var(--color-brand)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}>Criar conta</button>
               </div>
             </div>
           </div>
