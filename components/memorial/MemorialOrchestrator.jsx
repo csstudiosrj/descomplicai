@@ -86,11 +86,15 @@ export default function MemorialOrchestrator() {
 
     async function buscarDoSupabase() {
       try {
-        const { data } = await supabase
+        console.log('buscando memorial para user_id:', usuario.id); // 🔍 LOG TEMPORÁRIO
+        
+        const { data, error } = await supabase
           .from('memoriais')
           .select('estado, etapa_atual')
           .eq('user_id', usuario.id)
           .maybeSingle();
+
+        console.log('resultado supabase:', data, error); // 🔍 LOG TEMPORÁRIO
 
         if (data?.estado && data.estado.perfilCasal) {
           carregarEstado(data.estado);
