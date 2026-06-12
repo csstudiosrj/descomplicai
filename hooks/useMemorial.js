@@ -56,7 +56,7 @@ const ESTADO_INICIAL = {
   coquetel: null,
   duracaoCoquetel: null,
   tipoJantar: null,
-  restricoesAlimentares: null,
+  restricoesAlimentares: [],
   bolo: null,
   saborBolo: '',
   mesaDoces: null,
@@ -104,26 +104,33 @@ export default function useMemorial() {
   }, []);
 
   const carregarEstado = useCallback((novoEstado) => {
-    setEstado((prev) => ({
-      ...prev,
-      ...novoEstado,
-      paleta: novoEstado.paleta || prev.paleta,
-      tomsIdentidade: novoEstado.tomsIdentidade || prev.tomsIdentidade,
-      referenciasVisuais: novoEstado.referenciasVisuais || prev.referenciasVisuais,
-      locaisFlores: novoEstado.locaisFlores || prev.locaisFlores,
-      elementosCerimonia: novoEstado.elementosCerimonia || prev.elementosCerimonia,
-      papeisCriancas: novoEstado.papeisCriancas || prev.papeisCriancas,
-      rituaisSimbolicos: novoEstado.rituaisSimbolicos || prev.rituaisSimbolicos,
-      estiloMusical: novoEstado.estiloMusical || prev.estiloMusical,
-      atividadesEntretenimento: novoEstado.atividadesEntretenimento || prev.atividadesEntretenimento,
-      itensKitSaida: novoEstado.itensKitSaida || prev.itensKitSaida,
-      sinalizacaoEvento: novoEstado.sinalizacaoEvento || prev.sinalizacaoEvento,
-      fontesIdentidade: novoEstado.fontesIdentidade || prev.fontesIdentidade,
-      itensDigitais: novoEstado.itensDigitais || prev.itensDigitais,
-      acessorios: novoEstado.acessorios || prev.acessorios,
-      fornecedoresNecessarios: novoEstado.fornecedoresNecessarios || prev.fornecedoresNecessarios,
-      historicoEtapas: novoEstado.historicoEtapas || prev.historicoEtapas,
-    }));
+    setEstado((prev) => {
+      // Mescla o estado anterior com o novo, garantindo que arrays e objetos sejam preservados
+      return {
+        ...prev,
+        ...novoEstado,
+        // Arrays: se vierem no novoEstado, usa eles; senão mantém os anteriores
+        paleta: Array.isArray(novoEstado.paleta) ? novoEstado.paleta : prev.paleta,
+        tomsIdentidade: Array.isArray(novoEstado.tomsIdentidade) ? novoEstado.tomsIdentidade : prev.tomsIdentidade,
+        referenciasVisuais: Array.isArray(novoEstado.referenciasVisuais) ? novoEstado.referenciasVisuais : prev.referenciasVisuais,
+        locaisFlores: Array.isArray(novoEstado.locaisFlores) ? novoEstado.locaisFlores : prev.locaisFlores,
+        elementosCerimonia: Array.isArray(novoEstado.elementosCerimonia) ? novoEstado.elementosCerimonia : prev.elementosCerimonia,
+        papeisCriancas: Array.isArray(novoEstado.papeisCriancas) ? novoEstado.papeisCriancas : prev.papeisCriancas,
+        rituaisSimbolicos: Array.isArray(novoEstado.rituaisSimbolicos) ? novoEstado.rituaisSimbolicos : prev.rituaisSimbolicos,
+        estiloMusical: Array.isArray(novoEstado.estiloMusical) ? novoEstado.estiloMusical : prev.estiloMusical,
+        atividadesEntretenimento: Array.isArray(novoEstado.atividadesEntretenimento) ? novoEstado.atividadesEntretenimento : prev.atividadesEntretenimento,
+        itensKitSaida: Array.isArray(novoEstado.itensKitSaida) ? novoEstado.itensKitSaida : prev.itensKitSaida,
+        sinalizacaoEvento: Array.isArray(novoEstado.sinalizacaoEvento) ? novoEstado.sinalizacaoEvento : prev.sinalizacaoEvento,
+        fontesIdentidade: Array.isArray(novoEstado.fontesIdentidade) ? novoEstado.fontesIdentidade : prev.fontesIdentidade,
+        itensDigitais: Array.isArray(novoEstado.itensDigitais) ? novoEstado.itensDigitais : prev.itensDigitais,
+        acessorios: Array.isArray(novoEstado.acessorios) ? novoEstado.acessorios : prev.acessorios,
+        fornecedoresNecessarios: Array.isArray(novoEstado.fornecedoresNecessarios) ? novoEstado.fornecedoresNecessarios : prev.fornecedoresNecessarios,
+        restricoesAlimentares: Array.isArray(novoEstado.restricoesAlimentares) ? novoEstado.restricoesAlimentares : prev.restricoesAlimentares,
+        historicoEtapas: Array.isArray(novoEstado.historicoEtapas) ? novoEstado.historicoEtapas : prev.historicoEtapas,
+        // Garante que etapaAtual seja um número válido
+        etapaAtual: typeof novoEstado.etapaAtual === 'number' ? novoEstado.etapaAtual : prev.etapaAtual,
+      };
+    });
   }, []);
 
   const avancarEtapa = useCallback(() => {
