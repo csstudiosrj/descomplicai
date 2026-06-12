@@ -3,42 +3,123 @@ import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Font, Image } from '@react-pdf/renderer';
 import { sugerirFontes } from '../../utils/sugestoes';
 
-// ========== REGISTRO DE FONTES LOCAIS ==========
+// ========== REGISTRO DE FONTES LOCAIS (nomes exatos dos arquivos) ==========
 const FONTES_LOCAIS = {
-  'Cormorant Garamond': { regular: '/fonts/cormorant-garamond-v16-latin-regular.woff2', bold: '/fonts/cormorant-garamond-v16-latin-700.woff2' },
-  'Playfair Display': { regular: '/fonts/playfair-display-v30-latin-regular.woff2', bold: '/fonts/playfair-display-v30-latin-700.woff2' },
-  'Amatic SC': { regular: '/fonts/amatic-sc-v24-latin-regular.woff2', bold: '/fonts/amatic-sc-v24-latin-700.woff2' },
-  'Lora': { regular: '/fonts/lora-v26-latin-regular.woff2', bold: '/fonts/lora-v26-latin-700.woff2' },
-  'Josefin Sans': { regular: '/fonts/josefin-sans-v32-latin-regular.woff2', bold: '/fonts/josefin-sans-v32-latin-700.woff2' },
-  'Montserrat': { regular: '/fonts/montserrat-v29-latin-regular.woff2', bold: '/fonts/montserrat-v29-latin-700.woff2' },
-  'Open Sans': { regular: '/fonts/open-sans-v40-latin-regular.woff2', bold: '/fonts/open-sans-v40-latin-700.woff2' },
-  'Inter': { regular: '/fonts/inter-v18-latin-regular.woff2', bold: '/fonts/inter-v18-latin-700.woff2' },
-  'Oswald': { regular: '/fonts/oswald-v53-latin-regular.woff2', bold: '/fonts/oswald-v53-latin-700.woff2' },
-  'Roboto': { regular: '/fonts/roboto-v32-latin-regular.woff2', bold: '/fonts/roboto-v32-latin-700.woff2' },
-  'Pacifico': { regular: '/fonts/pacifico-v22-latin-regular.woff2' },
-  'Nunito': { regular: '/fonts/nunito-v26-latin-regular.woff2', bold: '/fonts/nunito-v26-latin-700.woff2' },
-  'Great Vibes': { regular: '/fonts/great-vibes-v19-latin-regular.woff2' },
-  'Crimson Text': { regular: '/fonts/crimson-text-v19-latin-regular.woff2', bold: '/fonts/crimson-text-v19-latin-700.woff2' },
-  'EB Garamond': { regular: '/fonts/eb-garamond-v30-latin-regular.woff2', bold: '/fonts/eb-garamond-v30-latin-700.woff2' },
-  'DM Sans': { regular: '/fonts/dm-sans-v15-latin-regular.woff2', bold: '/fonts/dm-sans-v15-latin-700.woff2' },
+  'Cormorant Garamond': {
+    regular: '/fonts/cormorant-garamond-v21-latin-regular.woff2',
+    bold: '/fonts/cormorant-garamond-v21-latin-700.woff2',
+  },
+  'Playfair Display': {
+    regular: '/fonts/playfair-display-v40-latin-regular.woff2',
+    bold: '/fonts/playfair-display-v40-latin-700.woff2',
+  },
+  'Amatic SC': {
+    regular: '/fonts/amatic-sc-v28-latin-regular.woff2',
+    bold: '/fonts/amatic-sc-v28-latin-700.woff2',
+  },
+  'Lora': {
+    regular: '/fonts/lora-v37-latin-regular.woff2',
+    bold: '/fonts/lora-v37-latin-700.woff2',
+  },
+  'Josefin Sans': {
+    regular: '/fonts/josefin-sans-v34-latin-regular.woff2',
+    bold: '/fonts/josefin-sans-v34-latin-700.woff2',
+  },
+  'Montserrat': {
+    regular: '/fonts/montserrat-v31-latin-regular.woff2',
+    bold: '/fonts/montserrat-v31-latin-700.woff2',
+  },
+  'Open Sans': {
+    regular: '/fonts/open-sans-v44-latin-regular.woff2',
+    bold: '/fonts/open-sans-v44-latin-700.woff2',
+  },
+  'Inter': {
+    regular: '/fonts/inter-v20-latin-regular.woff2',
+    bold: '/fonts/inter-v20-latin-700.woff2',
+  },
+  'Oswald': {
+    regular: '/fonts/oswald-v57-latin-regular.woff2',
+    bold: '/fonts/oswald-v57-latin-700.woff2',
+  },
+  'Roboto': {
+    regular: '/fonts/roboto-v51-latin-regular.woff2',
+    bold: '/fonts/roboto-v51-latin-700.woff2',
+  },
+  'Pacifico': {
+    regular: '/fonts/pacifico-v23-latin-regular.woff2',
+  },
+  'Nunito': {
+    regular: '/fonts/nunito-v32-latin-regular.woff2',
+    bold: '/fonts/nunito-v32-latin-700.woff2',
+  },
+  'Great Vibes': {
+    regular: '/fonts/great-vibes-v21-latin-regular.woff2',
+  },
+  'Crimson Text': {
+    regular: '/fonts/crimson-text-v19-latin-regular.woff2',
+    bold: '/fonts/crimson-text-v19-latin-700.woff2',
+  },
+  'EB Garamond': {
+    regular: '/fonts/eb-garamond-v32-latin-regular.woff2',
+    bold: '/fonts/eb-garamond-v32-latin-700.woff2',
+  },
+  'DM Sans': {
+    light: '/fonts/dm-sans-v17-latin-300.woff2',
+    regular: '/fonts/dm-sans-v17-latin-regular.woff2',
+    medium: '/fonts/dm-sans-v17-latin-500.woff2',
+    bold: '/fonts/dm-sans-v17-latin-700.woff2',
+  },
+  'Space Mono': {
+    regular: '/fonts/space-mono-v17-latin-regular.woff2',
+    bold: '/fonts/space-mono-v17-latin-700.woff2',
+    italic: '/fonts/space-mono-v17-latin-italic.woff2',
+    boldItalic: '/fonts/space-mono-v17-latin-700italic.woff2',
+  },
+  // Fontes adicionais sugeridas pelo Claude (já baixadas)
+  'Dancing Script': {
+    regular: '/fonts/dancing-script-v29-latin-regular.woff2',
+    bold: '/fonts/dancing-script-v29-latin-700.woff2',
+  },
+  'JetBrains Mono': {
+    regular: '/fonts/jetbrains-mono-v24-latin-regular.woff2',
+    bold: '/fonts/jetbrains-mono-v24-latin-700.woff2',
+  },
+  'Lato': {
+    regular: '/fonts/lato-v25-latin-regular.woff2',
+    bold: '/fonts/lato-v25-latin-700.woff2',
+  },
+  'Libre Baskerville': {
+    regular: '/fonts/libre-baskerville-v24-latin-regular.woff2',
+    bold: '/fonts/libre-baskerville-v24-latin-700.woff2',
+  },
+  'Parisienne': {
+    regular: '/fonts/parisienne-v14-latin-regular.woff2',
+  },
+  'Source Serif 4': {
+    regular: '/fonts/source-serif-4-v14-latin-regular.woff2',
+    bold: '/fonts/source-serif-4-v14-latin-700.woff2',
+  },
 };
 
-// Registra apenas as fontes do estilo atual
 function registrarFontesLocais(estilo) {
   const fontes = sugerirFontes(estilo) || [];
   fontes.forEach((fonte) => {
     const arquivos = FONTES_LOCAIS[fonte.nome];
     if (!arquivos) return;
     try {
-      if (arquivos.bold) {
-        Font.register({ family: fonte.nome, fonts: [
-          { src: arquivos.regular, fontWeight: 400 },
-          { src: arquivos.bold, fontWeight: 700 },
-        ]});
-      } else {
-        Font.register({ family: fonte.nome, src: arquivos.regular });
+      const fonts = [];
+      if (arquivos.light) fonts.push({ src: arquivos.light, fontWeight: 300 });
+      if (arquivos.regular) fonts.push({ src: arquivos.regular, fontWeight: 400 });
+      if (arquivos.medium) fonts.push({ src: arquivos.medium, fontWeight: 500 });
+      if (arquivos.bold) fonts.push({ src: arquivos.bold, fontWeight: 700 });
+      if (arquivos.italic) fonts.push({ src: arquivos.italic, fontWeight: 400, fontStyle: 'italic' });
+      if (arquivos.boldItalic) fonts.push({ src: arquivos.boldItalic, fontWeight: 700, fontStyle: 'italic' });
+      if (fonts.length > 0) {
+        Font.register({ family: fonte.nome, fonts });
       }
-    } catch (e) { /* fallback para Times-Roman/Helvetica */ }
+    } catch (e) {
+      /* fallback para Times-Roman/Helvetica */
+    }
   });
 }
 
