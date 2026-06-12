@@ -3,10 +3,12 @@ import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Font, Image } from '@react-pdf/renderer';
 import { sugerirFontes } from '../../utils/sugestoes';
 import path from 'path';
+import fs from 'fs';
 
-// ========== REGISTRO DE FONTES LOCAIS (com caminhos absolutos) ==========
+// ========== CAMINHO BASE DAS FONTES ==========
 const BASE_FONTS = path.resolve(process.cwd(), 'public', 'fonts');
 
+// ========== MAPEAMENTO COMPLETO DE FONTES ==========
 const FONTES_LOCAIS = {
   'Cormorant Garamond': {
     regular: path.join(BASE_FONTS, 'cormorant-garamond-v21-latin-regular.woff2'),
@@ -78,49 +80,45 @@ const FONTES_LOCAIS = {
     italic: path.join(BASE_FONTS, 'space-mono-v17-latin-italic.woff2'),
     boldItalic: path.join(BASE_FONTS, 'space-mono-v17-latin-700italic.woff2'),
   },
-  'Dancing Script': {
-    regular: path.join(BASE_FONTS, 'dancing-script-v29-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'dancing-script-v29-latin-700.woff2'),
-  },
-  'JetBrains Mono': {
-    regular: path.join(BASE_FONTS, 'jetbrains-mono-v24-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'jetbrains-mono-v24-latin-700.woff2'),
-  },
-  'Lato': {
-    regular: path.join(BASE_FONTS, 'lato-v25-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'lato-v25-latin-700.woff2'),
-  },
-  'Libre Baskerville': {
-    regular: path.join(BASE_FONTS, 'libre-baskerville-v24-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'libre-baskerville-v24-latin-700.woff2'),
-  },
-  'Parisienne': {
-    regular: path.join(BASE_FONTS, 'parisienne-v14-latin-regular.woff2'),
-  },
-  'Source Serif 4': {
-    regular: path.join(BASE_FONTS, 'source-serif-4-v14-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'source-serif-4-v14-latin-700.woff2'),
-  },
 };
 
+// ========== FUNÇÃO SEGURA DE REGISTRO DE FONTES ==========
 function registrarFontesLocais(estilo) {
   const fontes = sugerirFontes(estilo) || [];
   fontes.forEach((fonte) => {
     const arquivos = FONTES_LOCAIS[fonte.nome];
     if (!arquivos) return;
+
     try {
       const fonts = [];
-      if (arquivos.light) fonts.push({ src: arquivos.light, fontWeight: 300 });
-      if (arquivos.regular) fonts.push({ src: arquivos.regular, fontWeight: 400 });
-      if (arquivos.medium) fonts.push({ src: arquivos.medium, fontWeight: 500 });
-      if (arquivos.bold) fonts.push({ src: arquivos.bold, fontWeight: 700 });
-      if (arquivos.italic) fonts.push({ src: arquivos.italic, fontWeight: 400, fontStyle: 'italic' });
-      if (arquivos.boldItalic) fonts.push({ src: arquivos.boldItalic, fontWeight: 700, fontStyle: 'italic' });
+
+      // Verifica e adiciona cada peso
+      if (arquivos.light && fs.existsSync(arquivos.light) && fs.statSync(arquivos.light).size > 0) {
+        fonts.push({ src: arquivos.light, fontWeight: 300 });
+      }
+      if (arquivos.regular && fs.existsSync(arquivos.regular) && fs.statSync(arquivos.regular).size > 0) {
+        fonts.push({ src: arquivos.regular, fontWeight: 400 });
+      }
+      if (arquivos.medium && fs.existsSync(arquivos.medium) && fs.statSync(arquivos.medium).size > 0) {
+        fonts.push({ src: arquivos.medium, fontWeight: 500 });
+      }
+      if (arquivos.bold && fs.existsSync(arquivos.bold) && fs.statSync(arquivos.bold).size > 0) {
+        fonts.push({ src: arquivos.bold, fontWeight: 700 });
+      }
+      if (arquivos.italic && fs.existsSync(arquivos.italic) && fs.statSync(arquivos.italic).size > 0) {
+        fonts.push({ src: arquivos.italic, fontWeight: 400, fontStyle: 'italic' });
+      }
+      if (arquivos.boldItalic && fs.existsSync(arquivos.boldItalic) && fs.statSync(arquivos.boldItalic).size > 0) {
+        fonts.push({ src: arquivos.boldItalic, fontWeight: 700, fontStyle: 'italic' });
+      }
+
+      // Só registra se houver pelo menos um arquivo válido
       if (fonts.length > 0) {
         Font.register({ family: fonte.nome, fonts });
       }
     } catch (e) {
-      /* fallback silencioso */
+      console.warn(`Falha ao registrar fonte ${fonte.nome}:`, e.message);
+      // Fallback silencioso para Times-Roman ou Helvetica
     }
   });
 }
