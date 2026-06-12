@@ -18,25 +18,23 @@ export default function ConclusaoPage() {
   const [erro, setErro] = useState('');
   const [baixandoPDF, setBaixandoPDF] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [pagando, setPagando] = useState(false); // estado de carregamento dos botões de pagamento
 
   const { pagamento: statusPagamento, tipo: tipoProduto, concluido } = router.query;
   const pagamentoAprovado = statusPagamento === 'sucesso';
   const pdfLiberado = pagamentoAprovado && tipoProduto === 'memorial_pdf';
   const assinaturaAtiva = pagamentoAprovado && tipoProduto === 'assinatura';
 
-  // Evita hydration mismatch (necessário mesmo dentro de ClientOnly)
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Redireciona imediatamente se for assinatura aprovada
   useEffect(() => {
     if (isMounted && isHydrated && assinaturaAtiva) {
       router.replace('/painel');
     }
   }, [isMounted, isHydrated, assinaturaAtiva, router]);
 
-  // Recupera estado do draft e gera o memorial
   useEffect(() => {
     if (!isMounted || !isHydrated) return;
 
@@ -110,6 +108,69 @@ export default function ConclusaoPage() {
       alert(err.message || 'Não foi possível baixar o PDF. Tente novamente.');
     } finally {
       setBaixandoPDF(false);
+    }
+  };
+
+  // 🔧 Novas funções para iniciar pagamento diretamente via API
+  const handleComprarPDF = async () => {
+    setPagando(true);
+    try {
+      const dadosEvento = {
+        ...montarPayloadParaAPI(estado),
+        email: usuario?.email || null,
+      };
+
+      const resposta = await fetch('/api/pagamento/criar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'memorial_pdf',
+          dadosEvento,
+        }),
+      });
+
+      const data = await resposta.json();
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        alert(data.erro || 'Erro ao iniciar pagamento');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao iniciar pagamento. Tente novamente.');
+    } finally {
+      setPagando(false);
+    }
+  };
+
+  const handleComprarAssinatura = async () => {
+    setPagando(true);
+    try {
+      const dadosEvento = {
+        ...montarPayloadParaAPI(estado),
+        email: usuario?.email || null,
+      };
+
+      const resposta = await fetch('/api/pagamento/criar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'assinatura',
+          dadosEvento,
+        }),
+      });
+
+      const data = await resposta.json();
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        alert(data.erro || 'Erro ao iniciar pagamento');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao iniciar pagamento. Tente novamente.');
+    } finally {
+      setPagando(false);
     }
   };
 
@@ -199,11 +260,11 @@ export default function ConclusaoPage() {
             </>
           ) : (
             <>
-              <Button variant="primary" size="lg" fullWidth onClick={() => router.push('/planos?produto=pdf')}>
-                Baixar PDF completo — R$197
+              <Button variant="primary" size="lg" fullWidth loading={pagando} onClick={handleComprarPDF}>
+                {pagando ? 'Redirecionando...' : 'Baixar PDF completo — R$197'}
               </Button>
-              <Button variant="secondary" size="lg" fullWidth onClick={() => router.push('/planos?produto=assinatura')}>
-                Gerenciar meu casamento — R$29,90/mês
+              <Button variant="secondary" size="lg" fullWidth loading={pagando} onClick={handleComprarAssinatura}>
+                {pagando ? 'Redirecionando...' : 'Gerenciar meu casamento — R$29,90/mês'}
               </Button>
             </>
           )}
