@@ -63,33 +63,43 @@ function getImagem(categoria, chave) {
 }
 
 // ========== FUNÇÕES AUXILIARES ==========
+const FONTES_CONFIABLE = {
+  'Cormorant Garamond': 'https://fonts.gstatic.com/s/cormorantgaramond/v16/co3YmX5slCNuHLi8bLeY9MK7whWMhyjYqXtK.woff2',
+  'Playfair Display': 'https://fonts.gstatic.com/s/playfairdisplay/v37/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvXDXbtY.woff2',
+  'Montserrat': 'https://fonts.gstatic.com/s/montserrat/v29/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw5aXo.woff2',
+  'Inter': 'https://fonts.gstatic.com/s/inter/v18/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2',
+  'Lora': 'https://fonts.gstatic.com/s/lora/v35/0QI6MX1D_JOuGQbT0gvTJPa787weuxJBkqg.woff2',
+  'Great Vibes': 'https://fonts.gstatic.com/s/greatvibes/v19/RWmMoKWR9v4ksMfaWd_JN9XFiaQ.woff2',
+  'Oswald': 'https://fonts.gstatic.com/s/oswald/v53/TK3_WkUHHAIjg75cFRf3bXL8LICs1xvsUhiZTaR.woff2',
+  'Roboto': 'https://fonts.gstatic.com/s/roboto/v32/KFOmCnqEu92Fr1Mu4mxK.woff2',
+  'Pacifico': 'https://fonts.gstatic.com/s/pacifico/v22/FwZY7-Qmy14u9lezJ-6H6Mw.woff2',
+  'Nunito': 'https://fonts.gstatic.com/s/nunito/v26/XRXI3I6Li01BKofiOc5wtlZ2di8HDOIT.woff2',
+  'Cinzel Decorative': 'https://fonts.gstatic.com/s/cinzeldecorative/v17/daaCSScvJGqLYhG8nNt8KPPswUAPni7TTMw.woff2',
+  'Crimson Text': 'https://fonts.gstatic.com/s/crimsontext/v19/wlp2gwHKFkZgtmSR3NB0oRJfbwhT.woff2',
+  'Josefin Sans': 'https://fonts.gstatic.com/s/josefinsans/v32/Qw3PZQNVED7rKGKxtqIqX5E-AVSJrOCfjY46_DjQbMlh.woff2',
+  'EB Garamond': 'https://fonts.gstatic.com/s/ebgaramond/v30/SlGDmQSNjdsmc35JDF1K5E55YMjF_7DPuGi-6_RUAw.woff2',
+  'Amatic SC': 'https://fonts.gstatic.com/s/amaticsc/v24/TUZyzwprpvBS1izr_vO0DQ.woff2',
+  'Open Sans': 'https://fonts.gstatic.com/s/opensans/v40/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVI.woff2',
+  'DM Sans': 'https://fonts.gstatic.com/s/dmsans/v15/rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2',
+};
+
 function registrarFontes(estilo) {
   const fontes = sugerirFontes(estilo) || [];
   fontes.forEach((fonte) => {
+    if (!FONTES_CONFIABLE[fonte.nome]) return;
     try {
-      const fontMap = {
-        'Cormorant Garamond': 'https://fonts.gstatic.com/s/cormorantgaramond/v21/co3YmX5slCNuHLi8bLeY9MK7whWMhyjYqXtK.woff2',
-        'Playfair Display': 'https://fonts.gstatic.com/s/playfairdisplay/v30/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvXDXbtY.woff2',
-        'Montserrat': 'https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw5aXo.woff2',
-        'Inter': 'https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2',
-        'Lora': 'https://fonts.gstatic.com/s/lora/v26/0QIvMX1D_JOuMwr7Iw.woff2',
-        'Great Vibes': 'https://fonts.gstatic.com/s/greatvibes/v15/RWmMoKWR9v4ksMfaWd_JN9XFiaQ.woff2',
-        'Oswald': 'https://fonts.gstatic.com/s/oswald/v49/TK3_WkUHHAIjg75cFRf3bXL8LICs1xvsUhiZTaR.woff2',
-        'Roboto': 'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2',
-        'Pacifico': 'https://fonts.gstatic.com/s/pacifico/v22/FwZY7-Qmy14u9lezJ-6H6Mw.woff2',
-        'Nunito': 'https://fonts.gstatic.com/s/nunito/v25/XRXI3I6Li01BKofiOc5wtlZ2di8HDOIT.woff2',
-        'Cinzel Decorative': 'https://fonts.gstatic.com/s/cinzeldecorative/v14/daaCSScvJGqLYhG8nNt8KPPswUAPni7TTMw.woff2',
-        'Crimson Text': 'https://fonts.gstatic.com/s/crimsontext/v19/wlp2gwHKFkZgtmSR3NB0oRJfbwhT.woff2',
-        'Josefin Sans': 'https://fonts.gstatic.com/s/josefinsans/v26/Qw3PZQNVED7rKGKxtqIqX5E-AVSJrOCfjY46_DjQbMlh.woff2',
-        'EB Garamond': 'https://fonts.gstatic.com/s/ebgaramond/v27/SlGDmQSNjdsmc35JDF1K5E55YMjF_7DPuGi-6_RUAw.woff2',
-        'Amatic SC': 'https://fonts.gstatic.com/s/amaticsc/v26/TUZyzwprpvBS1izr_vO0DQ.woff2',
-        'Open Sans': 'https://fonts.gstatic.com/s/opensans/v35/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVI.woff2',
-        'DM Sans': 'https://fonts.gstatic.com/s/dmsans/v14/rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2',
-      };
-      if (fontMap[fonte.nome]) {
-        Font.register({ family: fonte.nome, src: fontMap[fonte.nome] });
-      }
-    } catch (e) {}
+      Font.register({
+        family: fonte.nome,
+        fonts: [
+          {
+            src: FONTES_CONFIABLE[fonte.nome],
+            fontWeight: 400,
+          },
+        ],
+      });
+    } catch (e) {
+      // fallback silencioso: usa Times-Roman ou Helvetica
+    }
   });
 }
 
@@ -167,15 +177,10 @@ export function MemorialPDF({ memorial, dadosEvento }) {
     imagem: { width: 200, height: 150, alignSelf: 'center', marginVertical: 12, borderRadius: 4 },
     rodape: { position: 'absolute', bottom: 20, left: 50, right: 50, flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 0.5, borderTopColor: corSecundaria, paddingTop: 6 },
     rodapeTexto: { fontFamily: fonteCorpo, fontSize: 8, color: corTextoSuave },
-    // Tabelas
     tabela: { display: 'flex', flexDirection: 'column', marginTop: 8, marginBottom: 8 },
     tabelaLinha: { display: 'flex', flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: corSecundaria, paddingVertical: 4 },
     tabelaCelula: { fontFamily: fonteCorpo, fontSize: 10, color: corTexto, flex: 1 },
     tabelaCelulaHeader: { fontFamily: fonteCorpo, fontSize: 10, fontWeight: 'bold', color: corPrimaria, flex: 1 },
-    // Gráfico de pizza (representação simplificada)
-    graficoContainer: { alignItems: 'center', marginVertical: 12 },
-    graficoPizza: { width: 100, height: 100, borderRadius: 50, borderWidth: 2, borderColor: corPrimaria, marginBottom: 8 },
-    // CTA contracapa
     ctaContainer: { alignItems: 'center', justifyContent: 'center', height: '100%', padding: 40 },
     ctaTitulo: { fontFamily: fonteDisplay, fontSize: 24, color: corPrimaria, textAlign: 'center', marginBottom: 16 },
     ctaTexto: { fontFamily: fonteCorpo, fontSize: 12, color: corTexto, textAlign: 'center', lineHeight: 1.8, marginBottom: 20 },
@@ -207,14 +212,12 @@ export function MemorialPDF({ memorial, dadosEvento }) {
   }
   if (atual) secoes.push(atual);
 
-  // Fornecedores mock (depois serão passados via props)
   const fornecedores = dadosEvento?.fornecedoresNecessarios || [
     { categoria: 'Fotografia', nome: 'Fotógrafo' },
     { categoria: 'Buffet', nome: 'Buffet' },
     { categoria: 'Espaço', nome: 'Espaço / Venue' },
   ];
 
-  // Itens de orçamento mock (depois serão baseados em região)
   const itensOrcamento = [
     { item: 'Espaço e locação', percentual: 18, valorEstimado: 4500 },
     { item: 'Buffet e alimentação', percentual: 28, valorEstimado: 7000 },
@@ -227,16 +230,15 @@ export function MemorialPDF({ memorial, dadosEvento }) {
     { item: 'Transporte e logística', percentual: 2, valorEstimado: 500 },
   ];
 
-  // Checklist mock
   const checklist = [
-    { item: 'Definir data do casamento', prazo: '12 meses antes', dica: 'Escolha uma data que tenha significado especial para o casal.' },
+    { item: 'Definir data do casamento', prazo: '12 meses antes', dica: 'Escolha uma data que tenha significado especial.' },
     { item: 'Escolher e reservar o local', prazo: '10 meses antes', dica: 'Visite pelo menos 3 opções antes de decidir.' },
     { item: 'Contratar fotógrafo e videomaker', prazo: '8 meses antes', dica: 'Peça portfólio completo e verifique referências.' },
     { item: 'Provar vestido/traje', prazo: '6 meses antes', dica: 'Agende provas com pelo menos 2 ateliês.' },
-    { item: 'Definir cardápio e fazer degustação', prazo: '4 meses antes', dica: 'Considere restrições alimentares dos convidados.' },
+    { item: 'Definir cardápio e fazer degustação', prazo: '4 meses antes', dica: 'Considere restrições alimentares.' },
     { item: 'Enviar convites', prazo: '3 meses antes', dica: 'Envie com RSVP para ter confirmação de presença.' },
-    { item: 'Prova de cabelo e maquiagem', prazo: '2 meses antes', dica: 'Leve fotos de referência e acessórios que usará.' },
-    { item: 'Confirmar presenças', prazo: '1 mês antes', dica: 'Entre em contato com quem não respondeu ao RSVP.' },
+    { item: 'Prova de cabelo e maquiagem', prazo: '2 meses antes', dica: 'Leve fotos de referência.' },
+    { item: 'Confirmar presenças', prazo: '1 mês antes', dica: 'Entre em contato com quem não respondeu.' },
     { item: 'Ensaio geral da cerimônia', prazo: '1 semana antes', dica: 'Convide padrinhos e pais para participar.' },
   ];
 
