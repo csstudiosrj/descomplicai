@@ -8,113 +8,43 @@ import fs from 'fs';
 // ========== CAMINHO BASE DAS FONTES ==========
 const BASE_FONTS = path.resolve(process.cwd(), 'public', 'fonts');
 
-// ========== MAPEAMENTO COMPLETO DE FONTES ==========
+// ========== MAPEAMENTO DE FONTES (apenas peso regular) ==========
 const FONTES_LOCAIS = {
-  'Cormorant Garamond': {
-    regular: path.join(BASE_FONTS, 'cormorant-garamond-v21-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'cormorant-garamond-v21-latin-700.woff2'),
-  },
-  'Playfair Display': {
-    regular: path.join(BASE_FONTS, 'playfair-display-v40-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'playfair-display-v40-latin-700.woff2'),
-  },
-  'Amatic SC': {
-    regular: path.join(BASE_FONTS, 'amatic-sc-v28-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'amatic-sc-v28-latin-700.woff2'),
-  },
-  'Lora': {
-    regular: path.join(BASE_FONTS, 'lora-v37-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'lora-v37-latin-700.woff2'),
-  },
-  'Josefin Sans': {
-    regular: path.join(BASE_FONTS, 'josefin-sans-v34-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'josefin-sans-v34-latin-700.woff2'),
-  },
-  'Montserrat': {
-    regular: path.join(BASE_FONTS, 'montserrat-v31-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'montserrat-v31-latin-700.woff2'),
-  },
-  'Open Sans': {
-    regular: path.join(BASE_FONTS, 'open-sans-v44-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'open-sans-v44-latin-700.woff2'),
-  },
-  'Inter': {
-    regular: path.join(BASE_FONTS, 'inter-v20-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'inter-v20-latin-700.woff2'),
-  },
-  'Oswald': {
-    regular: path.join(BASE_FONTS, 'oswald-v57-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'oswald-v57-latin-700.woff2'),
-  },
-  'Roboto': {
-    regular: path.join(BASE_FONTS, 'roboto-v51-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'roboto-v51-latin-700.woff2'),
-  },
-  'Pacifico': {
-    regular: path.join(BASE_FONTS, 'pacifico-v23-latin-regular.woff2'),
-  },
-  'Nunito': {
-    regular: path.join(BASE_FONTS, 'nunito-v32-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'nunito-v32-latin-700.woff2'),
-  },
-  'Great Vibes': {
-    regular: path.join(BASE_FONTS, 'great-vibes-v21-latin-regular.woff2'),
-  },
-  'Crimson Text': {
-    regular: path.join(BASE_FONTS, 'crimson-text-v19-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'crimson-text-v19-latin-700.woff2'),
-  },
-  'EB Garamond': {
-    regular: path.join(BASE_FONTS, 'eb-garamond-v32-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'eb-garamond-v32-latin-700.woff2'),
-  },
-  'DM Sans': {
-    light: path.join(BASE_FONTS, 'dm-sans-v17-latin-300.woff2'),
-    regular: path.join(BASE_FONTS, 'dm-sans-v17-latin-regular.woff2'),
-    medium: path.join(BASE_FONTS, 'dm-sans-v17-latin-500.woff2'),
-    bold: path.join(BASE_FONTS, 'dm-sans-v17-latin-700.woff2'),
-  },
-  'Space Mono': {
-    regular: path.join(BASE_FONTS, 'space-mono-v17-latin-regular.woff2'),
-    bold: path.join(BASE_FONTS, 'space-mono-v17-latin-700.woff2'),
-    italic: path.join(BASE_FONTS, 'space-mono-v17-latin-italic.woff2'),
-    boldItalic: path.join(BASE_FONTS, 'space-mono-v17-latin-700italic.woff2'),
-  },
+  'Cormorant Garamond': { regular: path.join(BASE_FONTS, 'cormorant-garamond-v21-latin-regular.woff2') },
+  'Playfair Display': { regular: path.join(BASE_FONTS, 'playfair-display-v40-latin-regular.woff2') },
+  'Amatic SC': { regular: path.join(BASE_FONTS, 'amatic-sc-v28-latin-regular.woff2') },
+  'Lora': { regular: path.join(BASE_FONTS, 'lora-v37-latin-regular.woff2') },
+  'Josefin Sans': { regular: path.join(BASE_FONTS, 'josefin-sans-v34-latin-regular.woff2') },
+  'Montserrat': { regular: path.join(BASE_FONTS, 'montserrat-v31-latin-regular.woff2') },
+  'Open Sans': { regular: path.join(BASE_FONTS, 'open-sans-v44-latin-regular.woff2') },
+  'Inter': { regular: path.join(BASE_FONTS, 'inter-v20-latin-regular.woff2') },
+  'Oswald': { regular: path.join(BASE_FONTS, 'oswald-v57-latin-regular.woff2') },
+  'Roboto': { regular: path.join(BASE_FONTS, 'roboto-v51-latin-regular.woff2') },
+  'Pacifico': { regular: path.join(BASE_FONTS, 'pacifico-v23-latin-regular.woff2') },
+  'Nunito': { regular: path.join(BASE_FONTS, 'nunito-v32-latin-regular.woff2') },
+  'Great Vibes': { regular: path.join(BASE_FONTS, 'great-vibes-v21-latin-regular.woff2') },
+  'Crimson Text': { regular: path.join(BASE_FONTS, 'crimson-text-v19-latin-regular.woff2') },
+  'EB Garamond': { regular: path.join(BASE_FONTS, 'eb-garamond-v32-latin-regular.woff2') },
+  'DM Sans': { regular: path.join(BASE_FONTS, 'dm-sans-v17-latin-regular.woff2') },
+  'Space Mono': { regular: path.join(BASE_FONTS, 'space-mono-v17-latin-regular.woff2') },
 };
 
 // ========== FUNÇÃO SEGURA DE REGISTRO DE FONTES ==========
 function registrarFontesLocais(estilo) {
   const fontes = sugerirFontes(estilo) || [];
   fontes.forEach((fonte) => {
-    const arquivos = FONTES_LOCAIS[fonte.nome];
-    if (!arquivos) return;
-
+    const arquivo = FONTES_LOCAIS[fonte.nome]?.regular;
+    if (!arquivo) return;
+    if (!fs.existsSync(arquivo) || fs.statSync(arquivo).size === 0) return;
     try {
-      const fonts = [];
-      const adicionar = (src, fontWeight, fontStyle) => {
-        if (src && fs.existsSync(src) && fs.statSync(src).size > 0) {
-          fonts.push({ src, fontWeight, fontStyle });
-        }
-      };
-
-      adicionar(arquivos.light, 300);
-      adicionar(arquivos.regular, 400);
-      adicionar(arquivos.medium, 500);
-      adicionar(arquivos.bold, 700);
-      adicionar(arquivos.italic, 400, 'italic');
-      adicionar(arquivos.boldItalic, 700, 'italic');
-
-      if (fonts.length > 0) {
-        console.log(`Registrando fonte: ${fonte.nome} com ${fonts.length} peso(s)`);
-        Font.register({ family: fonte.nome, fonts });
-      }
+      Font.register({ family: fonte.nome, src: arquivo });
     } catch (e) {
       console.warn(`Falha ao registrar fonte ${fonte.nome}:`, e.message);
     }
   });
 }
 
-// ========== MAPEAMENTO DE IMAGENS ==========
+// ========== MAPEAMENTO DE IMAGENS DE REFERÊNCIA ==========
 const IMAGENS = {
   flores: {
     'Rosas': 'https://images.unsplash.com/photo-1559563362-c667ba5f5480?w=400',
@@ -199,7 +129,7 @@ function formatarData(dataISO) {
   return `${dia}/${mes}/${ano}`;
 }
 
-// ========== COMPONENTE ==========
+// ========== COMPONENTE PRINCIPAL ==========
 export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false }) {
   const estilo = dadosEvento?.estilo || 'classico';
 
