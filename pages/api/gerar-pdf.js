@@ -12,17 +12,33 @@ export default async function handler(req, res) {
   }
 
   try {
-    const buffer = await renderToBuffer(<MemorialPDF memorial={memorial} dadosEvento={dadosEvento} />);
+    // Tenta renderizar com as fontes personalizadas
+    const buffer = await renderToBuffer(
+      <MemorialPDF memorial={memorial} dadosEvento={dadosEvento} usarFontesNativas={false} />
+    );
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="memorial-descomplicai.pdf"');
     res.send(buffer);
   } catch (erro) {
-    console.error('Erro completo:', erro);
+    console.error('Erro ao gerar PDF com fontes personalizadas:', erro.message);
     console.error('Stack:', erro.stack);
-    res.status(500).json({
-      erro: 'Erro ao gerar PDF',
-      detalhe: erro.message,
-      stack: process.env.NODE_ENV === 'development' ? erro.stack : undefined,
-    });
+    console.error('Estilo tentado:', dadosEvento?.estilo);
+
+    try {
+      // Fallback: renderiza com fontes nativas
+      const buffer = await renderToBuffer(
+        <MemorialPDF memorial={memorial} dadosEvento={dadosEvento} usarFontesNativas={true} />
+      );
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename="memorial-descomplicai.pdf"');
+      res.send(buffer);
+    } catch (erroFallback) {
+      console.error('Erro também no fallback:', erroFallback.message);
+      res.status(500).json({
+        erro: 'Erro ao gerar PDF',
+        detalhe: erroFallback.message,
+        stack: process.env.NODE_ENV === 'development' ? erroFallback.stack : undefined,
+      });
+    }
   }
 }

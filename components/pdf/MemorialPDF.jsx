@@ -91,39 +91,30 @@ function registrarFontesLocais(estilo) {
 
     try {
       const fonts = [];
+      const adicionar = (src, fontWeight, fontStyle) => {
+        if (src && fs.existsSync(src) && fs.statSync(src).size > 0) {
+          fonts.push({ src, fontWeight, fontStyle });
+        }
+      };
 
-      // Verifica e adiciona cada peso
-      if (arquivos.light && fs.existsSync(arquivos.light) && fs.statSync(arquivos.light).size > 0) {
-        fonts.push({ src: arquivos.light, fontWeight: 300 });
-      }
-      if (arquivos.regular && fs.existsSync(arquivos.regular) && fs.statSync(arquivos.regular).size > 0) {
-        fonts.push({ src: arquivos.regular, fontWeight: 400 });
-      }
-      if (arquivos.medium && fs.existsSync(arquivos.medium) && fs.statSync(arquivos.medium).size > 0) {
-        fonts.push({ src: arquivos.medium, fontWeight: 500 });
-      }
-      if (arquivos.bold && fs.existsSync(arquivos.bold) && fs.statSync(arquivos.bold).size > 0) {
-        fonts.push({ src: arquivos.bold, fontWeight: 700 });
-      }
-      if (arquivos.italic && fs.existsSync(arquivos.italic) && fs.statSync(arquivos.italic).size > 0) {
-        fonts.push({ src: arquivos.italic, fontWeight: 400, fontStyle: 'italic' });
-      }
-      if (arquivos.boldItalic && fs.existsSync(arquivos.boldItalic) && fs.statSync(arquivos.boldItalic).size > 0) {
-        fonts.push({ src: arquivos.boldItalic, fontWeight: 700, fontStyle: 'italic' });
-      }
+      adicionar(arquivos.light, 300);
+      adicionar(arquivos.regular, 400);
+      adicionar(arquivos.medium, 500);
+      adicionar(arquivos.bold, 700);
+      adicionar(arquivos.italic, 400, 'italic');
+      adicionar(arquivos.boldItalic, 700, 'italic');
 
-      // Só registra se houver pelo menos um arquivo válido
       if (fonts.length > 0) {
+        console.log(`Registrando fonte: ${fonte.nome} com ${fonts.length} peso(s)`);
         Font.register({ family: fonte.nome, fonts });
       }
     } catch (e) {
       console.warn(`Falha ao registrar fonte ${fonte.nome}:`, e.message);
-      // Fallback silencioso para Times-Roman ou Helvetica
     }
   });
 }
 
-// ========== MAPEAMENTO DE IMAGENS DE REFERÊNCIA ==========
+// ========== MAPEAMENTO DE IMAGENS ==========
 const IMAGENS = {
   flores: {
     'Rosas': 'https://images.unsplash.com/photo-1559563362-c667ba5f5480?w=400',
@@ -208,10 +199,14 @@ function formatarData(dataISO) {
   return `${dia}/${mes}/${ano}`;
 }
 
-// ========== COMPONENTE PRINCIPAL ==========
-export function MemorialPDF({ memorial, dadosEvento }) {
+// ========== COMPONENTE ==========
+export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false }) {
   const estilo = dadosEvento?.estilo || 'classico';
-  registrarFontesLocais(estilo);
+
+  // Só registra fontes personalizadas se NÃO estiver no modo fallback
+  if (!usarFontesNativas) {
+    registrarFontesLocais(estilo);
+  }
 
   const paleta = getPaleta(dadosEvento);
   const corPrimaria = paleta[0];
@@ -226,7 +221,9 @@ export function MemorialPDF({ memorial, dadosEvento }) {
   const nomeCasal = nome1 && nome2 ? `${nome1} & ${nome2}` : 'Nosso Casamento';
   const dataFormatada = formatarData(dadosEvento?.dataEvento);
   const cidade = dadosEvento?.cidadeEvento || '';
-  const fontesSugeridas = sugerirFontes(estilo);
+
+  // Fontes: personalizadas ou nativas
+  const fontesSugeridas = !usarFontesNativas ? sugerirFontes(estilo) : [];
   const fonteDisplay = fontesSugeridas.find(f => f.uso === 'display')?.nome || 'Times-Roman';
   const fonteCorpo = fontesSugeridas.find(f => f.uso === 'corpo')?.nome || 'Helvetica';
 
