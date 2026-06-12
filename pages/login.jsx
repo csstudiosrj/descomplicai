@@ -24,9 +24,14 @@ export default function LoginPage() {
     const { error } = await login(email, senha);
     setEnviando(false);
     if (error) {
-      setErro(error.message || 'Erro ao fazer login. Verifique suas credenciais.');
+      if (error.message.includes('Invalid login credentials')) {
+        setErro('Email ou senha incorretos.');
+      } else if (error.message.includes('Email not confirmed')) {
+        setErro('Confirme seu email antes de entrar.');
+      } else {
+        setErro(error.message || 'Erro ao fazer login.');
+      }
     } else {
-      // Redireciona para o memorial (ou destino original)
       router.push(redirect);
     }
   };
@@ -50,9 +55,7 @@ export default function LoginPage() {
             <Input label="Senha" type="password" placeholder="••••••••" value={senha} onChange={(e) => setSenha(e.target.value)} required />
 
             {erro && (
-              <div role="alert" style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-danger-light)', color: 'var(--color-danger)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)' }}>
-                {erro}
-              </div>
+              <div role="alert" style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-danger-light)', color: 'var(--color-danger)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)' }}>{erro}</div>
             )}
 
             <Button type="submit" variant="primary" size="lg" fullWidth loading={enviando || carregando}>Entrar</Button>
