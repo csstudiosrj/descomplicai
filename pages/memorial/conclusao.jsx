@@ -13,15 +13,17 @@ export default function ConclusaoPage() {
   const { estado, carregarEstado } = useMemorial();
   const { usuario } = useAuth();
   const { isHydrated, carregarDraft } = useAutoSave(estado);
-  const [status, setStatus] = useState('carregando'); // carregando | pronto | erro
+  const [status, setStatus] = useState('carregando');
   const [memorial, setMemorial] = useState('');
   const [erro, setErro] = useState('');
   const [baixandoPDF, setBaixandoPDF] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const [pagando, setPagando] = useState(false); // estado de carregamento dos botões de pagamento
+  const [pagando, setPagando] = useState(false);
 
-  const { pagamento: statusPagamento, tipo: tipoProduto, concluido } = router.query;
-  const pagamentoAprovado = statusPagamento === 'sucesso';
+  // 🔧 Correção: ler 'pagamento' e 'collection_status' da URL
+  const { pagamento, tipo: tipoProduto, concluido, collection_status } = router.query;
+  const pagamentoAprovado =
+    pagamento === 'sucesso' || collection_status === 'approved';
   const pdfLiberado = pagamentoAprovado && tipoProduto === 'memorial_pdf';
   const assinaturaAtiva = pagamentoAprovado && tipoProduto === 'assinatura';
 
@@ -49,7 +51,7 @@ export default function ConclusaoPage() {
       setErro('Dados do memorial não encontrados. Por favor, finalize novamente.');
       return;
     }
-  }, [isMounted, isHydrated]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isMounted, isHydrated]);
 
   useEffect(() => {
     if (!estado || !estado.etapaAtual || status !== 'carregando') return;
@@ -86,7 +88,7 @@ export default function ConclusaoPage() {
       const resposta = await fetch('/api/gerar-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memorial, dadosEvento, userId: usuario?.id }),
+        body: JSON.stringify({ memorial, dadosEvento }),
       });
 
       if (!resposta.ok) {
@@ -111,7 +113,6 @@ export default function ConclusaoPage() {
     }
   };
 
-  // 🔧 Novas funções para iniciar pagamento diretamente via API
   const handleComprarPDF = async () => {
     setPagando(true);
     try {
@@ -174,7 +175,6 @@ export default function ConclusaoPage() {
     }
   };
 
-  // Guarda até o componente estar montado no cliente e o draft ter sido lido
   if (!isMounted || !isHydrated || assinaturaAtiva) {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-off-white)' }}>
@@ -208,7 +208,6 @@ export default function ConclusaoPage() {
     );
   }
 
-  // Conteúdo do memorial: completo ou truncado conforme a situação
   const conteudoMemorial = pdfLiberado ? memorial : memorial.substring(0, 800);
   const mostrarBlur = !pdfLiberado && memorial.length > 800;
 
@@ -247,7 +246,6 @@ export default function ConclusaoPage() {
           )}
         </div>
 
-        {/* CTAs dinâmicos conforme o status do pagamento */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
           {pdfLiberado ? (
             <>
@@ -270,7 +268,7 @@ export default function ConclusaoPage() {
           )}
         </div>
 
-        {statusPagamento === 'pendente' && (
+        {pagamento === 'pendente' && (
           <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-3)', backgroundColor: '#FFF3E6', borderRadius: 'var(--radius-md)', color: 'var(--color-warning-dark)', fontFamily: 'var(--font-body)' }}>
             Pagamento em processamento. Assim que confirmado, você receberá o acesso.
           </div>
