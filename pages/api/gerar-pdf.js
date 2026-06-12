@@ -11,16 +11,18 @@ export default async function handler(req, res) {
     return res.status(400).json({ erro: 'Dados insuficientes para gerar PDF' });
   }
 
-  // 🔧 Verificação de pagamento removida temporariamente.
-  // Confiamos no parâmetro da URL até o webhook do Mercado Pago estar ativo.
-
   try {
     const buffer = await renderToBuffer(<MemorialPDF memorial={memorial} dadosEvento={dadosEvento} />);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="memorial-descomplicai.pdf"');
     res.send(buffer);
   } catch (erro) {
-    console.error('Erro ao gerar PDF:', erro);
-    res.status(500).json({ erro: 'Erro ao gerar PDF', detalhe: erro.message });
+    console.error('Erro completo:', erro);
+    console.error('Stack:', erro.stack);
+    res.status(500).json({
+      erro: 'Erro ao gerar PDF',
+      detalhe: erro.message,
+      stack: process.env.NODE_ENV === 'development' ? erro.stack : undefined,
+    });
   }
 }
