@@ -3,7 +3,46 @@ import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Font, Image } from '@react-pdf/renderer';
 import { sugerirFontes } from '../../utils/sugestoes';
 
-// ========== MAPEAMENTO DE IMAGENS DE REFERÊNCIA (URLs públicas) ==========
+// ========== REGISTRO DE FONTES LOCAIS ==========
+const FONTES_LOCAIS = {
+  'Cormorant Garamond': { regular: '/fonts/cormorant-garamond-v16-latin-regular.woff2', bold: '/fonts/cormorant-garamond-v16-latin-700.woff2' },
+  'Playfair Display': { regular: '/fonts/playfair-display-v30-latin-regular.woff2', bold: '/fonts/playfair-display-v30-latin-700.woff2' },
+  'Amatic SC': { regular: '/fonts/amatic-sc-v24-latin-regular.woff2', bold: '/fonts/amatic-sc-v24-latin-700.woff2' },
+  'Lora': { regular: '/fonts/lora-v26-latin-regular.woff2', bold: '/fonts/lora-v26-latin-700.woff2' },
+  'Josefin Sans': { regular: '/fonts/josefin-sans-v32-latin-regular.woff2', bold: '/fonts/josefin-sans-v32-latin-700.woff2' },
+  'Montserrat': { regular: '/fonts/montserrat-v29-latin-regular.woff2', bold: '/fonts/montserrat-v29-latin-700.woff2' },
+  'Open Sans': { regular: '/fonts/open-sans-v40-latin-regular.woff2', bold: '/fonts/open-sans-v40-latin-700.woff2' },
+  'Inter': { regular: '/fonts/inter-v18-latin-regular.woff2', bold: '/fonts/inter-v18-latin-700.woff2' },
+  'Oswald': { regular: '/fonts/oswald-v53-latin-regular.woff2', bold: '/fonts/oswald-v53-latin-700.woff2' },
+  'Roboto': { regular: '/fonts/roboto-v32-latin-regular.woff2', bold: '/fonts/roboto-v32-latin-700.woff2' },
+  'Pacifico': { regular: '/fonts/pacifico-v22-latin-regular.woff2' },
+  'Nunito': { regular: '/fonts/nunito-v26-latin-regular.woff2', bold: '/fonts/nunito-v26-latin-700.woff2' },
+  'Great Vibes': { regular: '/fonts/great-vibes-v19-latin-regular.woff2' },
+  'Crimson Text': { regular: '/fonts/crimson-text-v19-latin-regular.woff2', bold: '/fonts/crimson-text-v19-latin-700.woff2' },
+  'EB Garamond': { regular: '/fonts/eb-garamond-v30-latin-regular.woff2', bold: '/fonts/eb-garamond-v30-latin-700.woff2' },
+  'DM Sans': { regular: '/fonts/dm-sans-v15-latin-regular.woff2', bold: '/fonts/dm-sans-v15-latin-700.woff2' },
+};
+
+// Registra apenas as fontes do estilo atual
+function registrarFontesLocais(estilo) {
+  const fontes = sugerirFontes(estilo) || [];
+  fontes.forEach((fonte) => {
+    const arquivos = FONTES_LOCAIS[fonte.nome];
+    if (!arquivos) return;
+    try {
+      if (arquivos.bold) {
+        Font.register({ family: fonte.nome, fonts: [
+          { src: arquivos.regular, fontWeight: 400 },
+          { src: arquivos.bold, fontWeight: 700 },
+        ]});
+      } else {
+        Font.register({ family: fonte.nome, src: arquivos.regular });
+      }
+    } catch (e) { /* fallback para Times-Roman/Helvetica */ }
+  });
+}
+
+// ========== MAPEAMENTO DE IMAGENS DE REFERÊNCIA ==========
 const IMAGENS = {
   flores: {
     'Rosas': 'https://images.unsplash.com/photo-1559563362-c667ba5f5480?w=400',
@@ -56,57 +95,12 @@ const IMAGENS = {
 };
 
 function getImagem(categoria, chave) {
-  if (IMAGENS[categoria] && IMAGENS[categoria][chave]) {
-    return IMAGENS[categoria][chave];
-  }
-  return IMAGENS[categoria]?.default || null;
+  return IMAGENS[categoria]?.[chave] || IMAGENS[categoria]?.default || null;
 }
 
-// ========== FUNÇÕES AUXILIARES ==========
-const FONTES_CONFIABLE = {
-  'Cormorant Garamond': 'https://fonts.gstatic.com/s/cormorantgaramond/v16/co3YmX5slCNuHLi8bLeY9MK7whWMhyjYqXtK.woff2',
-  'Playfair Display': 'https://fonts.gstatic.com/s/playfairdisplay/v37/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvXDXbtY.woff2',
-  'Montserrat': 'https://fonts.gstatic.com/s/montserrat/v29/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw5aXo.woff2',
-  'Inter': 'https://fonts.gstatic.com/s/inter/v18/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2',
-  'Lora': 'https://fonts.gstatic.com/s/lora/v35/0QI6MX1D_JOuGQbT0gvTJPa787weuxJBkqg.woff2',
-  'Great Vibes': 'https://fonts.gstatic.com/s/greatvibes/v19/RWmMoKWR9v4ksMfaWd_JN9XFiaQ.woff2',
-  'Oswald': 'https://fonts.gstatic.com/s/oswald/v53/TK3_WkUHHAIjg75cFRf3bXL8LICs1xvsUhiZTaR.woff2',
-  'Roboto': 'https://fonts.gstatic.com/s/roboto/v32/KFOmCnqEu92Fr1Mu4mxK.woff2',
-  'Pacifico': 'https://fonts.gstatic.com/s/pacifico/v22/FwZY7-Qmy14u9lezJ-6H6Mw.woff2',
-  'Nunito': 'https://fonts.gstatic.com/s/nunito/v26/XRXI3I6Li01BKofiOc5wtlZ2di8HDOIT.woff2',
-  'Cinzel Decorative': 'https://fonts.gstatic.com/s/cinzeldecorative/v17/daaCSScvJGqLYhG8nNt8KPPswUAPni7TTMw.woff2',
-  'Crimson Text': 'https://fonts.gstatic.com/s/crimsontext/v19/wlp2gwHKFkZgtmSR3NB0oRJfbwhT.woff2',
-  'Josefin Sans': 'https://fonts.gstatic.com/s/josefinsans/v32/Qw3PZQNVED7rKGKxtqIqX5E-AVSJrOCfjY46_DjQbMlh.woff2',
-  'EB Garamond': 'https://fonts.gstatic.com/s/ebgaramond/v30/SlGDmQSNjdsmc35JDF1K5E55YMjF_7DPuGi-6_RUAw.woff2',
-  'Amatic SC': 'https://fonts.gstatic.com/s/amaticsc/v24/TUZyzwprpvBS1izr_vO0DQ.woff2',
-  'Open Sans': 'https://fonts.gstatic.com/s/opensans/v40/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVI.woff2',
-  'DM Sans': 'https://fonts.gstatic.com/s/dmsans/v15/rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2',
-};
-
-function registrarFontes(estilo) {
-  const fontes = sugerirFontes(estilo) || [];
-  fontes.forEach((fonte) => {
-    if (!FONTES_CONFIABLE[fonte.nome]) return;
-    try {
-      Font.register({
-        family: fonte.nome,
-        fonts: [
-          {
-            src: FONTES_CONFIABLE[fonte.nome],
-            fontWeight: 400,
-          },
-        ],
-      });
-    } catch (e) {
-      // fallback silencioso: usa Times-Roman ou Helvetica
-    }
-  });
-}
-
+// ========== UTILITÁRIOS ==========
 function getPaleta(dados) {
-  if (dados?.paleta && Array.isArray(dados.paleta) && dados.paleta.length > 0) {
-    return dados.paleta;
-  }
+  if (dados?.paleta?.length) return dados.paleta;
   return ['#8B6F5E', '#E5E0D9', '#F9F7F4'];
 }
 
@@ -133,14 +127,15 @@ function formatarData(dataISO) {
   return `${dia}/${mes}/${ano}`;
 }
 
-// ========== COMPONENTE ==========
+// ========== COMPONENTE PRINCIPAL ==========
 export function MemorialPDF({ memorial, dadosEvento }) {
-  if (dadosEvento?.estilo) registrarFontes(dadosEvento.estilo);
+  const estilo = dadosEvento?.estilo || 'classico';
+  registrarFontesLocais(estilo);
 
   const paleta = getPaleta(dadosEvento);
-  const corPrimaria = paleta[0] || '#8B6F5E';
-  const corSecundaria = paleta[1] || '#E5E0D9';
-  const corTerciaria = paleta[2] || '#F9F7F4';
+  const corPrimaria = paleta[0];
+  const corSecundaria = paleta[1];
+  const corTerciaria = paleta[2];
   const corBorda = getCorBorda(paleta);
   const corTexto = '#1A1714';
   const corTextoSuave = '#5C534A';
@@ -150,8 +145,7 @@ export function MemorialPDF({ memorial, dadosEvento }) {
   const nomeCasal = nome1 && nome2 ? `${nome1} & ${nome2}` : 'Nosso Casamento';
   const dataFormatada = formatarData(dadosEvento?.dataEvento);
   const cidade = dadosEvento?.cidadeEvento || '';
-  const estilo = dadosEvento?.estilo || 'classico';
-  const fontesSugeridas = dadosEvento?.estilo ? sugerirFontes(dadosEvento.estilo) : [];
+  const fontesSugeridas = sugerirFontes(estilo);
   const fonteDisplay = fontesSugeridas.find(f => f.uso === 'display')?.nome || 'Times-Roman';
   const fonteCorpo = fontesSugeridas.find(f => f.uso === 'corpo')?.nome || 'Helvetica';
 
@@ -161,7 +155,7 @@ export function MemorialPDF({ memorial, dadosEvento }) {
   const imagemMesa = getImagem('mesaPosta', estilo) || getImagem('mesaPosta', 'default');
   const imagemDecoracao = getImagem('decoracao', estilo) || getImagem('decoracao', 'default');
 
-  const estilos = StyleSheet.create({
+  const estilosPDF = StyleSheet.create({
     capa: { backgroundColor: corTerciaria, height: '100%', alignItems: 'center', justifyContent: 'center', padding: 60 },
     capaLinha: { width: 50, height: 1.5, backgroundColor: corPrimaria, marginBottom: 28 },
     capaTitulo: { fontFamily: fonteDisplay, fontSize: 38, color: corTexto, textAlign: 'center', marginBottom: 16 },
@@ -172,33 +166,30 @@ export function MemorialPDF({ memorial, dadosEvento }) {
     corSwatch: { width: 30, height: 30, borderRadius: 15, borderWidth: 1.5, borderColor: corBorda },
     pagina: { backgroundColor: '#FFFFFF', padding: 50, paddingBottom: 70 },
     tituloSecao: { fontFamily: fonteDisplay, fontSize: 24, color: corPrimaria, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: corSecundaria, paddingBottom: 10 },
-    subtitulo: { fontFamily: fonteCorpo, fontSize: 14, fontWeight: 'bold', color: corPrimaria, marginTop: 12, marginBottom: 6 },
     paragrafo: { fontFamily: fonteCorpo, fontSize: 11, color: corTexto, lineHeight: 1.8, marginBottom: 8 },
     imagem: { width: 200, height: 150, alignSelf: 'center', marginVertical: 12, borderRadius: 4 },
     rodape: { position: 'absolute', bottom: 20, left: 50, right: 50, flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 0.5, borderTopColor: corSecundaria, paddingTop: 6 },
     rodapeTexto: { fontFamily: fonteCorpo, fontSize: 8, color: corTextoSuave },
-    tabela: { display: 'flex', flexDirection: 'column', marginTop: 8, marginBottom: 8 },
-    tabelaLinha: { display: 'flex', flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: corSecundaria, paddingVertical: 4 },
+    tabela: { marginTop: 8, marginBottom: 8 },
+    tabelaLinha: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: corSecundaria, paddingVertical: 4 },
     tabelaCelula: { fontFamily: fonteCorpo, fontSize: 10, color: corTexto, flex: 1 },
     tabelaCelulaHeader: { fontFamily: fonteCorpo, fontSize: 10, fontWeight: 'bold', color: corPrimaria, flex: 1 },
     ctaContainer: { alignItems: 'center', justifyContent: 'center', height: '100%', padding: 40 },
     ctaTitulo: { fontFamily: fonteDisplay, fontSize: 24, color: corPrimaria, textAlign: 'center', marginBottom: 16 },
     ctaTexto: { fontFamily: fonteCorpo, fontSize: 12, color: corTexto, textAlign: 'center', lineHeight: 1.8, marginBottom: 20 },
-    ctaBotao: { backgroundColor: corPrimaria, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 4 },
-    ctaBotaoTexto: { fontFamily: fonteCorpo, fontSize: 14, color: '#FFFFFF', fontWeight: 'bold' },
   });
 
   function Rodape({ nome, pagina }) {
     return (
-      <View style={estilos.rodape} fixed>
-        <Text style={estilos.rodapeTexto}>{nome}</Text>
-        <Text style={estilos.rodapeTexto}>gerado pelo descomplicaí · arxum.csstudios.site/descomplicai</Text>
-        <Text style={estilos.rodapeTexto}>{pagina}</Text>
+      <View style={estilosPDF.rodape} fixed>
+        <Text style={estilosPDF.rodapeTexto}>{nome}</Text>
+        <Text style={estilosPDF.rodapeTexto}>gerado pelo descomplicaí · descomplicai.com.br</Text>
+        <Text style={estilosPDF.rodapeTexto}>{pagina}</Text>
       </View>
     );
   }
 
-  // Parse do conteúdo markdown
+  // Parse markdown
   const secoes = [];
   const linhasMemorial = (memorial || '').split('\n');
   let atual = null;
@@ -231,33 +222,33 @@ export function MemorialPDF({ memorial, dadosEvento }) {
   ];
 
   const checklist = [
-    { item: 'Definir data do casamento', prazo: '12 meses antes', dica: 'Escolha uma data que tenha significado especial.' },
-    { item: 'Escolher e reservar o local', prazo: '10 meses antes', dica: 'Visite pelo menos 3 opções antes de decidir.' },
-    { item: 'Contratar fotógrafo e videomaker', prazo: '8 meses antes', dica: 'Peça portfólio completo e verifique referências.' },
-    { item: 'Provar vestido/traje', prazo: '6 meses antes', dica: 'Agende provas com pelo menos 2 ateliês.' },
-    { item: 'Definir cardápio e fazer degustação', prazo: '4 meses antes', dica: 'Considere restrições alimentares.' },
-    { item: 'Enviar convites', prazo: '3 meses antes', dica: 'Envie com RSVP para ter confirmação de presença.' },
-    { item: 'Prova de cabelo e maquiagem', prazo: '2 meses antes', dica: 'Leve fotos de referência.' },
-    { item: 'Confirmar presenças', prazo: '1 mês antes', dica: 'Entre em contato com quem não respondeu.' },
-    { item: 'Ensaio geral da cerimônia', prazo: '1 semana antes', dica: 'Convide padrinhos e pais para participar.' },
+    { item: 'Definir data do casamento', prazo: '12 meses antes' },
+    { item: 'Reservar local', prazo: '10 meses antes' },
+    { item: 'Contratar fotógrafo', prazo: '8 meses antes' },
+    { item: 'Provar vestido/traje', prazo: '6 meses antes' },
+    { item: 'Definir cardápio', prazo: '4 meses antes' },
+    { item: 'Enviar convites', prazo: '3 meses antes' },
+    { item: 'Prova de cabelo/maquiagem', prazo: '2 meses antes' },
+    { item: 'Confirmar presenças', prazo: '1 mês antes' },
+    { item: 'Ensaio geral', prazo: '1 semana antes' },
   ];
 
-  let paginaNum = 2;
+  const basePagina = 2;
 
   return (
     <Document>
       {/* CAPA */}
-      <Page size="A4" style={estilos.capa}>
-        <View style={estilos.capaLinha} />
-        <Text style={estilos.capaTitulo}>{nomeCasal}</Text>
-        <Text style={estilos.capaSubtitulo}>Memorial do Casamento</Text>
-        {cidade ? <Text style={estilos.capaLocal}>{cidade}</Text> : null}
-        <Text style={estilos.capaData}>{dataFormatada}</Text>
-        <View style={[estilos.capaLinha, { marginTop: 36, marginBottom: 0 }]} />
-        <View style={estilos.paletaContainer}>
+      <Page size="A4" style={estilosPDF.capa}>
+        <View style={estilosPDF.capaLinha} />
+        <Text style={estilosPDF.capaTitulo}>{nomeCasal}</Text>
+        <Text style={estilosPDF.capaSubtitulo}>Memorial do Casamento</Text>
+        {cidade ? <Text style={estilosPDF.capaLocal}>{cidade}</Text> : null}
+        <Text style={estilosPDF.capaData}>{dataFormatada}</Text>
+        <View style={[estilosPDF.capaLinha, { marginTop: 36, marginBottom: 0 }]} />
+        <View style={estilosPDF.paletaContainer}>
           {paleta.map((cor, i) => (
             <View key={i} style={{ alignItems: 'center' }}>
-              <View style={[estilos.corSwatch, { backgroundColor: cor }]} />
+              <View style={[estilosPDF.corSwatch, { backgroundColor: cor }]} />
               <Text style={{ fontSize: 8, fontFamily: fonteCorpo, color: corTextoSuave, marginTop: 4 }}>{cor}</Text>
             </View>
           ))}
@@ -265,124 +256,111 @@ export function MemorialPDF({ memorial, dadosEvento }) {
         <Rodape nome={nomeCasal} pagina="1" />
       </Page>
 
-      {/* ÍNDICE / BOAS-VINDAS */}
-      <Page size="A4" style={estilos.pagina}>
-        <Text style={estilos.tituloSecao}>Bem-vindos ao seu memorial</Text>
-        <Text style={estilos.paragrafo}>
+      {/* BOAS-VINDAS */}
+      <Page size="A4" style={estilosPDF.pagina}>
+        <Text style={estilosPDF.tituloSecao}>Bem-vindos ao seu memorial</Text>
+        <Text style={estilosPDF.paragrafo}>
           Este memorial foi criado exclusivamente para {nomeCasal} pelo Descomplicaí. Ele reúne todas as decisões, referências e orientações práticas para tornar o planejamento do seu casamento uma experiência leve e organizada.
         </Text>
-        <Text style={estilos.subtitulo}>Índice</Text>
+        <Text style={{ ...estilosPDF.tituloSecao, fontSize: 16, marginTop: 20 }}>Índice</Text>
         {secoes.map((s, i) => (
-          <Text key={i} style={estilos.paragrafo}>
-            {s.titulo} — página {paginaNum + i}
-          </Text>
+          <Text key={i} style={estilosPDF.paragrafo}>{s.titulo} — pág. {basePagina + i}</Text>
         ))}
-        <Text style={estilos.paragrafo}>Fornecedores — página {paginaNum + secoes.length}</Text>
-        <Text style={estilos.paragrafo}>Orçamento — página {paginaNum + secoes.length + 1}</Text>
-        <Text style={estilos.paragrafo}>Checklist — página {paginaNum + secoes.length + 2}</Text>
+        <Text style={estilosPDF.paragrafo}>Fornecedores — pág. {basePagina + secoes.length}</Text>
+        <Text style={estilosPDF.paragrafo}>Orçamento — pág. {basePagina + secoes.length + 1}</Text>
+        <Text style={estilosPDF.paragrafo}>Checklist — pág. {basePagina + secoes.length + 2}</Text>
         <Rodape nome={nomeCasal} pagina="2" />
       </Page>
 
-      {/* SEÇÕES DO MEMORIAL */}
+      {/* SEÇÕES */}
       {secoes.map((secao, idx) => (
-        <Page key={idx} size="A4" style={estilos.pagina}>
-          <Text style={estilos.tituloSecao}>{secao.titulo}</Text>
+        <Page key={idx} size="A4" style={estilosPDF.pagina}>
+          <Text style={estilosPDF.tituloSecao}>{secao.titulo}</Text>
           {secao.linhas.map((l, i) => (
-            <Text key={i} style={estilos.paragrafo}>{l.replace(/[*_]{1,2}/g, '').trim()}</Text>
+            <Text key={i} style={estilosPDF.paragrafo}>{l.replace(/[*_]{1,2}/g, '').trim()}</Text>
           ))}
-          {secao.titulo.includes('Identidade Visual') && (
-            <Image style={estilos.imagem} src={imagemDecoracao} />
-          )}
-          {secao.titulo.includes('Decoração') && (
-            <Image style={estilos.imagem} src={imagemFlores} />
-          )}
-          {secao.titulo.includes('Mesa Posta') && (
-            <Image style={estilos.imagem} src={imagemMesa} />
-          )}
-          {secao.titulo.includes('Vestuário') && (
-            <Image style={estilos.imagem} src={imagemVestido} />
-          )}
-          <Rodape nome={nomeCasal} pagina={String(paginaNum + idx)} />
+          {secao.titulo.includes('Identidade Visual') && <Image style={estilosPDF.imagem} src={imagemDecoracao} />}
+          {secao.titulo.includes('Decoração') && <Image style={estilosPDF.imagem} src={imagemFlores} />}
+          {secao.titulo.includes('Mesa Posta') && <Image style={estilosPDF.imagem} src={imagemMesa} />}
+          {secao.titulo.includes('Vestuário') && <Image style={estilosPDF.imagem} src={imagemVestido} />}
+          <Rodape nome={nomeCasal} pagina={String(basePagina + idx)} />
         </Page>
       ))}
 
       {/* FORNECEDORES */}
-      <Page size="A4" style={estilos.pagina}>
-        <Text style={estilos.tituloSecao}>Fornecedores Necessários</Text>
-        <Text style={estilos.paragrafo}>Lista de fornecedores sugeridos para seu casamento. Preencha os dados conforme contratar.</Text>
-        <View style={estilos.tabela}>
-          <View style={estilos.tabelaLinha}>
-            <Text style={estilos.tabelaCelulaHeader}>Categoria</Text>
-            <Text style={estilos.tabelaCelulaHeader}>Fornecedor</Text>
-            <Text style={estilos.tabelaCelulaHeader}>Contato</Text>
-            <Text style={estilos.tabelaCelulaHeader}>Status</Text>
+      <Page size="A4" style={estilosPDF.pagina}>
+        <Text style={estilosPDF.tituloSecao}>Fornecedores Necessários</Text>
+        <View style={estilosPDF.tabela}>
+          <View style={estilosPDF.tabelaLinha}>
+            <Text style={estilosPDF.tabelaCelulaHeader}>Categoria</Text>
+            <Text style={estilosPDF.tabelaCelulaHeader}>Fornecedor</Text>
+            <Text style={estilosPDF.tabelaCelulaHeader}>Contato</Text>
+            <Text style={estilosPDF.tabelaCelulaHeader}>Status</Text>
           </View>
           {fornecedores.map((f, i) => (
-            <View key={i} style={estilos.tabelaLinha}>
-              <Text style={estilos.tabelaCelula}>{f.categoria}</Text>
-              <Text style={estilos.tabelaCelula}>{f.nome}</Text>
-              <Text style={estilos.tabelaCelula}>________________</Text>
-              <Text style={estilos.tabelaCelula}>A contratar</Text>
+            <View key={i} style={estilosPDF.tabelaLinha}>
+              <Text style={estilosPDF.tabelaCelula}>{f.categoria}</Text>
+              <Text style={estilosPDF.tabelaCelula}>{f.nome}</Text>
+              <Text style={estilosPDF.tabelaCelula}>________________</Text>
+              <Text style={estilosPDF.tabelaCelula}>A contratar</Text>
             </View>
           ))}
         </View>
-        <Rodape nome={nomeCasal} pagina={String(paginaNum + secoes.length)} />
+        <Rodape nome={nomeCasal} pagina={String(basePagina + secoes.length)} />
       </Page>
 
       {/* ORÇAMENTO */}
-      <Page size="A4" style={estilos.pagina}>
-        <Text style={estilos.tituloSecao}>Estimativa de Orçamento</Text>
-        <Text style={estilos.paragrafo}>Distribuição sugerida do orçamento por categoria. Os valores são estimativas baseadas em médias de mercado.</Text>
-        <View style={estilos.tabela}>
-          <View style={estilos.tabelaLinha}>
-            <Text style={estilos.tabelaCelulaHeader}>Item</Text>
-            <Text style={estilos.tabelaCelulaHeader}>%</Text>
-            <Text style={estilos.tabelaCelulaHeader}>Valor Estimado</Text>
+      <Page size="A4" style={estilosPDF.pagina}>
+        <Text style={estilosPDF.tituloSecao}>Estimativa de Orçamento</Text>
+        <View style={estilosPDF.tabela}>
+          <View style={estilosPDF.tabelaLinha}>
+            <Text style={estilosPDF.tabelaCelulaHeader}>Item</Text>
+            <Text style={estilosPDF.tabelaCelulaHeader}>%</Text>
+            <Text style={estilosPDF.tabelaCelulaHeader}>Valor Estimado</Text>
           </View>
           {itensOrcamento.map((item, i) => (
-            <View key={i} style={estilos.tabelaLinha}>
-              <Text style={estilos.tabelaCelula}>{item.item}</Text>
-              <Text style={estilos.tabelaCelula}>{item.percentual}%</Text>
-              <Text style={estilos.tabelaCelula}>R$ {item.valorEstimado.toLocaleString('pt-BR')}</Text>
+            <View key={i} style={estilosPDF.tabelaLinha}>
+              <Text style={estilosPDF.tabelaCelula}>{item.item}</Text>
+              <Text style={estilosPDF.tabelaCelula}>{item.percentual}%</Text>
+              <Text style={estilosPDF.tabelaCelula}>R$ {item.valorEstimado.toLocaleString('pt-BR')}</Text>
             </View>
           ))}
         </View>
-        <Rodape nome={nomeCasal} pagina={String(paginaNum + secoes.length + 1)} />
+        <Rodape nome={nomeCasal} pagina={String(basePagina + secoes.length + 1)} />
       </Page>
 
       {/* CHECKLIST */}
-      <Page size="A4" style={estilos.pagina}>
-        <Text style={estilos.tituloSecao}>Checklist de Decisões Pendentes</Text>
-        <Text style={estilos.paragrafo}>Use esta página para anotar decisões tomadas e acompanhar o que ainda precisa ser feito.</Text>
-        <View style={estilos.tabela}>
-          <View style={estilos.tabelaLinha}>
-            <Text style={estilos.tabelaCelulaHeader}>Decisão</Text>
-            <Text style={estilos.tabelaCelulaHeader}>Prazo</Text>
-            <Text style={estilos.tabelaCelulaHeader}>✓</Text>
+      <Page size="A4" style={estilosPDF.pagina}>
+        <Text style={estilosPDF.tituloSecao}>Checklist de Decisões</Text>
+        <View style={estilosPDF.tabela}>
+          <View style={estilosPDF.tabelaLinha}>
+            <Text style={estilosPDF.tabelaCelulaHeader}>Decisão</Text>
+            <Text style={estilosPDF.tabelaCelulaHeader}>Prazo</Text>
+            <Text style={estilosPDF.tabelaCelulaHeader}>✓</Text>
           </View>
           {checklist.map((item, i) => (
-            <View key={i} style={estilos.tabelaLinha}>
-              <Text style={estilos.tabelaCelula}>{item.item}</Text>
-              <Text style={estilos.tabelaCelula}>{item.prazo}</Text>
-              <Text style={estilos.tabelaCelula}>[ ]</Text>
+            <View key={i} style={estilosPDF.tabelaLinha}>
+              <Text style={estilosPDF.tabelaCelula}>{item.item}</Text>
+              <Text style={estilosPDF.tabelaCelula}>{item.prazo}</Text>
+              <Text style={estilosPDF.tabelaCelula}>[ ]</Text>
             </View>
           ))}
         </View>
-        <Rodape nome={nomeCasal} pagina={String(paginaNum + secoes.length + 2)} />
+        <Rodape nome={nomeCasal} pagina={String(basePagina + secoes.length + 2)} />
       </Page>
 
       {/* CONTRACAPA */}
-      <Page size="A4" style={estilos.pagina}>
-        <View style={estilos.ctaContainer}>
-          <Text style={estilos.ctaTitulo}>Seu casamento merece o melhor</Text>
-          <Text style={estilos.ctaTexto}>
+      <Page size="A4" style={estilosPDF.pagina}>
+        <View style={estilosPDF.ctaContainer}>
+          <Text style={estilosPDF.ctaTitulo}>Seu casamento merece o melhor</Text>
+          <Text style={estilosPDF.ctaTexto}>
             Assine o Descomplicaí e faça a gestão total do seu casamento de forma inteligente e descomplicada. Você terá controle total de tudo — fornecedores, orçamento, convidados e cronograma — em um só lugar. E ainda pode convidar seu cerimonialista para colaborar.
           </Text>
-          <Text style={[estilos.ctaTexto, { fontWeight: 'bold', marginTop: 8 }]}>
+          <Text style={[estilosPDF.ctaTexto, { fontWeight: 'bold', marginTop: 8 }]}>
             Acesse descomplicai.com.br e comece agora.
           </Text>
         </View>
-        <Rodape nome={nomeCasal} pagina={String(paginaNum + secoes.length + 3)} />
+        <Rodape nome={nomeCasal} pagina={String(basePagina + secoes.length + 3)} />
       </Page>
     </Document>
   );
