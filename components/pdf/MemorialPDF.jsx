@@ -145,7 +145,6 @@ export function MemorialPDF({ memorial, dadosEvento }) {
   const fonteDisplay = fontesSugeridas.find(f => f.uso === 'display')?.nome || 'Times-Roman';
   const fonteCorpo = fontesSugeridas.find(f => f.uso === 'corpo')?.nome || 'Helvetica';
 
-  // Extrai lista de flores escolhidas
   const flores = dadosEvento?.flores || '';
   const imagemFlores = getImagem('flores', flores) || getImagem('flores', 'default');
   const imagemVestido = getImagem('vestido', dadosEvento?.estiloVestido) || getImagem('vestido', 'default');
@@ -168,6 +167,20 @@ export function MemorialPDF({ memorial, dadosEvento }) {
     imagem: { width: 200, height: 150, alignSelf: 'center', marginVertical: 12, borderRadius: 4 },
     rodape: { position: 'absolute', bottom: 20, left: 50, right: 50, flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 0.5, borderTopColor: corSecundaria, paddingTop: 6 },
     rodapeTexto: { fontFamily: fonteCorpo, fontSize: 8, color: corTextoSuave },
+    // Tabelas
+    tabela: { display: 'flex', flexDirection: 'column', marginTop: 8, marginBottom: 8 },
+    tabelaLinha: { display: 'flex', flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: corSecundaria, paddingVertical: 4 },
+    tabelaCelula: { fontFamily: fonteCorpo, fontSize: 10, color: corTexto, flex: 1 },
+    tabelaCelulaHeader: { fontFamily: fonteCorpo, fontSize: 10, fontWeight: 'bold', color: corPrimaria, flex: 1 },
+    // Gráfico de pizza (representação simplificada)
+    graficoContainer: { alignItems: 'center', marginVertical: 12 },
+    graficoPizza: { width: 100, height: 100, borderRadius: 50, borderWidth: 2, borderColor: corPrimaria, marginBottom: 8 },
+    // CTA contracapa
+    ctaContainer: { alignItems: 'center', justifyContent: 'center', height: '100%', padding: 40 },
+    ctaTitulo: { fontFamily: fonteDisplay, fontSize: 24, color: corPrimaria, textAlign: 'center', marginBottom: 16 },
+    ctaTexto: { fontFamily: fonteCorpo, fontSize: 12, color: corTexto, textAlign: 'center', lineHeight: 1.8, marginBottom: 20 },
+    ctaBotao: { backgroundColor: corPrimaria, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 4 },
+    ctaBotaoTexto: { fontFamily: fonteCorpo, fontSize: 14, color: '#FFFFFF', fontWeight: 'bold' },
   });
 
   function Rodape({ nome, pagina }) {
@@ -182,9 +195,9 @@ export function MemorialPDF({ memorial, dadosEvento }) {
 
   // Parse do conteúdo markdown
   const secoes = [];
-  const linhas = (memorial || '').split('\n');
+  const linhasMemorial = (memorial || '').split('\n');
   let atual = null;
-  for (const linha of linhas) {
+  for (const linha of linhasMemorial) {
     if (linha.startsWith('## ')) {
       if (atual) secoes.push(atual);
       atual = { titulo: linha.replace('## ', '').trim(), linhas: [] };
@@ -193,6 +206,41 @@ export function MemorialPDF({ memorial, dadosEvento }) {
     }
   }
   if (atual) secoes.push(atual);
+
+  // Fornecedores mock (depois serão passados via props)
+  const fornecedores = dadosEvento?.fornecedoresNecessarios || [
+    { categoria: 'Fotografia', nome: 'Fotógrafo' },
+    { categoria: 'Buffet', nome: 'Buffet' },
+    { categoria: 'Espaço', nome: 'Espaço / Venue' },
+  ];
+
+  // Itens de orçamento mock (depois serão baseados em região)
+  const itensOrcamento = [
+    { item: 'Espaço e locação', percentual: 18, valorEstimado: 4500 },
+    { item: 'Buffet e alimentação', percentual: 28, valorEstimado: 7000 },
+    { item: 'Bebidas e bar', percentual: 10, valorEstimado: 2500 },
+    { item: 'Decoração e flores', percentual: 15, valorEstimado: 3750 },
+    { item: 'Fotografia e vídeo', percentual: 10, valorEstimado: 2500 },
+    { item: 'Música e entretenimento', percentual: 8, valorEstimado: 2000 },
+    { item: 'Vestuário e beleza', percentual: 6, valorEstimado: 1500 },
+    { item: 'Papelaria e convites', percentual: 3, valorEstimado: 750 },
+    { item: 'Transporte e logística', percentual: 2, valorEstimado: 500 },
+  ];
+
+  // Checklist mock
+  const checklist = [
+    { item: 'Definir data do casamento', prazo: '12 meses antes', dica: 'Escolha uma data que tenha significado especial para o casal.' },
+    { item: 'Escolher e reservar o local', prazo: '10 meses antes', dica: 'Visite pelo menos 3 opções antes de decidir.' },
+    { item: 'Contratar fotógrafo e videomaker', prazo: '8 meses antes', dica: 'Peça portfólio completo e verifique referências.' },
+    { item: 'Provar vestido/traje', prazo: '6 meses antes', dica: 'Agende provas com pelo menos 2 ateliês.' },
+    { item: 'Definir cardápio e fazer degustação', prazo: '4 meses antes', dica: 'Considere restrições alimentares dos convidados.' },
+    { item: 'Enviar convites', prazo: '3 meses antes', dica: 'Envie com RSVP para ter confirmação de presença.' },
+    { item: 'Prova de cabelo e maquiagem', prazo: '2 meses antes', dica: 'Leve fotos de referência e acessórios que usará.' },
+    { item: 'Confirmar presenças', prazo: '1 mês antes', dica: 'Entre em contato com quem não respondeu ao RSVP.' },
+    { item: 'Ensaio geral da cerimônia', prazo: '1 semana antes', dica: 'Convide padrinhos e pais para participar.' },
+  ];
+
+  let paginaNum = 2;
 
   return (
     <Document>
@@ -215,14 +263,31 @@ export function MemorialPDF({ memorial, dadosEvento }) {
         <Rodape nome={nomeCasal} pagina="1" />
       </Page>
 
-      {/* SEÇÕES */}
+      {/* ÍNDICE / BOAS-VINDAS */}
+      <Page size="A4" style={estilos.pagina}>
+        <Text style={estilos.tituloSecao}>Bem-vindos ao seu memorial</Text>
+        <Text style={estilos.paragrafo}>
+          Este memorial foi criado exclusivamente para {nomeCasal} pelo Descomplicaí. Ele reúne todas as decisões, referências e orientações práticas para tornar o planejamento do seu casamento uma experiência leve e organizada.
+        </Text>
+        <Text style={estilos.subtitulo}>Índice</Text>
+        {secoes.map((s, i) => (
+          <Text key={i} style={estilos.paragrafo}>
+            {s.titulo} — página {paginaNum + i}
+          </Text>
+        ))}
+        <Text style={estilos.paragrafo}>Fornecedores — página {paginaNum + secoes.length}</Text>
+        <Text style={estilos.paragrafo}>Orçamento — página {paginaNum + secoes.length + 1}</Text>
+        <Text style={estilos.paragrafo}>Checklist — página {paginaNum + secoes.length + 2}</Text>
+        <Rodape nome={nomeCasal} pagina="2" />
+      </Page>
+
+      {/* SEÇÕES DO MEMORIAL */}
       {secoes.map((secao, idx) => (
         <Page key={idx} size="A4" style={estilos.pagina}>
           <Text style={estilos.tituloSecao}>{secao.titulo}</Text>
           {secao.linhas.map((l, i) => (
             <Text key={i} style={estilos.paragrafo}>{l.replace(/[*_]{1,2}/g, '').trim()}</Text>
           ))}
-          {/* Imagens de referência específicas por seção */}
           {secao.titulo.includes('Identidade Visual') && (
             <Image style={estilos.imagem} src={imagemDecoracao} />
           )}
@@ -235,11 +300,88 @@ export function MemorialPDF({ memorial, dadosEvento }) {
           {secao.titulo.includes('Vestuário') && (
             <Image style={estilos.imagem} src={imagemVestido} />
           )}
-          <Rodape nome={nomeCasal} pagina={`${idx + 2}`} />
+          <Rodape nome={nomeCasal} pagina={String(paginaNum + idx)} />
         </Page>
       ))}
 
-      {/* Páginas adicionais: Fornecedores, Orçamento, etc. (a serem detalhadas futuramente) */}
+      {/* FORNECEDORES */}
+      <Page size="A4" style={estilos.pagina}>
+        <Text style={estilos.tituloSecao}>Fornecedores Necessários</Text>
+        <Text style={estilos.paragrafo}>Lista de fornecedores sugeridos para seu casamento. Preencha os dados conforme contratar.</Text>
+        <View style={estilos.tabela}>
+          <View style={estilos.tabelaLinha}>
+            <Text style={estilos.tabelaCelulaHeader}>Categoria</Text>
+            <Text style={estilos.tabelaCelulaHeader}>Fornecedor</Text>
+            <Text style={estilos.tabelaCelulaHeader}>Contato</Text>
+            <Text style={estilos.tabelaCelulaHeader}>Status</Text>
+          </View>
+          {fornecedores.map((f, i) => (
+            <View key={i} style={estilos.tabelaLinha}>
+              <Text style={estilos.tabelaCelula}>{f.categoria}</Text>
+              <Text style={estilos.tabelaCelula}>{f.nome}</Text>
+              <Text style={estilos.tabelaCelula}>________________</Text>
+              <Text style={estilos.tabelaCelula}>A contratar</Text>
+            </View>
+          ))}
+        </View>
+        <Rodape nome={nomeCasal} pagina={String(paginaNum + secoes.length)} />
+      </Page>
+
+      {/* ORÇAMENTO */}
+      <Page size="A4" style={estilos.pagina}>
+        <Text style={estilos.tituloSecao}>Estimativa de Orçamento</Text>
+        <Text style={estilos.paragrafo}>Distribuição sugerida do orçamento por categoria. Os valores são estimativas baseadas em médias de mercado.</Text>
+        <View style={estilos.tabela}>
+          <View style={estilos.tabelaLinha}>
+            <Text style={estilos.tabelaCelulaHeader}>Item</Text>
+            <Text style={estilos.tabelaCelulaHeader}>%</Text>
+            <Text style={estilos.tabelaCelulaHeader}>Valor Estimado</Text>
+          </View>
+          {itensOrcamento.map((item, i) => (
+            <View key={i} style={estilos.tabelaLinha}>
+              <Text style={estilos.tabelaCelula}>{item.item}</Text>
+              <Text style={estilos.tabelaCelula}>{item.percentual}%</Text>
+              <Text style={estilos.tabelaCelula}>R$ {item.valorEstimado.toLocaleString('pt-BR')}</Text>
+            </View>
+          ))}
+        </View>
+        <Rodape nome={nomeCasal} pagina={String(paginaNum + secoes.length + 1)} />
+      </Page>
+
+      {/* CHECKLIST */}
+      <Page size="A4" style={estilos.pagina}>
+        <Text style={estilos.tituloSecao}>Checklist de Decisões Pendentes</Text>
+        <Text style={estilos.paragrafo}>Use esta página para anotar decisões tomadas e acompanhar o que ainda precisa ser feito.</Text>
+        <View style={estilos.tabela}>
+          <View style={estilos.tabelaLinha}>
+            <Text style={estilos.tabelaCelulaHeader}>Decisão</Text>
+            <Text style={estilos.tabelaCelulaHeader}>Prazo</Text>
+            <Text style={estilos.tabelaCelulaHeader}>✓</Text>
+          </View>
+          {checklist.map((item, i) => (
+            <View key={i} style={estilos.tabelaLinha}>
+              <Text style={estilos.tabelaCelula}>{item.item}</Text>
+              <Text style={estilos.tabelaCelula}>{item.prazo}</Text>
+              <Text style={estilos.tabelaCelula}>[ ]</Text>
+            </View>
+          ))}
+        </View>
+        <Rodape nome={nomeCasal} pagina={String(paginaNum + secoes.length + 2)} />
+      </Page>
+
+      {/* CONTRACAPA */}
+      <Page size="A4" style={estilos.pagina}>
+        <View style={estilos.ctaContainer}>
+          <Text style={estilos.ctaTitulo}>Seu casamento merece o melhor</Text>
+          <Text style={estilos.ctaTexto}>
+            Assine o Descomplicaí e faça a gestão total do seu casamento de forma inteligente e descomplicada. Você terá controle total de tudo — fornecedores, orçamento, convidados e cronograma — em um só lugar. E ainda pode convidar seu cerimonialista para colaborar.
+          </Text>
+          <Text style={[estilos.ctaTexto, { fontWeight: 'bold', marginTop: 8 }]}>
+            Acesse descomplicai.com.br e comece agora.
+          </Text>
+        </View>
+        <Rodape nome={nomeCasal} pagina={String(paginaNum + secoes.length + 3)} />
+      </Page>
     </Document>
   );
 }
