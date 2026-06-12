@@ -75,7 +75,7 @@ export default function MemorialOrchestrator() {
   const [oferecerDraft, setOferecerDraft] = useState(false);
   const restauracaoFeita = useRef(false);
 
-  // ⬇⬇⬇ TODA LÓGICA DE RESTAURAÇÃO ESTÁ AQUI DENTRO ⬇⬇⬇
+  // Restauração de progresso ao montar
   useEffect(() => {
     if (restauracaoFeita.current) return;
     if (carregandoAuth) return;
@@ -91,7 +91,6 @@ export default function MemorialOrchestrator() {
       setOferecerDraft(true);
     }
   }, [carregandoAuth, estado.etapaAtual, estado.perfilCasal, temDraft, usuario, carregarDraft, carregarEstado]);
-  // ⬆⬆⬆ FIM DA LÓGICA DE RESTAURAÇÃO ⬆⬆⬆
 
   const etapasTotais = calcularEtapasTotais(estado);
   const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
@@ -118,6 +117,25 @@ export default function MemorialOrchestrator() {
       setTransicionando(false);
     }, 220);
   }, [estado, setRespostas, irParaEtapa, usuario]);
+
+  // 🔧 CORREÇÃO: salva estado antes de redirecionar para login
+  const handleIrParaLogin = useCallback(() => {
+    try {
+      localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
+    } catch (e) {
+      console.warn('Falha ao salvar rascunho antes do login:', e);
+    }
+    router.push('/login?redirect=' + encodeURIComponent('/memorial'));
+  }, [estado, router]);
+
+  const handleIrParaCadastro = useCallback(() => {
+    try {
+      localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
+    } catch (e) {
+      console.warn('Falha ao salvar rascunho antes do cadastro:', e);
+    }
+    router.push('/cadastro?redirect=' + encodeURIComponent('/memorial'));
+  }, [estado, router]);
 
   const handleConcluirMemorial = useCallback(async (fornecedores) => {
     setRespostas('fornecedoresNecessarios', fornecedores);
@@ -188,8 +206,8 @@ export default function MemorialOrchestrator() {
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-4)' }}>Quase lá!</h2>
               <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)' }}>Para continuar seu memorial na nuvem e acessar de qualquer lugar, faça login ou crie sua conta.</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                <button onClick={() => router.push(`/login?redirect=${encodeURIComponent('/memorial')}`)} style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: 'none', backgroundColor: 'var(--color-brand)', color: 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}>Fazer login</button>
-                <button onClick={() => router.push(`/cadastro?redirect=${encodeURIComponent('/memorial')}`)} style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-brand)', backgroundColor: 'transparent', color: 'var(--color-brand)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}>Criar conta</button>
+                <button onClick={handleIrParaLogin} style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: 'none', backgroundColor: 'var(--color-brand)', color: 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}>Fazer login</button>
+                <button onClick={handleIrParaCadastro} style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-brand)', backgroundColor: 'transparent', color: 'var(--color-brand)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}>Criar conta</button>
               </div>
             </div>
           </div>
