@@ -13,40 +13,45 @@ export default function ConclusaoPage() {
   const { estado, carregarEstado } = useMemorial();
   const { usuario } = useAuth();
   const { isHydrated, carregarDraft } = useAutoSave(estado);
-  const [status, setStatus] = useState('carregando');
+  const [status, setStatus] = useState('carregando'); // carregando | pronto | erro
   const [memorial, setMemorial] = useState('');
   const [erro, setErro] = useState('');
-  const [pagando, setPagando] = useState(false);
   const [baixandoPDF, setBaixandoPDF] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const { pagamento: statusPagamento, tipo: tipoProduto, concluido } = router.query;
 
-  // Evita hydration mismatch
+  const { pagamento: statusPagamento, tipo: tipoProduto, concluido } = router.query;
+  const pagamentoAprovado = statusPagamento === 'sucesso';
+  const pdfLiberado = pagamentoAprovado && tipoProduto === 'memorial_pdf';
+  const assinaturaAtiva = pagamentoAprovado && tipoProduto === 'assinatura';
+
+  // Evita hydration mismatch (necessário mesmo dentro de ClientOnly)
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // GUARDA: só renderiza depois de montado no cliente e hidratado
-  if (!isMounted || !isHydrated) {
-    return (
-      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-off-white)' }}>
-        <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando...</p>
-      </div>
-    );
-  }
-
-  // LÓGICA DE RECUPERAÇÃO DE ESTADO
+  // Redireciona imediatamente se for assinatura aprovada
   useEffect(() => {
+    if (isMounted && isHydrated && assinaturaAtiva) {
+      router.replace('/painel');
+    }
+  }, [isMounted, isHydrated, assinaturaAtiva, router]);
+
+  // Recupera estado do draft e gera o memorial
+  useEffect(() => {
+    if (!isMounted || !isHydrated) return;
+
     const draft = carregarDraft();
     if (draft) {
       carregarEstado(draft);
     } else if (!concluido) {
       router.replace('/memorial');
+      return;
     } else {
       setStatus('erro');
       setErro('Dados do memorial não encontrados. Por favor, finalize novamente.');
+      return;
     }
-  }, []);
+  }, [isMounted, isHydrated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!estado || !estado.etapaAtual || status !== 'carregando') return;
@@ -61,7 +66,9 @@ export default function ConclusaoPage() {
         });
 
         const data = await resposta.json();
-        if (!resposta.ok || !data.sucesso) throw new Error(data.erro || 'Erro desconhecido');
+        if (!resposta.ok || !data.sucesso) {
+          throw new Error(data.erro || 'Erro desconhecido');
+        }
 
         setMemorial(data.memorial);
         setStatus('pronto');
@@ -73,29 +80,6 @@ export default function ConclusaoPage() {
 
     gerarMemorial();
   }, [estado, status]);
-
-  const iniciarPagamento = async (tipo) => {
-    setPagando(true);
-    try {
-      localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
-
-      const resposta = await fetch('/api/pagamento/criar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipo }),
-      });
-
-      const data = await resposta.json();
-      if (!resposta.ok || !data.sucesso) throw new Error(data.erro || 'Erro ao criar pagamento');
-
-      window.location.href = data.checkoutUrl;
-    } catch (err) {
-      console.error(err);
-      alert('Não foi possível iniciar o pagamento. Tente novamente.');
-    } finally {
-      setPagando(false);
-    }
-  };
 
   const baixarPDF = async () => {
     setBaixandoPDF(true);
@@ -129,6 +113,15 @@ export default function ConclusaoPage() {
     }
   };
 
+  // Guarda até o componente estar montado no cliente e o draft ter sido lido
+  if (!isMounted || !isHydrated || assinaturaAtiva) {
+    return (
+      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-off-white)' }}>
+        <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando...</p>
+      </div>
+    );
+  }
+
   if (status === 'carregando') {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-4)', backgroundColor: 'var(--color-off-white)' }}>
@@ -154,8 +147,9 @@ export default function ConclusaoPage() {
     );
   }
 
-  const previewVisivel = memorial.substring(0, 800);
-  const pagamentoAprovado = statusPagamento === 'sucesso';
+  // Conteúdo do memorial: completo ou truncado conforme a situação
+  const conteudoMemorial = pdfLiberado ? memorial : memorial.substring(0, 800);
+  const mostrarBlur = !pdfLiberado && memorial.length > 800;
 
   return (
     <>
@@ -166,15 +160,15 @@ export default function ConclusaoPage() {
         <div style={{ marginBottom: 'var(--space-6)' }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-4xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>Memorial pronto!</h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-lg)' }}>
-            {pagamentoAprovado
+            {pdfLiberado
               ? 'Seu pagamento foi aprovado! Baixe o PDF completo.'
               : 'Ele foi gerado com base nas suas escolhas. Confira um trecho:'}
           </p>
         </div>
 
         <div style={{ borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', padding: 'var(--space-6)', backgroundColor: 'var(--color-white)', marginBottom: 'var(--space-6)' }}>
-          <div style={{ whiteSpace: 'pre-wrap', lineHeight: 'var(--leading-relaxed)' }}>{previewVisivel}</div>
-          {memorial.length > 800 && !pagamentoAprovado && (
+          <div style={{ whiteSpace: 'pre-wrap', lineHeight: 'var(--leading-relaxed)' }}>{conteudoMemorial}</div>
+          {mostrarBlur && (
             <div style={{
               marginTop: 'var(--space-4)',
               padding: 'var(--space-4)',
@@ -192,8 +186,9 @@ export default function ConclusaoPage() {
           )}
         </div>
 
+        {/* CTAs dinâmicos conforme o status do pagamento */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
-          {pagamentoAprovado ? (
+          {pdfLiberado ? (
             <>
               <Button variant="primary" size="lg" fullWidth loading={baixandoPDF} onClick={baixarPDF}>
                 {baixandoPDF ? 'Gerando PDF...' : 'Baixar PDF completo'}
@@ -204,11 +199,11 @@ export default function ConclusaoPage() {
             </>
           ) : (
             <>
-              <Button variant="primary" size="lg" fullWidth loading={pagando} onClick={() => iniciarPagamento('memorial_pdf')}>
-                {pagando ? 'Redirecionando...' : 'Baixar PDF completo — R$197'}
+              <Button variant="primary" size="lg" fullWidth onClick={() => router.push('/planos?produto=pdf')}>
+                Baixar PDF completo — R$197
               </Button>
-              <Button variant="secondary" size="lg" fullWidth loading={pagando} onClick={() => iniciarPagamento('assinatura')}>
-                {pagando ? 'Redirecionando...' : 'Gerenciar meu casamento — R$29,90/mês'}
+              <Button variant="secondary" size="lg" fullWidth onClick={() => router.push('/planos?produto=assinatura')}>
+                Gerenciar meu casamento — R$29,90/mês
               </Button>
             </>
           )}
@@ -220,7 +215,7 @@ export default function ConclusaoPage() {
           </div>
         )}
 
-        {!pagamentoAprovado && (
+        {!pdfLiberado && !assinaturaAtiva && (
           <p style={{ textAlign: 'center', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
             Seu memorial ficará salvo por 7 dias. Depois é só assinar para manter o acesso.
           </p>
