@@ -1,5 +1,6 @@
 // components/pdf/MemorialPDF.jsx
 import React from 'react';
+import path from 'path';
 import { Document, Page, Text, View, StyleSheet, Font, Image, Svg, Path, G } from '@react-pdf/renderer';
 import {
   capitalizarNome,
@@ -20,75 +21,81 @@ import {
 import { sugerirFontes } from '../../utils/sugestoes';
 
 // ========== BIBLIOTECA DE IMAGENS LOCAIS ==========
+const BASE_IMAGE_PATH = path.join(process.cwd(), 'public', 'images');
+
+function img(categoria, arquivo) {
+  return path.join(BASE_IMAGE_PATH, categoria, arquivo);
+}
+
 const IMAGENS = {
   flores: {
-    'Rosas': '/images/flores/rosas-1.jpg',
-    'Orquídeas': '/images/flores/flores-default-1.jpg',
-    'Lírios': '/images/flores/flores-default-2.jpg',
-    'Tulipas': '/images/flores/flores-default-3.jpg',
-    'Peônias': '/images/flores/flores-default-4.jpg',
-    'Flores do campo': '/images/flores/flores-do-campo-1.jpg',
-    'Flores secas': '/images/flores/flores-secas-1.jpg',
-    'Eucalipto': '/images/flores/flores-default-5.jpg',
-    'Hortênsias': '/images/flores/flores-default-6.jpg',
-    'Gérberas': '/images/flores/flores-default-7.jpg',
-    'Astilbe': '/images/flores/flores-default-8.jpg',
-    'Dálias': '/images/flores/flores-default-9.jpg',
-    'Chuva de ouro': '/images/flores/flores-default-10.jpg',
-    'Alstroemérias': '/images/flores/flores-default-11.jpg',
-    'Anêmonas': '/images/flores/flores-default-12.jpg',
-    'Ranúnculos': '/images/flores/flores-default-13.jpg',
-    'Lavanda': '/images/flores/flores-default-14.jpg',
-    'Margaridas': '/images/flores/flores-default-15.jpg',
-    'Gipsofila': '/images/flores/flores-default-16.jpg',
-    'Antúrios': '/images/flores/flores-default-17.jpg',
-    'Bromélias': '/images/flores/flores-default-18.jpg',
-    'Orquídeas phalaenopsis': '/images/flores/flores-default-19.jpg',
-    'Crisântemos': '/images/flores/flores-default-20.jpg',
-    'Cala': '/images/flores/flores-default-21.jpg',
-    'Proteas': '/images/flores/flores-default-22.jpg',
-    'Statice': '/images/flores/flores-default-23.jpg',
-    'Verônicas': '/images/flores/flores-default-24.jpg',
-    'Amarílis': '/images/flores/flores-default-25.jpg',
-    default: '/images/flores/flores-default-1.jpg',
+    'Rosas': img('flores', 'rosas-1.jpg'),
+    'Orquídeas': img('flores', 'flores-default-1.jpg'),
+    'Lírios': img('flores', 'flores-default-2.jpg'),
+    'Tulipas': img('flores', 'flores-default-3.jpg'),
+    'Peônias': img('flores', 'flores-default-4.jpg'),
+    'Flores do campo': img('flores', 'flores-do-campo-1.jpg'),
+    'Flores secas': img('flores', 'flores-secas-1.jpg'),
+    'Eucalipto': img('flores', 'flores-default-5.jpg'),
+    'Hortênsias': img('flores', 'flores-default-6.jpg'),
+    'Gérberas': img('flores', 'flores-default-7.jpg'),
+    'Astilbe': img('flores', 'flores-default-8.jpg'),
+    'Dálias': img('flores', 'flores-default-9.jpg'),
+    'Chuva de ouro': img('flores', 'flores-default-10.jpg'),
+    'Alstroemérias': img('flores', 'flores-default-11.jpg'),
+    'Anêmonas': img('flores', 'flores-default-12.jpg'),
+    'Ranúnculos': img('flores', 'flores-default-13.jpg'),
+    'Lavanda': img('flores', 'flores-default-14.jpg'),
+    'Margaridas': img('flores', 'flores-default-15.jpg'),
+    'Gipsofila': img('flores', 'flores-default-16.jpg'),
+    'Antúrios': img('flores', 'flores-default-17.jpg'),
+    'Bromélias': img('flores', 'flores-default-18.jpg'),
+    'Orquídeas phalaenopsis': img('flores', 'flores-default-19.jpg'),
+    'Crisântemos': img('flores', 'flores-default-20.jpg'),
+    'Cala': img('flores', 'flores-default-21.jpg'),
+    'Proteas': img('flores', 'flores-default-22.jpg'),
+    'Statice': img('flores', 'flores-default-23.jpg'),
+    'Verônicas': img('flores', 'flores-default-24.jpg'),
+    'Amarílis': img('flores', 'flores-default-25.jpg'),
+    default: img('flores', 'flores-default-1.jpg'),
   },
   vestido: {
-    'Princesa': '/images/vestidos/vestido-default-1.jpg',
-    'Sereia': '/images/vestidos/vestido-default-2.jpg',
-    'Minimalista': '/images/vestidos/vestido-minimalista-1.jpg',
-    'Boho': '/images/vestidos/vestido-boho-1.jpg',
-    'Romântico': '/images/vestidos/vestido-minimalista-2.jpg',
-    'Clássico': '/images/vestidos/vestido-minimalista-3.jpg',
-    'Moderno': '/images/vestidos/vestido-minimalista-4.jpg',
-    'Rústico': '/images/vestidos/vestido-boho-2.jpg',
-    default: '/images/vestidos/vestido-default-1.jpg',
+    'Princesa': img('vestidos', 'vestido-default-1.jpg'),
+    'Sereia': img('vestidos', 'vestido-default-2.jpg'),
+    'Minimalista': img('vestidos', 'vestido-minimalista-1.jpg'),
+    'Boho': img('vestidos', 'vestido-boho-1.jpg'),
+    'Romântico': img('vestidos', 'vestido-minimalista-2.jpg'),
+    'Clássico': img('vestidos', 'vestido-minimalista-3.jpg'),
+    'Moderno': img('vestidos', 'vestido-minimalista-4.jpg'),
+    'Rústico': img('vestidos', 'vestido-boho-2.jpg'),
+    default: img('vestidos', 'vestido-default-1.jpg'),
   },
   mesaPosta: {
-    'classico': '/images/mesa/mesa-classico-1.jpg',
-    'rustico': '/images/mesa/mesa-rustico-1.jpg',
-    'romantico': '/images/mesa/mesa-romantico-1.jpg',
-    'minimalista': '/images/mesa/mesa-minimalista-1.jpg',
-    'boho': '/images/mesa/mesa-rustico-4.jpg',
-    'moderno': '/images/mesa/mesa-default-2.jpg',
-    default: '/images/mesa/mesa-classico-1.jpg',
+    'classico': img('mesa', 'mesa-classico-1.jpg'),
+    'rustico': img('mesa', 'mesa-rustico-1.jpg'),
+    'romantico': img('mesa', 'mesa-romantico-1.jpg'),
+    'minimalista': img('mesa', 'mesa-minimalista-1.jpg'),
+    'boho': img('mesa', 'mesa-rustico-4.jpg'),
+    'moderno': img('mesa', 'mesa-default-2.jpg'),
+    default: img('mesa', 'mesa-classico-1.jpg'),
   },
   decoracao: {
-    'classico': '/images/decoracao/decor-classico-1.jpg',
-    'rustico': '/images/decoracao/decor-rustico-1.jpg',
-    'romantico': '/images/decoracao/decor-romantico-1.jpg',
-    'minimalista': '/images/decoracao/decor-minimalista-1.jpg',
-    'boho': '/images/decoracao/decor-boho-1.jpg',
-    'moderno': '/images/decoracao/decor-moderno-1.jpg',
-    default: '/images/decoracao/decor-classico-1.jpg',
+    'classico': img('decoracao', 'decor-classico-1.jpg'),
+    'rustico': img('decoracao', 'decor-rustico-1.jpg'),
+    'romantico': img('decoracao', 'decor-romantico-1.jpg'),
+    'minimalista': img('decoracao', 'decor-minimalista-1.jpg'),
+    'boho': img('decoracao', 'decor-boho-1.jpg'),
+    'moderno': img('decoracao', 'decor-moderno-1.jpg'),
+    default: img('decoracao', 'decor-classico-1.jpg'),
   },
   cerimonia: {
-    'classico': '/images/cerimonia/cerimonia-altar-1.jpg',
-    'rustico': '/images/cerimonia/cerimonia-corredor-3.jpg',
-    'romantico': '/images/cerimonia/cerimonia-beijo-1.jpg',
-    'minimalista': '/images/cerimonia/cerimonia-aliancas-1.jpg',
-    'boho': '/images/cerimonia/cerimonia-entrada-noiva-4.jpg',
-    'moderno': '/images/cerimonia/cerimonia-saida-1.jpg',
-    default: '/images/cerimonia/cerimonia-altar-1.jpg',
+    'classico': img('cerimonia', 'cerimonia-altar-1.jpg'),
+    'rustico': img('cerimonia', 'cerimonia-corredor-3.jpg'),
+    'romantico': img('cerimonia', 'cerimonia-beijo-1.jpg'),
+    'minimalista': img('cerimonia', 'cerimonia-aliancas-1.jpg'),
+    'boho': img('cerimonia', 'cerimonia-entrada-noiva-4.jpg'),
+    'moderno': img('cerimonia', 'cerimonia-saida-1.jpg'),
+    default: img('cerimonia', 'cerimonia-altar-1.jpg'),
   },
 };
 
@@ -188,20 +195,20 @@ function renderizarTextoMemorial(linhas, fonteCorpo, corTexto, corPrimaria) {
     if (!texto) return null;
     if (linha.startsWith('### ')) {
       return (
-        <Text key={i} style={{ fontFamily: fonteCorpo, fontSize: 12, color: corPrimaria, marginTop: 10, marginBottom: 5 }}>
+        <Text key={i} style={{ fontFamily: fonteCorpo, fontSize: 12, color: corPrimaria, marginTop: 10, marginBottom: 5, wrap: true }}>
           {texto}
         </Text>
       );
     }
     if (linha.startsWith('- ') || linha.startsWith('* ')) {
       return (
-        <Text key={i} style={{ fontFamily: fonteCorpo, fontSize: 10.5, color: corTexto, lineHeight: 1.7, marginBottom: 4, marginLeft: 12 }}>
+        <Text key={i} style={{ fontFamily: fonteCorpo, fontSize: 10.5, color: corTexto, lineHeight: 1.7, marginBottom: 4, marginLeft: 12, wrap: true }}>
           • {texto}
         </Text>
       );
     }
     return (
-      <Text key={i} style={{ fontFamily: fonteCorpo, fontSize: 10.5, color: corTexto, lineHeight: 1.7, marginBottom: 6 }}>
+      <Text key={i} style={{ fontFamily: fonteCorpo, fontSize: 10.5, color: corTexto, lineHeight: 1.7, marginBottom: 6, wrap: true }}>
         {texto}
       </Text>
     );
@@ -266,13 +273,13 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
     capaLocal: { fontFamily: fonteCorpo, fontSize: 12, color: getCorContraste(corTerciaria), textAlign: 'center', marginTop: 6 },
     paletaContainer: { flexDirection: 'row', marginTop: 36, alignItems: 'center', justifyContent: 'center' },
     pagina: { backgroundColor: corFundoPagina, padding: 50, paddingBottom: 70 },
-    tituloSecao: { fontFamily: fonteDisplay, fontSize: 24, color: corTitulo, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: corSecundaria, paddingBottom: 10 },
-    tituloSecaoPequeno: { fontFamily: fonteDisplay, fontSize: 18, color: corTitulo, marginBottom: 12, marginTop: 16 },
-    paragrafo: { fontFamily: fonteCorpo, fontSize: 11, color: corTexto, lineHeight: 1.8, marginBottom: 8 },
-    paragrafoDestaque: { fontFamily: fonteCorpo, fontSize: 11, color: corPrimaria, lineHeight: 1.8, marginBottom: 8 },
-    subtitulo: { fontFamily: fonteCorpo, fontSize: 13, color: corTitulo, marginTop: 12, marginBottom: 6 },
-    imagem: { width: 220, height: 160, alignSelf: 'center', marginVertical: 12, borderRadius: 4 },
-    imagemPequena: { width: 160, height: 120, alignSelf: 'center', marginVertical: 8, borderRadius: 4 },
+    tituloSecao: { fontFamily: fonteDisplay, fontSize: 24, color: corTitulo, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: corSecundaria, paddingBottom: 10, wrap: true },
+    tituloSecaoPequeno: { fontFamily: fonteDisplay, fontSize: 18, color: corTitulo, marginBottom: 12, marginTop: 16, wrap: true },
+    paragrafo: { fontFamily: fonteCorpo, fontSize: 11, color: corTexto, lineHeight: 1.8, marginBottom: 8, wrap: true },
+    paragrafoDestaque: { fontFamily: fonteCorpo, fontSize: 11, color: corPrimaria, lineHeight: 1.8, marginBottom: 8, wrap: true },
+    subtitulo: { fontFamily: fonteCorpo, fontSize: 13, color: corTitulo, marginTop: 12, marginBottom: 6, wrap: true },
+    imagem: { width: 220, height: 160, alignSelf: 'center', marginTop: 12, marginBottom: 20, borderRadius: 4 },
+    imagemPequena: { width: 160, height: 120, alignSelf: 'center', marginTop: 8, marginBottom: 16, borderRadius: 4 },
     tabela: { marginTop: 8, marginBottom: 8 },
     tabelaLinha: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: corSecundaria, paddingVertical: 5, alignItems: 'center' },
     tabelaLinhaHeader: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: corTitulo, paddingVertical: 6, backgroundColor: corSecundaria + '20', alignItems: 'center' },
@@ -283,7 +290,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
     linhaPautada: { borderBottomWidth: 0.5, borderBottomColor: '#D4CFC9', borderStyle: 'dashed', height: 20, marginBottom: 4 },
     ctaContainer: { alignItems: 'center', justifyContent: 'center', height: '100%', padding: 40 },
     ctaTitulo: { fontFamily: fonteDisplay, fontSize: 26, color: corTitulo, textAlign: 'center', marginBottom: 20 },
-    ctaTexto: { fontFamily: fonteCorpo, fontSize: 12, color: corTexto, textAlign: 'center', lineHeight: 1.8, marginBottom: 16 },
+    ctaTexto: { fontFamily: fonteCorpo, fontSize: 12, color: corTexto, textAlign: 'center', lineHeight: 1.8, marginBottom: 16, wrap: true },
     ctaUrl: { fontFamily: fonteCorpo, fontSize: 13, color: corTitulo, textAlign: 'center', marginTop: 8 },
     barraContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginLeft: 10 },
     barraLabel: { fontFamily: fonteCorpo, fontSize: 9, color: corTexto, width: 110 },
@@ -297,8 +304,8 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
     twoColumn: { flexDirection: 'row', gap: 20 },
     column: { flex: 1 },
     boxInfo: { backgroundColor: corSecundaria + '15', borderRadius: 6, padding: 12, marginVertical: 8, borderLeftWidth: 3, borderLeftColor: corTitulo },
-    boxInfoTexto: { fontFamily: fonteCorpo, fontSize: 10, color: corTexto, lineHeight: 1.7 },
-    quote: { fontFamily: fonteDisplay, fontSize: 14, color: corTitulo, fontStyle: 'italic', textAlign: 'center', marginVertical: 16, paddingHorizontal: 20 },
+    boxInfoTexto: { fontFamily: fonteCorpo, fontSize: 10, color: corTexto, lineHeight: 1.7, wrap: true },
+    quote: { fontFamily: fonteDisplay, fontSize: 14, color: corTitulo, fontStyle: 'italic', textAlign: 'center', marginVertical: 16, paddingHorizontal: 20, wrap: true },
   });
 
   return (
