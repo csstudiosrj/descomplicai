@@ -2,6 +2,7 @@ import { renderToBuffer, Font } from '@react-pdf/renderer';
 import { MemorialPDF } from '../../components/pdf/MemorialPDF';
 import path from 'path';
 import fs from 'fs';
+import QRCode from 'qrcode';
 
 // ========== REGISTRO DE FONTES (nível de módulo, servidor) ==========
 const BASE_FONTS = path.resolve(process.cwd(), 'public', 'fonts');
@@ -41,7 +42,6 @@ function registrarFontes() {
   }
 }
 
-// Registra uma vez no carregamento do módulo
 registrarFontes();
 
 export default async function handler(req, res) {
@@ -55,10 +55,29 @@ export default async function handler(req, res) {
     return res.status(400).json({ erro: 'Dados insuficientes para gerar PDF' });
   }
 
+  // Gera QR code real como data URI
+  let qrCodeDataUri = null;
   try {
-    // Tenta renderizar com fontes personalizadas
+    qrCodeDataUri = await QRCode.toDataURL('https://arxum.csstudios.site/descomplicai', {
+      width: 200,
+      margin: 2,
+      color: {
+        dark: '#1A1714',
+        light: '#FFFFFF',
+      },
+    });
+  } catch (e) {
+    console.warn('Falha ao gerar QR code:', e.message);
+  }
+
+  try {
     const buffer = await renderToBuffer(
-      <MemorialPDF memorial={memorial} dadosEvento={dadosEvento} usarFontesNativas={false} />
+      <MemorialPDF
+        memorial={memorial}
+        dadosEvento={dadosEvento}
+        usarFontesNativas={false}
+        qrCodeDataUri={qrCodeDataUri}
+      />
     );
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="memorial-descomplicai.pdf"');
@@ -69,9 +88,13 @@ export default async function handler(req, res) {
     console.error('Estilo tentado:', dadosEvento?.estilo);
 
     try {
-      // Fallback: renderiza com fontes nativas
       const buffer = await renderToBuffer(
-        <MemorialPDF memorial={memorial} dadosEvento={dadosEvento} usarFontesNativas={true} />
+        <MemorialPDF
+          memorial={memorial}
+          dadosEvento={dadosEvento}
+          usarFontesNativas={true}
+          qrCodeDataUri={qrCodeDataUri}
+        />
       );
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'attachment; filename="memorial-descomplicai.pdf"');
