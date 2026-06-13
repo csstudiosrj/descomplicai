@@ -3,6 +3,14 @@
  * @module utils/pdfUtils
  */
 
+import path from 'path';
+
+const BASE_IMAGE_PATH = path.join(process.cwd(), 'public', 'images');
+
+function img(categoria, arquivo) {
+  return path.join(BASE_IMAGE_PATH, categoria, arquivo);
+}
+
 /**
  * Capitaliza nome próprio
  * @param {string} nome
@@ -245,9 +253,28 @@ export function getDicasRegionais(cidade, estado) {
  * @returns {Array<{titulo: string, linhas: string[]}>}
  */
 export function parsearMemorial(memorial) {
+  if (!memorial || typeof memorial !== 'string') {
+    return [{ titulo: 'Memorial', linhas: ['Conteúdo não disponível.'] }];
+  }
+
   const secoes = [];
-  const linhas = (memorial || '').split('\n');
+  const linhas = memorial.split('\n');
   let atual = null;
+  let temH2 = false;
+
+  // Primeira passagem: verifica se tem ##
+  for (const linha of linhas) {
+    if (linha.startsWith('## ')) {
+      temH2 = true;
+      break;
+    }
+  }
+
+  // Se não tem ##, trata o texto inteiro como uma seção
+  if (!temH2) {
+    return [{ titulo: 'Memorial do Casamento', linhas: linhas.filter(l => l.trim()) }];
+  }
+
   for (const linha of linhas) {
     if (linha.startsWith('## ')) {
       if (atual) secoes.push(atual);
@@ -394,7 +421,7 @@ export function getItensOrcamento(cidade, estado) {
 }
 
 /**
- * Retorna imagem de referência por categoria
+ * Retorna imagem de referência por categoria — AGORA COM CAMINHOS LOCAIS
  * @param {string} categoria
  * @param {string} chave
  * @returns {string|null}
@@ -402,80 +429,73 @@ export function getItensOrcamento(cidade, estado) {
 export function getImagem(categoria, chave) {
   const IMAGENS = {
     flores: {
-      'Rosas': 'https://images.unsplash.com/photo-1559563362-c667ba5f5480?w=400',
-      'Orquídeas': 'https://images.unsplash.com/photo-1524592628638-25ae9e6a7c74?w=400',
-      'Hortênsias brancas': 'https://images.unsplash.com/photo-1462275646964-a0e3386b89fa?w=400',
-      'Girassóis': 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400',
-      'Margaridas': 'https://images.unsplash.com/photo-1508610041833-9f3d18d4ce3f?w=400',
-      'Ranúnculos': 'https://images.unsplash.com/photo-1589123053646-4e8c49b46e1a?w=400',
-      'Flores secas': 'https://images.unsplash.com/photo-1606041008023-472cdb5e530f?w=400',
-      'Antúrios': 'https://images.unsplash.com/photo-1561181286-d5ef734d74e6?w=400',
-      'Helicônias': 'https://images.unsplash.com/photo-1573481070555-1ba1cd7f7c54?w=400',
-      'Copo-de-leite': 'https://images.unsplash.com/photo-1593483316242-1eae1e0c1cf8?w=400',
-      'Peônias': 'https://images.unsplash.com/photo-1562690868-60bbe7293e94?w=400',
-      'Lavanda': 'https://images.unsplash.com/photo-1498579397066-22750a3cb424?w=400',
-      'Rosas rosa': 'https://images.unsplash.com/photo-1559563362-c667ba5f5480?w=400',
-      'Rosas escuras': 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400',
-      'Dálias negras': 'https://images.unsplash.com/photo-1508610041833-9f3d18d4ce3f?w=400',
-      'Proteas': 'https://images.unsplash.com/photo-1561181286-d5ef734d74e6?w=400',
-      'Musgo': 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=400',
-      'Costelas-de-adão': 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=400',
-      default: 'https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=400',
+      'Rosas': img('flores', 'rosas-1.jpg'),
+      'Orquídeas': img('flores', 'flores-default-1.jpg'),
+      'Lírios': img('flores', 'flores-default-2.jpg'),
+      'Tulipas': img('flores', 'flores-default-3.jpg'),
+      'Peônias': img('flores', 'flores-default-4.jpg'),
+      'Flores do campo': img('flores', 'flores-do-campo-1.jpg'),
+      'Flores secas': img('flores', 'flores-secas-1.jpg'),
+      'Eucalipto': img('flores', 'flores-default-5.jpg'),
+      'Hortênsias': img('flores', 'flores-default-6.jpg'),
+      'Gérberas': img('flores', 'flores-default-7.jpg'),
+      'Astilbe': img('flores', 'flores-default-8.jpg'),
+      'Dálias': img('flores', 'flores-default-9.jpg'),
+      'Chuva de ouro': img('flores', 'flores-default-10.jpg'),
+      'Alstroemérias': img('flores', 'flores-default-11.jpg'),
+      'Anêmonas': img('flores', 'flores-default-12.jpg'),
+      'Ranúnculos': img('flores', 'flores-default-13.jpg'),
+      'Lavanda': img('flores', 'flores-default-14.jpg'),
+      'Margaridas': img('flores', 'flores-default-15.jpg'),
+      'Gipsofila': img('flores', 'flores-default-16.jpg'),
+      'Antúrios': img('flores', 'flores-default-17.jpg'),
+      'Bromélias': img('flores', 'flores-default-18.jpg'),
+      'Orquídeas phalaenopsis': img('flores', 'flores-default-19.jpg'),
+      'Crisântemos': img('flores', 'flores-default-20.jpg'),
+      'Cala': img('flores', 'flores-default-21.jpg'),
+      'Proteas': img('flores', 'flores-default-22.jpg'),
+      'Statice': img('flores', 'flores-default-23.jpg'),
+      'Verônicas': img('flores', 'flores-default-24.jpg'),
+      'Amarílis': img('flores', 'flores-default-25.jpg'),
+      default: img('flores', 'flores-default-1.jpg'),
     },
     vestido: {
-      'Cauda longa': 'https://images.unsplash.com/photo-1520975916093-a1b5c5a1b3f0?w=400',
-      'Renda francesa': 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400',
-      'Cetim estruturado': 'https://images.unsplash.com/photo-1550639525-c97d454acf70?w=400',
-      'Renda boho': 'https://images.unsplash.com/photo-1515562141580-4f50a5d4e4e4?w=400',
-      'Cauda leve': 'https://images.unsplash.com/photo-1593030761757-71fae45fa0e2?w=400',
-      'Tule natural': 'https://images.unsplash.com/photo-1510076857177-7470076d4098?w=400',
-      'Corte reto minimalista': 'https://images.unsplash.com/photo-1551787766-1f3e9e1e6e3a?w=400',
-      'Corte clean em crepe': 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400',
-      'Princesa com saia volumosa': 'https://images.unsplash.com/photo-1520975916093-a1b5c5a1b3f0?w=400',
-      'Vestido fluido em crepe': 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400',
-      'Vestido leve em chiffon': 'https://images.unsplash.com/photo-1515562141580-4f50a5d4e4e4?w=400',
-      'Vestido escuro em renda': 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400',
-      'Renda vintage': 'https://images.unsplash.com/photo-1478145046317-39f10e56b5e9?w=400',
-      default: 'https://images.unsplash.com/photo-1551787766-1f3e9e1e6e3a?w=400',
+      'Princesa': img('vestidos', 'vestido-default-1.jpg'),
+      'Sereia': img('vestidos', 'vestido-default-2.jpg'),
+      'Minimalista': img('vestidos', 'vestido-minimalista-1.jpg'),
+      'Boho': img('vestidos', 'vestido-boho-1.jpg'),
+      'Romântico': img('vestidos', 'vestido-minimalista-2.jpg'),
+      'Clássico': img('vestidos', 'vestido-minimalista-3.jpg'),
+      'Moderno': img('vestidos', 'vestido-minimalista-4.jpg'),
+      'Rústico': img('vestidos', 'vestido-boho-2.jpg'),
+      default: img('vestidos', 'vestido-default-1.jpg'),
     },
     mesaPosta: {
-      'classico': 'https://images.unsplash.com/photo-1510076857177-7470076d4098?w=400',
-      'rustico': 'https://images.unsplash.com/photo-1485963631004-f2f00b1d6606?w=400',
-      'boho': 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400',
-      'moderno': 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400',
-      'minimalista': 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400',
-      'industrial': 'https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=400',
-      'tropical': 'https://images.unsplash.com/photo-1520453803296-c39e5b1e4e3a?w=400',
-      'romantico': 'https://images.unsplash.com/photo-1510076857177-7470076d4098?w=400',
-      'gotico': 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400',
-      'vintage': 'https://images.unsplash.com/photo-1478145046317-39f10e56b5e9?w=400',
-      default: 'https://images.unsplash.com/photo-1510076857177-7470076d4098?w=400',
+      'classico': img('mesa', 'mesa-classico-1.jpg'),
+      'rustico': img('mesa', 'mesa-rustico-1.jpg'),
+      'romantico': img('mesa', 'mesa-romantico-1.jpg'),
+      'minimalista': img('mesa', 'mesa-minimalista-1.jpg'),
+      'boho': img('mesa', 'mesa-rustico-4.jpg'),
+      'moderno': img('mesa', 'mesa-default-2.jpg'),
+      default: img('mesa', 'mesa-classico-1.jpg'),
     },
     decoracao: {
-      'classico': 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400',
-      'rustico': 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=400',
-      'boho': 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400',
-      'moderno': 'https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=400',
-      'minimalista': 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400',
-      'industrial': 'https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=400',
-      'tropical': 'https://images.unsplash.com/photo-1520453803296-c39e5b1e4e3a?w=400',
-      'romantico': 'https://images.unsplash.com/photo-1510076857177-7470076d4098?w=400',
-      'gotico': 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400',
-      'vintage': 'https://images.unsplash.com/photo-1478145046317-39f10e56b5e9?w=400',
-      default: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400',
+      'classico': img('decoracao', 'decor-classico-1.jpg'),
+      'rustico': img('decoracao', 'decor-rustico-1.jpg'),
+      'romantico': img('decoracao', 'decor-romantico-1.jpg'),
+      'minimalista': img('decoracao', 'decor-minimalista-1.jpg'),
+      'boho': img('decoracao', 'decor-boho-1.jpg'),
+      'moderno': img('decoracao', 'decor-moderno-1.jpg'),
+      default: img('decoracao', 'decor-classico-1.jpg'),
     },
     cerimonia: {
-      'classico': 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400',
-      'rustico': 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=400',
-      'boho': 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=400',
-      'moderno': 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=400',
-      'minimalista': 'https://images.unsplash.com/photo-1520854221256-17451cc330e7?w=400',
-      'industrial': 'https://images.unsplash.com/photo-1508219803418-5f1f89469b50?w=400',
-      'tropical': 'https://images.unsplash.com/photo-1520453803296-c39e5b1e4e3a?w=400',
-      'romantico': 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400',
-      'gotico': 'https://images.unsplash.com/photo-1508219803418-5f1f89469b50?w=400',
-      'vintage': 'https://images.unsplash.com/photo-1478145046317-39f10e56b5e9?w=400',
-      default: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400',
+      'classico': img('cerimonia', 'cerimonia-altar-1.jpg'),
+      'rustico': img('cerimonia', 'cerimonia-corredor-3.jpg'),
+      'romantico': img('cerimonia', 'cerimonia-beijo-1.jpg'),
+      'minimalista': img('cerimonia', 'cerimonia-aliancas-1.jpg'),
+      'boho': img('cerimonia', 'cerimonia-entrada-noiva-4.jpg'),
+      'moderno': img('cerimonia', 'cerimonia-saida-1.jpg'),
+      default: img('cerimonia', 'cerimonia-altar-1.jpg'),
     },
   };
 

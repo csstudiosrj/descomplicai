@@ -55,6 +55,21 @@ export default async function handler(req, res) {
     return res.status(400).json({ erro: 'Dados insuficientes para gerar PDF' });
   }
 
+  // ========== DEBUG LOGS ==========
+  console.log('=== MEMORIAL RECEBIDO (primeiros 500 chars) ===');
+  console.log(memorial?.substring(0, 500));
+  console.log('=== TAMANHO DO MEMORIAL ===');
+  console.log(memorial?.length);
+  console.log('=== DADOS EVENTO ===');
+  console.log(JSON.stringify(dadosEvento, null, 2)?.substring(0, 500));
+  console.log('=== CWD ===');
+  console.log(process.cwd());
+  console.log('=== IMAGEM TESTE ===');
+  const testeImg = path.join(process.cwd(), 'public', 'images', 'flores', 'rosas-1.jpg');
+  console.log('Caminho:', testeImg);
+  console.log('Existe:', fs.existsSync(testeImg));
+  console.log('=========================');
+
   // Gera QR code real como data URI
   let qrCodeDataUri = null;
   try {

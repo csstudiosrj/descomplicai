@@ -1,6 +1,5 @@
 // components/pdf/MemorialPDF.jsx
 import React from 'react';
-import path from 'path';
 import { Document, Page, Text, View, StyleSheet, Font, Image, Svg, Path, G } from '@react-pdf/renderer';
 import {
   capitalizarNome,
@@ -20,85 +19,6 @@ import {
 } from '../../utils/pdfUtils';
 import { sugerirFontes } from '../../utils/sugestoes';
 
-// ========== BIBLIOTECA DE IMAGENS LOCAIS ==========
-const BASE_IMAGE_PATH = path.join(process.cwd(), 'public', 'images');
-
-function img(categoria, arquivo) {
-  return path.join(BASE_IMAGE_PATH, categoria, arquivo);
-}
-
-const IMAGENS = {
-  flores: {
-    'Rosas': img('flores', 'rosas-1.jpg'),
-    'Orquídeas': img('flores', 'flores-default-1.jpg'),
-    'Lírios': img('flores', 'flores-default-2.jpg'),
-    'Tulipas': img('flores', 'flores-default-3.jpg'),
-    'Peônias': img('flores', 'flores-default-4.jpg'),
-    'Flores do campo': img('flores', 'flores-do-campo-1.jpg'),
-    'Flores secas': img('flores', 'flores-secas-1.jpg'),
-    'Eucalipto': img('flores', 'flores-default-5.jpg'),
-    'Hortênsias': img('flores', 'flores-default-6.jpg'),
-    'Gérberas': img('flores', 'flores-default-7.jpg'),
-    'Astilbe': img('flores', 'flores-default-8.jpg'),
-    'Dálias': img('flores', 'flores-default-9.jpg'),
-    'Chuva de ouro': img('flores', 'flores-default-10.jpg'),
-    'Alstroemérias': img('flores', 'flores-default-11.jpg'),
-    'Anêmonas': img('flores', 'flores-default-12.jpg'),
-    'Ranúnculos': img('flores', 'flores-default-13.jpg'),
-    'Lavanda': img('flores', 'flores-default-14.jpg'),
-    'Margaridas': img('flores', 'flores-default-15.jpg'),
-    'Gipsofila': img('flores', 'flores-default-16.jpg'),
-    'Antúrios': img('flores', 'flores-default-17.jpg'),
-    'Bromélias': img('flores', 'flores-default-18.jpg'),
-    'Orquídeas phalaenopsis': img('flores', 'flores-default-19.jpg'),
-    'Crisântemos': img('flores', 'flores-default-20.jpg'),
-    'Cala': img('flores', 'flores-default-21.jpg'),
-    'Proteas': img('flores', 'flores-default-22.jpg'),
-    'Statice': img('flores', 'flores-default-23.jpg'),
-    'Verônicas': img('flores', 'flores-default-24.jpg'),
-    'Amarílis': img('flores', 'flores-default-25.jpg'),
-    default: img('flores', 'flores-default-1.jpg'),
-  },
-  vestido: {
-    'Princesa': img('vestidos', 'vestido-default-1.jpg'),
-    'Sereia': img('vestidos', 'vestido-default-2.jpg'),
-    'Minimalista': img('vestidos', 'vestido-minimalista-1.jpg'),
-    'Boho': img('vestidos', 'vestido-boho-1.jpg'),
-    'Romântico': img('vestidos', 'vestido-minimalista-2.jpg'),
-    'Clássico': img('vestidos', 'vestido-minimalista-3.jpg'),
-    'Moderno': img('vestidos', 'vestido-minimalista-4.jpg'),
-    'Rústico': img('vestidos', 'vestido-boho-2.jpg'),
-    default: img('vestidos', 'vestido-default-1.jpg'),
-  },
-  mesaPosta: {
-    'classico': img('mesa', 'mesa-classico-1.jpg'),
-    'rustico': img('mesa', 'mesa-rustico-1.jpg'),
-    'romantico': img('mesa', 'mesa-romantico-1.jpg'),
-    'minimalista': img('mesa', 'mesa-minimalista-1.jpg'),
-    'boho': img('mesa', 'mesa-rustico-4.jpg'),
-    'moderno': img('mesa', 'mesa-default-2.jpg'),
-    default: img('mesa', 'mesa-classico-1.jpg'),
-  },
-  decoracao: {
-    'classico': img('decoracao', 'decor-classico-1.jpg'),
-    'rustico': img('decoracao', 'decor-rustico-1.jpg'),
-    'romantico': img('decoracao', 'decor-romantico-1.jpg'),
-    'minimalista': img('decoracao', 'decor-minimalista-1.jpg'),
-    'boho': img('decoracao', 'decor-boho-1.jpg'),
-    'moderno': img('decoracao', 'decor-moderno-1.jpg'),
-    default: img('decoracao', 'decor-classico-1.jpg'),
-  },
-  cerimonia: {
-    'classico': img('cerimonia', 'cerimonia-altar-1.jpg'),
-    'rustico': img('cerimonia', 'cerimonia-corredor-3.jpg'),
-    'romantico': img('cerimonia', 'cerimonia-beijo-1.jpg'),
-    'minimalista': img('cerimonia', 'cerimonia-aliancas-1.jpg'),
-    'boho': img('cerimonia', 'cerimonia-entrada-noiva-4.jpg'),
-    'moderno': img('cerimonia', 'cerimonia-saida-1.jpg'),
-    default: img('cerimonia', 'cerimonia-altar-1.jpg'),
-  },
-};
-
 // ========== COMPONENTE RODAPÉ ==========
 function Rodape({ nomeCasal }) {
   return (
@@ -117,11 +37,11 @@ function Rodape({ nomeCasal }) {
       fixed
       render={({ pageNumber, totalPages }) => (
         <>
-          <Text style={{ fontSize: 8, color: '#5C534A', fontFamily: 'Helvetica' }}>{nomeCasal}</Text>
-          <Text style={{ fontSize: 8, color: '#5C534A', fontFamily: 'Helvetica' }}>
+          <Text style={{ fontSize: 8, color: '#5C534A', fontFamily: 'Helvetica', wrap: true }}>{nomeCasal}</Text>
+          <Text style={{ fontSize: 8, color: '#5C534A', fontFamily: 'Helvetica', wrap: true }}>
             gerado pelo descomplicaí · arxum.csstudios.site/descomplicai
           </Text>
-          <Text style={{ fontSize: 8, color: '#5C534A', fontFamily: 'Helvetica' }}>
+          <Text style={{ fontSize: 8, color: '#5C534A', fontFamily: 'Helvetica', wrap: true }}>
             {pageNumber} / {totalPages}
           </Text>
         </>
@@ -144,10 +64,10 @@ function PaletaSwatch({ cor, hex, corBorda, fonteCorpo }) {
           borderColor: corBorda,
         }}
       />
-      <Text style={{ fontSize: 9, fontFamily: fonteCorpo, color: '#1A1714', marginTop: 5, textAlign: 'center' }}>
+      <Text style={{ fontSize: 9, fontFamily: fonteCorpo, color: '#1A1714', marginTop: 5, textAlign: 'center', wrap: true }}>
         {getNomeCor(hex)}
       </Text>
-      <Text style={{ fontSize: 8, fontFamily: fonteCorpo, color: '#5C534A', marginTop: 1, textAlign: 'center' }}>
+      <Text style={{ fontSize: 8, fontFamily: fonteCorpo, color: '#5C534A', marginTop: 1, textAlign: 'center', wrap: true }}>
         {hex}
       </Text>
     </View>
@@ -227,10 +147,8 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
   const corTextoSuave = '#5C534A';
   const corFundoPagina = '#FFFFFF';
 
-  // COR DOS TÍTULOS: garante contraste (não pode sumir no fundo branco)
   const corTitulo = getCorTitulo(corPrimaria, corBorda);
 
-  // FONTES: via sugerirFontes do motor de sugestões
   const fontesSugeridas = !usarFontesNativas ? sugerirFontes(estilo) : [];
   const fonteDisplay = fontesSugeridas.find(f => f.uso === 'display')?.nome || 'Times-Roman';
   const fonteCorpo = fontesSugeridas.find(f => f.uso === 'corpo')?.nome || 'Helvetica';
@@ -243,7 +161,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
   const estado = dadosEvento?.estadoEvento || '';
   const localCompleto = cidade && estado ? `${cidade}, ${estado}` : cidade || estado || 'Local a definir';
 
-  // Parse do memorial em seções
   const secoes = parsearMemorial(memorial);
   const secoesNormais = secoes.filter(s => {
     const t = s.titulo.toLowerCase();
@@ -255,22 +172,20 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
   const itensOrcamento = getItensOrcamento(cidade, estado);
   const dicasRegionais = getDicasRegionais(cidade, estado);
 
-  // Imagens
   const flores = dadosEvento?.flores || '';
-  const imagemFlores = IMAGENS.flores[flores] || IMAGENS.flores.default;
-  const imagemVestido = IMAGENS.vestido[dadosEvento?.estiloVestido] || IMAGENS.vestido.default;
-  const imagemMesa = IMAGENS.mesaPosta[estilo] || IMAGENS.mesaPosta.default;
-  const imagemDecoracao = IMAGENS.decoracao[estilo] || IMAGENS.decoracao.default;
-  const imagemCerimonia = IMAGENS.cerimonia[estilo] || IMAGENS.cerimonia.default;
+  const imagemFlores = getImagem('flores', flores) || getImagem('flores', 'default');
+  const imagemVestido = getImagem('vestido', dadosEvento?.estiloVestido) || getImagem('vestido', 'default');
+  const imagemMesa = getImagem('mesaPosta', estilo) || getImagem('mesaPosta', 'default');
+  const imagemDecoracao = getImagem('decoracao', estilo) || getImagem('decoracao', 'default');
+  const imagemCerimonia = getImagem('cerimonia', estilo) || getImagem('cerimonia', 'default');
 
-  // Estilos base
   const S = StyleSheet.create({
     capa: { backgroundColor: corTerciaria, height: '100%', alignItems: 'center', justifyContent: 'center', padding: 60 },
     capaLinha: { width: 60, height: 1.5, backgroundColor: getCorContraste(corTerciaria), marginBottom: 28 },
-    capaTitulo: { fontFamily: fonteDisplay, fontSize: 40, color: getCorContraste(corTerciaria), textAlign: 'center', marginBottom: 16 },
-    capaSubtitulo: { fontFamily: fonteCorpo, fontSize: 14, color: getCorContraste(corTerciaria), textAlign: 'center', marginBottom: 10, letterSpacing: 2 },
-    capaData: { fontFamily: fonteCorpo, fontSize: 13, color: getCorContraste(corTerciaria), textAlign: 'center', marginTop: 12 },
-    capaLocal: { fontFamily: fonteCorpo, fontSize: 12, color: getCorContraste(corTerciaria), textAlign: 'center', marginTop: 6 },
+    capaTitulo: { fontFamily: fonteDisplay, fontSize: 40, color: getCorContraste(corTerciaria), textAlign: 'center', marginBottom: 16, wrap: true },
+    capaSubtitulo: { fontFamily: fonteCorpo, fontSize: 14, color: getCorContraste(corTerciaria), textAlign: 'center', marginBottom: 10, letterSpacing: 2, wrap: true },
+    capaData: { fontFamily: fonteCorpo, fontSize: 13, color: getCorContraste(corTerciaria), textAlign: 'center', marginTop: 12, wrap: true },
+    capaLocal: { fontFamily: fonteCorpo, fontSize: 12, color: getCorContraste(corTerciaria), textAlign: 'center', marginTop: 6, wrap: true },
     paletaContainer: { flexDirection: 'row', marginTop: 36, alignItems: 'center', justifyContent: 'center' },
     pagina: { backgroundColor: corFundoPagina, padding: 50, paddingBottom: 70 },
     tituloSecao: { fontFamily: fonteDisplay, fontSize: 24, color: corTitulo, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: corSecundaria, paddingBottom: 10, wrap: true },
@@ -283,24 +198,24 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
     tabela: { marginTop: 8, marginBottom: 8 },
     tabelaLinha: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: corSecundaria, paddingVertical: 5, alignItems: 'center' },
     tabelaLinhaHeader: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: corTitulo, paddingVertical: 6, backgroundColor: corSecundaria + '20', alignItems: 'center' },
-    tabelaCelula: { fontFamily: fonteCorpo, fontSize: 9.5, color: corTexto, flex: 1, paddingRight: 4 },
-    tabelaCelulaHeader: { fontFamily: fonteCorpo, fontSize: 9.5, color: corTitulo, flex: 1, paddingRight: 4 },
-    tabelaCelulaPequena: { fontFamily: fonteCorpo, fontSize: 9, color: corTexto, width: 40, textAlign: 'center' },
-    tabelaCelulaCheckbox: { fontFamily: fonteCorpo, fontSize: 12, color: corTexto, width: 30, textAlign: 'center' },
+    tabelaCelula: { fontFamily: fonteCorpo, fontSize: 9.5, color: corTexto, flex: 1, paddingRight: 4, wrap: true },
+    tabelaCelulaHeader: { fontFamily: fonteCorpo, fontSize: 9.5, color: corTitulo, flex: 1, paddingRight: 4, wrap: true },
+    tabelaCelulaPequena: { fontFamily: fonteCorpo, fontSize: 9, color: corTexto, width: 40, textAlign: 'center', wrap: true },
+    tabelaCelulaCheckbox: { fontFamily: fonteCorpo, fontSize: 12, color: corTexto, width: 30, textAlign: 'center', wrap: true },
     linhaPautada: { borderBottomWidth: 0.5, borderBottomColor: '#D4CFC9', borderStyle: 'dashed', height: 20, marginBottom: 4 },
     ctaContainer: { alignItems: 'center', justifyContent: 'center', height: '100%', padding: 40 },
-    ctaTitulo: { fontFamily: fonteDisplay, fontSize: 26, color: corTitulo, textAlign: 'center', marginBottom: 20 },
+    ctaTitulo: { fontFamily: fonteDisplay, fontSize: 26, color: corTitulo, textAlign: 'center', marginBottom: 20, wrap: true },
     ctaTexto: { fontFamily: fonteCorpo, fontSize: 12, color: corTexto, textAlign: 'center', lineHeight: 1.8, marginBottom: 16, wrap: true },
-    ctaUrl: { fontFamily: fonteCorpo, fontSize: 13, color: corTitulo, textAlign: 'center', marginTop: 8 },
+    ctaUrl: { fontFamily: fonteCorpo, fontSize: 13, color: corTitulo, textAlign: 'center', marginTop: 8, wrap: true },
     barraContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginLeft: 10 },
-    barraLabel: { fontFamily: fonteCorpo, fontSize: 9, color: corTexto, width: 110 },
+    barraLabel: { fontFamily: fonteCorpo, fontSize: 9, color: corTexto, width: 110, wrap: true },
     barra: { height: 14, borderRadius: 3 },
-    barraTexto: { fontFamily: fonteCorpo, fontSize: 9, color: corTexto, flex: 1, marginLeft: 10 },
+    barraTexto: { fontFamily: fonteCorpo, fontSize: 9, color: corTexto, flex: 1, marginLeft: 10, wrap: true },
     pizzaContainer: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 12, marginBottom: 16 },
     pizzaItem: { flexDirection: 'row', alignItems: 'center', marginRight: 16, marginBottom: 6, width: 140 },
     pizzaFatia: { width: 14, height: 14, borderRadius: 7, marginRight: 6 },
-    pizzaLabel: { fontFamily: fonteCorpo, fontSize: 9, color: corTexto },
-    pizzaValor: { fontFamily: fonteCorpo, fontSize: 9, color: corTextoSuave },
+    pizzaLabel: { fontFamily: fonteCorpo, fontSize: 9, color: corTexto, wrap: true },
+    pizzaValor: { fontFamily: fonteCorpo, fontSize: 9, color: corTextoSuave, wrap: true },
     twoColumn: { flexDirection: 'row', gap: 20 },
     column: { flex: 1 },
     boxInfo: { backgroundColor: corSecundaria + '15', borderRadius: 6, padding: 12, marginVertical: 8, borderLeftWidth: 3, borderLeftColor: corTitulo },
@@ -310,7 +225,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
 
   return (
     <Document>
-      {/* PÁGINA 1: CAPA */}
       <Page size="A4" style={S.capa}>
         <View style={S.capaLinha} />
         <Text style={S.capaTitulo}>{nomeCasal}</Text>
@@ -326,7 +240,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      {/* PÁGINA 2: ÍNDICE E BOAS-VINDAS */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Bem-vindos ao seu Memorial</Text>
         <Text style={S.paragrafo}>
@@ -365,7 +278,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      {/* PÁGINAS 3-4: IDENTIDADE VISUAL */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Identidade Visual</Text>
         {secoesNormais.find(s => s.titulo.toLowerCase().includes('identidade'))?.linhas
@@ -382,9 +294,9 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
           {paleta.map((cor, i) => (
             <View key={i} style={{ flex: 1, alignItems: 'center', marginHorizontal: 8 }}>
               <View style={{ width: 50, height: 50, borderRadius: 25, backgroundColor: cor, borderWidth: 2, borderColor: corBorda, marginBottom: 6 }} />
-              <Text style={{ fontFamily: fonteCorpo, fontSize: 10, color: corTexto, textAlign: 'center' }}>{getNomeCor(cor)}</Text>
-              <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTextoSuave, textAlign: 'center' }}>{cor}</Text>
-              <Text style={{ fontFamily: fonteCorpo, fontSize: 8, color: corTextoSuave, textAlign: 'center', marginTop: 2 }}>
+              <Text style={{ fontFamily: fonteCorpo, fontSize: 10, color: corTexto, textAlign: 'center', wrap: true }}>{getNomeCor(cor)}</Text>
+              <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTextoSuave, textAlign: 'center', wrap: true }}>{cor}</Text>
+              <Text style={{ fontFamily: fonteCorpo, fontSize: 8, color: corTextoSuave, textAlign: 'center', marginTop: 2, wrap: true }}>
                 {i === 0 ? 'Cor principal (destaques)' : i === 1 ? 'Cor secundária (fundo/contraste)' : 'Cor terciária (detalhes)'}
               </Text>
             </View>
@@ -406,7 +318,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      {/* PÁGINAS 5-6: CERIMÔNIA */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Cerimônia</Text>
         {secoesNormais.find(s => s.titulo.toLowerCase().includes('cerimonia'))?.linhas
@@ -452,7 +363,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      {/* PÁGINAS 7-8: DECORAÇÃO */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Decoração</Text>
         {secoesNormais.find(s => s.titulo.toLowerCase().includes('decoração') || s.titulo.toLowerCase().includes('decoracao'))?.linhas
@@ -509,7 +419,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      {/* PÁGINAS 9-10: MESA POSTA */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Mesa Posta</Text>
         {secoesNormais.find(s => s.titulo.toLowerCase().includes('mesa'))?.linhas
@@ -555,7 +464,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      {/* PÁGINAS 11-12: ALIMENTAÇÃO E BEBIDAS */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Alimentação e Bebidas</Text>
         {secoesNormais.find(s => s.titulo.toLowerCase().includes('alimentação') || s.titulo.toLowerCase().includes('alimentacao') || s.titulo.toLowerCase().includes('bebidas'))?.linhas
@@ -595,7 +503,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      {/* PÁGINA 13: ENTRETENIMENTO */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Entretenimento</Text>
         {secoesNormais.find(s => s.titulo.toLowerCase().includes('entretenimento') || s.titulo.toLowerCase().includes('festa') || s.titulo.toLowerCase().includes('música'))?.linhas
@@ -637,7 +544,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      {/* PÁGINAS 14-15: VESTUÁRIO E BELEZA */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Vestuário e Beleza</Text>
         {secoesNormais.find(s => s.titulo.toLowerCase().includes('vestuário') || s.titulo.toLowerCase().includes('vestuario') || s.titulo.toLowerCase().includes('beleza'))?.linhas
@@ -678,7 +584,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      {/* PÁGINAS 16-17: PAPELARIA E IDENTIDADE */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Papelaria e Identidade</Text>
         {secoesNormais.find(s => s.titulo.toLowerCase().includes('papelaria') || s.titulo.toLowerCase().includes('identidade') || s.titulo.toLowerCase().includes('convite'))?.linhas
@@ -726,7 +631,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      {/* PÁGINAS 18-19: LINHA DO TEMPO VISUAL */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Linha do Tempo Visual</Text>
         <Text style={S.paragrafo}>O planejamento de um casamento exige organização. Esta linha do tempo divide as tarefas por período, com cores que indicam a urgência de cada etapa.</Text>
@@ -752,19 +656,19 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <View style={{ flexDirection: 'row', marginTop: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
             <View style={{ width: 14, height: 14, backgroundColor: '#4CAF50', borderRadius: 3, marginRight: 6 }} />
-            <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto }}>Tranquilo (12-8 meses)</Text>
+            <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, wrap: true }}>Tranquilo (12-8 meses)</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
             <View style={{ width: 14, height: 14, backgroundColor: '#FFC107', borderRadius: 3, marginRight: 6 }} />
-            <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto }}>Atenção (7-4 meses)</Text>
+            <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, wrap: true }}>Atenção (7-4 meses)</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
             <View style={{ width: 14, height: 14, backgroundColor: '#FF9800', borderRadius: 3, marginRight: 6 }} />
-            <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto }}>Urgente (3-1 meses)</Text>
+            <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, wrap: true }}>Urgente (3-1 meses)</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ width: 14, height: 14, backgroundColor: '#F44336', borderRadius: 3, marginRight: 6 }} />
-            <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto }}>Crítico (última semana)</Text>
+            <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, wrap: true }}>Crítico (última semana)</Text>
           </View>
         </View>
         <Rodape nomeCasal={nomeCasal} />
@@ -803,7 +707,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      {/* PÁGINAS 20-21: CHECKLIST */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Checklist de Decisões Pendentes</Text>
         <Text style={S.paragrafo}>Esta lista foi gerada a partir das respostas "ainda não sei" no seu questionário. Use-a como ponto de partida para as próximas conversas com fornecedores e cerimonialista.</Text>
@@ -853,7 +756,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      {/* PÁGINAS 22-23: FORNECEDORES */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Fornecedores</Text>
         <Text style={S.paragrafo}>Mantenha este registro atualizado com os contatos de todos os fornecedores. Compartilhe com seu cerimonialista e padrinhos de confiança.</Text>
@@ -900,11 +802,10 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      {/* PÁGINAS 24-25: ORÇAMENTO DETALHADO */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Orçamento Detalhado</Text>
         <Text style={S.paragrafo}>Esta estimativa foi regionalizada com base em {cidade || 'sua cidade'} / {estado || 'seu estado'}. Os valores são referências médias de mercado — ajuste conforme seu orçamento real.</Text>
-        
+
         <Text style={S.subtitulo}>Distribuição do Orçamento</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
           <PizzaChart
@@ -918,7 +819,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
               return (
                 <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                   <View style={{ width: 12, height: 12, backgroundColor: coresPizza[i % coresPizza.length], marginRight: 8 }} />
-                  <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto }}>{item.item} ({item.percentual}%)</Text>
+                  <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, wrap: true }}>{item.item} ({item.percentual}%)</Text>
                 </View>
               );
             })}
@@ -978,11 +879,10 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      {/* PÁGINA 26: DICAS REGIONAIS */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Dicas Regionais</Text>
         <Text style={S.paragrafo}>Informações específicas para {localCompleto} baseadas no clima, cultura local e experiências de casamentos na região.</Text>
-        
+
         <Text style={S.subtitulo}>Clima Local</Text>
         <View style={S.boxInfo}>
           <Text style={S.boxInfoTexto}>{dicasRegionais.clima}</Text>
@@ -992,7 +892,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         {dicasRegionais.cuidados.map((cuidado, i) => (
           <View key={i} style={{ flexDirection: 'row', marginBottom: 6, marginLeft: 10 }}>
             <Text style={{ fontFamily: fonteCorpo, fontSize: 10, color: corTitulo, marginRight: 6 }}>•</Text>
-            <Text style={{ fontFamily: fonteCorpo, fontSize: 10, color: corTexto, flex: 1, lineHeight: 1.6 }}>{cuidado}</Text>
+            <Text style={{ fontFamily: fonteCorpo, fontSize: 10, color: corTexto, flex: 1, lineHeight: 1.6, wrap: true }}>{cuidado}</Text>
           </View>
         ))}
 
@@ -1000,7 +900,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         {dicasRegionais.melhoresEpocas.map((epoca, i) => (
           <View key={i} style={{ flexDirection: 'row', marginBottom: 6, marginLeft: 10 }}>
             <Text style={{ fontFamily: fonteCorpo, fontSize: 10, color: corTitulo, marginRight: 6 }}>✓</Text>
-            <Text style={{ fontFamily: fonteCorpo, fontSize: 10, color: corTexto, flex: 1, lineHeight: 1.6 }}>{epoca}</Text>
+            <Text style={{ fontFamily: fonteCorpo, fontSize: 10, color: corTexto, flex: 1, lineHeight: 1.6, wrap: true }}>{epoca}</Text>
           </View>
         ))}
 
@@ -1012,7 +912,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      {/* PÁGINA 27: CONTRACAPA */}
       <Page size="A4" style={S.pagina}>
         <View style={S.ctaContainer}>
           <Text style={S.ctaTitulo}>Obrigado por confiar no descomplicaí</Text>
