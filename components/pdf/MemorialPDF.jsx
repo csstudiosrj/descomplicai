@@ -19,6 +19,79 @@ import {
 } from '../../utils/pdfUtils';
 import { sugerirFontes } from '../../utils/sugestoes';
 
+// ========== BIBLIOTECA DE IMAGENS LOCAIS ==========
+const IMAGENS = {
+  flores: {
+    'Rosas': '/images/flores/rosas-1.jpg',
+    'Orquídeas': '/images/flores/flores-default-1.jpg',
+    'Lírios': '/images/flores/flores-default-2.jpg',
+    'Tulipas': '/images/flores/flores-default-3.jpg',
+    'Peônias': '/images/flores/flores-default-4.jpg',
+    'Flores do campo': '/images/flores/flores-do-campo-1.jpg',
+    'Flores secas': '/images/flores/flores-secas-1.jpg',
+    'Eucalipto': '/images/flores/flores-default-5.jpg',
+    'Hortênsias': '/images/flores/flores-default-6.jpg',
+    'Gérberas': '/images/flores/flores-default-7.jpg',
+    'Astilbe': '/images/flores/flores-default-8.jpg',
+    'Dálias': '/images/flores/flores-default-9.jpg',
+    'Chuva de ouro': '/images/flores/flores-default-10.jpg',
+    'Alstroemérias': '/images/flores/flores-default-11.jpg',
+    'Anêmonas': '/images/flores/flores-default-12.jpg',
+    'Ranúnculos': '/images/flores/flores-default-13.jpg',
+    'Lavanda': '/images/flores/flores-default-14.jpg',
+    'Margaridas': '/images/flores/flores-default-15.jpg',
+    'Gipsofila': '/images/flores/flores-default-16.jpg',
+    'Antúrios': '/images/flores/flores-default-17.jpg',
+    'Bromélias': '/images/flores/flores-default-18.jpg',
+    'Orquídeas phalaenopsis': '/images/flores/flores-default-19.jpg',
+    'Crisântemos': '/images/flores/flores-default-20.jpg',
+    'Cala': '/images/flores/flores-default-21.jpg',
+    'Proteas': '/images/flores/flores-default-22.jpg',
+    'Statice': '/images/flores/flores-default-23.jpg',
+    'Verônicas': '/images/flores/flores-default-24.jpg',
+    'Amarílis': '/images/flores/flores-default-25.jpg',
+    default: '/images/flores/flores-default-1.jpg',
+  },
+  vestido: {
+    'Princesa': '/images/vestidos/vestido-default-1.jpg',
+    'Sereia': '/images/vestidos/vestido-default-2.jpg',
+    'Minimalista': '/images/vestidos/vestido-minimalista-1.jpg',
+    'Boho': '/images/vestidos/vestido-boho-1.jpg',
+    'Romântico': '/images/vestidos/vestido-minimalista-2.jpg',
+    'Clássico': '/images/vestidos/vestido-minimalista-3.jpg',
+    'Moderno': '/images/vestidos/vestido-minimalista-4.jpg',
+    'Rústico': '/images/vestidos/vestido-boho-2.jpg',
+    default: '/images/vestidos/vestido-default-1.jpg',
+  },
+  mesaPosta: {
+    'classico': '/images/mesa/mesa-classico-1.jpg',
+    'rustico': '/images/mesa/mesa-rustico-1.jpg',
+    'romantico': '/images/mesa/mesa-romantico-1.jpg',
+    'minimalista': '/images/mesa/mesa-minimalista-1.jpg',
+    'boho': '/images/mesa/mesa-rustico-4.jpg',
+    'moderno': '/images/mesa/mesa-default-2.jpg',
+    default: '/images/mesa/mesa-classico-1.jpg',
+  },
+  decoracao: {
+    'classico': '/images/decoracao/decor-classico-1.jpg',
+    'rustico': '/images/decoracao/decor-rustico-1.jpg',
+    'romantico': '/images/decoracao/decor-romantico-1.jpg',
+    'minimalista': '/images/decoracao/decor-minimalista-1.jpg',
+    'boho': '/images/decoracao/decor-boho-1.jpg',
+    'moderno': '/images/decoracao/decor-moderno-1.jpg',
+    default: '/images/decoracao/decor-classico-1.jpg',
+  },
+  cerimonia: {
+    'classico': '/images/cerimonia/cerimonia-altar-1.jpg',
+    'rustico': '/images/cerimonia/cerimonia-corredor-3.jpg',
+    'romantico': '/images/cerimonia/cerimonia-beijo-1.jpg',
+    'minimalista': '/images/cerimonia/cerimonia-aliancas-1.jpg',
+    'boho': '/images/cerimonia/cerimonia-entrada-noiva-4.jpg',
+    'moderno': '/images/cerimonia/cerimonia-saida-1.jpg',
+    default: '/images/cerimonia/cerimonia-altar-1.jpg',
+  },
+};
+
 // ========== COMPONENTE RODAPÉ ==========
 function Rodape({ nomeCasal }) {
   return (
@@ -177,11 +250,11 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
 
   // Imagens
   const flores = dadosEvento?.flores || '';
-  const imagemFlores = getImagem('flores', flores) || getImagem('flores', 'default');
-  const imagemVestido = getImagem('vestido', dadosEvento?.estiloVestido) || getImagem('vestido', 'default');
-  const imagemMesa = getImagem('mesaPosta', estilo) || getImagem('mesaPosta', 'default');
-  const imagemDecoracao = getImagem('decoracao', estilo) || getImagem('decoracao', 'default');
-  const imagemCerimonia = getImagem('cerimonia', estilo) || getImagem('cerimonia', 'default');
+  const imagemFlores = IMAGENS.flores[flores] || IMAGENS.flores.default;
+  const imagemVestido = IMAGENS.vestido[dadosEvento?.estiloVestido] || IMAGENS.vestido.default;
+  const imagemMesa = IMAGENS.mesaPosta[estilo] || IMAGENS.mesaPosta.default;
+  const imagemDecoracao = IMAGENS.decoracao[estilo] || IMAGENS.decoracao.default;
+  const imagemCerimonia = IMAGENS.cerimonia[estilo] || IMAGENS.cerimonia.default;
 
   // Estilos base
   const S = StyleSheet.create({
