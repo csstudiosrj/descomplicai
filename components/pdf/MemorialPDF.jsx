@@ -24,7 +24,7 @@ function Rodape({ nomeCasal }) {
   );
 }
 
-function PizzaChart({ data, colors, size = 160 }) {
+function PizzaChart({ data, colors, size = 140 }) {
   const cx = size / 2, cy = size / 2, r = size / 2 - 10;
   const total = data.reduce((s, d) => s + d.percentual, 0);
   let startAngle = 0;
@@ -36,13 +36,13 @@ function PizzaChart({ data, colors, size = 160 }) {
     const x2 = cx + r * Math.cos(endAngle), y2 = cy + r * Math.sin(endAngle);
     const largeArc = angle > Math.PI ? 1 : 0;
     const d = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
-    paths.push(<Path key={i} d={d} fill={colors[i % colors.length]} stroke="#FFFFFF" strokeWidth={1} />);
+    paths.push(<Path key={i} d={d} fill={colors[i % colors.length]} stroke="#FFFFFF" strokeWidth={2} />);
     startAngle = endAngle;
   });
   return <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}><G>{paths}</G></Svg>;
 }
 
-function ImagemProporcional({ src, dimensoes, maxWidth = 320, maxHeight = 240, style = {} }) {
+function ImagemEditorial({ src, dimensoes, maxWidth = 240, maxHeight = 500 }) {
   let width = maxWidth;
   let height = maxHeight;
   if (dimensoes && dimensoes.width && dimensoes.height) {
@@ -53,24 +53,62 @@ function ImagemProporcional({ src, dimensoes, maxWidth = 320, maxHeight = 240, s
   return (
     <Image
       src={src}
-      style={[{ width, height, alignSelf: 'center', marginTop: 16, marginBottom: 24, borderRadius: 6 }, style]}
+      style={{ width, height, borderRadius: 4 }}
     />
   );
 }
 
-function renderizarTextoMemorial(linhas, fonteCorpo, corTexto, corPrimaria) {
-  if (!linhas || linhas.length === 0) return null;
-  return linhas.map((linha, i) => {
-    const texto = linha.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').trim();
-    if (!texto) return null;
-    if (linha.startsWith('### ')) {
-      return <Text key={i} style={{ fontFamily: fonteCorpo, fontSize: 12, color: corPrimaria, marginTop: 10, marginBottom: 5, wrap: true }}>{texto}</Text>;
-    }
-    if (linha.startsWith('- ') || linha.startsWith('* ')) {
-      return <Text key={i} style={{ fontFamily: fonteCorpo, fontSize: 10.5, color: corTexto, lineHeight: 1.7, marginBottom: 4, marginLeft: 12, wrap: true }}>• {texto}</Text>;
-    }
-    return <Text key={i} style={{ fontFamily: fonteCorpo, fontSize: 10.5, color: corTexto, lineHeight: 1.7, marginBottom: 6, wrap: true }}>{texto}</Text>;
-  }).filter(Boolean);
+function SecaoEditorial({ titulo, secao, imagemSrc, dimensoes, fonteCorpo, fonteDisplay, corTexto, corTitulo, corSecundaria, nomeCasal, estilo }) {
+  const isVertical = dimensoes && dimensoes.height > dimensoes.width;
+  
+  return (
+    <Page size="A4" style={{ backgroundColor: '#FFFFFF', padding: 50, paddingBottom: 70 }}>
+      <Text style={{ fontFamily: fonteDisplay, fontSize: 22, color: corTitulo, marginBottom: 20, borderBottomWidth: 1, borderBottomColor: corSecundaria, paddingBottom: 10, wrap: true }}>
+        {titulo}
+      </Text>
+      
+      <View style={{ flexDirection: isVertical ? 'row' : 'column', gap: 20 }}>
+        {/* Coluna de texto */}
+        <View style={{ flex: isVertical ? 1.2 : 1 }}>
+          {secao?.linhas?.length > 0 ? (
+            secao.linhas.map((linha, i) => {
+              const texto = linha.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').trim();
+              if (!texto) return null;
+              if (linha.startsWith('### ')) {
+                return <Text key={i} style={{ fontFamily: fonteDisplay, fontSize: 12, color: corTitulo, marginTop: 10, marginBottom: 5, wrap: true }}>{texto}</Text>;
+              }
+              if (linha.startsWith('- ') || linha.startsWith('* ')) {
+                return <Text key={i} style={{ fontFamily: fonteCorpo, fontSize: 10, color: corTexto, lineHeight: 1.6, marginBottom: 3, marginLeft: 10, wrap: true }}>• {texto}</Text>;
+              }
+              return <Text key={i} style={{ fontFamily: fonteCorpo, fontSize: 10, color: corTexto, lineHeight: 1.6, marginBottom: 6, wrap: true }}>{texto}</Text>;
+            }).filter(Boolean)
+          ) : (
+            <Text style={{ fontFamily: fonteCorpo, fontSize: 10, color: corTexto, lineHeight: 1.6, wrap: true }}>
+              Conteúdo da seção {titulo} para {nomeCasal}. Estilo {estilo}.
+            </Text>
+          )}
+        </View>
+
+        {/* Coluna de imagem */}
+        {imagemSrc && (
+          <View style={{ 
+            flex: isVertical ? 0.8 : 1, 
+            alignItems: 'center', 
+            justifyContent: 'flex-start',
+            marginTop: isVertical ? 0 : 16 
+          }}>
+            <ImagemEditorial 
+              src={imagemSrc} 
+              dimensoes={dimensoes} 
+              maxWidth={isVertical ? 220 : 440} 
+              maxHeight={isVertical ? 520 : 260} 
+            />
+          </View>
+        )}
+      </View>
+      <Rodape nomeCasal={nomeCasal} />
+    </Page>
+  );
 }
 
 export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, qrCodeDataUri = null, dimensoesImagens = {} }) {
@@ -82,7 +120,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
   const corBorda = getCorBorda(paleta);
   const corTexto = '#1A1714';
   const corTextoSuave = '#5C534A';
-  const corFundoPagina = '#FFFFFF';
   const corTitulo = getCorTitulo(corPrimaria, corBorda);
 
   const fontesSugeridas = !usarFontesNativas ? sugerirFontes(estilo) : [];
@@ -127,32 +164,33 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
     capaData: { fontFamily: fonteCorpo, fontSize: 13, color: getCorContraste(corTerciaria), textAlign: 'center', marginTop: 12, wrap: true },
     capaLocal: { fontFamily: fonteCorpo, fontSize: 12, color: getCorContraste(corTerciaria), textAlign: 'center', marginTop: 6, wrap: true },
     paletaContainer: { flexDirection: 'row', marginTop: 36, alignItems: 'center', justifyContent: 'center' },
-    pagina: { backgroundColor: corFundoPagina, padding: 50, paddingBottom: 70 },
-    tituloSecao: { fontFamily: fonteDisplay, fontSize: 24, color: corTitulo, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: corSecundaria, paddingBottom: 10, wrap: true },
-    tituloSecaoPequeno: { fontFamily: fonteDisplay, fontSize: 18, color: corTitulo, marginBottom: 12, marginTop: 16, wrap: true },
-    paragrafo: { fontFamily: fonteCorpo, fontSize: 11, color: corTexto, lineHeight: 1.8, marginBottom: 8, wrap: true },
-    paragrafoDestaque: { fontFamily: fonteCorpo, fontSize: 11, color: corPrimaria, lineHeight: 1.8, marginBottom: 8, wrap: true },
-    subtitulo: { fontFamily: fonteCorpo, fontSize: 13, color: corTitulo, marginTop: 12, marginBottom: 6, wrap: true },
-    imagem: { alignSelf: 'center', marginTop: 16, marginBottom: 24, borderRadius: 6 },
-    imagemPequena: { alignSelf: 'center', marginTop: 8, marginBottom: 16, borderRadius: 4 },
-    tabela: { marginTop: 8, marginBottom: 8 },
-    tabelaLinha: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: corSecundaria, paddingVertical: 5, alignItems: 'center' },
-    tabelaLinhaHeader: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: corTitulo, paddingVertical: 6, backgroundColor: corSecundaria + '20', alignItems: 'center' },
-    tabelaCelula: { fontFamily: fonteCorpo, fontSize: 9.5, color: corTexto, flex: 1, paddingRight: 4, wrap: true },
-    tabelaCelulaHeader: { fontFamily: fonteCorpo, fontSize: 9.5, color: corTitulo, flex: 1, paddingRight: 4, wrap: true },
-    boxInfo: { backgroundColor: corSecundaria + '15', borderRadius: 6, padding: 12, marginVertical: 8, borderLeftWidth: 3, borderLeftColor: corTitulo },
-    boxInfoTexto: { fontFamily: fonteCorpo, fontSize: 10, color: corTexto, lineHeight: 1.7, wrap: true },
-    twoColumn: { flexDirection: 'row', gap: 20 },
+    pagina: { backgroundColor: '#FFFFFF', padding: 50, paddingBottom: 70 },
+    tituloSecao: { fontFamily: fonteDisplay, fontSize: 22, color: corTitulo, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: corSecundaria, paddingBottom: 10, wrap: true },
+    tituloSecaoPequeno: { fontFamily: fonteDisplay, fontSize: 16, color: corTitulo, marginBottom: 12, marginTop: 14, wrap: true },
+    paragrafo: { fontFamily: fonteCorpo, fontSize: 10, color: corTexto, lineHeight: 1.6, marginBottom: 6, wrap: true },
+    subtitulo: { fontFamily: fonteCorpo, fontSize: 11, color: corTitulo, marginTop: 10, marginBottom: 5, wrap: true },
+    tabela: { marginTop: 6, marginBottom: 6 },
+    tabelaLinha: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: '#E5E0D9', paddingVertical: 4, alignItems: 'center' },
+    tabelaLinhaHeader: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: corTitulo, paddingVertical: 5, backgroundColor: corSecundaria + '18', alignItems: 'center' },
+    tabelaCelula: { fontFamily: fonteCorpo, fontSize: 9, color: corTexto, flex: 1, paddingRight: 4, wrap: true },
+    tabelaCelulaHeader: { fontFamily: fonteCorpo, fontSize: 9, color: corTitulo, flex: 1, paddingRight: 4, wrap: true },
+    boxInfo: { backgroundColor: corSecundaria + '12', borderRadius: 4, padding: 10, marginVertical: 6, borderLeftWidth: 2, borderLeftColor: corTitulo },
+    boxInfoTexto: { fontFamily: fonteCorpo, fontSize: 9.5, color: corTexto, lineHeight: 1.6, wrap: true },
+    twoColumn: { flexDirection: 'row', gap: 16 },
     column: { flex: 1 },
     ctaContainer: { alignItems: 'center', justifyContent: 'center', height: '100%', padding: 40 },
-    ctaTitulo: { fontFamily: fonteDisplay, fontSize: 26, color: corTitulo, textAlign: 'center', marginBottom: 20, wrap: true },
-    ctaTexto: { fontFamily: fonteCorpo, fontSize: 12, color: corTexto, textAlign: 'center', lineHeight: 1.8, marginBottom: 16, wrap: true },
-    ctaUrl: { fontFamily: fonteCorpo, fontSize: 13, color: corTitulo, textAlign: 'center', marginTop: 8, wrap: true },
-    quote: { fontFamily: fonteDisplay, fontSize: 14, color: corTitulo, fontStyle: 'italic', textAlign: 'center', marginVertical: 16, paddingHorizontal: 20, wrap: true },
+    ctaTitulo: { fontFamily: fonteDisplay, fontSize: 24, color: corTitulo, textAlign: 'center', marginBottom: 20, wrap: true },
+    ctaTexto: { fontFamily: fonteCorpo, fontSize: 11, color: corTexto, textAlign: 'center', lineHeight: 1.7, marginBottom: 14, wrap: true },
+    ctaUrl: { fontFamily: fonteCorpo, fontSize: 12, color: corTitulo, textAlign: 'center', marginTop: 8, wrap: true },
+    quote: { fontFamily: fonteDisplay, fontSize: 13, color: corTitulo, fontStyle: 'italic', textAlign: 'center', marginVertical: 14, paddingHorizontal: 20, wrap: true },
   });
+
+  // Cores contrastantes para o gráfico de pizza — NADA de tons de marrom iguais
+  const CORES_PIZZA = ['#2E7D32', '#1565C0', '#C62828', '#F9A825', '#6A1B9A', '#E65100', '#00838F', '#AD1457', '#5D4037', '#455A64', '#827717', '#D84315'];
 
   return (
     <Document>
+      {/* CAPA */}
       <Page size="A4" style={S.capa}>
         <View style={S.capaLinha} />
         <Text style={S.capaTitulo}>{nomeCasal}</Text>
@@ -162,7 +200,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <View style={[S.capaLinha, { marginTop: 36, marginBottom: 0 }]} />
         <View style={S.paletaContainer}>
           {paleta.map((cor, i) => (
-            <View key={i} style={{ alignItems: 'center', marginHorizontal: 14 }}>
+            <View key={i} style={{ alignItems: 'center', marginHorizontal: 12 }}>
               <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: cor, borderWidth: 3, borderColor: isCorEscura(cor) ? '#FFFFFF' : '#1A1714' }} />
               <Text style={{ fontSize: 9, fontFamily: fonteCorpo, color: corTexto, marginTop: 5, textAlign: 'center', wrap: true }}>{getNomeCor(cor)}</Text>
               <Text style={{ fontSize: 8, fontFamily: fonteCorpo, color: corTextoSuave, marginTop: 1, textAlign: 'center', wrap: true }}>{cor}</Text>
@@ -172,449 +210,459 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
+      {/* ÍNDICE */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Bem-vindos ao seu Memorial</Text>
         <Text style={S.paragrafo}>Este memorial foi criado exclusivamente para {nomeCasal} pelo descomplicaí. Ele reúne todas as decisões, referências visuais e orientações práticas para tornar o planejamento do seu casamento uma experiência leve, organizada e inesquecível.</Text>
         <Text style={S.paragrafo}>Cada seção deste documento reflete as escolhas que você fez ao longo do questionário. Use-o como guia de consulta, apresente-o aos seus fornecedores e compartilhe com quem está ao seu lado nessa jornada.</Text>
-        <Text style={[S.tituloSecao, { fontSize: 18, marginTop: 24 }]}>Índice</Text>
+        
+        <Text style={[S.tituloSecao, { fontSize: 16, marginTop: 20 }]}>Índice</Text>
         <View style={S.tabela}>
-          <View style={S.tabelaLinhaHeader}>
-            <Text style={[S.tabelaCelulaHeader, { flex: 3 }]}>Seção</Text>
-            <Text style={[S.tabelaCelulaHeader, { width: 60, textAlign: 'right' }]}>Página</Text>
-          </View>
           {[
-            ['Identidade Visual', '3'], ['Cerimônia', '5'], ['Decoração', '7'], ['Mesa Posta', '9'],
-            ['Alimentação e Bebidas', '11'], ['Entretenimento', '13'], ['Vestuário e Beleza', '14'],
-            ['Papelaria e Identidade', '16'], ['Linha do Tempo Visual', '18'], ['Checklist de Decisões', '20'],
-            ['Fornecedores', '22'], ['Orçamento Detalhado', '24'], ['Dicas Regionais', '26'],
+            ['Identidade Visual', '3'], ['Cerimônia', '4'], ['Decoração', '5'], ['Mesa Posta', '6'],
+            ['Alimentação e Bebidas', '7'], ['Entretenimento', '8'], ['Vestuário e Beleza', '9'],
+            ['Papelaria e Identidade', '10'], ['Linha do Tempo Visual', '11'], ['Checklist de Decisões', '13'],
+            ['Fornecedores', '15'], ['Orçamento Detalhado', '17'], ['Dicas Regionais', '19'],
           ].map(([secao, pag], i) => (
             <View key={i} style={S.tabelaLinha}>
               <Text style={[S.tabelaCelula, { flex: 3 }]}>{secao}</Text>
-              <Text style={[S.tabelaCelula, { width: 60, textAlign: 'right' }]}>{pag}</Text>
+              <Text style={[S.tabelaCelula, { width: 50, textAlign: 'right' }]}>{pag}</Text>
             </View>
           ))}
         </View>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      <Page size="A4" style={S.pagina}>
-        <Text style={S.tituloSecao}>Identidade Visual</Text>
-        {(() => {
-          const secao = secoesNormais.find(s => s.titulo.toLowerCase().includes('identidade') || s.titulo.toLowerCase().includes('visual'));
-          if (secao?.linhas?.length > 0) return renderizarTextoMemorial(secao.linhas, fonteCorpo, corTexto, corTitulo);
-          return <Text style={S.paragrafo}>A identidade visual do seu casamento reflete a personalidade de {nomeCasal}. A paleta escolhida, as fontes sugeridas e os materiais recomendados criam uma narrativa visual coesa que será aplicada em todos os elementos do evento.</Text>;
-        })()}
-        <ImagemProporcional src={imagemDecoracao} dimensoes={dimensoesImagens?.imagemDecoracao} maxWidth={320} maxHeight={240} style={S.imagem} />
-        <Rodape nomeCasal={nomeCasal} />
-      </Page>
+      {/* IDENTIDADE VISUAL */}
+      <SecaoEditorial
+        titulo="Identidade Visual"
+        secao={secoesNormais.find(s => s.titulo.toLowerCase().includes('identidade') || s.titulo.toLowerCase().includes('visual'))}
+        imagemSrc={imagemDecoracao}
+        dimensoes={dimensoesImagens?.imagemDecoracao}
+        fonteCorpo={fonteCorpo}
+        fonteDisplay={fonteDisplay}
+        corTexto={corTexto}
+        corTitulo={corTitulo}
+        corSecundaria={corSecundaria}
+        nomeCasal={nomeCasal}
+        estilo={estilo}
+      />
 
+      {/* IDENTIDADE VISUAL — DETALHES */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Identidade Visual — Detalhes</Text>
-        <Text style={S.subtitulo}>Paleta de Cores Detalhada</Text>
-        <View style={{ flexDirection: 'row', marginBottom: 16 }}>
+        <View style={{ flexDirection: 'row', marginBottom: 14, gap: 12 }}>
           {paleta.map((cor, i) => (
-            <View key={i} style={{ flex: 1, alignItems: 'center', marginHorizontal: 8 }}>
-              <View style={{ width: 50, height: 50, borderRadius: 25, backgroundColor: cor, borderWidth: 3, borderColor: isCorEscura(cor) ? '#FFFFFF' : '#1A1714', marginBottom: 6 }} />
-              <Text style={{ fontFamily: fonteCorpo, fontSize: 10, color: corTexto, textAlign: 'center', wrap: true }}>{getNomeCor(cor)}</Text>
-              <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTextoSuave, textAlign: 'center', wrap: true }}>{cor}</Text>
-              <Text style={{ fontFamily: fonteCorpo, fontSize: 8, color: corTextoSuave, textAlign: 'center', marginTop: 2, wrap: true }}>{i === 0 ? 'Cor principal' : i === 1 ? 'Cor secundária' : 'Cor terciária'}</Text>
+            <View key={i} style={{ flex: 1, alignItems: 'center' }}>
+              <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: cor, borderWidth: 3, borderColor: isCorEscura(cor) ? '#FFFFFF' : '#1A1714', marginBottom: 4 }} />
+              <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, textAlign: 'center', wrap: true }}>{getNomeCor(cor)}</Text>
+              <Text style={{ fontFamily: fonteCorpo, fontSize: 8, color: corTextoSuave, textAlign: 'center', wrap: true }}>{cor}</Text>
+              <Text style={{ fontFamily: fonteCorpo, fontSize: 7, color: corTextoSuave, textAlign: 'center', marginTop: 1, wrap: true }}>{i === 0 ? 'Principal' : i === 1 ? 'Secundária' : 'Terciária'}</Text>
             </View>
           ))}
         </View>
         <Text style={S.subtitulo}>Fontes Sugeridas</Text>
         <View style={S.boxInfo}>
-          <Text style={S.boxInfoTexto}>Fonte de display (títulos e destaques): {fonteDisplay}</Text>
-          <Text style={S.boxInfoTexto}>Fonte de corpo (textos e parágrafos): {fonteCorpo}</Text>
-          <Text style={S.boxInfoTexto}>Ambas as fontes foram escolhidas para harmonizar com o estilo {estilo} e garantir legibilidade em todos os materiais.</Text>
+          <Text style={S.boxInfoTexto}>Display (títulos): {fonteDisplay}</Text>
+          <Text style={S.boxInfoTexto}>Corpo (textos): {fonteCorpo}</Text>
+          <Text style={S.boxInfoTexto}>Escolhidas para harmonizar com o estilo {estilo}.</Text>
         </View>
-        <Text style={S.subtitulo}>Texturas e Materiais Recomendados</Text>
-        <Text style={S.paragrafo}>Considere aplicar as texturas sugeridas em convites, menus, placas de boas-vindas e lembrancinhas. A coerência material reforça a identidade visual do evento.</Text>
+        <Text style={S.subtitulo}>Materiais Recomendados</Text>
         <View style={S.boxInfo}>
           <Text style={S.boxInfoTexto}>• Papel: Couchê fosco ou texturizado natural</Text>
           <Text style={S.boxInfoTexto}>• Acabamentos: Hot stamping, relevo seco ou corte laser</Text>
-          <Text style={S.boxInfoTexto}>• Tecidos: Linho, algodão orgânico ou seda (conforme estilo)</Text>
+          <Text style={S.boxInfoTexto}>• Tecidos: Linho, algodão orgânico ou seda</Text>
         </View>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      <Page size="A4" style={S.pagina}>
-        <Text style={S.tituloSecao}>Cerimônia</Text>
-        {(() => {
-          const secao = secoesNormais.find(s => s.titulo.toLowerCase().includes('cerimonia'));
-          if (secao?.linhas?.length > 0) return renderizarTextoMemorial(secao.linhas, fonteCorpo, corTexto, corTitulo);
-          return <Text style={S.paragrafo}>A cerimônia é o coração do seu casamento. Cada detalhe — desde a entrada até a saída — deve refletir a essência de {nomeCasal} e emocionar a todos os presentes.</Text>;
-        })()}
-        <ImagemProporcional src={imagemCerimonia} dimensoes={dimensoesImagens?.imagemCerimonia} maxWidth={320} maxHeight={240} style={S.imagem} />
-        <Rodape nomeCasal={nomeCasal} />
-      </Page>
+      {/* CERIMÔNIA */}
+      <SecaoEditorial
+        titulo="Cerimônia"
+        secao={secoesNormais.find(s => s.titulo.toLowerCase().includes('cerimonia'))}
+        imagemSrc={imagemCerimonia}
+        dimensoes={dimensoesImagens?.imagemCerimonia}
+        fonteCorpo={fonteCorpo}
+        fonteDisplay={fonteDisplay}
+        corTexto={corTexto}
+        corTitulo={corTitulo}
+        corSecundaria={corSecundaria}
+        nomeCasal={nomeCasal}
+        estilo={estilo}
+      />
 
+      {/* CERIMÔNIA — DETALHES */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Cerimônia — Roteiro e Músicas</Text>
-        <Text style={S.subtitulo}>Roteiro Sugerido</Text>
         <View style={S.tabela}>
           <View style={S.tabelaLinhaHeader}>
-            <Text style={[S.tabelaCelulaHeader, { width: 80 }]}>Momento</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 70 }]}>Momento</Text>
             <Text style={[S.tabelaCelulaHeader, { flex: 2 }]}>Descrição</Text>
-            <Text style={[S.tabelaCelulaHeader, { width: 80 }]}>Duração</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 60 }]}>Duração</Text>
           </View>
           {[
-            ['Entrada da noiva', 'Marcha nupcial com acompanhamento dos pais ou padrinho', '~3 min'],
-            ['Recepção pelo celebrante', 'Saudação e boas-vindas aos convidados', '~2 min'],
-            ['Leituras e reflexões', 'Textos escolhidos pelo casal, poesias ou cartas', '~5 min'],
-            ['Votos do casal', `Promessas pessoais escritas por ${nome1} e ${nome2}`, '~5 min'],
-            ['Troca de alianças', 'Momento simbólico com bênção das alianças', '~2 min'],
-            ['Declaração e beijo', 'Oficialização da união e primeiro beijo como casal', '~1 min'],
-            ['Saída dos noivos', 'Marcha de saída com confetes, pétalas ou bolhas de sabão', '~3 min'],
-          ].map(([momento, desc, dur], i) => (
+            ['Entrada da noiva', 'Marcha nupcial com acompanhamento dos pais', '~3 min'],
+            ['Recepção', 'Saudação e boas-vindas aos convidados', '~2 min'],
+            ['Leituras', 'Textos escolhidos pelo casal', '~5 min'],
+            ['Votos', `Promessas pessoais de ${nome1} e ${nome2}`, '~5 min'],
+            ['Alianças', 'Troca simbólica com bênção', '~2 min'],
+            ['Declaração', 'Oficialização e primeiro beijo', '~1 min'],
+            ['Saída', 'Marcha com confetes ou pétalas', '~3 min'],
+          ].map(([m, d, t], i) => (
             <View key={i} style={S.tabelaLinha}>
-              <Text style={[S.tabelaCelula, { width: 80 }]}>{momento}</Text>
-              <Text style={[S.tabelaCelula, { flex: 2 }]}>{desc}</Text>
-              <Text style={[S.tabelaCelula, { width: 80 }]}>{dur}</Text>
+              <Text style={[S.tabelaCelula, { width: 70 }]}>{m}</Text>
+              <Text style={[S.tabelaCelula, { flex: 2 }]}>{d}</Text>
+              <Text style={[S.tabelaCelula, { width: 60 }]}>{t}</Text>
             </View>
           ))}
         </View>
         <Text style={S.subtitulo}>Sugestões de Músicas</Text>
         <View style={S.boxInfo}>
-          <Text style={S.boxInfoTexto}>• Entrada da noiva: Canon in D (Pachelbel) ou A Thousand Years (Christina Perri)</Text>
-          <Text style={S.boxInfoTexto}>• Durante a cerimônia: instrumental suave conforme estilo {estilo}</Text>
-          <Text style={S.boxInfoTexto}>• Saída dos noivos: Signed, Sealed, Delivered (Stevie Wonder) ou All You Need Is Love (The Beatles)</Text>
+          <Text style={S.boxInfoTexto}>• Entrada: Canon in D (Pachelbel) ou A Thousand Years (Christina Perri)</Text>
+          <Text style={S.boxInfoTexto}>• Cerimônia: instrumental suave conforme estilo {estilo}</Text>
+          <Text style={S.boxInfoTexto}>• Saída: Signed, Sealed, Delivered (Stevie Wonder)</Text>
         </View>
-        <Text style={S.subtitulo}>Elementos Decorativos da Cerimônia</Text>
-        <Text style={S.paragrafo}>Considere arcos florais, tapetes personalizados, velas ao longo do corredor e um altar que dialogue com a paleta de cores escolhida. Cada elemento deve criar uma atmosfera imersiva.</Text>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      <Page size="A4" style={S.pagina}>
-        <Text style={S.tituloSecao}>Decoração</Text>
-        {(() => {
-          const secao = secoesNormais.find(s => s.titulo.toLowerCase().includes('decoração') || s.titulo.toLowerCase().includes('decoracao'));
-          if (secao?.linhas?.length > 0) return renderizarTextoMemorial(secao.linhas, fonteCorpo, corTexto, corTitulo);
-          return <Text style={S.paragrafo}>A decoração transforma o espaço escolhido em um ambiente que conta a história de {nomeCasal}. Cada elemento visual deve dialogar com o estilo {estilo} e a paleta de cores definida.</Text>;
-        })()}
-        <ImagemProporcional src={imagemFlores} dimensoes={dimensoesImagens?.imagemFlores} maxWidth={320} maxHeight={240} style={S.imagem} />
-        <Rodape nomeCasal={nomeCasal} />
-      </Page>
+      {/* DECORAÇÃO */}
+      <SecaoEditorial
+        titulo="Decoração"
+        secao={secoesNormais.find(s => s.titulo.toLowerCase().includes('decoração') || s.titulo.toLowerCase().includes('decoracao'))}
+        imagemSrc={imagemFlores}
+        dimensoes={dimensoesImagens?.imagemFlores}
+        fonteCorpo={fonteCorpo}
+        fonteDisplay={fonteDisplay}
+        corTexto={corTexto}
+        corTitulo={corTitulo}
+        corSecundaria={corSecundaria}
+        nomeCasal={nomeCasal}
+        estilo={estilo}
+      />
 
+      {/* DECORAÇÃO — DETALHES */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Decoração — Flores e Iluminação</Text>
-        <Text style={S.subtitulo}>Flores por Localização</Text>
         <View style={S.tabela}>
           <View style={S.tabelaLinhaHeader}>
-            <Text style={[S.tabelaCelulaHeader, { width: 100 }]}>Localização</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 90 }]}>Local</Text>
             <Text style={[S.tabelaCelulaHeader, { flex: 2 }]}>Sugestão Floral</Text>
-            <Text style={[S.tabelaCelulaHeader, { width: 80 }]}>Estilo</Text>
           </View>
           {[
-            ['Altar', 'Arranjo principal com flores escolhidas pelo casal', estilo],
-            ['Corredor', 'Flores ao longo do caminho ou em hastes suspensas', estilo],
-            ['Entrada', 'Guirlanda ou arco floral de boas-vindas', estilo],
-            ['Mesas de convidados', 'Centros de mesa variados (altos e baixos)', estilo],
-            ['Mesa do bolo', 'Arranjo especial com flores comestíveis ou decorativas', estilo],
-            ['Lounge / área externa', 'Vasos suspensos ou arranjos em garrafas', estilo],
-            ['Banheiros', 'Pequenos arranjos em vasos de cerâmica', estilo],
-          ].map(([loc, sug, est], i) => (
+            ['Altar', 'Arranjo principal com flores escolhidas'],
+            ['Corredor', 'Flores ao longo do caminho'],
+            ['Entrada', 'Guirlanda ou arco floral'],
+            ['Mesas', 'Centros de mesa variados'],
+            ['Mesa do bolo', 'Arranjo especial com flores decorativas'],
+            ['Lounge', 'Vasos suspensos ou arranjos em garrafas'],
+          ].map(([l, s], i) => (
             <View key={i} style={S.tabelaLinha}>
-              <Text style={[S.tabelaCelula, { width: 100 }]}>{loc}</Text>
-              <Text style={[S.tabelaCelula, { flex: 2 }]}>{sug}</Text>
-              <Text style={[S.tabelaCelula, { width: 80 }]}>{est}</Text>
+              <Text style={[S.tabelaCelula, { width: 90 }]}>{l}</Text>
+              <Text style={[S.tabelaCelula, { flex: 2 }]}>{s}</Text>
             </View>
           ))}
         </View>
         <Text style={S.subtitulo}>Iluminação e Velas</Text>
         <View style={S.twoColumn}>
           <View style={S.column}>
-            <Text style={S.paragrafo}>A iluminação cria a atmosfera do evento. Combine luzes quentes com velas estrategicamente posicionadas para criar pontos de interesse e áreas de intimidade.</Text>
+            <Text style={S.paragrafo}>Combine luzes quentes com velas estrategicamente posicionadas para criar pontos de interesse.</Text>
             <View style={S.boxInfo}>
-              <Text style={S.boxInfoTexto}>• Lustres ou spots quentes para área principal</Text>
+              <Text style={S.boxInfoTexto}>• Lustres ou spots quentes</Text>
               <Text style={S.boxInfoTexto}>• Velas em castiçais ao longo das mesas</Text>
-              <Text style={S.boxInfoTexto}>• Fairy lights ou cordões de luz em áreas externas</Text>
+              <Text style={S.boxInfoTexto}>• Fairy lights em áreas externas</Text>
             </View>
           </View>
           <View style={S.column}>
-            <Text style={S.paragrafo}>Mobiliário recomendado conforme estilo {estilo}:</Text>
+            <Text style={S.paragrafo}>Mobiliário conforme estilo {estilo}:</Text>
             <View style={S.boxInfo}>
-              <Text style={S.boxInfoTexto}>• Cadeiras: conforme sugestão do estilo</Text>
-              <Text style={S.boxInfoTexto}>• Mesas: redondas para interação ou retangulares para espaços amplos</Text>
-              <Text style={S.boxInfoTexto}>• Áreas de descanso: sofás, puffs ou bancos rústicos</Text>
+              <Text style={S.boxInfoTexto}>• Cadeiras conforme sugestão do estilo</Text>
+              <Text style={S.boxInfoTexto}>• Mesas redondas ou retangulares</Text>
+              <Text style={S.boxInfoTexto}>• Áreas de descanso com sofás</Text>
             </View>
           </View>
         </View>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      <Page size="A4" style={S.pagina}>
-        <Text style={S.tituloSecao}>Mesa Posta</Text>
-        {(() => {
-          const secao = secoesNormais.find(s => s.titulo.toLowerCase().includes('mesa'));
-          if (secao?.linhas?.length > 0) return renderizarTextoMemorial(secao.linhas, fonteCorpo, corTexto, corTitulo);
-          return <Text style={S.paragrafo}>A mesa posta é uma das expressões mais tangíveis da identidade visual do casamento. Cada elemento — desde a toalha até o cartão de lugar — deve conversar com o estilo {estilo} e a paleta escolhida.</Text>;
-        })()}
-        <ImagemProporcional src={imagemMesa} dimensoes={dimensoesImagens?.imagemMesa} maxWidth={320} maxHeight={240} style={S.imagem} />
-        <Rodape nomeCasal={nomeCasal} />
-      </Page>
+      {/* MESA POSTA */}
+      <SecaoEditorial
+        titulo="Mesa Posta"
+        secao={secoesNormais.find(s => s.titulo.toLowerCase().includes('mesa'))}
+        imagemSrc={imagemMesa}
+        dimensoes={dimensoesImagens?.imagemMesa}
+        fonteCorpo={fonteCorpo}
+        fonteDisplay={fonteDisplay}
+        corTexto={corTexto}
+        corTitulo={corTitulo}
+        corSecundaria={corSecundaria}
+        nomeCasal={nomeCasal}
+        estilo={estilo}
+      />
 
+      {/* MESA POSTA — DETALHES */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Mesa Posta — Especificações</Text>
         <View style={S.tabela}>
           <View style={S.tabelaLinhaHeader}>
-            <Text style={[S.tabelaCelulaHeader, { width: 120 }]}>Elemento</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 100 }]}>Elemento</Text>
             <Text style={[S.tabelaCelulaHeader, { flex: 2 }]}>Sugestão</Text>
-            <Text style={[S.tabelaCelulaHeader, { width: 80 }]}>Cor/Tom</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 70 }]}>Cor/Tom</Text>
           </View>
           {[
-            ['Toalha', 'Material e estilo conforme identidade visual', paleta[1]],
-            ['Louças', 'Porcelana, cerâmica ou design contemporâneo', 'Branco ou paleta'],
-            ['Talheres', 'Prata, dourado, cobre ou inox escovado', paleta[0]],
-            ['Taças', 'Cristal fino, vidro colorido ou mason jars', 'Transparente ou paleta'],
-            ['Centro de mesa', 'Arranjo floral ou escultura conforme estilo', paleta[0]],
-            ['Guardanapo', 'Linho, algodão ou material temático', paleta[1]],
-            ['Cartão de lugar', 'Papelaria personalizada com monograma', paleta[0]],
-            ['Menu individual', 'Impresso em papel texturizado ou papel vegetal', paleta[2]],
-          ].map(([elem, sug, cor], i) => (
+            ['Toalha', 'Material conforme identidade visual', paleta[1]],
+            ['Louças', 'Porcelana ou cerâmica', 'Branco'],
+            ['Talheres', 'Prata, dourado ou cobre', paleta[0]],
+            ['Taças', 'Cristal ou vidro colorido', 'Transparente'],
+            ['Centro de mesa', 'Arranjo floral', paleta[0]],
+            ['Guardanapo', 'Linho ou algodão', paleta[1]],
+            ['Cartão de lugar', 'Papelaria personalizada', paleta[0]],
+            ['Menu', 'Papel texturizado', paleta[2]],
+          ].map(([e, s, c], i) => (
             <View key={i} style={S.tabelaLinha}>
-              <Text style={[S.tabelaCelula, { width: 120 }]}>{elem}</Text>
-              <Text style={[S.tabelaCelula, { flex: 2 }]}>{sug}</Text>
-              <Text style={[S.tabelaCelula, { width: 80 }]}>{cor}</Text>
+              <Text style={[S.tabelaCelula, { width: 100 }]}>{e}</Text>
+              <Text style={[S.tabelaCelula, { flex: 2 }]}>{s}</Text>
+              <Text style={[S.tabelaCelula, { width: 70 }]}>{c}</Text>
             </View>
           ))}
         </View>
         <Text style={S.subtitulo}>Dicas de Montagem</Text>
         <View style={S.boxInfo}>
-          <Text style={S.boxInfoTexto}>1. Comece pela toalha: ela é a base de toda a composição visual.</Text>
-          <Text style={S.boxInfoTexto}>2. Distribua os talheres na ordem de uso (de fora para dentro).</Text>
-          <Text style={S.boxInfoTexto}>3. O centro de mesa não deve impedir a conversação entre convidados.</Text>
-          <Text style={S.boxInfoTexto}>4. O cartão de lugar e o menu devem estar alinhados com o prato principal.</Text>
-          <Text style={S.boxInfoTexto}>5. Adicione um toque pessoal: uma flor solta, um bilhete ou uma lembrancinha no prato.</Text>
+          <Text style={S.boxInfoTexto}>1. Toalha é a base da composição visual.</Text>
+          <Text style={S.boxInfoTexto}>2. Distribua talheres na ordem de uso.</Text>
+          <Text style={S.boxInfoTexto}>3. Centro de mesa não deve impedir conversação.</Text>
+          <Text style={S.boxInfoTexto}>4. Cartão e menu alinhados com o prato.</Text>
+          <Text style={S.boxInfoTexto}>5. Toque pessoal: flor solta ou bilhete.</Text>
         </View>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      <Page size="A4" style={S.pagina}>
-        <Text style={S.tituloSecao}>Alimentação e Bebidas</Text>
-        {(() => {
-          const secao = secoesNormais.find(s => s.titulo.toLowerCase().includes('alimentação') || s.titulo.toLowerCase().includes('alimentacao') || s.titulo.toLowerCase().includes('bebidas'));
-          if (secao?.linhas?.length > 0) return renderizarTextoMemorial(secao.linhas, fonteCorpo, corTexto, corTitulo);
-          return <Text style={S.paragrafo}>A experiência gastronômica é um dos pilares da celebração. Do coquetel de boas-vindas ao bolo de casamento, cada momento deve surpreender e agradar o paladar dos convidados.</Text>;
-        })()}
-        <ImagemProporcional src={imagemAlimentacao} dimensoes={dimensoesImagens?.imagemAlimentacao} maxWidth={320} maxHeight={240} style={S.imagem} />
-        <Rodape nomeCasal={nomeCasal} />
-      </Page>
+      {/* ALIMENTAÇÃO */}
+      <SecaoEditorial
+        titulo="Alimentação e Bebidas"
+        secao={secoesNormais.find(s => s.titulo.toLowerCase().includes('alimentação') || s.titulo.toLowerCase().includes('alimentacao') || s.titulo.toLowerCase().includes('bebidas'))}
+        imagemSrc={imagemAlimentacao}
+        dimensoes={dimensoesImagens?.imagemAlimentacao}
+        fonteCorpo={fonteCorpo}
+        fonteDisplay={fonteDisplay}
+        corTexto={corTexto}
+        corTitulo={corTitulo}
+        corSecundaria={corSecundaria}
+        nomeCasal={nomeCasal}
+        estilo={estilo}
+      />
 
+      {/* ALIMENTAÇÃO — DETALHES */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Alimentação e Bebidas — Detalhes</Text>
         <View style={S.twoColumn}>
           <View style={S.column}>
             <Text style={S.subtitulo}>Coquetel de Boas-Vindas</Text>
-            <Text style={S.paragrafo}>Drinks de recepção que dialoguem com o estilo {estilo} e a estação do ano. Considere uma assinatura do casal.</Text>
+            <Text style={S.paragrafo}>Drinks que dialoguem com o estilo {estilo}.</Text>
             <View style={S.boxInfo}>
               <Text style={S.boxInfoTexto}>• Drink assinatura do casal</Text>
-              <Text style={S.boxInfoTexto}>• Águas aromatizadas e sucos naturais</Text>
+              <Text style={S.boxInfoTexto}>• Águas aromatizadas e sucos</Text>
               <Text style={S.boxInfoTexto}>• Petiscos e canapés variados</Text>
             </View>
             <Text style={S.subtitulo}>Jantar / Almoço</Text>
-            <Text style={S.paragrafo}>Cardápio elaborado conforme restrições alimentares informadas. Degustação recomendada 4 meses antes.</Text>
+            <Text style={S.paragrafo}>Cardápio elaborado conforme restrições. Degustação 4 meses antes.</Text>
           </View>
           <View style={S.column}>
             <Text style={S.subtitulo}>Bolo e Doces</Text>
-            <Text style={S.paragrafo}>O bolo é um dos momentos mais fotografados do casamento. Escolha sabores que representem o casal.</Text>
+            <Text style={S.paragrafo}>Momento mais fotografado. Escolha sabores que representem o casal.</Text>
             <View style={S.boxInfo}>
               <Text style={S.boxInfoTexto}>• Bolo principal: estilo {estilo}</Text>
-              <Text style={S.boxInfoTexto}>• Mesa de doces: brigadeiros gourmet, macarons, bem-casados</Text>
+              <Text style={S.boxInfoTexto}>• Mesa de doces: brigadeiros, macarons, bem-casados</Text>
               <Text style={S.boxInfoTexto}>• Bem-casados: embalagem personalizada</Text>
             </View>
             <Text style={S.subtitulo}>Bar e Bebidas</Text>
-            <Text style={S.paragrafo}>Bar completo com cervejas artesanais, vinhos selecionados e drinks à pedido. Álcool e não-álcool.</Text>
+            <Text style={S.paragrafo}>Bar completo com cervejas artesanais e vinhos.</Text>
           </View>
         </View>
         <Text style={S.subtitulo}>Restrições Alimentares</Text>
-        <Text style={S.paragrafo}>Verifique com antecedência: vegetarianos, veganos, intolerantes à lactose/glúten, alergias. Prepare opções alternativas discretas e saborosas.</Text>
+        <Text style={S.paragrafo}>Verifique com antecedência: vegetarianos, veganos, intolerantes, alergias. Prepare opções alternativas.</Text>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
+      {/* ENTRETENIMENTO */}
+      <SecaoEditorial
+        titulo="Entretenimento"
+        secao={secoesNormais.find(s => s.titulo.toLowerCase().includes('entretenimento') || s.titulo.toLowerCase().includes('festa') || s.titulo.toLowerCase().includes('música'))}
+        imagemSrc={imagemEntretenimento}
+        dimensoes={dimensoesImagens?.imagemEntretenimento}
+        fonteCorpo={fonteCorpo}
+        fonteDisplay={fonteDisplay}
+        corTexto={corTexto}
+        corTitulo={corTitulo}
+        corSecundaria={corSecundaria}
+        nomeCasal={nomeCasal}
+        estilo={estilo}
+      />
+
+      {/* ENTRETENIMENTO — DETALHES */}
       <Page size="A4" style={S.pagina}>
-        <Text style={S.tituloSecao}>Entretenimento</Text>
-        {(() => {
-          const secao = secoesNormais.find(s => s.titulo.toLowerCase().includes('entretenimento') || s.titulo.toLowerCase().includes('festa') || s.titulo.toLowerCase().includes('música'));
-          if (secao?.linhas?.length > 0) return renderizarTextoMemorial(secao.linhas, fonteCorpo, corTexto, corTitulo);
-          return <Text style={S.paragrafo}>A festa é a celebração da união de {nomeCasal}. A música, as atividades e o cronograma devem manter a energia alta e criar momentos inesquecíveis para todos os convidados.</Text>;
-        })()}
-        <ImagemProporcional src={imagemEntretenimento} dimensoes={dimensoesImagens?.imagemEntretenimento} maxWidth={320} maxHeight={240} style={S.imagem} />
-        <Text style={S.subtitulo}>Música e Atrações</Text>
-        <View style={S.boxInfo}>
-          <Text style={S.boxInfoTexto}>• Cerimônia: música instrumental ao vivo ou playlist curada</Text>
-          <Text style={S.boxInfoTexto}>• Coquetel: jazz acústico, bossa nova ou playlist ambiente</Text>
-          <Text style={S.boxInfoTexto}>• Jantar: música de fundo que permita conversação</Text>
-          <Text style={S.boxInfoTexto}>• Festa: DJ ou banda ao vivo com repertório variado</Text>
-          <Text style={S.boxInfoTexto}>• Momento especial: primeira dança do casal</Text>
-        </View>
-        <Text style={S.subtitulo}>Cronograma Sugerido da Festa</Text>
+        <Text style={S.tituloSecao}>Entretenimento — Cronograma</Text>
         <View style={S.tabela}>
           <View style={S.tabelaLinhaHeader}>
-            <Text style={[S.tabelaCelulaHeader, { width: 80 }]}>Horário</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 70 }]}>Horário</Text>
             <Text style={[S.tabelaCelulaHeader, { flex: 2 }]}>Atividade</Text>
           </View>
           {[
-            ['18:00', 'Cerimônia'], ['19:00', 'Coquetel de boas-vindas'], ['20:00', 'Jantar'],
+            ['18:00', 'Cerimônia'], ['19:00', 'Coquetel'], ['20:00', 'Jantar'],
             ['21:30', 'Discursos e brindes'], ['22:00', 'Corte do bolo'], ['22:30', 'Primeira dança'],
-            ['23:00', 'Abertura da pista de dança'], ['00:00', 'Distribuição de bem-casados'], ['01:00', 'Última música e despedida'],
-          ].map(([hora, ativ], i) => (
+            ['23:00', 'Pista de dança'], ['00:00', 'Bem-casados'], ['01:00', 'Despedida'],
+          ].map(([h, a], i) => (
             <View key={i} style={S.tabelaLinha}>
-              <Text style={[S.tabelaCelula, { width: 80 }]}>{hora}</Text>
-              <Text style={[S.tabelaCelula, { flex: 2 }]}>{ativ}</Text>
+              <Text style={[S.tabelaCelula, { width: 70 }]}>{h}</Text>
+              <Text style={[S.tabelaCelula, { flex: 2 }]}>{a}</Text>
             </View>
           ))}
         </View>
         <Text style={S.subtitulo}>Atividades Interativas</Text>
-        <Text style={S.paragrafo}>Considere: cabine de fotos instantâneas, bar de cigarros, food truck de madrugada, fogos de artifício (se permitido), lanternas sky lanterns, ou uma área de descanso com sofás.</Text>
+        <Text style={S.paragrafo}>Cabine de fotos, bar de cigarros, food truck, fogos de artifício (se permitido), lanternas sky lanterns.</Text>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      <Page size="A4" style={S.pagina}>
-        <Text style={S.tituloSecao}>Vestuário e Beleza</Text>
-        {(() => {
-          const secao = secoesNormais.find(s => s.titulo.toLowerCase().includes('vestuário') || s.titulo.toLowerCase().includes('vestuario') || s.titulo.toLowerCase().includes('beleza'));
-          if (secao?.linhas?.length > 0) return renderizarTextoMemorial(secao.linhas, fonteCorpo, corTexto, corTitulo);
-          return <Text style={S.paragrafo}>O vestuário e a beleza são expressões pessoais que devem fazer {nome1} e {nome2} se sentirem a melhor versão de si mesmos no grande dia.</Text>;
-        })()}
-        <ImagemProporcional src={imagemVestido} dimensoes={dimensoesImagens?.imagemVestido} maxWidth={320} maxHeight={240} style={S.imagem} />
-        <Rodape nomeCasal={nomeCasal} />
-      </Page>
+      {/* VESTUÁRIO */}
+      <SecaoEditorial
+        titulo="Vestuário e Beleza"
+        secao={secoesNormais.find(s => s.titulo.toLowerCase().includes('vestuário') || s.titulo.toLowerCase().includes('vestuario') || s.titulo.toLowerCase().includes('beleza'))}
+        imagemSrc={imagemVestido}
+        dimensoes={dimensoesImagens?.imagemVestido}
+        fonteCorpo={fonteCorpo}
+        fonteDisplay={fonteDisplay}
+        corTexto={corTexto}
+        corTitulo={corTitulo}
+        corSecundaria={corSecundaria}
+        nomeCasal={nomeCasal}
+        estilo={estilo}
+      />
 
+      {/* VESTUÁRIO — DETALHES */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Vestuário e Beleza — Detalhes</Text>
         <View style={S.twoColumn}>
           <View style={S.column}>
             <Text style={S.subtitulo}>Traje da Noiva</Text>
-            <Text style={S.paragrafo}>Escolha que valorize o corpo e a personalidade. Considere: prova 6 meses antes, ajustes finais 2 semanas antes, e um kit de emergência.</Text>
+            <Text style={S.paragrafo}>Prova 6 meses antes, ajustes 2 semanas antes.</Text>
             <View style={S.boxInfo}>
-              <Text style={S.boxInfoTexto}>• Estilo sugerido: conforme escolha no questionário</Text>
-              <Text style={S.boxInfoTexto}>• Acessórios: véu, grinalda, joias ou tiara</Text>
-              <Text style={S.boxInfoTexto}>• Sapatos: conforto é essencial — teste antes</Text>
-              <Text style={S.boxInfoTexto}>• Lingerie: peça especial para o dia</Text>
+              <Text style={S.boxInfoTexto}>• Acessórios: véu, grinalda, joias</Text>
+              <Text style={S.boxInfoTexto}>• Sapatos: conforto é essencial</Text>
+              <Text style={S.boxInfoTexto}>• Lingerie: peça especial</Text>
             </View>
             <Text style={S.subtitulo}>Traje do Noivo</Text>
-            <Text style={S.paragrafo}>Terno, smoking ou traje conforme estilo e horário do evento. Gravata, abotoaduras e relógio completam o visual.</Text>
+            <Text style={S.paragrafo}>Terno, smoking ou traje conforme estilo e horário.</Text>
           </View>
           <View style={S.column}>
             <Text style={S.subtitulo}>Maquiagem e Cabelo</Text>
-            <Text style={S.paragrafo}>Agende a prova 2 meses antes. Leve referências e fotos do vestido. O visual deve durar 12+ horas.</Text>
+            <Text style={S.paragrafo}>Prova 2 meses antes. Visual deve durar 12+ horas.</Text>
             <View style={S.boxInfo}>
-              <Text style={S.boxInfoTexto}>• Maquiagem: à prova d'água e com fixador</Text>
-              <Text style={S.boxInfoTexto}>• Cabelo: teste de penteado na prova</Text>
+              <Text style={S.boxInfoTexto}>• Maquiagem à prova d'água</Text>
+              <Text style={S.boxInfoTexto}>• Cabelo: teste de penteado</Text>
               <Text style={S.boxInfoTexto}>• Manicure e pedicure: 2 dias antes</Text>
-              <Text style={S.boxInfoTexto}>• Kit de retoque: batom, pó, alfinetes</Text>
             </View>
-            <Text style={S.subtitulo}>Padronização de Madrinhas e Padrinhos</Text>
-            <Text style={S.paragrafo}>Defina uma cor ou tom que dialogue com a paleta. Não precisa ser uniforme — a coesão visual é mais importante que a uniformidade.</Text>
+            <Text style={S.subtitulo}>Madrinhas e Padrinhos</Text>
+            <Text style={S.paragrafo}>Defina uma cor que dialogue com a paleta. Coesão visual é mais importante que uniformidade.</Text>
           </View>
         </View>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
-      <Page size="A4" style={S.pagina}>
-        <Text style={S.tituloSecao}>Papelaria e Identidade</Text>
-        {(() => {
-          const secao = secoesNormais.find(s => s.titulo.toLowerCase().includes('papelaria') || s.titulo.toLowerCase().includes('identidade') || s.titulo.toLowerCase().includes('convite'));
-          if (secao?.linhas?.length > 0) return renderizarTextoMemorial(secao.linhas, fonteCorpo, corTexto, corTitulo);
-          return <Text style={S.paragrafo}>A papelaria é o primeiro contato dos convidados com o casamento. Cada peça — do save the date ao menu — deve transmitir a identidade visual e criar expectativa.</Text>;
-        })()}
-        <ImagemProporcional src={imagemPapelaria} dimensoes={dimensoesImagens?.imagemPapelaria} maxWidth={320} maxHeight={240} style={S.imagem} />
-        <Rodape nomeCasal={nomeCasal} />
-      </Page>
+      {/* PAPELARIA */}
+      <SecaoEditorial
+        titulo="Papelaria e Identidade"
+        secao={secoesNormais.find(s => s.titulo.toLowerCase().includes('papelaria') || s.titulo.toLowerCase().includes('identidade') || s.titulo.toLowerCase().includes('convite'))}
+        imagemSrc={imagemPapelaria}
+        dimensoes={dimensoesImagens?.imagemPapelaria}
+        fonteCorpo={fonteCorpo}
+        fonteDisplay={fonteDisplay}
+        corTexto={corTexto}
+        corTitulo={corTitulo}
+        corSecundaria={corSecundaria}
+        nomeCasal={nomeCasal}
+        estilo={estilo}
+      />
 
+      {/* PAPELARIA — DETALHES */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Papelaria e Identidade — Itens</Text>
         <View style={S.tabela}>
           <View style={S.tabelaLinhaHeader}>
-            <Text style={[S.tabelaCelulaHeader, { width: 120 }]}>Item</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 100 }]}>Item</Text>
             <Text style={[S.tabelaCelulaHeader, { flex: 2 }]}>Descrição</Text>
-            <Text style={[S.tabelaCelulaHeader, { width: 80 }]}>Prazo</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 70 }]}>Prazo</Text>
           </View>
           {[
-            ['Save the Date', 'Anúncio inicial da data (digital ou impresso)', '10-12 meses'],
-            ['Convite', 'Cartão formal com informações do evento', '3-4 meses'],
-            ['Site do casamento', 'Página digital com lista de presentes e confirmação', '6 meses'],
-            ['Menu', 'Impresso individual ou em quadro na entrada', '1 mês'],
-            ['Cartão de lugar', 'Identificação do convidado na mesa', '1 mês'],
-            ['Sinalização', 'Placas de boas-vindas, direcionais e áreas', '2 semanas'],
-            ['Monograma', 'Símbolo personalizado do casal', '6 meses'],
-            ['Lembrancinha', 'Presente de agradecimento aos convidados', '2 meses'],
-            ['Tags', 'Etiquetas para bem-casados e presentes', '1 mês'],
-            ['Certificado', 'Documento decorativo da cerimônia', '2 semanas'],
-          ].map(([item, desc, prazo], i) => (
-            <View key={i} style={S.tabelaLinha}>
-              <Text style={[S.tabelaCelula, { width: 120 }]}>{item}</Text>
-              <Text style={[S.tabelaCelula, { flex: 2 }]}>{desc}</Text>
-              <Text style={[S.tabelaCelula, { width: 80 }]}>{prazo}</Text>
+            ['Save the Date', 'Anúncio inicial da data', '10-12 meses'],
+            ['Convite', 'Cartão formal com informações', '3-4 meses'],
+            ['Site do casamento', 'Página digital com lista de presentes', '6 meses'],
+            ['Menu', 'Impresso individual ou quadro', '1 mês'],
+            ['Cartão de lugar', 'Identificação do convidado', '1 mês'],
+            ['Sinalização', 'Placas de boas-vindas', '2 semanas'],
+            ['Monograma', 'Símbolo personalizado', '6 meses'],
+            ['Lembrancinha', 'Presente de agradecimento', '2 meses'],
+          ].map(([i, d, p], idx) => (
+            <View key={idx} style={S.tabelaLinha}>
+              <Text style={[S.tabelaCelula, { width: 100 }]}>{i}</Text>
+              <Text style={[S.tabelaCelula, { flex: 2 }]}>{d}</Text>
+              <Text style={[S.tabelaCelula, { width: 70 }]}>{p}</Text>
             </View>
           ))}
         </View>
-        <Text style={S.subtitulo}>Itens Digitais</Text>
-        <View style={S.boxInfo}>
-          <Text style={S.boxInfoTexto}>• Filtro personalizado para Instagram Stories</Text>
-          <Text style={S.boxInfoTexto}>• Playlist colaborativa no Spotify</Text>
-          <Text style={S.boxInfoTexto}>• QR code para confirmação de presença</Text>
-          <Text style={S.boxInfoTexto}>• Álbum de fotos compartilhado (Google Photos ou similar)</Text>
-        </View>
         <Text style={S.subtitulo}>Monograma do Casal</Text>
-        <Text style={S.paragrafo}>O monograma une as iniciais de {nome1} e {nome2} em um símbolo único. Use-o em convites, selos, taças, bolo e todos os materiais impressos.</Text>
+        <Text style={S.paragrafo}>O monograma une as iniciais de {nome1} e {nome2}. Use-o em convites, selos, taças, bolo e materiais impressos.</Text>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
+      {/* LINHA DO TEMPO VISUAL */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Linha do Tempo Visual</Text>
-        <Text style={S.paragrafo}>O planejamento de um casamento exige organização. Esta linha do tempo divide as tarefas por período, com cores que indicam a urgência de cada etapa.</Text>
-        <View style={{ marginTop: 16, marginBottom: 20 }}>
+        <Text style={S.paragrafo}>O planejamento de um casamento exige organização. Esta linha do tempo divide as tarefas por período.</Text>
+        <View style={{ marginTop: 14, marginBottom: 16 }}>
           {[
-            { meses: '12-8 meses antes', cor: '#4CAF50', tarefas: ['Definir data e reservar local', 'Contratar cerimonialista', 'Iniciar lista de convidados', 'Definir estilo e paleta visual'] },
+            { meses: '12-8 meses antes', cor: '#4CAF50', tarefas: ['Definir data e reservar local', 'Contratar cerimonialista', 'Iniciar lista de convidados', 'Definir estilo e paleta'] },
             { meses: '7-4 meses antes', cor: '#FFC107', tarefas: ['Fechar buffet e bebidas', 'Contratar fotógrafo e vídeo', 'Provar vestido e traje', 'Definir decoração e flores'] },
             { meses: '3-1 meses antes', cor: '#FF9800', tarefas: ['Enviar convites', 'Confirmar presenças', 'Ajustar detalhes decorativos', 'Prova de cabelo e maquiagem'] },
-            { meses: 'Última semana', cor: '#F44336', tarefas: ['Ensaio geral', 'Confirmar todos os fornecedores', 'Separar itens do dia', 'Descansar e se hidratar'] },
+            { meses: 'Última semana', cor: '#F44336', tarefas: ['Ensaio geral', 'Confirmar fornecedores', 'Separar itens do dia', 'Descansar e se hidratar'] },
           ].map((item, i) => (
-            <View key={i} style={{ marginBottom: 18, flexDirection: 'row' }}>
-              <View style={{ width: 14, alignItems: 'center', marginRight: 10 }}>
-                <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: item.cor, marginTop: 2 }} />
+            <View key={i} style={{ marginBottom: 16, flexDirection: 'row' }}>
+              <View style={{ width: 12, alignItems: 'center', marginRight: 10 }}>
+                <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: item.cor, marginTop: 2 }} />
                 {i < 3 && <View style={{ width: 2, flex: 1, backgroundColor: '#E5E0D9', marginTop: 4 }} />}
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: fonteCorpo, fontSize: 11, color: corTitulo, marginBottom: 4, wrap: true }}>{item.meses}</Text>
+                <Text style={{ fontFamily: fonteDisplay, fontSize: 11, color: corTitulo, marginBottom: 3, wrap: true }}>{item.meses}</Text>
                 {item.tarefas.map((t, j) => (
-                  <Text key={j} style={{ fontFamily: fonteCorpo, fontSize: 9.5, color: corTexto, lineHeight: 1.6, marginBottom: 2, wrap: true }}>• {t}</Text>
+                  <Text key={j} style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, lineHeight: 1.5, marginBottom: 1, wrap: true }}>• {t}</Text>
                 ))}
               </View>
             </View>
           ))}
         </View>
         <Text style={S.subtitulo}>Legenda de Urgência</Text>
-        <View style={{ flexDirection: 'row', marginTop: 8, flexWrap: 'wrap' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20, marginBottom: 6 }}>
-            <View style={{ width: 14, height: 14, backgroundColor: '#4CAF50', borderRadius: 3, marginRight: 6 }} />
-            <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, wrap: true }}>Tranquilo (12-8 meses)</Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20, marginBottom: 6 }}>
-            <View style={{ width: 14, height: 14, backgroundColor: '#FFC107', borderRadius: 3, marginRight: 6 }} />
-            <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, wrap: true }}>Atenção (7-4 meses)</Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20, marginBottom: 6 }}>
-            <View style={{ width: 14, height: 14, backgroundColor: '#FF9800', borderRadius: 3, marginRight: 6 }} />
-            <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, wrap: true }}>Urgente (3-1 meses)</Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-            <View style={{ width: 14, height: 14, backgroundColor: '#F44336', borderRadius: 3, marginRight: 6 }} />
-            <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, wrap: true }}>Crítico (última semana)</Text>
-          </View>
+        <View style={{ flexDirection: 'row', marginTop: 6, flexWrap: 'wrap' }}>
+          {[
+            { cor: '#4CAF50', label: 'Tranquilo (12-8 meses)' },
+            { cor: '#FFC107', label: 'Atenção (7-4 meses)' },
+            { cor: '#FF9800', label: 'Urgente (3-1 meses)' },
+            { cor: '#F44336', label: 'Crítico (última semana)' },
+          ].map((l, i) => (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16, marginBottom: 4 }}>
+              <View style={{ width: 12, height: 12, backgroundColor: l.cor, borderRadius: 2, marginRight: 5 }} />
+              <Text style={{ fontFamily: fonteCorpo, fontSize: 8, color: corTexto, wrap: true }}>{l.label}</Text>
+            </View>
+          ))}
         </View>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
+      {/* LINHA DO TEMPO — CALENDÁRIO */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Linha do Tempo — Calendário Mensal</Text>
-        <Text style={S.paragrafo}>Use este calendário como guia de referência rápida. Marque as tarefas concluídas e ajuste os prazos conforme a realidade do seu planejamento.</Text>
         <View style={S.tabela}>
           <View style={S.tabelaLinhaHeader}>
-            <Text style={[S.tabelaCelulaHeader, { width: 60 }]}>Mês</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 50 }]}>Mês</Text>
             <Text style={[S.tabelaCelulaHeader, { flex: 2 }]}>Tarefas Prioritárias</Text>
-            <Text style={[S.tabelaCelulaHeader, { width: 60 }]}>Status</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 50 }]}>Status</Text>
           </View>
           {[
             ['Mês 12', 'Definir data, reservar local, contratar cerimonialista', ''],
@@ -629,218 +677,203 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
             ['Mês 3', 'Ajustes finais de decoração, prova de vestido', ''],
             ['Mês 2', 'Confirmar presenças, reunião com cerimonialista', ''],
             ['Mês 1', 'Ensaio geral, separar itens do dia, relaxar', ''],
-          ].map(([mes, tarefa, status], i) => (
+          ].map(([m, t, s], i) => (
             <View key={i} style={S.tabelaLinha}>
-              <Text style={[S.tabelaCelula, { width: 60 }]}>{mes}</Text>
-              <Text style={[S.tabelaCelula, { flex: 2 }]}>{tarefa}</Text>
-              <Text style={[S.tabelaCelula, { width: 60 }]}>[ ]</Text>
+              <Text style={[S.tabelaCelula, { width: 50 }]}>{m}</Text>
+              <Text style={[S.tabelaCelula, { flex: 2 }]}>{t}</Text>
+              <Text style={[S.tabelaCelula, { width: 50 }]}>[ ]</Text>
             </View>
           ))}
         </View>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
+      {/* CHECKLIST */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Checklist de Decisões Pendentes</Text>
-        <Text style={S.paragrafo}>Esta lista foi gerada a partir das respostas "ainda não sei" no seu questionário. Use-a como ponto de partida para as próximas conversas com fornecedores e cerimonialista.</Text>
         <View style={S.tabela}>
           <View style={S.tabelaLinhaHeader}>
             <Text style={[S.tabelaCelulaHeader, { flex: 2 }]}>Decisão Pendente</Text>
-            <Text style={[S.tabelaCelulaHeader, { width: 100 }]}>Prazo Sugerido</Text>
-            <Text style={[S.tabelaCelulaHeader, { width: 40 }]}>✓</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 90 }]}>Prazo</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 30 }]}>✓</Text>
             <Text style={[S.tabelaCelulaHeader, { flex: 1.5 }]}>Anotações</Text>
           </View>
-          {checklist.slice(0, 10).map((item, i) => (
+          {checklist.slice(0, 12).map((item, i) => (
             <View key={i} style={S.tabelaLinha}>
               <Text style={[S.tabelaCelula, { flex: 2 }]}>{item.item}</Text>
-              <Text style={[S.tabelaCelula, { width: 100 }]}>{item.prazo}</Text>
-              <Text style={[S.tabelaCelula, { width: 40, textAlign: 'center' }]}>[ ]</Text>
-              <View style={[S.tabelaCelula, { flex: 1.5, borderBottomWidth: 0.5, borderBottomColor: '#D4CFC9', borderStyle: 'dashed', height: 16 }]} />
+              <Text style={[S.tabelaCelula, { width: 90 }]}>{item.prazo}</Text>
+              <Text style={[S.tabelaCelula, { width: 30, textAlign: 'center' }]}>[ ]</Text>
+              <View style={[S.tabelaCelula, { flex: 1.5, borderBottomWidth: 0.5, borderBottomColor: '#D4CFC9', borderStyle: 'dashed', height: 14 }]} />
             </View>
           ))}
         </View>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
+      {/* CHECKLIST — ANOTAÇÕES */}
       <Page size="A4" style={S.pagina}>
-        <Text style={S.tituloSecao}>Checklist — Anotações e Observações</Text>
-        <Text style={S.paragrafo}>Use este espaço para registrar contatos, valores negociados e observações importantes durante o planejamento.</Text>
-        <View style={{ marginTop: 12 }}>
-          {checklist.slice(10, 20).map((item, i) => (
+        <Text style={S.tituloSecao}>Checklist — Anotações</Text>
+        <View style={{ marginTop: 10 }}>
+          {(checklist.length > 12 ? checklist.slice(12, 20) : checklist.slice(0, 8)).map((item, i) => (
             <View key={i} style={{ marginBottom: 10 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                <Text style={[S.tabelaCelula, { width: 30 }]}>[ ]</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
+                <Text style={[S.tabelaCelula, { width: 25 }]}>[ ]</Text>
                 <Text style={[S.tabelaCelula, { flex: 1 }]}>{item.item}</Text>
               </View>
-              <View style={{ borderBottomWidth: 0.5, borderBottomColor: '#D4CFC9', borderStyle: 'dashed', height: 20 }} />
-              <View style={{ borderBottomWidth: 0.5, borderBottomColor: '#D4CFC9', borderStyle: 'dashed', height: 20 }} />
-            </View>
-          ))}
-          {checklist.length <= 10 && Array.from({ length: 8 }).map((_, i) => (
-            <View key={`extra-${i}`} style={{ marginBottom: 10 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                <Text style={[S.tabelaCelula, { width: 30 }]}>[ ]</Text>
-                <Text style={[S.tabelaCelula, { flex: 1 }]}>_________________________________________</Text>
-              </View>
-              <View style={{ borderBottomWidth: 0.5, borderBottomColor: '#D4CFC9', borderStyle: 'dashed', height: 20 }} />
+              <View style={{ borderBottomWidth: 0.5, borderBottomColor: '#D4CFC9', borderStyle: 'dashed', height: 18 }} />
+              <View style={{ borderBottomWidth: 0.5, borderBottomColor: '#D4CFC9', borderStyle: 'dashed', height: 18 }} />
             </View>
           ))}
         </View>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
+      {/* FORNECEDORES */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Fornecedores</Text>
-        <Text style={S.paragrafo}>Mantenha este registro atualizado com os contatos de todos os fornecedores. Compartilhe com seu cerimonialista e padrinhos de confiança.</Text>
         <View style={S.tabela}>
           <View style={S.tabelaLinhaHeader}>
-            <Text style={[S.tabelaCelulaHeader, { width: 90 }]}>Categoria</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 80 }]}>Categoria</Text>
             <Text style={[S.tabelaCelulaHeader, { flex: 1.2 }]}>Nome</Text>
             <Text style={[S.tabelaCelulaHeader, { flex: 1 }]}>Telefone</Text>
             <Text style={[S.tabelaCelulaHeader, { flex: 1.2 }]}>E-mail</Text>
-            <Text style={[S.tabelaCelulaHeader, { width: 60 }]}>Status</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 50 }]}>Status</Text>
           </View>
-          {fornecedores.slice(0, 12).map((item, i) => (
+          {fornecedores.slice(0, 14).map((item, i) => (
             <View key={i} style={S.tabelaLinha}>
-              <Text style={[S.tabelaCelula, { width: 90 }]}>{item.categoria}</Text>
+              <Text style={[S.tabelaCelula, { width: 80 }]}>{item.categoria}</Text>
               <Text style={[S.tabelaCelula, { flex: 1.2 }]}>{item.nome}</Text>
               <Text style={[S.tabelaCelula, { flex: 1 }]}>________________</Text>
               <Text style={[S.tabelaCelula, { flex: 1.2 }]}>________________</Text>
-              <Text style={[S.tabelaCelula, { width: 60 }]}>A contratar</Text>
+              <Text style={[S.tabelaCelula, { width: 50 }]}>A definir</Text>
             </View>
           ))}
         </View>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
+      {/* FORNECEDORES — ANOTAÇÕES */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Fornecedores — Anotações</Text>
-        <Text style={S.paragrafo}>Registre valores negociados, datas de pagamento e observações importantes sobre cada fornecedor.</Text>
         <View style={S.tabela}>
           <View style={S.tabelaLinhaHeader}>
-            <Text style={[S.tabelaCelulaHeader, { width: 90 }]}>Categoria</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 80 }]}>Categoria</Text>
             <Text style={[S.tabelaCelulaHeader, { flex: 1 }]}>Valor</Text>
             <Text style={[S.tabelaCelulaHeader, { flex: 1 }]}>Prazo</Text>
             <Text style={[S.tabelaCelulaHeader, { flex: 2 }]}>Anotações</Text>
           </View>
           {fornecedores.slice(0, 10).map((item, i) => (
             <View key={i} style={S.tabelaLinha}>
-              <Text style={[S.tabelaCelula, { width: 90 }]}>{item.categoria}</Text>
+              <Text style={[S.tabelaCelula, { width: 80 }]}>{item.categoria}</Text>
               <Text style={[S.tabelaCelula, { flex: 1 }]}>R$ ____________</Text>
               <Text style={[S.tabelaCelula, { flex: 1 }]}>____________</Text>
-              <View style={[S.tabelaCelula, { flex: 2, borderBottomWidth: 0.5, borderBottomColor: '#D4CFC9', borderStyle: 'dashed', height: 16 }]} />
+              <View style={[S.tabelaCelula, { flex: 2, borderBottomWidth: 0.5, borderBottomColor: '#D4CFC9', borderStyle: 'dashed', height: 14 }]} />
             </View>
           ))}
         </View>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
+      {/* ORÇAMENTO */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Orçamento Detalhado</Text>
-        <Text style={S.paragrafo}>Esta estimativa foi regionalizada com base em {cidade || 'sua cidade'} / {estado || 'seu estado'}. Os valores são referências médias de mercado — ajuste conforme seu orçamento real.</Text>
+        <Text style={S.paragrafo}>Esta estimativa foi regionalizada com base em {cidade || 'sua cidade'} / {estado || 'seu estado'}.</Text>
         <Text style={S.subtitulo}>Distribuição do Orçamento</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-          <PizzaChart data={itensOrcamento.slice(0, 8)} colors={[corPrimaria, corSecundaria, corTerciaria, corBorda, '#8B6F5E', '#C8BFB4', '#5C534A', '#A89F91']} size={140} />
-          <View style={{ marginLeft: 20, flex: 1 }}>
-            {itensOrcamento.slice(0, 8).map((item, i) => {
-              const coresPizza = [corPrimaria, corSecundaria, corTerciaria, corBorda, '#8B6F5E', '#C8BFB4', '#5C534A', '#A89F91'];
-              return (
-                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                  <View style={{ width: 12, height: 12, backgroundColor: coresPizza[i % coresPizza.length], marginRight: 8 }} />
-                  <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, wrap: true }}>{item.item} ({item.percentual}%)</Text>
-                </View>
-              );
-            })}
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 }}>
+          <PizzaChart data={itensOrcamento.slice(0, 8)} colors={CORES_PIZZA} size={130} />
+          <View style={{ marginLeft: 16, flex: 1 }}>
+            {itensOrcamento.slice(0, 8).map((item, i) => (
+              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 3 }}>
+                <View style={{ width: 10, height: 10, backgroundColor: CORES_PIZZA[i % CORES_PIZZA.length], marginRight: 6 }} />
+                <Text style={{ fontFamily: fonteCorpo, fontSize: 8, color: corTexto, wrap: true }}>{item.item} ({item.percentual}%)</Text>
+              </View>
+            ))}
           </View>
         </View>
         <View style={S.tabela}>
           <View style={S.tabelaLinhaHeader}>
             <Text style={[S.tabelaCelulaHeader, { flex: 2 }]}>Item</Text>
-            <Text style={[S.tabelaCelulaHeader, { width: 60 }]}>%</Text>
-            <Text style={[S.tabelaCelulaHeader, { width: 90 }]}>Valor Estimado</Text>
-            <Text style={[S.tabelaCelulaHeader, { width: 90 }]}>Valor Real</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 50 }]}>%</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 80 }]}>Valor Est.</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 80 }]}>Valor Real</Text>
           </View>
           {itensOrcamento.slice(0, 15).map((item, i) => (
             <View key={i} style={S.tabelaLinha}>
               <Text style={[S.tabelaCelula, { flex: 2 }]}>{item.item}</Text>
-              <Text style={[S.tabelaCelula, { width: 60 }]}>{item.percentual}%</Text>
-              <Text style={[S.tabelaCelula, { width: 90 }]}>R$ {item.valor.toLocaleString('pt-BR')}</Text>
-              <Text style={[S.tabelaCelula, { width: 90 }]}>R$ ____________</Text>
+              <Text style={[S.tabelaCelula, { width: 50 }]}>{item.percentual}%</Text>
+              <Text style={[S.tabelaCelula, { width: 80 }]}>R$ {item.valor.toLocaleString('pt-BR')}</Text>
+              <Text style={[S.tabelaCelula, { width: 80 }]}>R$ ____________</Text>
             </View>
           ))}
         </View>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
+      {/* ORÇAMENTO — CONTINUAÇÃO */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Orçamento Detalhado — Continuação</Text>
         <View style={S.tabela}>
           <View style={S.tabelaLinhaHeader}>
             <Text style={[S.tabelaCelulaHeader, { flex: 2 }]}>Item</Text>
-            <Text style={[S.tabelaCelulaHeader, { width: 60 }]}>%</Text>
-            <Text style={[S.tabelaCelulaHeader, { width: 90 }]}>Valor Estimado</Text>
-            <Text style={[S.tabelaCelulaHeader, { width: 90 }]}>Valor Real</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 50 }]}>%</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 80 }]}>Valor Est.</Text>
+            <Text style={[S.tabelaCelulaHeader, { width: 80 }]}>Valor Real</Text>
           </View>
           {itensOrcamento.slice(15).map((item, i) => (
             <View key={i} style={S.tabelaLinha}>
               <Text style={[S.tabelaCelula, { flex: 2 }]}>{item.item}</Text>
-              <Text style={[S.tabelaCelula, { width: 60 }]}>{item.percentual}%</Text>
-              <Text style={[S.tabelaCelula, { width: 90 }]}>R$ {item.valor.toLocaleString('pt-BR')}</Text>
-              <Text style={[S.tabelaCelula, { width: 90 }]}>R$ ____________</Text>
+              <Text style={[S.tabelaCelula, { width: 50 }]}>{item.percentual}%</Text>
+              <Text style={[S.tabelaCelula, { width: 80 }]}>R$ {item.valor.toLocaleString('pt-BR')}</Text>
+              <Text style={[S.tabelaCelula, { width: 80 }]}>R$ ____________</Text>
             </View>
           ))}
-          <View style={[S.tabelaLinha, { borderTopWidth: 1, borderTopColor: corTitulo, marginTop: 4 }]}>
+          <View style={[S.tabelaLinha, { borderTopWidth: 1, borderTopColor: corTitulo, marginTop: 3 }]}>
             <Text style={[S.tabelaCelula, { flex: 2, fontFamily: fonteDisplay, color: corTitulo }]}>TOTAL ESTIMADO</Text>
-            <Text style={[S.tabelaCelula, { width: 60, color: corTitulo }]}>100%</Text>
-            <Text style={[S.tabelaCelula, { width: 90, color: corTitulo }]}>R$ {itensOrcamento.reduce((s, i) => s + i.valor, 0).toLocaleString('pt-BR')}</Text>
-            <Text style={[S.tabelaCelula, { width: 90, color: corTitulo }]}>R$ ____________</Text>
+            <Text style={[S.tabelaCelula, { width: 50, color: corTitulo }]}>100%</Text>
+            <Text style={[S.tabelaCelula, { width: 80, color: corTitulo }]}>R$ {itensOrcamento.reduce((s, i) => s + i.valor, 0).toLocaleString('pt-BR')}</Text>
+            <Text style={[S.tabelaCelula, { width: 80, color: corTitulo }]}>R$ ____________</Text>
           </View>
         </View>
         <View style={S.boxInfo}>
-          <Text style={S.boxInfoTexto}>Dica: reserve 10% do orçamento total para imprevistos. O item "Reserva de emergência" já está incluído na tabela acima.</Text>
-          <Text style={S.boxInfoTexto}>Negocie pacotes completos com fornecedores — muitos oferecem descontos ao contratar múltiplos serviços.</Text>
-          <Text style={S.boxInfoTexto}>Considere casamentos em dias de semana ou fora de temporada para reduzir custos com espaço e buffet.</Text>
+          <Text style={S.boxInfoTexto}>Dica: reserve 10% do orçamento para imprevistos. Negocie pacotes completos com fornecedores.</Text>
         </View>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
+      {/* DICAS REGIONAIS */}
       <Page size="A4" style={S.pagina}>
         <Text style={S.tituloSecao}>Dicas Regionais</Text>
-        <Text style={S.paragrafo}>Informações específicas para {localCompleto} baseadas no clima, cultura local e experiências de casamentos na região.</Text>
+        <Text style={S.paragrafo}>Informações específicas para {localCompleto}.</Text>
         <Text style={S.subtitulo}>Clima Local</Text>
         <View style={S.boxInfo}><Text style={S.boxInfoTexto}>{dicasRegionais.clima}</Text></View>
         <Text style={S.subtitulo}>Cuidados Especiais</Text>
-        {dicasRegionais.cuidados.map((cuidado, i) => (
-          <View key={i} style={{ flexDirection: 'row', marginBottom: 6, marginLeft: 10 }}>
-            <Text style={{ fontFamily: fonteCorpo, fontSize: 10, color: corTitulo, marginRight: 6 }}>•</Text>
-            <Text style={{ fontFamily: fonteCorpo, fontSize: 10, color: corTexto, flex: 1, lineHeight: 1.6, wrap: true }}>{cuidado}</Text>
+        {dicasRegionais.cuidados.map((c, i) => (
+          <View key={i} style={{ flexDirection: 'row', marginBottom: 4, marginLeft: 8 }}>
+            <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTitulo, marginRight: 4 }}>•</Text>
+            <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, flex: 1, lineHeight: 1.5, wrap: true }}>{c}</Text>
           </View>
         ))}
-        <Text style={S.subtitulo}>Melhores Épocas para Casar</Text>
-        {dicasRegionais.melhoresEpocas.map((epoca, i) => (
-          <View key={i} style={{ flexDirection: 'row', marginBottom: 6, marginLeft: 10 }}>
-            <Text style={{ fontFamily: fonteCorpo, fontSize: 10, color: corTitulo, marginRight: 6 }}>✓</Text>
-            <Text style={{ fontFamily: fonteCorpo, fontSize: 10, color: corTexto, flex: 1, lineHeight: 1.6, wrap: true }}>{epoca}</Text>
+        <Text style={S.subtitulo}>Melhores Épocas</Text>
+        {dicasRegionais.melhoresEpocas.map((e, i) => (
+          <View key={i} style={{ flexDirection: 'row', marginBottom: 4, marginLeft: 8 }}>
+            <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTitulo, marginRight: 4 }}>✓</Text>
+            <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, flex: 1, lineHeight: 1.5, wrap: true }}>{e}</Text>
           </View>
         ))}
-        <Text style={S.subtitulo}>Fornecedores Locais Recomendados</Text>
-        <Text style={S.paragrafo}>Consulte a base de fornecedores do descomplicaí filtrada por {cidade || 'sua cidade'}. Nossa curadoria inclui apenas profissionais com avaliações verificadas.</Text>
-        <View style={S.boxInfo}><Text style={S.boxInfoTexto}>Acesse arxum.csstudios.site/descomplicai para encontrar fornecedores em {cidade || 'sua cidade'}.</Text></View>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
+      {/* CTA FINAL */}
       <Page size="A4" style={S.pagina}>
         <View style={S.ctaContainer}>
           <Text style={S.ctaTitulo}>Obrigado por confiar no descomplicaí</Text>
-          <Text style={S.ctaTexto}>{nomeCasal}, este memorial é apenas o começo da sua jornada. Assine o descomplicaí e tenha acesso à gestão completa do seu casamento: fornecedores, orçamento, convidados, cronograma e muito mais — tudo em um só lugar.</Text>
-          <Text style={S.ctaTexto}>Você ainda pode convidar seu cerimonialista, padrinhos e familiares para colaborar no planejamento. Organize, sonhe e realize com quem você ama.</Text>
-          <Text style={[S.ctaTexto, { fontFamily: fonteDisplay, fontSize: 14, color: corTitulo, marginTop: 12 }]}>"O amor é a poesia dos sentidos."</Text>
-          <Text style={[S.ctaTexto, { fontSize: 10, color: corTextoSuave }]}>— Honoré de Balzac</Text>
-          <View style={{ marginTop: 24, alignItems: 'center' }}>
-            {qrCodeDataUri ? <Image src={qrCodeDataUri} style={{ width: 100, height: 100 }} /> : <View style={{ width: 100, height: 100, backgroundColor: '#F3F0EC', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: corBorda }}><Text style={{ fontSize: 8, color: corTextoSuave }}>QR Code</Text></View>}
-            <Text style={[S.ctaUrl, { marginTop: 12 }]}>arxum.csstudios.site/descomplicai</Text>
+          <Text style={S.ctaTexto}>{nomeCasal}, este memorial é apenas o começo. Assine o descomplicaí e tenha acesso à gestão completa do seu casamento.</Text>
+          <Text style={[S.ctaTexto, { fontFamily: fonteDisplay, fontSize: 13, color: corTitulo, marginTop: 10 }]}>"O amor é a poesia dos sentidos."</Text>
+          <Text style={[S.ctaTexto, { fontSize: 9, color: corTextoSuave }]}>— Honoré de Balzac</Text>
+          <View style={{ marginTop: 20, alignItems: 'center' }}>
+            {qrCodeDataUri ? <Image src={qrCodeDataUri} style={{ width: 90, height: 90 }} /> : <View style={{ width: 90, height: 90, backgroundColor: '#F3F0EC', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: corBorda }}><Text style={{ fontSize: 8, color: corTextoSuave }}>QR Code</Text></View>}
+            <Text style={[S.ctaUrl, { marginTop: 10 }]}>arxum.csstudios.site/descomplicai</Text>
           </View>
-          <Text style={[S.ctaTexto, { fontSize: 10, color: corTextoSuave, marginTop: 16 }]}>Escaneie o QR code ou acesse o link para começar agora.</Text>
         </View>
         <Rodape nomeCasal={nomeCasal} />
       </Page>
