@@ -20,7 +20,6 @@ export default function ConclusaoPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [pagando, setPagando] = useState(false);
 
-  // 🔧 Correção: ler 'pagamento' e 'collection_status' da URL
   const { pagamento, tipo: tipoProduto, concluido, collection_status } = router.query;
   const pagamentoAprovado =
     pagamento === 'sucesso' || collection_status === 'approved';
@@ -92,8 +91,17 @@ export default function ConclusaoPage() {
       });
 
       if (!resposta.ok) {
-        const err = await resposta.json();
-        throw new Error(err.erro || 'Erro ao gerar PDF');
+        // 🔧 CORREÇÃO: tenta JSON, mas se falhar lê como texto
+        let mensagemErro = 'Erro ao gerar PDF';
+        const texto = await resposta.text();
+        try {
+          const json = JSON.parse(texto);
+          mensagemErro = json.erro || json.detalhe || mensagemErro;
+        } catch {
+          // Se não é JSON, pode ser HTML de erro da Vercel
+          mensagemErro = `Erro ${resposta.status} no servidor. Tente novamente.`;
+        }
+        throw new Error(mensagemErro);
       }
 
       const blob = await resposta.blob();
