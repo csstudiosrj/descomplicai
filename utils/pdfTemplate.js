@@ -8,9 +8,20 @@ import {
 } from './pdfUtils';
 import { sugerirFontes } from './sugestoes';
 
-// Cores contrastantes para o gráfico — NADA de tons iguais
 const CORES_GRAFICO = ['#2E7D32', '#1565C0', '#C62828', '#F9A825', '#6A1B9A', '#E65100', '#00838F', '#AD1457'];
 
+// ============================================
+// NORMALIZAÇÃO DE ACENTOS — ESSENCIAL
+// ============================================
+function normalizar(str) {
+  return str.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s]/g, '');
+}
+
+// ============================================
+// FONTES → BASE64
+// ============================================
 function fonteToBase64(nomeFonte) {
   const mapa = {
     'Times-Roman': null,
@@ -45,11 +56,21 @@ function fonteToBase64(nomeFonte) {
   }
 }
 
-function imagemToFileUrl(categoria, chave) {
+// ============================================
+// IMAGENS → BASE64 (nunca file://)
+// ============================================
+function imagemToBase64(categoria, chave) {
   const src = getImagem(categoria, chave);
   if (!src || !fs.existsSync(src)) return null;
-  // Protocolo file:// funciona no Puppeteer
-  return 'file://' + src.replace(/\\/g, '/');
+  try {
+    const buf = fs.readFileSync(src);
+    const ext = path.extname(src).toLowerCase().replace('.', '');
+    const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : `image/${ext}`;
+    return `data:${mime};base64,${buf.toString('base64')}`;
+  } catch (e) {
+    console.warn('Imagem base64 falhou:', categoria, chave, e.message);
+    return null;
+  }
 }
 
 function gerarSvgPizza(itens, size = 280) {
@@ -58,7 +79,7 @@ function gerarSvgPizza(itens, size = 280) {
   let startAngle = -Math.PI / 2;
   let paths = '';
   let legendHtml = '';
-  
+
   itens.slice(0, 8).forEach((item, i) => {
     const angle = (item.percentual / total) * 2 * Math.PI;
     const endAngle = startAngle + angle;
@@ -69,7 +90,7 @@ function gerarSvgPizza(itens, size = 280) {
     const largeArc = angle > Math.PI ? 1 : 0;
     const cor = CORES_GRAFICO[i % CORES_GRAFICO.length];
     paths += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z" fill="${cor}" stroke="#FFFFFF" stroke-width="2"/>`;
-    
+
     legendHtml += `
       <div style="display:flex;align-items:center;margin-bottom:8px;">
         <div style="width:16px;height:16px;background:${cor};border-radius:3px;margin-right:10px;flex-shrink:0;"></div>
@@ -91,11 +112,11 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   const [cor1, cor2, cor3] = paleta;
   const corTexto = '#1A1714';
   const corTextoSuave = '#5C534A';
-  
+
   const fontes = sugerirFontes(estilo);
   const fonteDisplay = fontes.find(f => f.uso === 'display')?.nome || 'Georgia';
   const fonteCorpo = fontes.find(f => f.uso === 'corpo')?.nome || 'Helvetica';
-  
+
   const nome1 = capitalizarNome(dadosEvento?.nomePessoa1 || '');
   const nome2 = capitalizarNome(dadosEvento?.nomePessoa2 || '');
   const nomeCasal = nome1 && nome2 ? `${nome1} & ${nome2}` : 'Nosso Casamento';
@@ -106,8 +127,8 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
 
   const secoes = parsearMemorial(memorial);
   const secoesNormais = secoes.filter(s => {
-    const t = s.titulo.toLowerCase();
-    return !t.includes('fornecedor') && !t.includes('orçamento') && !t.includes('orcamento') && !t.includes('checklist') && !t.includes('decisões') && !t.includes('decisoes') && !t.includes('linha do tempo');
+    const t = normalizar(s.titulo);
+    return !t.includes('fornecedor') && !t.includes('orcamento') && !t.includes('checklist') && !t.includes('decisoes') && !t.includes('linha do tempo');
   });
 
   const checklist = extrairChecklist(secoes);
@@ -115,10 +136,10 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   const itensOrcamento = getItensOrcamento(cidade, estado);
   const dicasRegionais = getDicasRegionais(cidade, estado);
 
-  // Fontes em base64 para o Puppeteer
+  // Fontes em base64
   const displayBase64 = fonteToBase64(fonteDisplay);
   const corpoBase64 = fonteToBase64(fonteCorpo);
-  
+
   let fontFaceCss = '';
   if (displayBase64) {
     fontFaceCss += `@font-face { font-family: 'DisplayFont'; src: url(data:font/woff2;base64,${displayBase64}) format('woff2'); font-weight: normal; font-style: normal; }`;
@@ -131,26 +152,34 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     fontFaceCss += `@font-face { font-family: 'BodyFont'; src: local('Helvetica'), local('Arial'); }`;
   }
 
-  // Imagens
+  // Imagens em base64
   const flores = dadosEvento?.flores || '';
-  const imgDecoracao = imagemToFileUrl('decoracao', estilo);
-  const imgCerimonia = imagemToFileUrl('cerimonia', estilo);
-  const imgFlores = imagemToFileUrl('flores', flores) || imagemToFileUrl('flores', 'default');
-  const imgMesa = imagemToFileUrl('mesaPosta', estilo);
-  const imgAlimentacao = imagemToFileUrl('alimentacao', estilo);
-  const imgEntretenimento = imagemToFileUrl('entretenimento', estilo);
-  const imgVestido = imagemToFileUrl('vestido', dadosEvento?.estiloVestido) || imagemToFileUrl('vestido', 'default');
-  const imgPapelaria = imagemToFileUrl('papelaria', estilo);
+  const imgDecoracao = imagemToBase64('decoracao', estilo);
+  const imgCerimonia = imagemToBase64('cerimonia', estilo);
+  const imgFlores = imagemToBase64('flores', flores) || imagemToBase64('flores', 'default');
+  const imgMesa = imagemToBase64('mesaPosta', estilo);
+  const imgAlimentacao = imagemToBase64('alimentacao', estilo);
+  const imgEntretenimento = imagemToBase64('entretenimento', estilo);
+  const imgVestido = imagemToBase64('vestido', dadosEvento?.estiloVestido) || imagemToBase64('vestido', 'default');
+  const imgPapelaria = imagemToBase64('papelaria', estilo);
 
-  // Helpers para seções
-  const getSecao = (tituloBusca) => secoesNormais.find(s => s.titulo.toLowerCase().includes(tituloBusca));
+  // ============================================
+  // BUSCA DE SEÇÃO COM NORMALIZAÇÃO DE ACENTOS
+  // ============================================
+  const getSecao = (tituloBusca) => {
+    const buscaNormalizada = normalizar(tituloBusca);
+    return secoesNormais.find(s => normalizar(s.titulo).includes(buscaNormalizada));
+  };
+
   const renderTextoSecao = (secao) => {
-    if (!secao?.linhas?.length) return '<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);">Conteúdo personalizado para este casal.</p>';
+    if (!secao?.linhas?.length) {
+      return '<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">Conteúdo personalizado para este casal.</p>';
+    }
     return secao.linhas.map(linha => {
       const texto = linha.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').trim();
       if (!texto) return '';
       if (linha.startsWith('### ')) return `<h3 style="font-family:var(--font-display);font-size:13pt;color:var(--color-primary);margin-top:14px;margin-bottom:6px;">${texto}</h3>`;
-      if (linha.startsWith('- ') || linha.startsWith('* ')) return `<p style="font-family:var(--font-body);font-size:10pt;line-height:1.6;color:var(--color-text);margin-bottom:4px;margin-left:12px;">• ${texto}</p>`;
+      if (linha.startsWith('- ') || linha.startsWith('* ')) return `<p style="font-family:var(--font-body);font-size:10pt;line-height:1.6;color:var(--color-text);margin-bottom:4px;margin-left:12px;">&bull; ${texto}</p>`;
       return `<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${texto}</p>`;
     }).join('');
   };
@@ -176,7 +205,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   * { margin: 0; padding: 0; box-sizing: border-box; }
   @page { size: A4; margin: 0; }
   body { font-family: var(--font-body); color: var(--color-text); }
-  
+
   .page {
     width: 210mm;
     height: 297mm;
@@ -186,8 +215,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     overflow: hidden;
   }
   .page:last-child { page-break-after: auto; }
-  
-  /* RODAPÉ */
+
   .footer {
     position: absolute;
     bottom: 10mm;
@@ -202,8 +230,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     color: var(--color-text-soft);
     font-family: var(--font-body);
   }
-  
-  /* CAPA */
+
   .cover {
     background: var(--color-tertiary);
     display: flex;
@@ -264,8 +291,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   }
   .palette-name { font-size: 8pt; color: var(--color-text); font-family: var(--font-body); }
   .palette-hex { font-size: 7pt; color: var(--color-text-soft); font-family: var(--font-body); }
-  
-  /* TÍTULOS */
+
   .section-title {
     font-family: var(--font-display);
     font-size: 22pt;
@@ -281,8 +307,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     margin-top: 6mm;
     margin-bottom: 3mm;
   }
-  
-  /* LAYOUT EDITORIAL */
+
   .editorial-layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -310,8 +335,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     object-position: center;
     border-radius: 3px;
   }
-  
-  /* Layout alternativo: imagem no topo */
+
   .editorial-top {
     display: flex;
     flex-direction: column;
@@ -329,8 +353,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     font-size: 10pt;
     line-height: 1.65;
   }
-  
-  /* TABELAS */
+
   .data-table {
     width: 100%;
     border-collapse: collapse;
@@ -353,8 +376,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     font-family: var(--font-body);
     vertical-align: top;
   }
-  
-  /* BOX INFO */
+
   .info-box {
     background: ${cor2}15;
     border-left: 2pt solid var(--color-primary);
@@ -367,8 +389,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     line-height: 1.6;
     margin-bottom: 2px;
   }
-  
-  /* TIMELINE */
+
   .timeline {
     display: flex;
     flex-direction: column;
@@ -403,8 +424,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     line-height: 1.5;
     margin-bottom: 1px;
   }
-  
-  /* ORÇAMENTO */
+
   .budget-grid {
     display: grid;
     grid-template-columns: auto 1fr;
@@ -413,8 +433,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     margin-bottom: 5mm;
   }
   .budget-chart svg { display: block; }
-  
-  /* CTA */
+
   .cta-page {
     display: flex;
     flex-direction: column;
@@ -447,8 +466,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     height: 30mm;
     margin-top: 4mm;
   }
-  
-  /* INDICE */
+
   .toc-row {
     display: flex;
     justify-content: space-between;
@@ -550,7 +568,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   <div class="editorial-top">
     ${imgFlores ? `<img src="${imgFlores}" alt="flores"/>` : ''}
     <div class="text-col">
-      ${renderTextoSecao(getSecao('decoração'))}
+      ${renderTextoSecao(getSecao('decoracao'))}
       <div class="info-box" style="margin-top:4mm;">
         <p><strong>Iluminação:</strong> Combine spots quentes com velas em castiçais.</p>
         <p><strong>Flores:</strong> Arranjos que dialoguem com a paleta ${paleta.join(', ')}.</p>
@@ -578,7 +596,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   <div class="editorial-top">
     ${imgAlimentacao ? `<img src="${imgAlimentacao}" alt="alimentação"/>` : ''}
     <div class="text-col">
-      ${renderTextoSecao(getSecao('alimentação'))}
+      ${renderTextoSecao(getSecao('alimentacao'))}
     </div>
   </div>
   <div class="footer"><span>${nomeCasal}</span><span>gerado pelo descomplicaí</span><span>7</span></div>
@@ -606,12 +624,12 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   <div class="section-title">Vestuário e Beleza</div>
   <div class="editorial-layout">
     <div class="editorial-text">
-      ${renderTextoSecao(getSecao('vestuário'))}
+      ${renderTextoSecao(getSecao('vestuario'))}
       <div class="section-subtitle">Dicas</div>
       <div class="info-box">
-        <p>• Prova do vestido: 6 meses antes</p>
-        <p>• Ajustes finais: 2 semanas antes</p>
-        <p>• Maquiagem à prova d'água</p>
+        <p>&bull; Prova do vestido: 6 meses antes</p>
+        <p>&bull; Ajustes finais: 2 semanas antes</p>
+        <p>&bull; Maquiagem à prova d'água</p>
       </div>
     </div>
     ${imgVestido ? `<div style="display:flex;align-items:center;justify-content:center;height:100%;"><img src="${imgVestido}" class="editorial-image-vertical" alt="vestido"/></div>` : ''}
@@ -650,11 +668,11 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
       <div class="timeline-item">
         <div style="display:flex;flex-direction:column;align-items:center;">
           <div class="timeline-dot" style="background:${item.cor};"></div>
-          ${i<<3?'<div class="timeline-line"></div>':''}
+          ${i<3?'<div class="timeline-line"></div>':''}
         </div>
         <div class="timeline-content">
           <h4>${item.meses}</h4>
-          ${item.tarefas.map(t=>`<p>• ${t}</p>`).join('')}
+          ${item.tarefas.map(t=>`<p>&bull; ${t}</p>`).join('')}
         </div>
       </div>
     `).join('')}
@@ -697,7 +715,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
 <div class="page">
   <div class="section-title">Checklist de Decisões</div>
   <table class="data-table">
-    <tr><th>Decisão Pendente</th><th style="width:25mm;">Prazo</th><th style="width:10mm;">✓</th><th>Anotações</th></tr>
+    <tr><th>Decisão Pendente</th><th style="width:25mm;">Prazo</th><th style="width:10mm;">&check;</th><th>Anotações</th></tr>
     ${checklist.slice(0,12).map(item=>`
       <tr>
         <td>${item.item}</td>
@@ -712,7 +730,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
 
 <!-- CHECKLIST ANOTAÇÕES -->
 <div class="page">
-  <div class="section-title">Checklist — Anotações</div>
+  <div class="section-title">Checklist &mdash; Anotações</div>
   ${(checklist.length>12?checklist.slice(12,20):checklist.slice(0,8)).map(item=>`
     <div style="margin-bottom:4mm;">
       <div style="display:flex;gap:2mm;margin-bottom:1mm;">
@@ -746,7 +764,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
 
 <!-- FORNECEDORES ANOTAÇÕES -->
 <div class="page">
-  <div class="section-title">Fornecedores — Anotações</div>
+  <div class="section-title">Fornecedores &mdash; Anotações</div>
   <table class="data-table">
     <tr><th style="width:25mm;">Categoria</th><th style="width:25mm;">Valor</th><th style="width:20mm;">Prazo</th><th>Anotações</th></tr>
     ${fornecedores.slice(0,10).map(f=>`
@@ -785,7 +803,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
 
 <!-- ORÇAMENTO CONTINUAÇÃO -->
 <div class="page">
-  <div class="section-title">Orçamento — Continuação</div>
+  <div class="section-title">Orçamento &mdash; Continuação</div>
   <table class="data-table">
     <tr><th>Item</th><th style="width:12mm;">%</th><th style="width:22mm;">Valor Est.</th><th style="width:22mm;">Valor Real</th></tr>
     ${itensOrcamento.slice(15).map(item=>`
@@ -816,9 +834,9 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   <div class="section-subtitle">Clima Local</div>
   <div class="info-box"><p>${dicasRegionais.clima}</p></div>
   <div class="section-subtitle">Cuidados Especiais</div>
-  ${dicasRegionais.cuidados.map(c=>`<p style="font-size:10pt;line-height:1.6;margin-bottom:2px;margin-left:3mm;">• ${c}</p>`).join('')}
+  ${dicasRegionais.cuidados.map(c=>`<p style="font-size:10pt;line-height:1.6;margin-bottom:2px;margin-left:3mm;">&bull; ${c}</p>`).join('')}
   <div class="section-subtitle" style="margin-top:5mm;">Melhores Épocas</div>
-  ${dicasRegionais.melhoresEpocas.map(e=>`<p style="font-size:10pt;line-height:1.6;margin-bottom:2px;margin-left:3mm;">✓ ${e}</p>`).join('')}
+  ${dicasRegionais.melhoresEpocas.map(e=>`<p style="font-size:10pt;line-height:1.6;margin-bottom:2px;margin-left:3mm;">&check; ${e}</p>`).join('')}
   <div class="footer"><span>${nomeCasal}</span><span>gerado pelo descomplicaí</span><span>19</span></div>
 </div>
 
@@ -827,7 +845,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   <div class="cta-title">Obrigado por confiar no descomplicaí</div>
   <div class="cta-text">${nomeCasal}, este memorial é apenas o começo. Assine o descomplicaí e tenha acesso à gestão completa do seu casamento.</div>
   <div class="cta-quote">"O amor é a poesia dos sentidos."</div>
-  <div style="font-size:9pt;color:var(--color-text-soft);margin-bottom:6mm;">— Honoré de Balzac</div>
+  <div style="font-size:9pt;color:var(--color-text-soft);margin-bottom:6mm;">&mdash; Honoré de Balzac</div>
   ${qrCodeDataUri ? `<img src="${qrCodeDataUri}" class="cta-qr" alt="QR Code"/>` : ''}
   <div style="font-size:10pt;color:var(--color-primary);margin-top:3mm;">arxum.csstudios.site/descomplicai</div>
   <div class="footer"><span>${nomeCasal}</span><span>gerado pelo descomplicaí</span><span>20</span></div>
