@@ -39,12 +39,12 @@ export default async function handler(req, res) {
         ...chromium.args,
         '--no-sandbox',
         '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',   // ESSENCIAL para Vercel
+        '--disable-dev-shm-usage',
         '--disable-gpu',
         '--disable-software-rasterizer',
       ],
       executablePath,
-      headless: 'shell',               // ← CORREÇÃO: v147+ exige "shell"
+      headless: 'shell',
       defaultViewport: {
         width: 1920,
         height: 1080,
@@ -54,7 +54,10 @@ export default async function handler(req, res) {
 
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
-    await page.waitForTimeout(2000);  // espera fonts e imagens
+
+    // CORREÇÃO: waitForTimeout não existe nessa versão do Puppeteer
+    // Usa evaluate + Promise para esperar 2 segundos dentro da página
+    await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 2000)));
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
@@ -67,12 +70,11 @@ export default async function handler(req, res) {
 
     console.log('PDF gerado:', pdfBuffer.length, 'bytes');
 
-    // ← CORREÇÃO: res.end() em vez de res.send()
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Length', pdfBuffer.length);
     res.setHeader('Content-Disposition', 'attachment; filename="memorial-descomplicai.pdf"');
     res.setHeader('Cache-Control', 'no-store');
-    
+
     return res.end(pdfBuffer);
 
   } catch (erro) {
