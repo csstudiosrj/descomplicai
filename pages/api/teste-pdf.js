@@ -8,12 +8,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ erro: 'Método não permitido' });
   }
 
-  console.log('=== TESTE CHROMIUM-MIN v147 (CORRIGIDO) ===');
+  console.log('=== TESTE CHROMIUM-MIN v147.0.2 ===');
   const startTime = Date.now();
 
   let browser = null;
   try {
-    // 1. CONVERTER IMAGEM PARA BASE64 (nunca use file:// na Vercel)
     const imagemTeste = path.join(process.cwd(), 'public', 'images', 'flores', 'rosas-1.jpg');
     const imagemExiste = fs.existsSync(imagemTeste);
     let imagemBase64 = '';
@@ -25,24 +24,26 @@ export default async function handler(req, res) {
       imagemBase64 = `data:${mime};base64,${imagemBuffer.toString('base64')}`;
     }
 
-    // 2. DOWNLOAD DO CHROMIUM
-    const tarballUrl = 'https://github.com/Sparticuz/chromium/releases/download/v147.0.0/chromium-v147.0.0-pack.x64.tar';
+    const tarballUrl = 'https://github.com/Sparticuz/chromium/releases/download/v147.0.2/chromium-v147.0.2-pack.x64.tar';
+    
     console.log('Baixando Chromium...');
     const executablePath = await chromium.executablePath(tarballUrl);
     console.log('Chromium pronto em:', executablePath);
 
-    // 3. LAUNCH CORRETO (v147+ exige headless: "shell")
+    const stats = fs.statSync(executablePath);
+    console.log('Tamanho do binário:', stats.size, 'bytes');
+
     browser = await puppeteer.launch({
       args: [
         ...chromium.args,
         '--no-sandbox',
         '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',   // ESSENCIAL para Vercel
+        '--disable-dev-shm-usage',
         '--disable-gpu',
         '--disable-software-rasterizer',
       ],
       executablePath,
-      headless: 'shell',               // ← MUDANÇA CRÍTICA
+      headless: 'shell',
       defaultViewport: {
         width: 1920,
         height: 1080,
@@ -52,7 +53,6 @@ export default async function handler(req, res) {
 
     const page = await browser.newPage();
 
-    // 4. HTML COM IMAGEM EMBUTIDA
     const html = `
       <!DOCTYPE html>
       <html>
@@ -83,9 +83,8 @@ export default async function handler(req, res) {
       timeout: 30000,
     });
     
-    await page.waitForTimeout(2000); // aguarda renderização completa
+    await page.waitForTimeout(2000);
 
-    // 5. GERAR PDF
     const pdfBuffer = await page.pdf({ 
       format: 'A4', 
       printBackground: true,
@@ -98,19 +97,20 @@ export default async function handler(req, res) {
     const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log('PDF gerado em', totalTime, 's — Tamanho:', pdfBuffer.length, 'bytes');
 
-    // 6. RESPOSTA COM HEADERS CORRETOS
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Length', pdfBuffer.length);  // ← evita truncamento
+    res.setHeader('Content-Length', pdfBuffer.length);
     res.setHeader('Content-Disposition', 'inline; filename="teste.pdf"');
     res.setHeader('Cache-Control', 'no-store');
     
-    return res.status(200).send(pdfBuffer);
+    return res.end(pdfBuffer);
 
   } catch (erro) {
     console.error('Erro:', erro);
+    
     if (browser) {
       try { await browser.close(); } catch (e) { /* ignora */ }
     }
+    
     return res.status(500).json({ 
       erro: 'Falha no teste', 
       detalhe: erro.message,
