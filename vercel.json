@@ -1,0 +1,10 @@
+{
+    "functions": {
+      "pages/api/teste-pdf.js": {
+        "maxDuration": 60
+      },
+      "pages/api/gerar-pdf.js": {
+        "maxDuration": 60
+      }
+    }
+  }
