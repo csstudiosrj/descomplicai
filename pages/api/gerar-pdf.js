@@ -3,7 +3,6 @@ import chromium from '@sparticuz/chromium-min';
 import QRCode from 'qrcode';
 import { gerarTemplateHTML } from '../../utils/pdfTemplate';
 
-// URL do tarball do Chromium v147.0.0 (x64) — confirmada
 const TARBALL_URL = 'https://github.com/Sparticuz/chromium/releases/download/v147.0.0/chromium-v147.0.0-pack.x64.tar';
 
 export default async function handler(req, res) {
@@ -22,7 +21,6 @@ export default async function handler(req, res) {
 
   let browser = null;
   try {
-    // QR Code
     let qrCodeDataUri = null;
     try {
       qrCodeDataUri = await QRCode.toDataURL('https://arxum.csstudios.site/descomplicai', {
@@ -30,10 +28,8 @@ export default async function handler(req, res) {
       });
     } catch (e) { console.warn('QR code:', e.message); }
 
-    // Gerar HTML editorial
     const html = gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri });
 
-    // Inicializar Chromium
     console.log('Baixando Chromium...');
     const executablePath = await chromium.executablePath(TARBALL_URL);
     console.log('Chromium pronto:', executablePath);
@@ -46,7 +42,10 @@ export default async function handler(req, res) {
 
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
-    await page.waitForTimeout(2000); // aguarda fontes e imagens
+
+    // 🔧 CORREÇÃO: waitForTimeout não existe nessa versão
+    // Usa evaluate + Promise para esperar 2 segundos dentro da página
+    await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 2000)));
 
     const pdf = await page.pdf({
       format: 'A4',
