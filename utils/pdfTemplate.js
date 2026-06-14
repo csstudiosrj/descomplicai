@@ -10,22 +10,15 @@ import { sugerirFontes } from './sugestoes';
 
 const CORES_GRAFICO = ['#2E7D32', '#1565C0', '#C62828', '#F9A825', '#6A1B9A', '#E65100', '#00838F', '#AD1457'];
 
-// ============================================
-// NORMALIZAÇÃO DE ACENTOS — ESSENCIAL
-// ============================================
 function normalizar(str) {
   return str.toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9\s]/g, '');
 }
 
-// ============================================
-// FONTES → BASE64
-// ============================================
 function fonteToBase64(nomeFonte) {
   const mapa = {
-    'Times-Roman': null,
-    'Helvetica': null,
+    'Times-Roman': null, 'Helvetica': null,
     'Cormorant Garamond': 'cormorant-garamond-v21-latin-regular.woff2',
     'Playfair Display': 'playfair-display-v40-latin-regular.woff2',
     'Amatic SC': 'amatic-sc-v28-latin-regular.woff2',
@@ -56,9 +49,6 @@ function fonteToBase64(nomeFonte) {
   }
 }
 
-// ============================================
-// IMAGENS → BASE64 (nunca file://)
-// ============================================
 function imagemToBase64(categoria, chave) {
   const src = getImagem(categoria, chave);
   if (!src || !fs.existsSync(src)) return null;
@@ -73,7 +63,7 @@ function imagemToBase64(categoria, chave) {
   }
 }
 
-function gerarSvgPizza(itens, size = 280) {
+function gerarSvgPizza(itens, size = 260) {
   const cx = size / 2, cy = size / 2, r = size / 2 - 20;
   const total = itens.reduce((s, d) => s + d.percentual, 0);
   let startAngle = -Math.PI / 2;
@@ -90,28 +80,30 @@ function gerarSvgPizza(itens, size = 280) {
     const largeArc = angle > Math.PI ? 1 : 0;
     const cor = CORES_GRAFICO[i % CORES_GRAFICO.length];
     paths += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z" fill="${cor}" stroke="#FFFFFF" stroke-width="2"/>`;
-
     legendHtml += `
-      <div style="display:flex;align-items:center;margin-bottom:8px;">
-        <div style="width:16px;height:16px;background:${cor};border-radius:3px;margin-right:10px;flex-shrink:0;"></div>
-        <span style="font-family:var(--font-body);font-size:11px;color:var(--color-text);">${item.item} <strong>(${item.percentual}%)</strong></span>
+      <div style="display:flex;align-items:center;margin-bottom:6px;">
+        <div style="width:14px;height:14px;background:${cor};border-radius:2px;margin-right:8px;flex-shrink:0;"></div>
+        <span style="font-family:var(--font-body);font-size:10px;color:var(--color-text);">${item.item} <strong>(${item.percentual}%)</strong></span>
       </div>
     `;
     startAngle = endAngle;
   });
 
-  return {
-    svg: `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0;">${paths}</svg>`,
-    legend: legendHtml
-  };
+  return { svg: `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0;">${paths}</svg>`, legend: legendHtml };
 }
 
 export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null }) {
   const estilo = dadosEvento?.estilo || 'classico';
   const paleta = getPaleta(dadosEvento);
   const [cor1, cor2, cor3] = paleta;
+
+  // CORREÇÃO: usar a cor mais escura da paleta para texto/títulos
   const corTexto = '#1A1714';
   const corTextoSuave = '#5C534A';
+  const corPrimaria = isCorEscura(cor1) ? cor1 : (isCorEscura(cor2) ? cor2 : (isCorEscura(cor3) ? cor3 : '#5C4A3D'));
+  const corSecundaria = cor2;
+  const corTerciaria = cor3;
+  const corFundo = cor1;
 
   const fontes = sugerirFontes(estilo);
   const fonteDisplay = fontes.find(f => f.uso === 'display')?.nome || 'Georgia';
@@ -136,7 +128,6 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   const itensOrcamento = getItensOrcamento(cidade, estado);
   const dicasRegionais = getDicasRegionais(cidade, estado);
 
-  // Fontes em base64
   const displayBase64 = fonteToBase64(fonteDisplay);
   const corpoBase64 = fonteToBase64(fonteCorpo);
 
@@ -152,7 +143,6 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     fontFaceCss += `@font-face { font-family: 'BodyFont'; src: local('Helvetica'), local('Arial'); }`;
   }
 
-  // Imagens em base64
   const flores = dadosEvento?.flores || '';
   const imgDecoracao = imagemToBase64('decoracao', estilo);
   const imgCerimonia = imagemToBase64('cerimonia', estilo);
@@ -163,9 +153,6 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   const imgVestido = imagemToBase64('vestido', dadosEvento?.estiloVestido) || imagemToBase64('vestido', 'default');
   const imgPapelaria = imagemToBase64('papelaria', estilo);
 
-  // ============================================
-  // BUSCA DE SEÇÃO COM NORMALIZAÇÃO DE ACENTOS
-  // ============================================
   const getSecao = (tituloBusca) => {
     const buscaNormalizada = normalizar(tituloBusca);
     return secoesNormais.find(s => normalizar(s.titulo).includes(buscaNormalizada));
@@ -178,8 +165,8 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     return secao.linhas.map(linha => {
       const texto = linha.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').trim();
       if (!texto) return '';
-      if (linha.startsWith('### ')) return `<h3 style="font-family:var(--font-display);font-size:13pt;color:var(--color-primary);margin-top:14px;margin-bottom:6px;">${texto}</h3>`;
-      if (linha.startsWith('- ') || linha.startsWith('* ')) return `<p style="font-family:var(--font-body);font-size:10pt;line-height:1.6;color:var(--color-text);margin-bottom:4px;margin-left:12px;">&bull; ${texto}</p>`;
+      if (linha.startsWith('### ')) return `<h3 style="font-family:var(--font-display);font-size:12pt;color:var(--color-primary);margin-top:12px;margin-bottom:5px;">${texto}</h3>`;
+      if (linha.startsWith('- ') || linha.startsWith('* ')) return `<p style="font-family:var(--font-body);font-size:10pt;line-height:1.6;color:var(--color-text);margin-bottom:4px;margin-left:10px;">&bull; ${texto}</p>`;
       return `<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${texto}</p>`;
     }).join('');
   };
@@ -194,9 +181,10 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
 <style>
   ${fontFaceCss}
   :root {
-    --color-primary: ${cor1};
-    --color-secondary: ${cor2};
-    --color-tertiary: ${cor3};
+    --color-primary: ${corPrimaria};
+    --color-secondary: ${corSecundaria};
+    --color-tertiary: ${corTerciaria};
+    --color-fundo: ${corFundo};
     --color-text: ${corTexto};
     --color-text-soft: ${corTextoSuave};
     --font-display: 'DisplayFont', Georgia, serif;
@@ -208,29 +196,30 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
 
   .page {
     width: 210mm;
-    height: 297mm;
-    padding: 18mm 20mm 22mm 20mm;
+    min-height: 297mm;
+    padding: 16mm 18mm 20mm 18mm;
     position: relative;
     page-break-after: always;
-    overflow: hidden;
+    overflow: visible;
   }
   .page:last-child { page-break-after: auto; }
 
   .footer {
     position: absolute;
-    bottom: 10mm;
-    left: 20mm;
-    right: 20mm;
+    bottom: 8mm;
+    left: 18mm;
+    right: 18mm;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-top: 0.5pt solid #C8BFB4;
-    padding-top: 3mm;
+    padding-top: 2.5mm;
     font-size: 8pt;
     color: var(--color-text-soft);
     font-family: var(--font-body);
   }
 
+  /* CAPA */
   .cover {
     background: var(--color-tertiary);
     display: flex;
@@ -238,25 +227,27 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 30mm;
+    padding: 30mm 20mm;
+    min-height: 297mm;
   }
   .cover-line {
     width: 25mm;
     height: 0.8pt;
-    background: ${getCorContraste(cor3)};
+    background: ${getCorContraste(corTerciaria)};
     margin-bottom: 10mm;
   }
   .cover-title {
     font-family: var(--font-display);
-    font-size: 42pt;
-    color: ${getCorContraste(cor3)};
+    font-size: 40pt;
+    color: ${getCorContraste(corTerciaria)};
     margin-bottom: 4mm;
     letter-spacing: 1px;
+    line-height: 1.1;
   }
   .cover-subtitle {
     font-family: var(--font-body);
     font-size: 11pt;
-    color: ${getCorContraste(cor3)};
+    color: ${getCorContraste(corTerciaria)};
     letter-spacing: 4px;
     text-transform: uppercase;
     margin-bottom: 8mm;
@@ -264,13 +255,13 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   .cover-local {
     font-family: var(--font-body);
     font-size: 12pt;
-    color: ${getCorContraste(cor3)};
+    color: ${getCorContraste(corTerciaria)};
     margin-bottom: 3mm;
   }
   .cover-date {
     font-family: var(--font-body);
     font-size: 11pt;
-    color: ${getCorContraste(cor3)};
+    color: ${getCorContraste(corTerciaria)};
   }
   .cover-palette {
     display: flex;
@@ -286,33 +277,36 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     width: 14mm;
     height: 14mm;
     border-radius: 50%;
-    border: 2.5pt solid ${isCorEscura(cor3) ? '#FFFFFF' : '#1A1714'};
+    border: 2.5pt solid ${isCorEscura(corTerciaria) ? '#FFFFFF' : '#1A1714'};
     margin-bottom: 2mm;
   }
-  .palette-name { font-size: 8pt; color: var(--color-text); font-family: var(--font-body); }
-  .palette-hex { font-size: 7pt; color: var(--color-text-soft); font-family: var(--font-body); }
+  .palette-name { font-size: 8pt; color: ${getCorContraste(corTerciaria)}; font-family: var(--font-body); }
+  .palette-hex { font-size: 7pt; color: ${getCorContraste(corTerciaria)}; opacity: 0.8; font-family: var(--font-body); }
 
+  /* TÍTULOS — COR ESCURA GARANTIDA */
   .section-title {
     font-family: var(--font-display);
-    font-size: 22pt;
+    font-size: 24pt;
     color: var(--color-primary);
     margin-bottom: 5mm;
     padding-bottom: 3mm;
-    border-bottom: 0.8pt solid var(--color-secondary);
+    border-bottom: 1.5pt solid var(--color-secondary);
+    line-height: 1.2;
   }
   .section-subtitle {
     font-family: var(--font-display);
-    font-size: 14pt;
+    font-size: 13pt;
     color: var(--color-primary);
-    margin-top: 6mm;
+    margin-top: 5mm;
     margin-bottom: 3mm;
+    line-height: 1.3;
   }
 
+  /* LAYOUT EDITORIAL — SEM HEIGHT FIXO */
   .editorial-layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 6mm;
-    height: calc(297mm - 40mm - 15mm);
+    gap: 5mm;
     align-items: start;
   }
   .editorial-text {
@@ -321,31 +315,42 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     line-height: 1.7;
     color: var(--color-text);
   }
-  .editorial-text p { margin-bottom: 8px; }
-  .editorial-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 3px;
+  .editorial-text p { margin-bottom: 6px; }
+  .editorial-text h3 { page-break-after: avoid; }
+
+  /* IMAGENS — CONTAIN EM VEZ DE COVER */
+  .editorial-image-wrapper {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
   }
-  .editorial-image-vertical {
-    width: 100%;
-    max-height: 220mm;
-    object-fit: cover;
-    object-position: center;
+  .editorial-image {
+    max-width: 100%;
+    max-height: 230mm;
+    object-fit: contain;
     border-radius: 3px;
+    display: block;
+  }
+  .editorial-image-landscape {
+    max-width: 100%;
+    max-height: 100mm;
+    object-fit: contain;
+    border-radius: 3px;
+    display: block;
   }
 
+  /* Layout topo com imagem */
   .editorial-top {
     display: flex;
     flex-direction: column;
-    gap: 5mm;
+    gap: 4mm;
   }
   .editorial-top img {
     width: 100%;
-    max-height: 110mm;
-    object-fit: cover;
+    max-height: 95mm;
+    object-fit: contain;
     border-radius: 3px;
+    display: block;
   }
   .editorial-top .text-col {
     column-count: 2;
@@ -354,35 +359,41 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     line-height: 1.65;
   }
 
+  /* TABELAS */
   .data-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 4mm;
-    font-size: 9.5pt;
+    margin-top: 3mm;
+    font-size: 9pt;
+    page-break-inside: avoid;
   }
   .data-table th {
     text-align: left;
-    padding: 2.5mm 2mm;
+    padding: 2mm 2mm;
     border-bottom: 1pt solid var(--color-primary);
-    background: ${cor2}22;
+    background: ${corSecundaria}22;
     font-family: var(--font-body);
     font-weight: 600;
     color: var(--color-primary);
-    font-size: 9pt;
+    font-size: 8.5pt;
   }
   .data-table td {
-    padding: 2mm;
+    padding: 1.8mm 2mm;
     border-bottom: 0.4pt solid #E5E0D9;
     font-family: var(--font-body);
     vertical-align: top;
+    font-size: 9pt;
   }
+  .data-table tr { page-break-inside: avoid; }
 
+  /* BOX INFO */
   .info-box {
-    background: ${cor2}15;
-    border-left: 2pt solid var(--color-primary);
+    background: ${corSecundaria}15;
+    border-left: 2.5pt solid var(--color-primary);
     padding: 3mm;
     margin: 3mm 0;
     border-radius: 2px;
+    page-break-inside: avoid;
   }
   .info-box p {
     font-size: 9.5pt;
@@ -390,15 +401,17 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     margin-bottom: 2px;
   }
 
+  /* TIMELINE */
   .timeline {
     display: flex;
     flex-direction: column;
-    gap: 5mm;
-    margin-top: 5mm;
+    gap: 4mm;
+    margin-top: 4mm;
   }
   .timeline-item {
     display: flex;
-    gap: 4mm;
+    gap: 3mm;
+    page-break-inside: avoid;
   }
   .timeline-dot {
     width: 3mm;
@@ -425,28 +438,31 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     margin-bottom: 1px;
   }
 
+  /* ORÇAMENTO */
   .budget-grid {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: 6mm;
+    gap: 5mm;
     align-items: start;
-    margin-bottom: 5mm;
+    margin-bottom: 4mm;
   }
   .budget-chart svg { display: block; }
 
+  /* CTA */
   .cta-page {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    height: 100%;
+    min-height: 260mm;
   }
   .cta-title {
     font-family: var(--font-display);
     font-size: 26pt;
     color: var(--color-primary);
-    margin-bottom: 6mm;
+    margin-bottom: 5mm;
+    line-height: 1.2;
   }
   .cta-text {
     font-size: 11pt;
@@ -459,7 +475,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     font-size: 14pt;
     color: var(--color-primary);
     font-style: italic;
-    margin: 5mm 0;
+    margin: 4mm 0;
   }
   .cta-qr {
     width: 30mm;
@@ -467,6 +483,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     margin-top: 4mm;
   }
 
+  /* INDICE */
   .toc-row {
     display: flex;
     justify-content: space-between;
@@ -475,6 +492,14 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     font-size: 10.5pt;
   }
   .toc-row strong { color: var(--color-primary); }
+
+  /* EVITAR CORTE DE ELEMENTOS */
+  p, .info-box, .timeline-item, .data-table tr {
+    page-break-inside: avoid;
+  }
+  .section-title, .section-subtitle {
+    page-break-after: avoid;
+  }
 </style>
 </head>
 <body>
@@ -490,13 +515,13 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   <div class="cover-palette">
     ${paleta.map((cor, i) => `
       <div class="palette-item">
-        <div class="palette-circle" style="background:${cor};border-color:${isCorEscura(cor)?'#FFFFFF':'#1A1714'};"></div>
+        <div class="palette-circle" style="background:${cor};"></div>
         <div class="palette-name">${getNomeCor(cor)}</div>
         <div class="palette-hex">${cor}</div>
       </div>
     `).join('')}
   </div>
-  <div class="footer" style="border-top-color:${getCorContraste(cor3)};color:${getCorContraste(cor3)};">
+  <div class="footer" style="border-top-color:${getCorContraste(corTerciaria)};color:${getCorContraste(corTerciaria)};">
     <span>${nomeCasal}</span>
     <span>gerado pelo descomplicaí</span>
     <span>1</span>
@@ -545,7 +570,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
         <p>Escolhidas para harmonizar com o estilo <strong>${estilo}</strong>.</p>
       </div>
     </div>
-    ${imgDecoracao ? `<div style="display:flex;align-items:center;justify-content:center;height:100%;"><img src="${imgDecoracao}" class="editorial-image-vertical" alt="decoração"/></div>` : ''}
+    ${imgDecoracao ? `<div class="editorial-image-wrapper"><img src="${imgDecoracao}" class="editorial-image" alt="decoração"/></div>` : ''}
   </div>
   <div class="footer"><span>${nomeCasal}</span><span>gerado pelo descomplicaí</span><span>3</span></div>
 </div>
@@ -557,7 +582,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     <div class="editorial-text">
       ${renderTextoSecao(getSecao('cerimonia'))}
     </div>
-    ${imgCerimonia ? `<div style="display:flex;align-items:center;justify-content:center;height:100%;"><img src="${imgCerimonia}" class="editorial-image-vertical" alt="cerimônia"/></div>` : ''}
+    ${imgCerimonia ? `<div class="editorial-image-wrapper"><img src="${imgCerimonia}" class="editorial-image" alt="cerimônia"/></div>` : ''}
   </div>
   <div class="footer"><span>${nomeCasal}</span><span>gerado pelo descomplicaí</span><span>4</span></div>
 </div>
@@ -585,7 +610,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     <div class="editorial-text">
       ${renderTextoSecao(getSecao('mesa'))}
     </div>
-    ${imgMesa ? `<div style="display:flex;align-items:center;justify-content:center;height:100%;"><img src="${imgMesa}" class="editorial-image-vertical" alt="mesa"/></div>` : ''}
+    ${imgMesa ? `<div class="editorial-image-wrapper"><img src="${imgMesa}" class="editorial-image" alt="mesa"/></div>` : ''}
   </div>
   <div class="footer"><span>${nomeCasal}</span><span>gerado pelo descomplicaí</span><span>6</span></div>
 </div>
@@ -614,7 +639,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
         ${[['18:00','Cerimônia'],['19:00','Coquetel'],['20:00','Jantar'],['21:30','Discursos'],['22:00','Corte do bolo'],['22:30','Primeira dança'],['23:00','Pista'],['00:00','Bem-casados'],['01:00','Despedida']].map(([h,a])=>`<tr><td>${h}</td><td>${a}</td></tr>`).join('')}
       </table>
     </div>
-    ${imgEntretenimento ? `<div style="display:flex;align-items:center;justify-content:center;height:100%;"><img src="${imgEntretenimento}" class="editorial-image-vertical" alt="entretenimento"/></div>` : ''}
+    ${imgEntretenimento ? `<div class="editorial-image-wrapper"><img src="${imgEntretenimento}" class="editorial-image" alt="entretenimento"/></div>` : ''}
   </div>
   <div class="footer"><span>${nomeCasal}</span><span>gerado pelo descomplicaí</span><span>8</span></div>
 </div>
@@ -632,7 +657,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
         <p>&bull; Maquiagem à prova d'água</p>
       </div>
     </div>
-    ${imgVestido ? `<div style="display:flex;align-items:center;justify-content:center;height:100%;"><img src="${imgVestido}" class="editorial-image-vertical" alt="vestido"/></div>` : ''}
+    ${imgVestido ? `<div class="editorial-image-wrapper"><img src="${imgVestido}" class="editorial-image" alt="vestido"/></div>` : ''}
   </div>
   <div class="footer"><span>${nomeCasal}</span><span>gerado pelo descomplicaí</span><span>9</span></div>
 </div>
@@ -814,7 +839,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
         <td>R$ ____________</td>
       </tr>
     `).join('')}
-    <tr style="border-top:1pt solid var(--color-primary);font-weight:bold;">
+    <tr style="border-top:1.5pt solid var(--color-primary);font-weight:bold;">
       <td>TOTAL ESTIMADO</td>
       <td>100%</td>
       <td>R$ ${itensOrcamento.reduce((s,i)=>s+i.valor,0).toLocaleString('pt-BR')}</td>
