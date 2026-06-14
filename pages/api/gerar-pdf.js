@@ -4,7 +4,6 @@ import path from 'path';
 import fs from 'fs';
 import QRCode from 'qrcode';
 
-// ========== REGISTRO DE FONTES (nível de módulo, servidor) ==========
 const BASE_FONTS = path.resolve(process.cwd(), 'public', 'fonts');
 
 const FONTES_DISPONIVEIS = {
@@ -31,13 +30,9 @@ function registrarFontes() {
   for (const [family, arquivo] of Object.entries(FONTES_DISPONIVEIS)) {
     const caminho = path.join(BASE_FONTS, arquivo);
     if (fs.existsSync(caminho) && fs.statSync(caminho).size > 0) {
-      try {
-        Font.register({ family, src: caminho });
-      } catch (e) {
-        console.warn(`Falha ao registrar fonte ${family}:`, e.message);
-      }
+      try { Font.register({ family, src: caminho }); } catch (e) { console.warn(`Fonte ${family}:`, e.message); }
     } else {
-      console.warn(`Fonte não encontrada ou vazia: ${caminho}`);
+      console.warn(`Fonte não encontrada: ${caminho}`);
     }
   }
 }
@@ -45,82 +40,39 @@ function registrarFontes() {
 registrarFontes();
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ erro: 'Método não permitido' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ erro: 'Método não permitido' });
 
   const { memorial, dadosEvento } = req.body;
+  if (!memorial || !dadosEvento) return res.status(400).json({ erro: 'Dados insuficientes' });
 
-  if (!memorial || !dadosEvento) {
-    return res.status(400).json({ erro: 'Dados insuficientes para gerar PDF' });
-  }
-
-  // ========== DEBUG LOGS ==========
-  console.log('=== MEMORIAL RECEBIDO (primeiros 500 chars) ===');
-  console.log(memorial?.substring(0, 500));
-  console.log('=== TAMANHO DO MEMORIAL ===');
-  console.log(memorial?.length);
-  console.log('=== DADOS EVENTO ===');
-  console.log(JSON.stringify(dadosEvento, null, 2)?.substring(0, 500));
-  console.log('=== CWD ===');
-  console.log(process.cwd());
-  console.log('=== IMAGEM TESTE ===');
+  console.log('=== MEMORIAL (primeiros 300 chars) ===');
+  console.log(memorial?.substring(0, 300));
+  console.log('=== TAMANHO ===', memorial?.length);
+  console.log('=== DADOS EVENTO ===', JSON.stringify(dadosEvento, null, 2)?.substring(0, 300));
+  console.log('=== CWD ===', process.cwd());
   const testeImg = path.join(process.cwd(), 'public', 'images', 'flores', 'rosas-1.jpg');
-  console.log('Caminho:', testeImg);
-  console.log('Existe:', fs.existsSync(testeImg));
-  console.log('=========================');
+  console.log('=== IMAGEM EXISTE? ===', fs.existsSync(testeImg), testeImg);
 
-  // Gera QR code real como data URI
   let qrCodeDataUri = null;
   try {
-    qrCodeDataUri = await QRCode.toDataURL('https://arxum.csstudios.site/descomplicai', {
-      width: 200,
-      margin: 2,
-      color: {
-        dark: '#1A1714',
-        light: '#FFFFFF',
-      },
-    });
-  } catch (e) {
-    console.warn('Falha ao gerar QR code:', e.message);
-  }
+    qrCodeDataUri = await QRCode.toDataURL('https://arxum.csstudios.site/descomplicai', { width: 200, margin: 2, color: { dark: '#1A1714', light: '#FFFFFF' } });
+  } catch (e) { console.warn('QR code:', e.message); }
 
   try {
-    const buffer = await renderToBuffer(
-      <MemorialPDF
-        memorial={memorial}
-        dadosEvento={dadosEvento}
-        usarFontesNativas={false}
-        qrCodeDataUri={qrCodeDataUri}
-      />
-    );
+    const buffer = await renderToBuffer(<MemorialPDF memorial={memorial} dadosEvento={dadosEvento} usarFontesNativas={false} qrCodeDataUri={qrCodeDataUri} />);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="memorial-descomplicai.pdf"');
     res.send(buffer);
   } catch (erro) {
-    console.error('Erro ao gerar PDF com fontes personalizadas:', erro.message);
-    console.error('Stack:', erro.stack);
-    console.error('Estilo tentado:', dadosEvento?.estilo);
-
+    console.error('Erro PDF:', erro.message);
     try {
-      const buffer = await renderToBuffer(
-        <MemorialPDF
-          memorial={memorial}
-          dadosEvento={dadosEvento}
-          usarFontesNativas={true}
-          qrCodeDataUri={qrCodeDataUri}
-        />
-      );
+      const buffer = await renderToBuffer(<MemorialPDF memorial={memorial} dadosEvento={dadosEvento} usarFontesNativas={true} qrCodeDataUri={qrCodeDataUri} />);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'attachment; filename="memorial-descomplicai.pdf"');
       res.send(buffer);
     } catch (erroFallback) {
-      console.error('Erro também no fallback:', erroFallback.message);
-      res.status(500).json({
-        erro: 'Erro ao gerar PDF',
-        detalhe: erroFallback.message,
-        stack: process.env.NODE_ENV === 'development' ? erroFallback.stack : undefined,
-      });
+      console.error('Erro fallback:', erroFallback.message);
+      res.status(500).json({ erro: 'Erro ao gerar PDF', detalhe: erroFallback.message });
     }
   }
 }

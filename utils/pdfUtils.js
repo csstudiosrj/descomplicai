@@ -13,8 +13,6 @@ function img(categoria, arquivo) {
 
 /**
  * Capitaliza nome próprio
- * @param {string} nome
- * @returns {string}
  */
 export function capitalizarNome(nome) {
   if (!nome) return '';
@@ -26,8 +24,6 @@ export function capitalizarNome(nome) {
 
 /**
  * Formata data ISO para DD/MM/AAAA
- * @param {string} dataISO
- * @returns {string}
  */
 export function formatarData(dataISO) {
   if (!dataISO) return 'Data a definir';
@@ -38,8 +34,6 @@ export function formatarData(dataISO) {
 
 /**
  * Retorna paleta de 3 cores do usuário ou fallback
- * @param {Object} dados
- * @returns {string[]}
  */
 export function getPaleta(dados) {
   if (dados?.paleta && Array.isArray(dados.paleta) && dados.paleta.length >= 3) {
@@ -50,8 +44,6 @@ export function getPaleta(dados) {
 
 /**
  * Verifica se cor é escura (luminância < 128)
- * @param {string} hex
- * @returns {boolean}
  */
 export function isCorEscura(hex) {
   if (!hex || hex.length < 7) return false;
@@ -64,8 +56,6 @@ export function isCorEscura(hex) {
 
 /**
  * Retorna cor de contraste para texto sobre fundo
- * @param {string} hex
- * @returns {string}
  */
 export function getCorContraste(hex) {
   return isCorEscura(hex) ? '#FFFFFF' : '#1A1714';
@@ -73,8 +63,6 @@ export function getCorContraste(hex) {
 
 /**
  * Retorna a cor mais escura da paleta (para bordas)
- * @param {string[]} paleta
- * @returns {string}
  */
 export function getCorBorda(paleta) {
   if (!paleta || paleta.length === 0) return '#8B6F5E';
@@ -84,22 +72,16 @@ export function getCorBorda(paleta) {
 }
 
 /**
- * Garante que a cor do título seja legível (escura o suficiente)
- * Se a corPrimaria for muito clara, usa a corBorda ou um tom escuro
- * @param {string} corPrimaria
- * @param {string} corBorda
- * @returns {string}
+ * Garante que a cor do título seja legível
  */
 export function getCorTitulo(corPrimaria, corBorda) {
   if (isCorEscura(corPrimaria)) return corPrimaria;
   if (isCorEscura(corBorda)) return corBorda;
-  return '#5C4A3D'; // tom escuro padrão que combina com paletas claras
+  return '#5C4A3D';
 }
 
 /**
- * Nome da cor a partir do hex (simplificado)
- * @param {string} hex
- * @returns {string}
+ * Nome da cor a partir do hex
  */
 export function getNomeCor(hex) {
   const mapa = {
@@ -130,11 +112,7 @@ export function getNomeCor(hex) {
 }
 
 /**
- * Calcula valor médio regionalizado baseado em cidade/estado
- * @param {string} categoria
- * @param {string} cidade
- * @param {string} estado
- * @returns {number}
+ * Calcula valor médio regionalizado
  */
 export function getValorRegionalizado(categoria, cidade, estado) {
   const estadoLower = (estado || '').toLowerCase().trim();
@@ -198,10 +176,7 @@ export function getValorRegionalizado(categoria, cidade, estado) {
 }
 
 /**
- * Retorna dicas regionais baseadas em cidade/estado
- * @param {string} cidade
- * @param {string} estado
- * @returns {{clima: string, cuidados: string[], melhoresEpocas: string[]}}
+ * Retorna dicas regionais
  */
 export function getDicasRegionais(cidade, estado) {
   const estadoLower = (estado || '').toLowerCase().trim();
@@ -249,12 +224,12 @@ export function getDicasRegionais(cidade, estado) {
 
 /**
  * Parseia o texto markdown do memorial em seções
- * @param {string} memorial
- * @returns {Array<{titulo: string, linhas: string[]}>}
+ * AGORA COM FALLBACK ROBUSTO: se não encontrar ##, retorna o texto inteiro como uma seção
  */
 export function parsearMemorial(memorial) {
   if (!memorial || typeof memorial !== 'string') {
-    return [{ titulo: 'Memorial', linhas: ['Conteúdo não disponível.'] }];
+    console.warn('parsearMemorial: memorial vazio ou inválido', memorial);
+    return [{ titulo: 'Memorial do Casamento', linhas: ['Conteúdo não disponível.'] }];
   }
 
   const secoes = [];
@@ -262,7 +237,6 @@ export function parsearMemorial(memorial) {
   let atual = null;
   let temH2 = false;
 
-  // Primeira passagem: verifica se tem ##
   for (const linha of linhas) {
     if (linha.startsWith('## ')) {
       temH2 = true;
@@ -270,9 +244,12 @@ export function parsearMemorial(memorial) {
     }
   }
 
-  // Se não tem ##, trata o texto inteiro como uma seção
   if (!temH2) {
-    return [{ titulo: 'Memorial do Casamento', linhas: linhas.filter(l => l.trim()) }];
+    const linhasFiltradas = linhas.filter(l => l.trim());
+    if (linhasFiltradas.length === 0) {
+      return [{ titulo: 'Memorial do Casamento', linhas: ['Memorial gerado com sucesso.'] }];
+    }
+    return [{ titulo: 'Memorial do Casamento', linhas: linhasFiltradas }];
   }
 
   for (const linha of linhas) {
@@ -284,13 +261,16 @@ export function parsearMemorial(memorial) {
     }
   }
   if (atual) secoes.push(atual);
+
+  if (secoes.length === 0) {
+    return [{ titulo: 'Memorial do Casamento', linhas: linhas.filter(l => l.trim()) }];
+  }
+
   return secoes;
 }
 
 /**
- * Extrai itens de checklist do memorial (respostas "ainda não sei")
- * @param {Array} secoes
- * @returns {Array<{item: string, prazo: string}>}
+ * Extrai itens de checklist
  */
 export function extrairChecklist(secoes) {
   const checklist = [];
@@ -299,9 +279,7 @@ export function extrairChecklist(secoes) {
       const lower = linha.toLowerCase();
       if (lower.includes('ainda não sei') || lower.includes('ainda nao sei') || lower.includes('pendente') || lower.includes('a definir') || lower.includes('a decidir')) {
         const item = linha.replace(/[*\-]\s*/, '').replace(/\*\*/g, '').trim();
-        if (item) {
-          checklist.push({ item, prazo: 'A definir' });
-        }
+        if (item) checklist.push({ item, prazo: 'A definir' });
       }
     }
   }
@@ -323,9 +301,7 @@ export function extrairChecklist(secoes) {
 }
 
 /**
- * Extrai fornecedores mencionados no memorial
- * @param {Array} secoes
- * @returns {Array<{categoria: string, nome: string}>}
+ * Extrai fornecedores
  */
 export function extrairFornecedores(secoes) {
   const fornecedores = [];
@@ -372,43 +348,18 @@ export function extrairFornecedores(secoes) {
 }
 
 /**
- * Gera itens de orçamento completos (30+)
- * @param {string} cidade
- * @param {string} estado
- * @returns {Array<{item: string, percentual: number, valor: number}>}
+ * Gera itens de orçamento
  */
 export function getItensOrcamento(cidade, estado) {
   const itens = [
-    'Espaço e locação',
-    'Buffet e alimentação',
-    'Bebidas e bar',
-    'Decoração e flores',
-    'Fotografia',
-    'Vídeo e filmagem',
-    'Música e DJ/banda',
-    'Vestido da noiva',
-    'Terno do noivo',
-    'Beleza (cabelo/maquiagem)',
-    'Convites e papelaria',
-    'Lembrancinhas',
-    'Transporte (noivos)',
-    'Transporte (convidados)',
-    'Cerimonialista',
-    'Bolo e doces',
-    'Bem-casados',
-    'Aluguel de mesas/cadeiras',
-    'Toalhas e guardanapos',
-    'Louças, talheres e taças',
-    'Iluminação cênica',
-    'Som e equipamentos',
-    'Segurança',
-    'Estacionamento',
-    'Hospedagem (noite de núpcias)',
-    'Lua de mel (reserva)',
-    'Alianças',
-    'Taxas e licenças',
-    'Presentes para padrinhos',
-    'Reserva de emergência (10%)',
+    'Espaço e locação', 'Buffet e alimentação', 'Bebidas e bar', 'Decoração e flores',
+    'Fotografia', 'Vídeo e filmagem', 'Música e DJ/banda', 'Vestido da noiva',
+    'Terno do noivo', 'Beleza (cabelo/maquiagem)', 'Convites e papelaria', 'Lembrancinhas',
+    'Transporte (noivos)', 'Transporte (convidados)', 'Cerimonialista', 'Bolo e doces',
+    'Bem-casados', 'Aluguel de mesas/cadeiras', 'Toalhas e guardanapos',
+    'Louças, talheres e taças', 'Iluminação cênica', 'Som e equipamentos',
+    'Segurança', 'Estacionamento', 'Hospedagem (noite de núpcias)', 'Lua de mel (reserva)',
+    'Alianças', 'Taxas e licenças', 'Presentes para padrinhos', 'Reserva de emergência (10%)',
   ];
 
   const percentuais = [18, 22, 10, 12, 6, 5, 6, 4, 2, 2, 1.5, 1, 1, 1.5, 2.5, 2, 1, 1.5, 0.8, 1, 1.5, 1.5, 0.8, 0.5, 1, 2, 1.5, 0.5, 0.8, 5];
@@ -421,10 +372,7 @@ export function getItensOrcamento(cidade, estado) {
 }
 
 /**
- * Retorna imagem de referência por categoria — AGORA COM CAMINHOS LOCAIS
- * @param {string} categoria
- * @param {string} chave
- * @returns {string|null}
+ * Retorna imagem de referência por categoria — CAMINHOS LOCAIS ABSOLUTOS
  */
 export function getImagem(categoria, chave) {
   const IMAGENS = {
@@ -496,6 +444,42 @@ export function getImagem(categoria, chave) {
       'boho': img('cerimonia', 'cerimonia-entrada-noiva-4.jpg'),
       'moderno': img('cerimonia', 'cerimonia-saida-1.jpg'),
       default: img('cerimonia', 'cerimonia-altar-1.jpg'),
+    },
+    alimentacao: {
+      'classico': img('alimentacao', 'bolo-casamento-1.jpg'),
+      'rustico': img('alimentacao', 'mesa-doces-1.jpg'),
+      'romantico': img('alimentacao', 'mesa-doces-5.jpg'),
+      'minimalista': img('alimentacao', 'coquetel-drinks-1.jpg'),
+      'boho': img('alimentacao', 'mesa-doces-10.jpg'),
+      'moderno': img('alimentacao', 'bolo-casamento-6.jpg'),
+      default: img('alimentacao', 'bolo-casamento-1.jpg'),
+    },
+    entretenimento: {
+      'classico': img('entretenimento', 'pista-danca-1.jpg'),
+      'rustico': img('entretenimento', 'dj-banda-1.jpg'),
+      'romantico': img('entretenimento', 'pista-danca-3.jpg'),
+      'minimalista': img('entretenimento', 'cabine-fotos-1.jpg'),
+      'boho': img('entretenimento', 'pista-danca-4.jpg'),
+      'moderno': img('entretenimento', 'dj-banda-2.jpg'),
+      default: img('entretenimento', 'pista-danca-1.jpg'),
+    },
+    local: {
+      'classico': img('local', 'local-salao-1.jpg'),
+      'rustico': img('local', 'local-sitio-1.jpg'),
+      'romantico': img('local', 'local-jardim-1.jpg'),
+      'minimalista': img('local', 'local-salao-10.jpg'),
+      'boho': img('local', 'local-jardim-3.jpg'),
+      'moderno': img('local', 'local-salao-5.jpg'),
+      default: img('local', 'local-default-1.jpg'),
+    },
+    papelaria: {
+      'classico': img('papelaria', 'convite-1.jpg'),
+      'rustico': img('papelaria', 'placa-boas-vindas-1.jpg'),
+      'romantico': img('papelaria', 'convite-5.jpg'),
+      'minimalista': img('papelaria', 'menu-lugar-1.jpg'),
+      'boho': img('papelaria', 'monograma-1.jpg'),
+      'moderno': img('papelaria', 'convite-3.jpg'),
+      default: img('papelaria', 'convite-1.jpg'),
     },
   };
 
