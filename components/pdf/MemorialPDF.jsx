@@ -42,6 +42,22 @@ function PizzaChart({ data, colors, size = 160 }) {
   return <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}><G>{paths}</G></Svg>;
 }
 
+function ImagemProporcional({ src, dimensoes, maxWidth = 320, maxHeight = 240, style = {} }) {
+  let width = maxWidth;
+  let height = maxHeight;
+  if (dimensoes && dimensoes.width && dimensoes.height) {
+    const ratio = Math.min(maxWidth / dimensoes.width, maxHeight / dimensoes.height);
+    width = Math.round(dimensoes.width * ratio);
+    height = Math.round(dimensoes.height * ratio);
+  }
+  return (
+    <Image
+      src={src}
+      style={[{ width, height, alignSelf: 'center', marginTop: 16, marginBottom: 24, borderRadius: 6 }, style]}
+    />
+  );
+}
+
 function renderizarTextoMemorial(linhas, fonteCorpo, corTexto, corPrimaria) {
   if (!linhas || linhas.length === 0) return null;
   return linhas.map((linha, i) => {
@@ -57,7 +73,7 @@ function renderizarTextoMemorial(linhas, fonteCorpo, corTexto, corPrimaria) {
   }).filter(Boolean);
 }
 
-export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, qrCodeDataUri = null }) {
+export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, qrCodeDataUri = null, dimensoesImagens = {} }) {
   const estilo = dadosEvento?.estilo || 'classico';
   const paleta = getPaleta(dadosEvento);
   const corPrimaria = paleta[0];
@@ -117,8 +133,8 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
     paragrafo: { fontFamily: fonteCorpo, fontSize: 11, color: corTexto, lineHeight: 1.8, marginBottom: 8, wrap: true },
     paragrafoDestaque: { fontFamily: fonteCorpo, fontSize: 11, color: corPrimaria, lineHeight: 1.8, marginBottom: 8, wrap: true },
     subtitulo: { fontFamily: fonteCorpo, fontSize: 13, color: corTitulo, marginTop: 12, marginBottom: 6, wrap: true },
-    imagem: { width: 320, height: 240, alignSelf: 'center', marginTop: 16, marginBottom: 24, borderRadius: 6 },
-    imagemPequena: { width: 240, height: 180, alignSelf: 'center', marginTop: 8, marginBottom: 16, borderRadius: 4 },
+    imagem: { alignSelf: 'center', marginTop: 16, marginBottom: 24, borderRadius: 6 },
+    imagemPequena: { alignSelf: 'center', marginTop: 8, marginBottom: 16, borderRadius: 4 },
     tabela: { marginTop: 8, marginBottom: 8 },
     tabelaLinha: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: corSecundaria, paddingVertical: 5, alignItems: 'center' },
     tabelaLinhaHeader: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: corTitulo, paddingVertical: 6, backgroundColor: corSecundaria + '20', alignItems: 'center' },
@@ -132,9 +148,6 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
     ctaTitulo: { fontFamily: fonteDisplay, fontSize: 26, color: corTitulo, textAlign: 'center', marginBottom: 20, wrap: true },
     ctaTexto: { fontFamily: fonteCorpo, fontSize: 12, color: corTexto, textAlign: 'center', lineHeight: 1.8, marginBottom: 16, wrap: true },
     ctaUrl: { fontFamily: fonteCorpo, fontSize: 13, color: corTitulo, textAlign: 'center', marginTop: 8, wrap: true },
-    barraLabel: { fontFamily: fonteCorpo, fontSize: 9, color: corTexto, width: 110, wrap: true },
-    barra: { height: 14, borderRadius: 3 },
-    barraTexto: { fontFamily: fonteCorpo, fontSize: 9, color: corTexto, flex: 1, marginLeft: 10, wrap: true },
     quote: { fontFamily: fonteDisplay, fontSize: 14, color: corTitulo, fontStyle: 'italic', textAlign: 'center', marginVertical: 16, paddingHorizontal: 20, wrap: true },
   });
 
@@ -150,7 +163,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <View style={S.paletaContainer}>
           {paleta.map((cor, i) => (
             <View key={i} style={{ alignItems: 'center', marginHorizontal: 14 }}>
-              <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: cor, borderWidth: 2, borderColor: isCorEscura(cor) ? '#FFFFFF' : '#1A1714' }} />
+              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: cor, borderWidth: 3, borderColor: isCorEscura(cor) ? '#FFFFFF' : '#1A1714' }} />
               <Text style={{ fontSize: 9, fontFamily: fonteCorpo, color: corTexto, marginTop: 5, textAlign: 'center', wrap: true }}>{getNomeCor(cor)}</Text>
               <Text style={{ fontSize: 8, fontFamily: fonteCorpo, color: corTextoSuave, marginTop: 1, textAlign: 'center', wrap: true }}>{cor}</Text>
             </View>
@@ -191,7 +204,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
           if (secao?.linhas?.length > 0) return renderizarTextoMemorial(secao.linhas, fonteCorpo, corTexto, corTitulo);
           return <Text style={S.paragrafo}>A identidade visual do seu casamento reflete a personalidade de {nomeCasal}. A paleta escolhida, as fontes sugeridas e os materiais recomendados criam uma narrativa visual coesa que será aplicada em todos os elementos do evento.</Text>;
         })()}
-        <Image style={S.imagem} src={imagemDecoracao} />
+        <ImagemProporcional src={imagemDecoracao} dimensoes={dimensoesImagens?.imagemDecoracao} maxWidth={320} maxHeight={240} style={S.imagem} />
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
@@ -201,7 +214,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <View style={{ flexDirection: 'row', marginBottom: 16 }}>
           {paleta.map((cor, i) => (
             <View key={i} style={{ flex: 1, alignItems: 'center', marginHorizontal: 8 }}>
-              <View style={{ width: 50, height: 50, borderRadius: 25, backgroundColor: cor, borderWidth: 2, borderColor: isCorEscura(cor) ? '#FFFFFF' : '#1A1714', marginBottom: 6 }} />
+              <View style={{ width: 50, height: 50, borderRadius: 25, backgroundColor: cor, borderWidth: 3, borderColor: isCorEscura(cor) ? '#FFFFFF' : '#1A1714', marginBottom: 6 }} />
               <Text style={{ fontFamily: fonteCorpo, fontSize: 10, color: corTexto, textAlign: 'center', wrap: true }}>{getNomeCor(cor)}</Text>
               <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTextoSuave, textAlign: 'center', wrap: true }}>{cor}</Text>
               <Text style={{ fontFamily: fonteCorpo, fontSize: 8, color: corTextoSuave, textAlign: 'center', marginTop: 2, wrap: true }}>{i === 0 ? 'Cor principal' : i === 1 ? 'Cor secundária' : 'Cor terciária'}</Text>
@@ -231,7 +244,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
           if (secao?.linhas?.length > 0) return renderizarTextoMemorial(secao.linhas, fonteCorpo, corTexto, corTitulo);
           return <Text style={S.paragrafo}>A cerimônia é o coração do seu casamento. Cada detalhe — desde a entrada até a saída — deve refletir a essência de {nomeCasal} e emocionar a todos os presentes.</Text>;
         })()}
-        <Image style={S.imagem} src={imagemCerimonia} />
+        <ImagemProporcional src={imagemCerimonia} dimensoes={dimensoesImagens?.imagemCerimonia} maxWidth={320} maxHeight={240} style={S.imagem} />
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
@@ -278,7 +291,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
           if (secao?.linhas?.length > 0) return renderizarTextoMemorial(secao.linhas, fonteCorpo, corTexto, corTitulo);
           return <Text style={S.paragrafo}>A decoração transforma o espaço escolhido em um ambiente que conta a história de {nomeCasal}. Cada elemento visual deve dialogar com o estilo {estilo} e a paleta de cores definida.</Text>;
         })()}
-        <Image style={S.imagem} src={imagemFlores} />
+        <ImagemProporcional src={imagemFlores} dimensoes={dimensoesImagens?.imagemFlores} maxWidth={320} maxHeight={240} style={S.imagem} />
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
@@ -336,7 +349,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
           if (secao?.linhas?.length > 0) return renderizarTextoMemorial(secao.linhas, fonteCorpo, corTexto, corTitulo);
           return <Text style={S.paragrafo}>A mesa posta é uma das expressões mais tangíveis da identidade visual do casamento. Cada elemento — desde a toalha até o cartão de lugar — deve conversar com o estilo {estilo} e a paleta escolhida.</Text>;
         })()}
-        <Image style={S.imagem} src={imagemMesa} />
+        <ImagemProporcional src={imagemMesa} dimensoes={dimensoesImagens?.imagemMesa} maxWidth={320} maxHeight={240} style={S.imagem} />
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
@@ -383,7 +396,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
           if (secao?.linhas?.length > 0) return renderizarTextoMemorial(secao.linhas, fonteCorpo, corTexto, corTitulo);
           return <Text style={S.paragrafo}>A experiência gastronômica é um dos pilares da celebração. Do coquetel de boas-vindas ao bolo de casamento, cada momento deve surpreender e agradar o paladar dos convidados.</Text>;
         })()}
-        <Image style={S.imagem} src={imagemAlimentacao} />
+        <ImagemProporcional src={imagemAlimentacao} dimensoes={dimensoesImagens?.imagemAlimentacao} maxWidth={320} maxHeight={240} style={S.imagem} />
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
@@ -425,7 +438,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
           if (secao?.linhas?.length > 0) return renderizarTextoMemorial(secao.linhas, fonteCorpo, corTexto, corTitulo);
           return <Text style={S.paragrafo}>A festa é a celebração da união de {nomeCasal}. A música, as atividades e o cronograma devem manter a energia alta e criar momentos inesquecíveis para todos os convidados.</Text>;
         })()}
-        <Image style={S.imagem} src={imagemEntretenimento} />
+        <ImagemProporcional src={imagemEntretenimento} dimensoes={dimensoesImagens?.imagemEntretenimento} maxWidth={320} maxHeight={240} style={S.imagem} />
         <Text style={S.subtitulo}>Música e Atrações</Text>
         <View style={S.boxInfo}>
           <Text style={S.boxInfoTexto}>• Cerimônia: música instrumental ao vivo ou playlist curada</Text>
@@ -463,7 +476,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
           if (secao?.linhas?.length > 0) return renderizarTextoMemorial(secao.linhas, fonteCorpo, corTexto, corTitulo);
           return <Text style={S.paragrafo}>O vestuário e a beleza são expressões pessoais que devem fazer {nome1} e {nome2} se sentirem a melhor versão de si mesmos no grande dia.</Text>;
         })()}
-        <Image style={S.imagem} src={imagemVestido} />
+        <ImagemProporcional src={imagemVestido} dimensoes={dimensoesImagens?.imagemVestido} maxWidth={320} maxHeight={240} style={S.imagem} />
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
@@ -505,7 +518,7 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
           if (secao?.linhas?.length > 0) return renderizarTextoMemorial(secao.linhas, fonteCorpo, corTexto, corTitulo);
           return <Text style={S.paragrafo}>A papelaria é o primeiro contato dos convidados com o casamento. Cada peça — do save the date ao menu — deve transmitir a identidade visual e criar expectativa.</Text>;
         })()}
-        <Image style={S.imagem} src={imagemPapelaria} />
+        <ImagemProporcional src={imagemPapelaria} dimensoes={dimensoesImagens?.imagemPapelaria} maxWidth={320} maxHeight={240} style={S.imagem} />
         <Rodape nomeCasal={nomeCasal} />
       </Page>
 
@@ -553,37 +566,40 @@ export function MemorialPDF({ memorial, dadosEvento, usarFontesNativas = false, 
         <Text style={S.paragrafo}>O planejamento de um casamento exige organização. Esta linha do tempo divide as tarefas por período, com cores que indicam a urgência de cada etapa.</Text>
         <View style={{ marginTop: 16, marginBottom: 20 }}>
           {[
-            { meses: '12-8 meses antes', cor: '#4CAF50', tarefas: ['Definir data e reservar local', 'Contratar cerimonialista', 'Iniciar lista de convidados', 'Definir estilo e paleta visual'], largura: 280 },
-            { meses: '7-4 meses antes', cor: '#FFC107', tarefas: ['Fechar buffet e bebidas', 'Contratar fotógrafo e vídeo', 'Provar vestido e traje', 'Definir decoração e flores'], largura: 220 },
-            { meses: '3-1 meses antes', cor: '#FF9800', tarefas: ['Enviar convites', 'Confirmar presenças', 'Ajustar detalhes decorativos', 'Prova de cabelo e maquiagem'], largura: 160 },
-            { meses: 'Última semana', cor: '#F44336', tarefas: ['Ensaio geral', 'Confirmar todos os fornecedores', 'Separar itens do dia', 'Descansar e se hidratar'], largura: 100 },
+            { meses: '12-8 meses antes', cor: '#4CAF50', tarefas: ['Definir data e reservar local', 'Contratar cerimonialista', 'Iniciar lista de convidados', 'Definir estilo e paleta visual'] },
+            { meses: '7-4 meses antes', cor: '#FFC107', tarefas: ['Fechar buffet e bebidas', 'Contratar fotógrafo e vídeo', 'Provar vestido e traje', 'Definir decoração e flores'] },
+            { meses: '3-1 meses antes', cor: '#FF9800', tarefas: ['Enviar convites', 'Confirmar presenças', 'Ajustar detalhes decorativos', 'Prova de cabelo e maquiagem'] },
+            { meses: 'Última semana', cor: '#F44336', tarefas: ['Ensaio geral', 'Confirmar todos os fornecedores', 'Separar itens do dia', 'Descansar e se hidratar'] },
           ].map((item, i) => (
-            <View key={i} style={{ marginBottom: 14 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-                <Text style={[S.barraLabel, { width: 120, fontSize: 10 }]}>{item.meses}</Text>
-                <View style={[S.barra, { backgroundColor: item.cor, width: item.largura }]} />
+            <View key={i} style={{ marginBottom: 18, flexDirection: 'row' }}>
+              <View style={{ width: 14, alignItems: 'center', marginRight: 10 }}>
+                <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: item.cor, marginTop: 2 }} />
+                {i < 3 && <View style={{ width: 2, flex: 1, backgroundColor: '#E5E0D9', marginTop: 4 }} />}
               </View>
-              {item.tarefas.map((t, j) => (
-                <Text key={j} style={[S.barraTexto, { marginLeft: 130, fontSize: 9, marginBottom: 2 }]}>• {t}</Text>
-              ))}
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: fonteCorpo, fontSize: 11, color: corTitulo, marginBottom: 4, wrap: true }}>{item.meses}</Text>
+                {item.tarefas.map((t, j) => (
+                  <Text key={j} style={{ fontFamily: fonteCorpo, fontSize: 9.5, color: corTexto, lineHeight: 1.6, marginBottom: 2, wrap: true }}>• {t}</Text>
+                ))}
+              </View>
             </View>
           ))}
         </View>
         <Text style={S.subtitulo}>Legenda de Urgência</Text>
-        <View style={{ flexDirection: 'row', marginTop: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
+        <View style={{ flexDirection: 'row', marginTop: 8, flexWrap: 'wrap' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20, marginBottom: 6 }}>
             <View style={{ width: 14, height: 14, backgroundColor: '#4CAF50', borderRadius: 3, marginRight: 6 }} />
             <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, wrap: true }}>Tranquilo (12-8 meses)</Text>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20, marginBottom: 6 }}>
             <View style={{ width: 14, height: 14, backgroundColor: '#FFC107', borderRadius: 3, marginRight: 6 }} />
             <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, wrap: true }}>Atenção (7-4 meses)</Text>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20, marginBottom: 6 }}>
             <View style={{ width: 14, height: 14, backgroundColor: '#FF9800', borderRadius: 3, marginRight: 6 }} />
             <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, wrap: true }}>Urgente (3-1 meses)</Text>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
             <View style={{ width: 14, height: 14, backgroundColor: '#F44336', borderRadius: 3, marginRight: 6 }} />
             <Text style={{ fontFamily: fonteCorpo, fontSize: 9, color: corTexto, wrap: true }}>Crítico (última semana)</Text>
           </View>

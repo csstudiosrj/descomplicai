@@ -3,6 +3,8 @@ import { MemorialPDF } from '../../components/pdf/MemorialPDF';
 import path from 'path';
 import fs from 'fs';
 import QRCode from 'qrcode';
+import sharp from 'sharp';
+import { getImagem } from '../../utils/pdfUtils';
 
 const BASE_FONTS = path.resolve(process.cwd(), 'public', 'fonts');
 
@@ -53,20 +55,69 @@ export default async function handler(req, res) {
   const testeImg = path.join(process.cwd(), 'public', 'images', 'flores', 'rosas-1.jpg');
   console.log('=== IMAGEM EXISTE? ===', fs.existsSync(testeImg), testeImg);
 
+  // Detectar dimensões das imagens para proporção correta (vertical não achatada)
+  const dimensoesImagens = {};
+  const estilo = dadosEvento?.estilo || 'classico';
+  const flores = dadosEvento?.flores || '';
+  
+  const imagensParaDetectar = [
+    { key: 'imagemFlores', src: getImagem('flores', flores) || getImagem('flores', 'default') },
+    { key: 'imagemVestido', src: getImagem('vestido', dadosEvento?.estiloVestido) || getImagem('vestido', 'default') },
+    { key: 'imagemMesa', src: getImagem('mesaPosta', estilo) || getImagem('mesaPosta', 'default') },
+    { key: 'imagemDecoracao', src: getImagem('decoracao', estilo) || getImagem('decoracao', 'default') },
+    { key: 'imagemCerimonia', src: getImagem('cerimonia', estilo) || getImagem('cerimonia', 'default') },
+    { key: 'imagemAlimentacao', src: getImagem('alimentacao', estilo) || getImagem('alimentacao', 'default') },
+    { key: 'imagemEntretenimento', src: getImagem('entretenimento', estilo) || getImagem('entretenimento', 'default') },
+    { key: 'imagemLocal', src: getImagem('local', estilo) || getImagem('local', 'default') },
+    { key: 'imagemPapelaria', src: getImagem('papelaria', estilo) || getImagem('papelaria', 'default') },
+  ];
+
+  for (const { key, src } of imagensParaDetectar) {
+    if (src && fs.existsSync(src)) {
+      try {
+        const metadata = await sharp(src).metadata();
+        dimensoesImagens[key] = { width: metadata.width, height: metadata.height };
+        console.log(`=== DIMENSÃO ${key} ===`, metadata.width, 'x', metadata.height);
+      } catch (e) {
+        console.warn(`Erro ao ler dimensões de ${key}:`, e.message);
+        dimensoesImagens[key] = { width: 320, height: 240 };
+      }
+    } else {
+      console.warn(`Imagem não encontrada: ${src}`);
+      dimensoesImagens[key] = { width: 320, height: 240 };
+    }
+  }
+
   let qrCodeDataUri = null;
   try {
     qrCodeDataUri = await QRCode.toDataURL('https://arxum.csstudios.site/descomplicai', { width: 200, margin: 2, color: { dark: '#1A1714', light: '#FFFFFF' } });
   } catch (e) { console.warn('QR code:', e.message); }
 
   try {
-    const buffer = await renderToBuffer(<MemorialPDF memorial={memorial} dadosEvento={dadosEvento} usarFontesNativas={false} qrCodeDataUri={qrCodeDataUri} />);
+    const buffer = await renderToBuffer(
+      <MemorialPDF 
+        memorial={memorial} 
+        dadosEvento={dadosEvento} 
+        usarFontesNativas={false} 
+        qrCodeDataUri={qrCodeDataUri}
+        dimensoesImagens={dimensoesImagens}
+      />
+    );
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="memorial-descomplicai.pdf"');
     res.send(buffer);
   } catch (erro) {
     console.error('Erro PDF:', erro.message);
     try {
-      const buffer = await renderToBuffer(<MemorialPDF memorial={memorial} dadosEvento={dadosEvento} usarFontesNativas={true} qrCodeDataUri={qrCodeDataUri} />);
+      const buffer = await renderToBuffer(
+        <MemorialPDF 
+          memorial={memorial} 
+          dadosEvento={dadosEvento} 
+          usarFontesNativas={true} 
+          qrCodeDataUri={qrCodeDataUri}
+          dimensoesImagens={dimensoesImagens}
+        />
+      );
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'attachment; filename="memorial-descomplicai.pdf"');
       res.send(buffer);
