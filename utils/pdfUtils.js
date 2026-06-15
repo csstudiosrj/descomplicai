@@ -301,27 +301,59 @@ export function extrairChecklist(secoes) {
 }
 
 /**
- * Extrai fornecedores
+ * Extrai fornecedores — CORRIGIDO: retorna só categoria + "A definir"
+ * Não puxa mais texto descritivo do memorial como nome de fornecedor.
  */
 export function extrairFornecedores(secoes) {
-  const fornecedores = [];
-  const categorias = ['fotógrafo', 'fotografo', 'buffet', 'decorador', 'decoracao', 'decoração', 'dj', 'banda', 'musica', 'música', 'video', 'vídeo', 'cerimonialista', 'igreja', 'espaço', 'espaco', 'salão', 'salao', 'vestido', 'terno', 'beleza', 'cabelo', 'maquiagem', 'convite', 'papelaria', 'bolo', 'doces', 'florista', 'iluminação', 'iluminacao', 'som'];
+  const categorias = [
+    'fotógrafo', 'fotografo', 'buffet', 'decorador', 'decoracao', 'decoração',
+    'dj', 'banda', 'musica', 'música', 'video', 'vídeo', 'cerimonialista',
+    'igreja', 'espaço', 'espaco', 'salão', 'salao', 'vestido', 'terno',
+    'beleza', 'cabelo', 'maquiagem', 'convite', 'papelaria', 'bolo', 'doces',
+    'florista', 'iluminação', 'iluminacao', 'som'
+  ];
+
+  const mapaNomes = {
+    'fotógrafo': 'Fotografia', 'fotografo': 'Fotografia',
+    'buffet': 'Buffet',
+    'decorador': 'Decoração', 'decoracao': 'Decoração', 'decoração': 'Decoração',
+    'dj': 'Música / DJ', 'banda': 'Música / DJ', 'musica': 'Música / DJ', 'música': 'Música / DJ',
+    'video': 'Filmagem', 'vídeo': 'Filmagem',
+    'cerimonialista': 'Cerimonialista',
+    'igreja': 'Espaço / Venue', 'espaço': 'Espaço / Venue', 'espaco': 'Espaço / Venue',
+    'salão': 'Espaço / Venue', 'salao': 'Espaço / Venue',
+    'vestido': 'Vestido', 'terno': 'Terno',
+    'beleza': 'Beleza', 'cabelo': 'Beleza', 'maquiagem': 'Beleza',
+    'convite': 'Papelaria', 'papelaria': 'Papelaria',
+    'bolo': 'Bolo e Doces', 'doces': 'Bolo e Doces',
+    'florista': 'Flores',
+    'iluminação': 'Iluminação', 'iluminacao': 'Iluminação',
+    'som': 'Som'
+  };
+
+  const encontradas = new Set();
 
   for (const secao of secoes) {
     for (const linha of secao.linhas) {
       const lower = linha.toLowerCase();
       for (const cat of categorias) {
         if (lower.includes(cat)) {
-          const nome = linha.replace(/[*\-]\s*/, '').replace(/\*\*/g, '').trim();
-          if (nome && nome.length > 3) {
-            fornecedores.push({ categoria: cat.charAt(0).toUpperCase() + cat.slice(1), nome });
-          }
+          encontradas.add(cat);
           break;
         }
       }
     }
   }
 
+  const fornecedores = [];
+  for (const cat of encontradas) {
+    const nomeCat = mapaNomes[cat] || cat.charAt(0).toUpperCase() + cat.slice(1);
+    if (!fornecedores.find(f => f.categoria === nomeCat)) {
+      fornecedores.push({ categoria: nomeCat, nome: 'A definir' });
+    }
+  }
+
+  // Fallback padronizado se nenhuma categoria for detectada
   if (fornecedores.length === 0) {
     return [
       { categoria: 'Espaço / Venue', nome: 'A definir' },
