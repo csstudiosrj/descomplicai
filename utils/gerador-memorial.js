@@ -9,6 +9,7 @@ export function montarPayloadParaAPI(estado) {
     nomePessoa2: estado.nomePessoa2 || '',
     dataEvento: estado.dataEvento || '',
     cidadeEvento: estado.cidadeEvento || '',
+    estadoEvento: estado.estadoEvento || '',        // ← ADICIONADO
     totalConvidados: estado.totalConvidados || '',
     faixaOrcamento: estado.faixaOrcamento || '',
     tipoCerimonia: estado.tipoCerimonia || '',
