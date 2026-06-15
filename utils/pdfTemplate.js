@@ -1682,4 +1682,4 @@ ${fornecedores.length > 20 ? `
   `;
 
   return html;
-} novo 
+}
