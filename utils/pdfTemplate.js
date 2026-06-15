@@ -1,5 +1,4 @@
-// utils/pdfTemplate.js — Memorial descomplicaí v5 (Reescrito do Zero)
-// Princípio: impacto visual, coerência de branding, zero vazamento de conteúdo.
+// utils/pdfTemplate.js — Memorial descomplicaí v6 (Correções Cirúrgicas)
 
 import fs from 'fs';
 import path from 'path';
@@ -14,9 +13,7 @@ const CORES_GRAFICO = ['#2E7D32', '#1565C0', '#C62828', '#F9A825', '#6A1B9A', '#
 
 function normalizar(str) {
   if (typeof str !== 'string') return '';
-  return str.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s]/g, '');
+  return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, '');
 }
 
 function filtrarHexDoTexto(texto) {
@@ -85,7 +82,6 @@ function imagemToBase64(categoria, chave) {
     const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : `image/${ext}`;
     return `data:${mime};base64,${buf.toString('base64')}`;
   } catch (e) {
-    console.warn('Imagem base64 falhou:', categoria, chave, e.message);
     return null;
   }
 }
@@ -96,7 +92,7 @@ function getImagensMultiplas(categoria, chave, quantidade = 3) {
   const principal = getImagem(categoria, chaveStr);
   if (principal) {
     try { if (fs.existsSync(principal)) { const buf = fs.readFileSync(principal); resultado.push(`data:image/jpeg;base64,${buf.toString('base64')}`); } }
-    catch (e) { console.warn('Img principal falhou:', categoria, chaveStr, e.message); }
+    catch (e) {}
   }
   if (resultado.length === 0) {
     const fallback = getImagem(categoria, 'default');
@@ -145,129 +141,210 @@ function getImagensMultiplas(categoria, chave, quantidade = 3) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   LOGO DESCOMPLECAÍ — SVG inline (garantia de renderização)
+   LOGO DESCOMPLECAÍ — HTML span com font-face (funcionava antes)
    ═══════════════════════════════════════════════════════════ */
-function logoSVG(corDescomplica = '#8B6F5E', corI = '#10B981', height = 24) {
-  // SVG inline com font-family fallback. Se as fontes não carregarem, o texto ainda aparece.
-  return `<svg xmlns="http://www.w3.org/2000/svg" height="${height}" viewBox="0 0 260 36" style="display:inline-block;vertical-align:middle;">
-    <text x="0" y="26" font-family="'DM Sans', 'Helvetica Neue', Arial, sans-serif" font-weight="300" font-size="28" fill="${corDescomplica}">descomplica</text>
-    <text x="186" y="26" font-family="'Space Mono', 'Courier New', monospace" font-weight="400" font-style="italic" font-size="30" fill="${corI}">í</text>
-  </svg>`;
+function logoHTML(corDescomplica = '#8B6F5E', corI = '#10B981') {
+  return `<span style="display:inline-flex;align-items:baseline;white-space:nowrap;font-size:1em;">
+    <span style="font-family:'LogoFont1','DM Sans','Helvetica Neue',Arial,sans-serif;font-weight:300;color:${corDescomplica};">descomplica</span>
+    <span style="font-family:'LogoFont2','Space Mono','Courier New',monospace;font-weight:400;font-style:italic;font-size:1.08em;color:${corI};margin-left:0.02em;">í</span>
+  </span>`;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   MONOGRAMAS POR PERFIL — criativos e impactantes
+   MONOGRAMAS POR PERFIL — designs criativos e impactantes
    ═══════════════════════════════════════════════════════════ */
-function svgMonogramaPorPerfil(inicial1, inicial2, perfil, cor, tamanho = 160) {
+function svgMonogramaPorPerfil(inicial1, inicial2, perfil, cor, tamanho = 200) {
   const i1 = String(inicial1 || 'N').charAt(0).toUpperCase();
   const i2 = String(inicial2 || 'N').charAt(0).toUpperCase();
   const c = String(cor || '#1A1714');
-  const p = String(perfil || 'minimalista').toLowerCase();
   const s = tamanho;
   const hs = s / 2;
 
-  if (p === 'classico') {
+  if (perfil === 'classico') {
     return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-      <rect x="${s*0.08}" y="${s*0.08}" width="${s*0.84}" height="${s*0.84}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.25"/>
-      <rect x="${s*0.15}" y="${s*0.15}" width="${s*0.70}" height="${s*0.70}" fill="none" stroke="${c}" stroke-width="${s*0.006}" opacity="0.15"/>
-      <text x="${hs}" y="${s*0.58}" text-anchor="middle" font-family="DisplayFont, Georgia, 'Times New Roman', serif" font-size="${s*0.38}" fill="${c}" letter-spacing="${s*0.01}">${i1}<tspan font-size="${s*0.22}" dy="${-s*0.04}">&</tspan>${i2}</text>
-      <line x1="${s*0.22}" y1="${s*0.72}" x2="${s*0.78}" y2="${s*0.72}" stroke="${c}" stroke-width="${s*0.008}" opacity="0.4"/>
-      <line x1="${s*0.28}" y1="${s*0.76}" x2="${s*0.72}" y2="${s*0.76}" stroke="${c}" stroke-width="${s*0.004}" opacity="0.25"/>
+      <!-- Moldura ornamental com cantos -->
+      <path d="M${s*0.12},${s*0.18} Q${s*0.12},${s*0.12} ${s*0.18},${s*0.12}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.5"/>
+      <path d="M${s*0.82},${s*0.12} Q${s*0.88},${s*0.12} ${s*0.88},${s*0.18}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.5"/>
+      <path d="M${s*0.88},${s*0.82} Q${s*0.88},${s*0.88} ${s*0.82},${s*0.88}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.5"/>
+      <path d="M${s*0.18},${s*0.88} Q${s*0.12},${s*0.88} ${s*0.12},${s*0.82}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.5"/>
+      <!-- Linhas decorativas horizontais -->
+      <line x1="${s*0.22}" y1="${s*0.28}" x2="${s*0.78}" y2="${s*0.28}" stroke="${c}" stroke-width="${s*0.004}" opacity="0.3"/>
+      <line x1="${s*0.22}" y1="${s*0.72}" x2="${s*0.78}" y2="${s*0.72}" stroke="${c}" stroke-width="${s*0.004}" opacity="0.3"/>
+      <!-- Volutas laterais -->
+      <path d="M${s*0.15},${s*0.45} Q${s*0.08},${s*0.5} ${s*0.15},${s*0.55}" fill="none" stroke="${c}" stroke-width="${s*0.006}" opacity="0.35"/>
+      <path d="M${s*0.85},${s*0.45} Q${s*0.92},${s*0.5} ${s*0.85},${s*0.55}" fill="none" stroke="${c}" stroke-width="${s*0.006}" opacity="0.35"/>
+      <!-- Iniciais -->
+      <text x="${hs}" y="${s*0.54}" text-anchor="middle" font-family="DisplayFont, Georgia, 'Times New Roman', serif" font-size="${s*0.32}" fill="${c}" font-weight="bold" letter-spacing="${s*0.01}">${i1}<tspan font-size="${s*0.20}" dy="${-s*0.04}" font-weight="normal">&</tspan>${i2}</text>
+      <!-- Ornamento inferior -->
+      <path d="M${s*0.38},${s*0.68} Q${hs},${s*0.78} ${s*0.62},${s*0.68}" fill="none" stroke="${c}" stroke-width="${s*0.008}" opacity="0.4"/>
+      <circle cx="${s*0.35}" cy="${s*0.74}" r="${s*0.008}" fill="${c}" opacity="0.3"/>
+      <circle cx="${s*0.65}" cy="${s*0.74}" r="${s*0.008}" fill="${c}" opacity="0.3"/>
     </svg>`;
   }
-  if (p === 'boho') {
+  if (perfil === 'boho') {
     return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="${hs}" cy="${hs}" r="${s*0.42}" fill="none" stroke="${c}" stroke-width="${s*0.01}" opacity="0.2" stroke-dasharray="${s*0.06} ${s*0.04}"/>
-      <path d="M${s*0.15},${s*0.82} Q${s*0.30},${s*0.65} ${s*0.45},${s*0.78} Q${s*0.60},${s*0.62} ${s*0.75},${s*0.80} Q${s*0.88},${s*0.70} ${s*0.92},${s*0.82}" fill="none" stroke="${c}" stroke-width="${s*0.008}" opacity="0.35"/>
-      <path d="M${s*0.20},${s*0.86} Q${s*0.35},${s*0.72} ${s*0.50},${s*0.84} Q${s*0.65},${s*0.70} ${s*0.80},${s*0.86}" fill="none" stroke="${c}" stroke-width="${s*0.005}" opacity="0.25"/>
-      <text x="${hs}" y="${s*0.56}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.34}" fill="${c}" letter-spacing="${s*0.008}">${i1}<tspan font-size="${s*0.20}" dy="${-s*0.03}">&</tspan>${i2}</text>
-      <circle cx="${s*0.30}" cy="${s*0.75}" r="${s*0.018}" fill="${c}" opacity="0.3"/>
-      <circle cx="${s*0.70}" cy="${s*0.78}" r="${s*0.014}" fill="${c}" opacity="0.25"/>
+      <!-- Círculo pontilhado -->
+      <circle cx="${hs}" cy="${hs}" r="${s*0.40}" fill="none" stroke="${c}" stroke-width="${s*0.008}" opacity="0.2" stroke-dasharray="${s*0.06} ${s*0.03}"/>
+      <!-- Ramos orgânicos -->
+      <path d="M${s*0.10},${s*0.62} C${s*0.20},${s*0.35} ${s*0.30},${s*0.55} ${s*0.42},${s*0.42} C${s*0.55},${s*0.30} ${s*0.65},${s*0.48} ${s*0.78},${s*0.38} C${s*0.88},${s*0.30} ${s*0.90},${s*0.55} ${s*0.85},${s*0.65}" fill="none" stroke="${c}" stroke-width="${s*0.010}" opacity="0.35"/>
+      <path d="M${s*0.15},${s*0.68} C${s*0.25},${s*0.45} ${s*0.35},${s*0.62} ${s*0.48},${s*0.50} C${s*0.60},${s*0.38} ${s*0.70},${s*0.55} ${s*0.82},${s*0.48} C${s*0.90},${s*0.42} ${s*0.88},${s*0.65} ${s*0.80},${s*0.72}" fill="none" stroke="${c}" stroke-width="${s*0.007}" opacity="0.25"/>
+      <!-- Folhas -->
+      <path d="M${s*0.32},${s*0.35} Q${s*0.28},${s*0.25} ${s*0.35},${s*0.22} Q${s*0.42},${s*0.25} ${s*0.38},${s*0.35} Z" fill="none" stroke="${c}" stroke-width="${s*0.005}" opacity="0.3"/>
+      <path d="M${s*0.62},${s*0.35} Q${s*0.58},${s*0.25} ${s*0.65},${s*0.22} Q${s*0.72},${s*0.25} ${s*0.68},${s*0.35} Z" fill="none" stroke="${c}" stroke-width="${s*0.005}" opacity="0.3"/>
+      <!-- Iniciais -->
+      <text x="${hs}" y="${s*0.54}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.30}" fill="${c}" font-weight="bold">${i1} & ${i2}</text>
+      <!-- Pontos decorativos -->
+      <circle cx="${s*0.28}" cy="${s*0.75}" r="${s*0.012}" fill="${c}" opacity="0.25"/>
+      <circle cx="${s*0.72}" cy="${s*0.75}" r="${s*0.012}" fill="${c}" opacity="0.25"/>
+      <circle cx="${s*0.50}" cy="${s*0.80}" r="${s*0.008}" fill="${c}" opacity="0.2"/>
     </svg>`;
   }
-  if (p === 'moderno') {
+  if (perfil === 'moderno') {
     return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-      <rect x="${s*0.12}" y="${s*0.12}" width="${s*0.76}" height="${s*0.76}" fill="none" stroke="${c}" stroke-width="${s*0.015}" opacity="0.35"/>
-      <rect x="${s*0.22}" y="${s*0.22}" width="${s*0.56}" height="${s*0.56}" fill="none" stroke="${c}" stroke-width="${s*0.008}" opacity="0.2"/>
-      <line x1="${s*0.12}" y1="${hs}" x2="${s*0.88}" y2="${hs}" stroke="${c}" stroke-width="${s*0.006}" opacity="0.15"/>
-      <line x1="${hs}" y1="${s*0.12}" x2="${hs}" y2="${s*0.88}" stroke="${c}" stroke-width="${s*0.006}" opacity="0.15"/>
-      <text x="${hs}" y="${s*0.58}" text-anchor="middle" font-family="DisplayFont, 'Helvetica Neue', Arial, sans-serif" font-size="${s*0.32}" fill="${c}" font-weight="bold" letter-spacing="${s*0.02}">${i1} / ${i2}</text>
+      <!-- Moldura geométrica dupla -->
+      <rect x="${s*0.12}" y="${s*0.12}" width="${s*0.76}" height="${s*0.76}" fill="none" stroke="${c}" stroke-width="${s*0.016}" opacity="0.35" rx="${s*0.02}"/>
+      <rect x="${s*0.20}" y="${s*0.20}" width="${s*0.60}" height="${s*0.60}" fill="none" stroke="${c}" stroke-width="${s*0.008}" opacity="0.2" rx="${s*0.01}"/>
+      <!-- Linhas de cruz -->
+      <line x1="${s*0.12}" y1="${hs}" x2="${s*0.88}" y2="${hs}" stroke="${c}" stroke-width="${s*0.005}" opacity="0.15"/>
+      <line x1="${hs}" y1="${s*0.12}" x2="${hs}" y2="${s*0.88}" stroke="${c}" stroke-width="${s*0.005}" opacity="0.15"/>
+      <!-- Diagonais -->
+      <line x1="${s*0.20}" y1="${s*0.20}" x2="${s*0.30}" y2="${s*0.30}" stroke="${c}" stroke-width="${s*0.008}" opacity="0.3"/>
+      <line x1="${s*0.80}" y1="${s*0.20}" x2="${s*0.70}" y2="${s*0.30}" stroke="${c}" stroke-width="${s*0.008}" opacity="0.3"/>
+      <line x1="${s*0.20}" y1="${s*0.80}" x2="${s*0.30}" y2="${s*0.70}" stroke="${c}" stroke-width="${s*0.008}" opacity="0.3"/>
+      <line x1="${s*0.80}" y1="${s*0.80}" x2="${s*0.70}" y2="${s*0.70}" stroke="${c}" stroke-width="${s*0.008}" opacity="0.3"/>
+      <!-- Iniciais -->
+      <text x="${hs}" y="${s*0.56}" text-anchor="middle" font-family="DisplayFont, 'Helvetica Neue', Arial, sans-serif" font-size="${s*0.34}" fill="${c}" font-weight="bold" letter-spacing="${s*0.015}">${i1} / ${i2}</text>
+      <!-- Barra inferior -->
+      <rect x="${s*0.38}" y="${s*0.68}" width="${s*0.24}" height="${s*0.012}" fill="${c}" opacity="0.4"/>
     </svg>`;
   }
-  if (p === 'rustico') {
+  if (perfil === 'rustico') {
     return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="${hs}" cy="${hs}" r="${s*0.40}" fill="none" stroke="${c}" stroke-width="${s*0.014}" opacity="0.25"/>
-      <text x="${hs}" y="${s*0.56}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.34}" fill="${c}" letter-spacing="${s*0.01}">${i1} + ${i2}</text>
-      <path d="M${s*0.12},${s*0.78} Q${s*0.30},${s*0.62} ${s*0.50},${s*0.76} Q${s*0.70},${s*0.60} ${s*0.88},${s*0.78}" fill="none" stroke="${c}" stroke-width="${s*0.01}" opacity="0.3"/>
-      <path d="M${s*0.18},${s*0.84} Q${s*0.35},${s*0.70} ${s*0.50},${s*0.82} Q${s*0.65},${s*0.68} ${s*0.82},${s*0.84}" fill="none" stroke="${c}" stroke-width="${s*0.006}" opacity="0.2"/>
-      <circle cx="${s*0.28}" cy="${s*0.70}" r="${s*0.016}" fill="${c}" opacity="0.25"/>
-      <circle cx="${s*0.72}" cy="${s*0.68}" r="${s*0.012}" fill="${c}" opacity="0.2"/>
+      <!-- Círculo orgânico -->
+      <circle cx="${hs}" cy="${hs}" r="${s*0.38}" fill="none" stroke="${c}" stroke-width="${s*0.014}" opacity="0.25"/>
+      <!-- Galhos principais -->
+      <path d="M${s*0.08},${s*0.65} Q${s*0.25},${s*0.45} ${s*0.45},${s*0.58} Q${s*0.65},${s*0.42} ${s*0.82},${s*0.55} Q${s*0.92},${s*0.48} ${s*0.92},${s*0.68}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.4"/>
+      <path d="M${s*0.15},${s*0.72} Q${s*0.30},${s*0.55} ${s*0.50},${s*0.68} Q${s*0.70},${s*0.52} ${s*0.85},${s*0.65}" fill="none" stroke="${c}" stroke-width="${s*0.008}" opacity="0.25"/>
+      <!-- Folhas estilizadas -->
+      <ellipse cx="${s*0.30}" cy="${s*0.48}" rx="${s*0.025}" ry="${s*0.055}" fill="none" stroke="${c}" stroke-width="${s*0.005}" opacity="0.3" transform="rotate(-25 ${s*0.30} ${s*0.48})"/>
+      <ellipse cx="${s*0.70}" cy="${s*0.48}" rx="${s*0.025}" ry="${s*0.055}" fill="none" stroke="${c}" stroke-width="${s*0.005}" opacity="0.3" transform="rotate(25 ${s*0.70} ${s*0.48})"/>
+      <ellipse cx="${s*0.40}" cy="${s*0.40}" rx="${s*0.02}" ry="${s*0.04}" fill="none" stroke="${c}" stroke-width="${s*0.004}" opacity="0.25" transform="rotate(-40 ${s*0.40} ${s*0.40})"/>
+      <ellipse cx="${s*0.60}" cy="${s*0.40}" rx="${s*0.02}" ry="${s*0.04}" fill="none" stroke="${c}" stroke-width="${s*0.004}" opacity="0.25" transform="rotate(40 ${s*0.60} ${s*0.40})"/>
+      <!-- Iniciais -->
+      <text x="${hs}" y="${s*0.54}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.30}" fill="${c}" font-weight="bold">${i1} + ${i2}</text>
+      <!-- Círculos decorativos -->
+      <circle cx="${s*0.25}" cy="${s*0.75}" r="${s*0.010}" fill="${c}" opacity="0.25"/>
+      <circle cx="${s*0.75}" cy="${s*0.75}" r="${s*0.010}" fill="${c}" opacity="0.25"/>
     </svg>`;
   }
-  if (p === 'romantico') {
+  if (perfil === 'romantico') {
     return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-      <path d="M${hs},${s*0.18} C${hs-s*0.10},${s*0.06} ${hs-s*0.22},${s*0.14} ${hs-s*0.22},${s*0.26} C${hs-s*0.22},${s*0.38} ${hs},${s*0.52} ${hs},${s*0.52} C${hs},${s*0.52} ${hs+s*0.22},${s*0.38} ${hs+s*0.22},${s*0.26} C${hs+s*0.22},${s*0.14} ${hs+s*0.10},${s*0.06} ${hs},${s*0.18}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.3"/>
-      <text x="${hs}" y="${s*0.68}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.30}" fill="${c}" letter-spacing="${s*0.008}">${i1} & ${i2}</text>
-      <path d="M${s*0.10},${s*0.82} Q${s*0.35},${s*0.72} ${hs},${s*0.82} Q${s*0.65},${s*0.72} ${s*0.90},${s*0.82}" fill="none" stroke="${c}" stroke-width="${s*0.006}" opacity="0.25"/>
+      <!-- Coração estilizado -->
+      <path d="M${hs},${s*0.22} C${s*0.35},${s*0.08} ${s*0.15},${s*0.18} ${s*0.15},${s*0.38} C${s*0.15},${s*0.58} ${hs},${s*0.78} ${hs},${s*0.78} C${hs},${s*0.78} ${s*0.85},${s*0.58} ${s*0.85},${s*0.38} C${s*0.85},${s*0.18} ${s*0.65},${s*0.08} ${hs},${s*0.22}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.35"/>
+      <!-- Iniciais -->
+      <text x="${hs}" y="${s*0.52}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.28}" fill="${c}" font-weight="bold">${i1} & ${i2}</text>
+      <!-- Enfeites florais -->
+      <path d="M${s*0.25},${s*0.72} Q${s*0.38},${s*0.62} ${hs},${s*0.72} Q${s*0.62},${s*0.62} ${s*0.75},${s*0.72}" fill="none" stroke="${c}" stroke-width="${s*0.006}" opacity="0.3"/>
+      <path d="M${s*0.30},${s*0.78} Q${s*0.40},${s*0.70} ${hs},${s*0.78} Q${s*0.60},${s*0.70} ${s*0.70},${s*0.78}" fill="none" stroke="${c}" stroke-width="${s*0.005}" opacity="0.2"/>
+      <!-- Pétalas -->
+      <circle cx="${s*0.28}" cy="${s*0.32}" r="${s*0.015}" fill="none" stroke="${c}" stroke-width="${s*0.004}" opacity="0.25"/>
+      <circle cx="${s*0.72}" cy="${s*0.32}" r="${s*0.015}" fill="none" stroke="${c}" stroke-width="${s*0.004}" opacity="0.25"/>
+      <circle cx="${s*0.35}" cy="${s*0.25}" r="${s*0.010}" fill="${c}" opacity="0.2"/>
+      <circle cx="${s*0.65}" cy="${s*0.25}" r="${s*0.010}" fill="${c}" opacity="0.2"/>
     </svg>`;
   }
   // Minimalista fallback
   return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-    <line x1="${s*0.10}" y1="${hs}" x2="${s*0.90}" y2="${hs}" stroke="${c}" stroke-width="${s*0.01}" opacity="0.4"/>
-    <text x="${hs}" y="${s*0.54}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.36}" fill="${c}" letter-spacing="${s*0.015}">${i1} & ${i2}</text>
-    <line x1="${s*0.10}" y1="${s*0.56}" x2="${s*0.90}" y2="${s*0.56}" stroke="${c}" stroke-width="${s*0.005}" opacity="0.2"/>
+    <line x1="${s*0.10}" y1="${hs}" x2="${s*0.90}" y2="${hs}" stroke="${c}" stroke-width="${s*0.010}" opacity="0.4"/>
+    <text x="${hs}" y="${s*0.54}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.36}" fill="${c}" font-weight="bold" letter-spacing="${s*0.015}">${i1} & ${i2}</text>
+    <line x1="${s*0.10}" y1="${s*0.58}" x2="${s*0.90}" y2="${s*0.58}" stroke="${c}" stroke-width="${s*0.005}" opacity="0.2"/>
   </svg>`;
 }
 
 /* ═══════════════════════════════════════════════════════════
    ELEMENTO GRÁFICO REAL DO PERFIL — arabesco/folha/geometria/flor
    ═══════════════════════════════════════════════════════════ */
-function svgElementoGrafico(perfil, cor, largura = 200, altura = 60) {
+function svgElementoGrafico(perfil, cor, largura = 240, altura = 70) {
   const p = String(perfil || 'minimalista').toLowerCase();
   const c = String(cor || '#1A1714');
   const w = largura;
   const h = altura;
+
   if (p === 'classico') {
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <path d="M0,${h*0.55} Q${w*0.20},${h*0.15} ${w*0.35},${h*0.45} Q${w*0.50},${h*0.10} ${w*0.65},${h*0.45} Q${w*0.80},${h*0.15} ${w},${h*0.55}" fill="none" stroke="${c}" stroke-width="1.5" opacity="0.45"/>
-      <path d="M${w*0.08},${h*0.65} Q${w*0.25},${h*0.30} ${w*0.40},${h*0.55} Q${w*0.55},${h*0.25} ${w*0.70},${h*0.55} Q${w*0.85},${h*0.30} ${w*0.92},${h*0.65}" fill="none" stroke="${c}" stroke-width="1" opacity="0.3"/>
-      <circle cx="${w*0.35}" cy="${h*0.35}" r="3" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.35"/>
-      <circle cx="${w*0.65}" cy="${h*0.32}" r="2.5" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.3"/>
+      <!-- Arabesco central com volutas -->
+      <path d="M${w*0.05},${h*0.55} C${w*0.15},${h*0.20} ${w*0.30},${h*0.45} ${w*0.42},${h*0.35} C${w*0.50},${h*0.28} ${w*0.55},${h*0.42} ${w*0.60},${h*0.35} C${w*0.70},${h*0.25} ${w*0.85},${h*0.20} ${w*0.95},${h*0.55}" fill="none" stroke="${c}" stroke-width="1.4" opacity="0.45"/>
+      <path d="M${w*0.10},${h*0.65} C${w*0.20},${h*0.35} ${w*0.32},${h*0.55} ${w*0.45},${h*0.45} C${w*0.52},${h*0.38} ${w*0.56},${h*0.52} ${w*0.62},${h*0.45} C${w*0.72},${h*0.35} ${w*0.80},${h*0.35} ${w*0.90},${h*0.65}" fill="none" stroke="${c}" stroke-width="1" opacity="0.3"/>
+      <!-- Volutas laterais -->
+      <path d="M${w*0.25},${h*0.30} Q${w*0.20},${h*0.15} ${w*0.30},${h*0.12} Q${w*0.40},${h*0.15} ${w*0.35},${h*0.30}" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.35"/>
+      <path d="M${w*0.65},${h*0.30} Q${w*0.60},${h*0.15} ${w*0.70},${h*0.12} Q${w*0.80},${h*0.15} ${w*0.75},${h*0.30}" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.35"/>
+      <!-- Círculos decorativos -->
+      <circle cx="${w*0.35}" cy="${h*0.40}" r="2.5" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3"/>
+      <circle cx="${w*0.65}" cy="${h*0.38}" r="2" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.25"/>
     </svg>`;
   }
   if (p === 'boho') {
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <path d="M${w*0.05},${h*0.70} C${w*0.15},${h*0.20} ${w*0.25},${h*0.60} ${w*0.35},${h*0.30} C${w*0.45},${h*0.55} ${w*0.55},${h*0.15} ${w*0.65},${h*0.50} C${w*0.75},${h*0.25} ${w*0.85},${h*0.65} ${w*0.95},${h*0.35}" fill="none" stroke="${c}" stroke-width="1.4" opacity="0.4"/>
-      <path d="M${w*0.10},${h*0.80} C${w*0.20},${h*0.40} ${w*0.30},${h*0.75} ${w*0.40},${h*0.45} C${w*0.50},${h*0.70} ${w*0.60},${h*0.35} ${w*0.70},${h*0.65} C${w*0.80},${h*0.40} ${w*0.90},${h*0.75} ${w*0.95},${h*0.50}" fill="none" stroke="${c}" stroke-width="1" opacity="0.25"/>
-      <circle cx="${w*0.35}" cy="${h*0.28}" r="2" fill="${c}" opacity="0.25"/>
-      <circle cx="${w*0.65}" cy="${h*0.45}" r="2" fill="${c}" opacity="0.25"/>
+      <!-- Ramos ondulantes -->
+      <path d="M${w*0.04},${h*0.70} C${w*0.12},${h*0.25} ${w*0.22},${h*0.55} ${w*0.32},${h*0.35} C${w*0.42},${h*0.55} ${w*0.52},${h*0.20} ${w*0.62},${h*0.40} C${w*0.72},${h*0.25} ${w*0.82},${h*0.55} ${w*0.92},${h*0.30} C${w*0.96},${h*0.20} ${w*0.98},${h*0.45} ${w*0.98},${h*0.70}" fill="none" stroke="${c}" stroke-width="1.4" opacity="0.4"/>
+      <path d="M${w*0.08},${h*0.78} C${w*0.15},${h*0.40} ${w*0.25},${h*0.65} ${w*0.35},${h*0.45} C${w*0.45},${h*0.65} ${w*0.55},${h*0.35} ${w*0.65},${h*0.50} C${w*0.75},${h*0.35} ${w*0.85},${h*0.60} ${w*0.95},${h*0.40}" fill="none" stroke="${c}" stroke-width="1" opacity="0.25"/>
+      <!-- Folhas -->
+      <path d="M${w*0.22},${h*0.32} Q${w*0.18},${h*0.22} ${w*0.25},${h*0.18} Q${w*0.32},${h*0.22} ${w*0.28},${h*0.32} Z" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3"/>
+      <path d="M${w*0.48},${h*0.28} Q${w*0.44},${h*0.18} ${w*0.50},${h*0.15} Q${w*0.56},${h*0.18} ${w*0.52},${h*0.28} Z" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3"/>
+      <path d="M${w*0.75},${h*0.30} Q${w*0.71},${h*0.20} ${w*0.78},${h*0.17} Q${w*0.85},${h*0.20} ${w*0.81},${h*0.30} Z" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3"/>
+      <!-- Pontos -->
+      <circle cx="${w*0.35}" cy="${h*0.25}" r="1.5" fill="${c}" opacity="0.25"/>
+      <circle cx="${w*0.65}" cy="${h*0.22}" r="1.5" fill="${c}" opacity="0.25"/>
     </svg>`;
   }
   if (p === 'moderno') {
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <rect x="${w*0.08}" y="${h*0.25}" width="${w*0.18}" height="${h*0.35}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4"/>
-      <rect x="${w*0.32}" y="${h*0.18}" width="${w*0.28}" height="${h*0.50}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4"/>
-      <rect x="${w*0.66}" y="${h*0.25}" width="${w*0.26}" height="${h*0.35}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4"/>
+      <!-- Formas geométricas -->
+      <rect x="${w*0.06}" y="${h*0.25}" width="${w*0.14}" height="${h*0.40}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4" rx="2"/>
+      <rect x="${w*0.24}" y="${h*0.18}" width="${w*0.22}" height="${h*0.55}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4" rx="2"/>
+      <rect x="${w*0.50}" y="${h*0.25}" width="${w*0.18}" height="${h*0.40}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4" rx="2"/>
+      <rect x="${w*0.72}" y="${h*0.18}" width="${w*0.22}" height="${h*0.55}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4" rx="2"/>
+      <!-- Linha base -->
       <line x1="0" y1="${h*0.82}" x2="${w}" y2="${h*0.82}" stroke="${c}" stroke-width="2" opacity="0.5"/>
+      <!-- Pontos -->
+      <circle cx="${w*0.13}" cy="${h*0.72}" r="2" fill="${c}" opacity="0.3"/>
+      <circle cx="${w*0.35}" cy="${h*0.78}" r="2" fill="${c}" opacity="0.3"/>
+      <circle cx="${w*0.59}" cy="${h*0.72}" r="2" fill="${c}" opacity="0.3"/>
+      <circle cx="${w*0.83}" cy="${h*0.78}" r="2" fill="${c}" opacity="0.3"/>
     </svg>`;
   }
   if (p === 'rustico') {
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <path d="M${w*0.04},${h*0.65} Q${w*0.18},${h*0.25} ${w*0.32},${h*0.55} Q${w*0.46},${h*0.20} ${w*0.60},${h*0.55} Q${w*0.74},${h*0.25} ${w*0.88},${h*0.60} Q${w*0.96},${h*0.40} ${w*0.98},${h*0.70}" fill="none" stroke="${c}" stroke-width="1.6" opacity="0.4"/>
-      <path d="M${w*0.12},${h*0.78} Q${w*0.24},${h*0.40} ${w*0.38},${h*0.68} Q${w*0.52},${h*0.35} ${w*0.66},${h*0.68} Q${w*0.80},${h*0.40} ${w*0.92},${h*0.75}" fill="none" stroke="${c}" stroke-width="1" opacity="0.25"/>
-      <circle cx="${w*0.32}" cy="${h*0.38}" r="2.5" fill="${c}" opacity="0.2"/>
-      <circle cx="${w*0.66}" cy="${h*0.42}" r="2" fill="${c}" opacity="0.2"/>
+      <!-- Galhos principais -->
+      <path d="M${w*0.03},${h*0.65} Q${w*0.15},${h*0.30} ${w*0.28},${h*0.50} Q${w*0.42},${h*0.25} ${w*0.55},${h*0.48} Q${w*0.68},${h*0.28} ${w*0.82},${h*0.50} Q${w*0.92},${h*0.35} ${w*0.97},${h*0.65}" fill="none" stroke="${c}" stroke-width="1.6" opacity="0.4"/>
+      <path d="M${w*0.08},${h*0.75} Q${w*0.18},${h*0.45} ${w*0.30},${h*0.62} Q${w*0.42},${h*0.40} ${w*0.55},${h*0.58} Q${w*0.68},${h*0.38} ${w*0.80},${h*0.60} Q${w*0.90},${h*0.45} ${w*0.95},${h*0.75}" fill="none" stroke="${c}" stroke-width="1" opacity="0.25"/>
+      <!-- Folhas estilizadas -->
+      <ellipse cx="${w*0.20}" cy="${h*0.38}" rx="3" ry="7" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3" transform="rotate(-30 ${w*0.20} ${h*0.38})"/>
+      <ellipse cx="${w*0.38}" cy="${h*0.32}" rx="2.5" ry="6" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3" transform="rotate(-15 ${w*0.38} ${h*0.32})"/>
+      <ellipse cx="${w*0.62}" cy="${h*0.30}" rx="2.5" ry="6" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3" transform="rotate(15 ${w*0.62} ${h*0.30})"/>
+      <ellipse cx="${w*0.80}" cy="${h*0.38}" rx="3" ry="7" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3" transform="rotate(30 ${w*0.80} ${h*0.38})"/>
+      <!-- Círculos -->
+      <circle cx="${w*0.30}" cy="${h*0.22}" r="1.5" fill="${c}" opacity="0.2"/>
+      <circle cx="${w*0.70}" cy="${h*0.20}" r="1.5" fill="${c}" opacity="0.2"/>
     </svg>`;
   }
   if (p === 'romantico') {
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <path d="M${w*0.48},${h*0.15} C${w*0.38},${h*0.02} ${w*0.28},${h*0.10} ${w*0.28},${h*0.22} C${w*0.28},${h*0.34} ${w*0.48},${h*0.48} ${w*0.48},${h*0.48} C${w*0.48},${h*0.48} ${w*0.68},${h*0.34} ${w*0.68},${h*0.22} C${w*0.68},${h*0.10} ${w*0.58},${h*0.02} ${w*0.48},${h*0.15}" fill="none" stroke="${c}" stroke-width="1.3" opacity="0.35"/>
-      <path d="M0,${h*0.72} Q${w*0.30},${h*0.55} ${w*0.48},${h*0.72} Q${w*0.66},${h*0.55} ${w},${h*0.72}" fill="none" stroke="${c}" stroke-width="0.9" opacity="0.3"/>
-      <path d="M${w*0.15},${h*0.82} Q${w*0.35},${h*0.68} ${w*0.48},${h*0.82} Q${w*0.61},${h*0.68} ${w*0.85},${h*0.82}" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.2"/>
+      <!-- Corações estilizados -->
+      <path d="M${w*0.15},${h*0.45} C${w*0.10},${h*0.30} ${w*0.22},${h*0.25} ${w*0.25},${h*0.35} C${w*0.28},${h*0.25} ${w*0.40},${h*0.30} ${w*0.35},${h*0.45} C${w*0.35},${h*0.55} ${w*0.25},${h*0.65} ${w*0.25},${h*0.65} C${w*0.25},${h*0.65} ${w*0.15},${h*0.55} ${w*0.15},${h*0.45}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.35"/>
+      <path d="M${w*0.65},${h*0.45} C${w*0.60},${h*0.30} ${w*0.72},${h*0.25} ${w*0.75},${h*0.35} C${w*0.78},${h*0.25} ${w*0.90},${h*0.30} ${w*0.85},${h*0.45} C${w*0.85},${h*0.55} ${w*0.75},${h*0.65} ${w*0.75},${h*0.65} C${w*0.75},${h*0.65} ${w*0.65},${h*0.55} ${w*0.65},${h*0.45}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.35"/>
+      <!-- Linha ondulada central -->
+      <path d="M0,${h*0.55} Q${w*0.25},${h*0.40} ${w*0.50},${h*0.55} Q${w*0.75},${h*0.70} ${w},${h*0.55}" fill="none" stroke="${c}" stroke-width="1.3" opacity="0.4"/>
+      <path d="M${w*0.05},${h*0.65} Q${w*0.30},${h*0.50} ${w*0.50},${h*0.65} Q${w*0.70},${h*0.80} ${w*0.95},${h*0.65}" fill="none" stroke="${c}" stroke-width="0.9" opacity="0.25"/>
+      <!-- Pétalas -->
+      <circle cx="${w*0.50}" cy="${h*0.25}" r="2" fill="none" stroke="${c}" stroke-width="0.6" opacity="0.3"/>
+      <circle cx="${w*0.42}" cy="${h*0.30}" r="1.5" fill="${c}" opacity="0.2"/>
+      <circle cx="${w*0.58}" cy="${h*0.30}" r="1.5" fill="${c}" opacity="0.2"/>
     </svg>`;
   }
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-    <line x1="${w*0.20}" y1="${h*0.50}" x2="${w*0.80}" y2="${h*0.50}" stroke="${c}" stroke-width="1.2" opacity="0.5"/>
+    <line x1="${w*0.15}" y1="${h*0.50}" x2="${w*0.85}" y2="${h*0.50}" stroke="${c}" stroke-width="1.2" opacity="0.5"/>
+    <line x1="${w*0.25}" y1="${h*0.58}" x2="${w*0.75}" y2="${h*0.58}" stroke="${c}" stroke-width="0.8" opacity="0.3"/>
   </svg>`;
 }
 
@@ -363,7 +440,7 @@ function cardTecnico(tituloSecao, dados) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   MINI CHECKLIST — checkbox real ☑, não o í da logo
+   MINI CHECKLIST — checkbox real ☐
    ═══════════════════════════════════════════════════════════ */
 function miniChecklistSecao(tituloSecao, dados) {
   const checks = {
@@ -407,8 +484,8 @@ function dicaSecao(tituloSecao) {
 /* ═══════════════════════════════════════════════════════════
    GRÁFICO PIZZA SVG
    ═══════════════════════════════════════════════════════════ */
-function gerarSvgPizza(itens, size = 220) {
-  const cx = size / 2, cy = size / 2, r = size / 2 - 16;
+function gerarSvgPizza(itens, size = 280) {
+  const cx = size / 2, cy = size / 2, r = size / 2 - 18;
   const total = itens.reduce((s, d) => s + d.percentual, 0);
   let startAngle = -Math.PI / 2;
   let paths = '';
@@ -427,7 +504,7 @@ function gerarSvgPizza(itens, size = 220) {
     legendHtml += `
       <div style="display:flex;align-items:center;margin-bottom:5px;gap:6px;">
         <div style="width:12px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;"></div>
-        <span style="font-family:var(--font-body);font-size:9.5px;color:var(--color-text);">${item.item} <strong>(${item.percentual}%)</strong></span>
+        <span style="font-family:var(--font-body);font-size:9px;color:var(--color-text);">${item.item} <strong>(${item.percentual}%)</strong></span>
       </div>
     `;
     startAngle = endAngle;
@@ -472,7 +549,6 @@ function renderTextoEditorial(secoesNormais) {
   let html = '';
   const primeiro = todasLinhas[0];
   const resto = todasLinhas.slice(1);
-  // Drop-cap ajustado para 3 linhas de altura
   html += `<p class="editorial-dropcap" style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;text-align:justify;">${primeiro}</p>`;
   for (const par of resto) {
     html += `<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;text-align:justify;">${par}</p>`;
@@ -580,10 +656,10 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   const grafico = gerarSvgPizza(itensOrcamento.slice(0, 8));
   const svgDeco = svgElementoGrafico(perfil, corPrimaria, 200, 50);
   const svgDecoLarge = svgElementoGrafico(perfil, corContraste, 280, 70);
-  const svgMono = svgMonogramaPorPerfil(inicial1, inicial2, perfil, corContraste, 160);
-  const svgMonoLarge = svgMonogramaPorPerfil(inicial1, inicial2, perfil, corContraste, 220);
-  const logoSvg = logoSVG('#8B6F5E', '#10B981', 22);
-  const logoSvgSmall = logoSVG('#8B6F5E', '#10B981', 16);
+  const svgMono = svgMonogramaPorPerfil(inicial1, inicial2, perfil, corContraste, 200);
+  const svgMonoLarge = svgMonogramaPorPerfil(inicial1, inicial2, perfil, corContraste, 260);
+  const logoHtml = logoHTML('#8B6F5E', '#10B981');
+  const logoHtmlSmall = logoHTML('#8B6F5E', '#10B981');
 
   const secoesTematicas = [
     { titulo: 'Identidade Visual', imagens: imgDecoracao, layout: 'hero' },
@@ -601,7 +677,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     let corpo = '';
 
     if (layout === 'hero') {
-      const imgHero = (imagens && imagens[0]) ? `<img src="${imagens[0]}" style="width:100%;height:90mm;object-fit:cover;border-radius:4px;display:block;margin-bottom:5mm;"/>` : '';
+      const imgHero = (imagens && imagens[0]) ? `<img src="${imagens[0]}" style="width:100%;height:85mm;object-fit:cover;border-radius:4px;display:block;margin-bottom:5mm;"/>` : '';
       corpo = `
         ${imgHero}
         <div style="font-size:10.5pt;line-height:1.7;text-align:justify;">
@@ -609,13 +685,13 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
         </div>
       `;
     } else if (layout === 'side') {
-      const imgLat = (imagens && imagens[0]) ? `<img src="${imagens[0]}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;display:block;"/>` : '';
+      const imgLat = (imagens && imagens[0]) ? `<img src="${imagens[0]}" style="width:100%;height:100%;min-height:80mm;object-fit:cover;border-radius:4px;display:block;"/>` : '';
       corpo = `
-        <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:5mm;align-items:start;height:calc(100% - 20mm);">
+        <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:5mm;align-items:start;">
           <div style="font-size:10.5pt;line-height:1.7;text-align:justify;">
             <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${textoInedito}</p>
           </div>
-          <div style="height:100%;min-height:80mm;">${imgLat}</div>
+          <div style="min-height:80mm;">${imgLat}</div>
         </div>
       `;
     } else if (layout === 'grid') {
@@ -632,7 +708,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
       const imgBack = (imagens && imagens[0]) ? `background-image:url(${imagens[0]});background-size:cover;background-position:center;` : '';
       corpo = `
         <div style="position:relative;border-radius:4px;overflow:hidden;min-height:120mm;${imgBack}">
-          <div style="background:rgba(249,247,244,0.90);padding:5mm;position:absolute;bottom:0;left:0;right:0;">
+          <div style="background:rgba(249,247,244,0.92);padding:5mm;position:absolute;bottom:0;left:0;right:0;">
             <div style="font-size:10.5pt;line-height:1.7;text-align:justify;">
               <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${textoInedito}</p>
             </div>
@@ -653,7 +729,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   ${miniChecklistSecao(titulo, dadosEvento)}
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoSvgSmall}</span>
+    <span>${logoHtmlSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>`;
@@ -683,7 +759,6 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   @page { size: A4; margin: 0; }
-  @page landscape { size: A4 landscape; margin: 0; }
   body { font-family: var(--font-body); color: var(--color-text); counter-reset: pagina; }
 
   .page {
@@ -696,18 +771,6 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     counter-increment: pagina;
   }
   .page:last-child { page-break-after: auto; }
-
-  .page-landscape {
-    width: 297mm;
-    min-height: 210mm;
-    padding: 14mm 18mm 18mm 18mm;
-    position: relative;
-    page-break-after: always;
-    overflow: visible;
-    counter-increment: pagina;
-    page: landscape;
-  }
-  .page-landscape:last-child { page-break-after: auto; }
 
   .footer {
     position: absolute;
@@ -804,6 +867,15 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     border-radius: 50%;
     border: 2pt solid ${corContraste};
     margin-bottom: 2mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .palette-hex {
+    font-size: 6.5pt;
+    font-family: 'LogoFont2', monospace;
+    color: ${corContraste};
+    opacity: 0.9;
   }
   .palette-name { font-size: 8.5pt; font-family: var(--font-body); font-weight: 500; }
   .palette-role { font-size: 7.5pt; opacity: 0.8; font-family: var(--font-body); }
@@ -887,11 +959,11 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   }
   .editorial-dropcap::first-letter {
     font-family: var(--font-display);
-    font-size: 3.4em;
+    font-size: 4.5em;
     float: left;
-    line-height: 0.82;
+    line-height: 0.72;
     margin-right: 0.06em;
-    margin-top: 0.04em;
+    margin-top: 0.06em;
     color: var(--color-primary);
     font-weight: bold;
   }
@@ -933,12 +1005,23 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     border-radius: 3px;
     margin-bottom: 2mm;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .idv-swatch-hex {
+    font-size: 6.5pt;
+    font-family: 'LogoFont2', monospace;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    font-weight: bold;
   }
   .idv-swatch-name { font-size: 9pt; font-family: var(--font-body); font-weight: 500; }
   .idv-swatch-role { font-size: 7.5pt; font-family: var(--font-body); color: var(--color-text-soft); margin-top: 1px; }
   .idv-typo-sample {
     font-family: var(--font-display);
-    font-size: 20pt;
+    font-size: 22pt;
     margin: 4mm 0;
     line-height: 1.4;
     color: var(--color-primary);
@@ -949,6 +1032,12 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     line-height: 1.6;
     max-width: 140mm;
     margin: 0 auto 4mm auto;
+    text-align: center;
+  }
+  .idv-typo-alphabet {
+    font-size: 11pt;
+    line-height: 1.8;
+    margin: 3mm 0;
     text-align: center;
   }
   .idv-explanation {
@@ -986,7 +1075,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     padding: 3mm;
     margin: 3mm 0;
     border-radius: 3px;
-    page-break-inside: avoid;
+    break-inside: avoid;
   }
   .info-box p {
     font-size: 9.5pt;
@@ -1000,7 +1089,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     border-collapse: collapse;
     margin-top: 3mm;
     font-size: 9pt;
-    page-break-inside: avoid;
+    break-inside: avoid;
   }
   .data-table th {
     text-align: left;
@@ -1019,24 +1108,22 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     vertical-align: top;
     font-size: 9pt;
   }
-  .data-table tr { page-break-inside: avoid; }
+  .data-table tr { break-inside: avoid; }
 
-  /* ═══ LINHA DO TEMPO (LANDSCAPE) ═══ */
-  .timeline-landscape {
-    display: flex;
-    gap: 5mm;
+  /* ═══ LINHA DO TEMPO (VERTICAL A4) ═══ */
+  .timeline-vertical {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4mm;
     margin-top: 4mm;
-    align-items: stretch;
   }
   .timeline-card {
-    flex: 1;
-    min-width: 0;
     border-radius: 4px;
     padding: 4mm;
-    page-break-inside: avoid;
-    position: relative;
+    break-inside: avoid;
     background: #fff;
     border: 0.5pt solid #E5E0D9;
+    border-top: 3pt solid var(--color-primary);
   }
   .timeline-card h4 {
     font-family: var(--font-display);
@@ -1063,10 +1150,10 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     border-radius: 1.5pt;
   }
 
-  /* ═══ CALENDÁRIO (LANDSCAPE) ═══ */
+  /* ═══ CALENDÁRIO (VERTICAL A4) ═══ */
   .calendario-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 3mm;
     margin-top: 4mm;
   }
@@ -1074,7 +1161,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     border: 0.5pt solid #E5E0D9;
     border-radius: 3px;
     padding: 3mm;
-    page-break-inside: avoid;
+    break-inside: avoid;
     background: #fff;
   }
   .calendario-mes h5 {
@@ -1092,8 +1179,8 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     color: var(--color-text);
   }
 
-  /* ═══ ORÇAMENTO (LANDSCAPE) ═══ */
-  .budget-landscape {
+  /* ═══ ORÇAMENTO ═══ */
+  .budget-header {
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 6mm;
@@ -1101,8 +1188,23 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     margin-bottom: 4mm;
   }
   .budget-chart svg { display: block; }
+  .budget-dicas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3mm;
+    margin-top: 4mm;
+  }
+  .budget-dica-box {
+    background: ${corSecundaria}15;
+    border-left: 2pt solid var(--color-primary);
+    padding: 2.5mm;
+    border-radius: 2px;
+    font-size: 9pt;
+    line-height: 1.5;
+    break-inside: avoid;
+  }
 
-  /* ═══ FORNECEDORES (LANDSCAPE) ═══ */
+  /* ═══ FORNECEDORES ═══ */
   .fornecedores-table th { font-size: 9pt; padding: 2.5mm; }
   .fornecedores-table td { font-size: 9pt; padding: 2mm 2.5mm; }
 
@@ -1149,7 +1251,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     background: ${corSecundaria}33;
     color: var(--color-text);
   }
-  .fornecedor-local {
+  .dica-box {
     display: inline-block;
     padding: 1.2mm 2.5mm;
     border-radius: 3px;
@@ -1196,14 +1298,11 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   }
 
   /* Quebras de conteúdo */
-  .section-title, .section-subtitle, .info-box, .timeline-card, .calendario-mes, .data-table {
-    page-break-inside: avoid;
+  .section-title, .section-subtitle, .info-box, .timeline-card, .calendario-mes, .data-table, img {
+    break-inside: avoid;
   }
   .section-title, .section-subtitle {
-    page-break-after: avoid;
-  }
-  img {
-    page-break-inside: avoid;
+    break-after: avoid;
   }
 </style>
 </head>
@@ -1222,7 +1321,9 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     <div class="cover-palette">
       ${paleta.map((cor, i) => `
         <div class="palette-item">
-          <div class="palette-circle" style="background:${cor};"></div>
+          <div class="palette-circle" style="background:${cor};">
+            <span class="palette-hex">${cor.toUpperCase()}</span>
+          </div>
           <div class="palette-name">${getNomeCor(cor)}</div>
           <div class="palette-role">${i===0?'Principal':i===1?'Secundária':'Terciária'}</div>
         </div>
@@ -1232,7 +1333,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   <div class="cover-deco">${svgDecoLarge}</div>
   <div class="cover-footer">
     <span>${nomeCasal}</span>
-    <span>${logoSvg}</span>
+    <span>${logoHtml}</span>
     <span>arxum.csstudios.site/descomplicai</span>
   </div>
 </div>
@@ -1266,7 +1367,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   ].map(([s, p]) => `<div class="toc-row"><span><strong>${s}</strong></span><span class="toc-dots"></span><span style="color:var(--color-text-soft);">${p}</span></div>`).join('')}
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoSvgSmall}</span>
+    <span>${logoHtmlSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
@@ -1287,12 +1388,12 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   ` : ''}
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoSvgSmall}</span>
+    <span>${logoHtmlSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
 
-<!-- Página 4 do Editorial — estrutura coerente, sem float maluco -->
+<!-- Página 4 do Editorial — estrutura coerente -->
 <div class="page">
   <div style="text-align:center;margin-bottom:4mm;">${svgDeco}</div>
   <div class="section-title" style="font-size:18pt;text-align:center;border:none;">A Visão do Casal</div>
@@ -1321,7 +1422,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   ` : ''}
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoSvgSmall}</span>
+    <span>${logoHtmlSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
@@ -1331,7 +1432,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title" style="text-align:center;border:none;">Identidade Visual</div>
 
-  <div class="idv-monogram-main">${svgMonogramaPorPerfil(inicial1, inicial2, perfil, corPrimaria, 180)}</div>
+  <div class="idv-monogram-main">${svgMonogramaPorPerfil(inicial1, inicial2, perfil, corPrimaria, 200)}</div>
 
   <div style="font-family:var(--font-display);font-size:14pt;color:var(--color-primary);margin:3mm 0;">
     Estilo: <strong>${capitalizarNome(estilo)}</strong> &mdash; Perfil: <strong>${capitalizarNome(perfil)}</strong>
@@ -1340,18 +1441,26 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   <div class="idv-swatches">
     ${paleta.map((cor, i) => `
       <div class="idv-swatch">
-        <div class="idv-swatch-box" style="background:${cor};"></div>
+        <div class="idv-swatch-box" style="background:${cor};">
+          <span class="idv-swatch-hex">${cor.toUpperCase()}</span>
+        </div>
         <div class="idv-swatch-name">${getNomeCor(cor)}</div>
         <div class="idv-swatch-role">${i===0?'Principal':i===1?'Secundária':'Terciária'}</div>
       </div>
     `).join('')}
   </div>
 
-  <div class="idv-typo-sample">
-    Aa Bb Cc Dd Ee Ff Gg
+  <div class="idv-typo-sample" style="font-family:var(--font-display);font-size:24pt;margin:5mm 0;">
+    ${nomeCasal}
+  </div>
+  <div class="idv-typo-alphabet" style="font-family:var(--font-display);">
+    Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz
   </div>
   <div class="idv-typo-body">
     <strong>Display:</strong> ${fonteDisplay} &mdash; <strong>Corpo:</strong> ${fonteCorpo}
+  </div>
+  <div class="idv-typo-alphabet" style="font-family:var(--font-body);font-size:10pt;">
+    Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz
   </div>
 
   <div class="idv-explanation">
@@ -1369,7 +1478,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
 
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoSvgSmall}</span>
+    <span>${logoHtmlSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
@@ -1377,8 +1486,8 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
 <!-- ═══════════════════════════════════════════════════ SEÇÕES TEMÁTICAS -->
 ${paginasTematicas}
 
-<!-- ═══════════════════════════════════════════════════ LINHA DO TEMPO (LANDSCAPE) -->
-<div class="page-landscape">
+<!-- ═══════════════════════════════════════════════════ LINHA DO TEMPO (A4 VERTICAL) -->
+<div class="page">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Linha do Tempo</div>
   <p style="font-size:10.5pt;line-height:1.7;margin-bottom:5mm;">O planejamento exige organização. Aqui está o cronograma ideal para ${nomeCasal}.</p>
@@ -1387,14 +1496,14 @@ ${paginasTematicas}
     <div class="timeline-connector-line"></div>
   </div>
 
-  <div class="timeline-landscape">
+  <div class="timeline-vertical">
     ${[
       {meses:'12-8 meses',cor:'#4CAF50',tarefas:['Definir data e reservar local','Contratar cerimonialista','Iniciar lista de convidados','Definir estilo e paleta']},
       {meses:'7-4 meses',cor:'#FFC107',tarefas:['Fechar buffet e bebidas','Contratar fotógrafo e vídeo','Provar vestido e traje','Definir decoração e flores']},
       {meses:'3-1 mês',cor:'#FF9800',tarefas:['Enviar convites','Confirmar presenças','Ajustar detalhes decorativos','Prova de cabelo e maquiagem']},
       {meses:'Última semana',cor:'#F44336',tarefas:['Ensaio geral','Confirmar fornecedores','Separar itens do dia','Descansar e se hidratar']},
     ].map((item,i)=>`
-      <div class="timeline-card" style="border-top:3pt solid ${item.cor};">
+      <div class="timeline-card" style="border-top-color:${item.cor};">
         <h4 style="color:${item.cor};">${item.meses}</h4>
         ${item.tarefas.map(t=>`<p>&bull; ${t}</p>`).join('')}
       </div>
@@ -1411,13 +1520,13 @@ ${paginasTematicas}
   </div>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoSvgSmall}</span>
+    <span>${logoHtmlSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════ CALENDÁRIO MENSAL (LANDSCAPE) -->
-<div class="page-landscape">
+<!-- ═══════════════════════════════════════════════════ CALENDÁRIO MENSAL (A4 VERTICAL) -->
+<div class="page">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Calendário Mensal</div>
   <div class="calendario-grid">
@@ -1443,7 +1552,7 @@ ${paginasTematicas}
   </div>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoSvgSmall}</span>
+    <span>${logoHtmlSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
@@ -1465,7 +1574,7 @@ ${paginasTematicas}
   </table>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoSvgSmall}</span>
+    <span>${logoHtmlSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
@@ -1487,14 +1596,14 @@ ${checklist.length > 16 ? `
   </table>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoSvgSmall}</span>
+    <span>${logoHtmlSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
 ` : ''}
 
-<!-- ═══════════════════════════════════════════════════ FORNECEDORES (LANDSCAPE) -->
-<div class="page-landscape">
+<!-- ═══════════════════════════════════════════════════ FORNECEDORES (A4 VERTICAL) -->
+<div class="page">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Fornecedores</div>
   <table class="data-table fornecedores-table">
@@ -1511,13 +1620,13 @@ ${checklist.length > 16 ? `
   </table>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoSvgSmall}</span>
+    <span>${logoHtmlSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
 
 ${fornecedores.length > 20 ? `
-<div class="page-landscape">
+<div class="page">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Fornecedores &mdash; Continuação</div>
   <table class="data-table fornecedores-table">
@@ -1534,13 +1643,13 @@ ${fornecedores.length > 20 ? `
   </table>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoSvgSmall}</span>
+    <span>${logoHtmlSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
 ` : ''}
 
-<div class="page-landscape">
+<div class="page">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Fornecedores &mdash; Anotações de Valor e Prazo</div>
   <table class="data-table fornecedores-table">
@@ -1556,23 +1665,50 @@ ${fornecedores.length > 20 ? `
   </table>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoSvgSmall}</span>
+    <span>${logoHtmlSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════ ORÇAMENTO (LANDSCAPE, JUNTO) -->
-<div class="page-landscape">
+<!-- ═══════════════════════════════════════════════════ ORÇAMENTO (A4 VERTICAL) -->
+<div class="page">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Orçamento Detalhado</div>
   <p style="font-size:10pt;line-height:1.6;margin-bottom:4mm;">Esta estimativa foi regionalizada com base em <strong>${cidade || 'sua cidade'}</strong> / <strong>${estado || 'seu estado'}</strong>.</p>
-  <div class="budget-landscape">
+  <div class="budget-header">
     <div class="budget-chart">${grafico.svg}</div>
-    <div>${grafico.legend}</div>
+    <div>
+      <p style="font-size:10pt;line-height:1.6;margin-bottom:3mm;"><strong>Como ler este gráfico:</strong> cada fatia representa a proporção ideal do orçamento total para cada categoria. Use os valores estimados como ponto de partida para suas negociações.</p>
+      ${grafico.legend}
+    </div>
   </div>
+  <div class="budget-dicas">
+    <div class="budget-dica-box">
+      <strong style="color:var(--color-primary);">Dica 1:</strong> Reserve 10% do orçamento total para imprevistos e gastos de última hora.
+    </div>
+    <div class="budget-dica-box">
+      <strong style="color:var(--color-primary);">Dica 2:</strong> Negocie pacotes completos com fornecedores para obter descontos de 5-15%.
+    </div>
+    <div class="budget-dica-box">
+      <strong style="color:var(--color-primary);">Dica 3:</strong> Priorize: buffet, espaço e fotografia são os itens que mais impactam a experiência.
+    </div>
+    <div class="budget-dica-box">
+      <strong style="color:var(--color-primary);">Dica 4:</strong> Pague fornecedores-chave com antecedência para garantir disponibilidade.
+    </div>
+  </div>
+  <div class="footer">
+    <span>${nomeCasal}</span>
+    <span>${logoHtmlSmall}</span>
+    <span class="page-number"></span>
+  </div>
+</div>
+
+<div class="page">
+  <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
+  <div class="section-title">Orçamento &mdash; Tabela Completa</div>
   <table class="data-table">
-    <tr><th>Item</th><th style="width:12mm;">%</th><th style="width:22mm;">Valor Est.</th><th style="width:22mm;">Valor Real</th></tr>
-    ${itensOrcamento.slice(0,20).map(item=>`
+    <tr><th>Item</th><th style="width:12mm;">%</th><th style="width:24mm;">Valor Est.</th><th style="width:24mm;">Valor Real</th></tr>
+    ${itensOrcamento.slice(0,18).map(item=>`
       <tr>
         <td>${item.item}</td>
         <td>${item.percentual}%</td>
@@ -1583,17 +1719,17 @@ ${fornecedores.length > 20 ? `
   </table>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoSvgSmall}</span>
+    <span>${logoHtmlSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
 
-<div class="page-landscape">
+<div class="page">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Orçamento &mdash; Continuação</div>
   <table class="data-table">
-    <tr><th>Item</th><th style="width:12mm;">%</th><th style="width:22mm;">Valor Est.</th><th style="width:22mm;">Valor Real</th></tr>
-    ${itensOrcamento.slice(20).map(item=>`
+    <tr><th>Item</th><th style="width:12mm;">%</th><th style="width:24mm;">Valor Est.</th><th style="width:24mm;">Valor Real</th></tr>
+    ${itensOrcamento.slice(18).map(item=>`
       <tr>
         <td>${item.item}</td>
         <td>${item.percentual}%</td>
@@ -1609,11 +1745,11 @@ ${fornecedores.length > 20 ? `
     </tr>
   </table>
   <div class="info-box" style="margin-top:4mm;">
-    <p><span style="color:#10B981;font-weight:bold;font-size:11pt;margin-right:4px;">í</span><strong>Dica:</strong> reserve 10% do orçamento para imprevistos. Negocie pacotes completos com fornecedores para obter melhores condições.</p>
+    <p><span style="color:#10B981;font-weight:bold;font-size:11pt;margin-right:4px;">í</span><strong>Importante:</strong> os valores são estimativas regionalizadas. Solicite orçamentos detalhados de pelo menos 3 fornecedores por categoria antes de tomar decisões finais.</p>
   </div>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoSvgSmall}</span>
+    <span>${logoHtmlSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
@@ -1637,26 +1773,18 @@ ${fornecedores.length > 20 ? `
     ${dicasRegionais.melhoresEpocas.map(e=>`<span class="epoca-badge">${e}</span>`).join('')}
   </div>
 
-  <div class="section-subtitle" style="margin-top:5mm;">Fornecedores Locais Recomendados</div>
-  <div style="margin:2mm 0;">
-    <span class="fornecedor-local">Espaços &amp; Venues</span>
-    <span class="fornecedor-local">Buffet &amp; Bar</span>
-    <span class="fornecedor-local">Fotografia</span>
-    <span class="fornecedor-local">Decoração &amp; Flores</span>
-    <span class="fornecedor-local">Música &amp; DJ</span>
-    <span class="fornecedor-local">Beleza &amp; Vestido</span>
-    <span class="fornecedor-local">Papelaria</span>
-    <span class="fornecedor-local">Cerimonialista</span>
-  </div>
+  <div class="section-subtitle" style="margin-top:5mm;">Dicas de Planejamento</div>
   <p style="font-size:9.5pt;line-height:1.6;color:var(--color-text-soft);margin-left:3mm;margin-top:2mm;">
-    Consulte a lista de fornecedores verificados em ${cidade || 'sua região'}. 
-    Prefira profissionais com experiência em casamentos no estilo ${estilo}.
-    Solicite orçamentos detalhados com 8 meses de antecedência e visite os espaços pessoalmente antes de fechar contrato.
+    &bull; Solicite orçamentos detalhados com 8 meses de antecedência.<br/>
+    &bull; Visite os espaços pessoalmente antes de fechar contrato.<br/>
+    &bull; Verifique a disponibilidade de fornecedores para a data escolhida.<br/>
+    &bull; Considere a logística de acesso para convidados de outras cidades.<br/>
+    &bull; Reserve acomodações com antecedência se o evento for em cidade turística.
   </p>
 
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoSvgSmall}</span>
+    <span>${logoHtmlSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
@@ -1669,10 +1797,10 @@ ${fornecedores.length > 20 ? `
   <div style="font-size:9pt;color:var(--color-text-soft);margin-bottom:6mm;">&mdash; Honoré de Balzac</div>
   ${qrCodeDataUri ? `<img src="${qrCodeDataUri}" class="cta-qr" alt="QR Code"/>` : ''}
   <div style="font-size:10pt;color:var(--color-primary);margin-top:3mm;">arxum.csstudios.site/descomplicai</div>
-  <div style="margin-top:6mm;">${logoSvg}</div>
+  <div style="margin-top:6mm;">${logoHtml}</div>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoSvgSmall}</span>
+    <span>${logoHtmlSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
