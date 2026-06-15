@@ -1,5 +1,5 @@
-// utils/pdfTemplate.js — Template Editorial Fluido (descomplicaí v4)
-// Princípio: quantas páginas forem necessárias. Nada de número fixo.
+// utils/pdfTemplate.js — Memorial descomplicaí v5 (Reescrito do Zero)
+// Princípio: impacto visual, coerência de branding, zero vazamento de conteúdo.
 
 import fs from 'fs';
 import path from 'path';
@@ -19,16 +19,20 @@ function normalizar(str) {
     .replace(/[^a-z0-9\s]/g, '');
 }
 
-/* ═══════════════════════════════════════════════════════════
-   FILTRO HEX — remove códigos hex do texto do memorial
-   ═══════════════════════════════════════════════════════════ */
 function filtrarHexDoTexto(texto) {
   if (!texto || typeof texto !== 'string') return texto;
   return texto.replace(/#[0-9A-Fa-f]{3,8}\b/g, '').replace(/\s{2,}/g, ' ').trim();
 }
 
+function sanitizarValor(val) {
+  if (val === true || val === 'true') return 'Sim';
+  if (val === false || val === 'false') return 'Não';
+  if (val === null || val === undefined) return '';
+  return String(val);
+}
+
 /* ═══════════════════════════════════════════════════════════
-   FONTES — carrega Regular e Bold em base64
+   FONTES BASE64
    ═══════════════════════════════════════════════════════════ */
 function fonteToBase64(nomeFonte, peso = 'regular') {
   if (typeof nomeFonte !== 'string') return null;
@@ -70,7 +74,7 @@ function fonteToBase64(nomeFonte, peso = 'regular') {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   IMAGENS — base64 única e múltiplas (SEM readdirSync)
+   IMAGENS BASE64
    ═══════════════════════════════════════════════════════════ */
 function imagemToBase64(categoria, chave) {
   const src = getImagem(categoria, chave);
@@ -89,48 +93,31 @@ function imagemToBase64(categoria, chave) {
 function getImagensMultiplas(categoria, chave, quantidade = 3) {
   const resultado = [];
   const chaveStr = String(chave || 'default').toLowerCase();
-
   const principal = getImagem(categoria, chaveStr);
   if (principal) {
-    try {
-      if (fs.existsSync(principal)) {
-        const buf = fs.readFileSync(principal);
-        resultado.push(`data:image/jpeg;base64,${buf.toString('base64')}`);
-      }
-    } catch (e) { console.warn('Img principal falhou:', categoria, chaveStr, e.message); }
+    try { if (fs.existsSync(principal)) { const buf = fs.readFileSync(principal); resultado.push(`data:image/jpeg;base64,${buf.toString('base64')}`); } }
+    catch (e) { console.warn('Img principal falhou:', categoria, chaveStr, e.message); }
   }
-
   if (resultado.length === 0) {
     const fallback = getImagem(categoria, 'default');
     if (fallback) {
-      try {
-        if (fs.existsSync(fallback)) {
-          const buf = fs.readFileSync(fallback);
-          resultado.push(`data:image/jpeg;base64,${buf.toString('base64')}`);
-        }
-      } catch (e) {}
+      try { if (fs.existsSync(fallback)) { const buf = fs.readFileSync(fallback); resultado.push(`data:image/jpeg;base64,${buf.toString('base64')}`); } }
+      catch (e) {}
     }
   }
-
   if (principal && resultado.length > 0) {
     const dir = path.dirname(principal);
     const ext = path.extname(principal);
     const baseName = path.basename(principal, ext);
     const prefixMatch = baseName.match(/^(.+)-(\d+)$/);
     const prefix = prefixMatch ? prefixMatch[1] : baseName;
-
     for (let i = 2; i <= 6; i++) {
       if (resultado.length >= quantidade) break;
       const candidato = path.join(dir, `${prefix}-${i}${ext}`);
-      try {
-        if (fs.existsSync(candidato)) {
-          const buf = fs.readFileSync(candidato);
-          resultado.push(`data:image/jpeg;base64,${buf.toString('base64')}`);
-        }
-      } catch (e) {}
+      try { if (fs.existsSync(candidato)) { const buf = fs.readFileSync(candidato); resultado.push(`data:image/jpeg;base64,${buf.toString('base64')}`); } }
+      catch (e) {}
     }
   }
-
   if (resultado.length < quantidade) {
     const extrasPorCategoria = {
       decoracao: ['decor-default-1', 'decor-default-2', 'decor-default-3'],
@@ -150,206 +137,138 @@ function getImagensMultiplas(categoria, chave, quantidade = 3) {
     for (const nome of extras) {
       if (resultado.length >= quantidade) break;
       const candidato = path.join(baseDir, `${nome}.jpg`);
-      try {
-        if (fs.existsSync(candidato)) {
-          const buf = fs.readFileSync(candidato);
-          resultado.push(`data:image/jpeg;base64,${buf.toString('base64')}`);
-        }
-      } catch (e) {}
+      try { if (fs.existsSync(candidato)) { const buf = fs.readFileSync(candidato); resultado.push(`data:image/jpeg;base64,${buf.toString('base64')}`); } }
+      catch (e) {}
     }
   }
-
   return resultado;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   LOGO DESCOMPLECAÍ — tipografia pura, zero SVG
+   LOGO DESCOMPLECAÍ — SVG inline (garantia de renderização)
    ═══════════════════════════════════════════════════════════ */
-function logoDescomplicaiHTML(corDescomplica = '#8B6F5E', corI = '#10B981') {
-  return `<span style="font-family:'LogoFont1', 'DM Sans', 'Helvetica Neue', Arial, sans-serif; font-weight:300; font-size:1em; color:${corDescomplica};">descomplica</span><span style="font-family:'LogoFont2', 'Space Mono', 'Courier New', monospace; font-weight:400; font-style:italic; font-size:1.05em; color:${corI};">í</span>`;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   SVGs DECORATIVOS
-   ═══════════════════════════════════════════════════════════ */
-function svgMonograma(inicial1, inicial2, cor, tamanho = 140) {
-  const i1 = String(inicial1 || 'N').charAt(0).toUpperCase();
-  const i2 = String(inicial2 || 'N').charAt(0).toUpperCase();
-  const c = String(cor || '#1A1714');
-  return `<svg width="${tamanho}" height="${tamanho}" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="70" cy="70" r="65" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.6"/>
-    <circle cx="70" cy="70" r="58" fill="none" stroke="${c}" stroke-width="0.6" opacity="0.4"/>
-    <text x="70" y="78" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="38" fill="${c}" letter-spacing="2">${i1} <tspan font-size="24" dy="-4">&amp;</tspan> ${i2}</text>
-    <line x1="35" y1="95" x2="105" y2="95" stroke="${c}" stroke-width="1" opacity="0.5"/>
-  </svg>`;
-}
-
-function svgMonogramaPorPerfil(inicial1, inicial2, perfil, cor, tamanho = 140) {
-  const i1 = String(inicial1 || 'N').charAt(0).toUpperCase();
-  const i2 = String(inicial2 || 'N').charAt(0).toUpperCase();
-  const c = String(cor || '#1A1714');
-  const p = String(perfil || 'minimalista').toLowerCase();
-
-  if (p === 'classico') {
-    return `<svg width="${tamanho}" height="${tamanho}" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
-      <rect x="20" y="20" width="100" height="100" fill="none" stroke="${c}" stroke-width="1" opacity="0.4"/>
-      <text x="70" y="78" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="36" fill="${c}" letter-spacing="1">${i1} & ${i2}</text>
-      <line x1="30" y1="95" x2="110" y2="95" stroke="${c}" stroke-width="0.8" opacity="0.5"/>
-      <line x1="30" y1="98" x2="110" y2="98" stroke="${c}" stroke-width="0.4" opacity="0.3"/>
-    </svg>`;
-  }
-  if (p === 'boho') {
-    return `<svg width="${tamanho}" height="${tamanho}" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="70" cy="70" r="60" fill="none" stroke="${c}" stroke-width="1" opacity="0.3" stroke-dasharray="4 2"/>
-      <text x="70" y="76" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="34" fill="${c}" letter-spacing="1">${i1} <tspan font-size="20" dy="-2">&amp;</tspan> ${i2}</text>
-      <path d="M30,100 Q50,85 70,100 Q90,85 110,100" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.4"/>
-    </svg>`;
-  }
-  if (p === 'moderno') {
-    return `<svg width="${tamanho}" height="${tamanho}" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
-      <rect x="25" y="25" width="90" height="90" fill="none" stroke="${c}" stroke-width="1.5" opacity="0.5"/>
-      <rect x="35" y="35" width="70" height="70" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.3"/>
-      <text x="70" y="78" text-anchor="middle" font-family="DisplayFont, 'Helvetica Neue', sans-serif" font-size="32" fill="${c}" font-weight="bold" letter-spacing="2">${i1} / ${i2}</text>
-    </svg>`;
-  }
-  if (p === 'rustico') {
-    return `<svg width="${tamanho}" height="${tamanho}" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="70" cy="70" r="55" fill="none" stroke="${c}" stroke-width="1.5" opacity="0.4"/>
-      <text x="70" y="76" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="34" fill="${c}" letter-spacing="1">${i1} + ${i2}</text>
-      <path d="M25,105 Q45,90 70,105 Q95,90 115,105" fill="none" stroke="${c}" stroke-width="1" opacity="0.4"/>
-      <circle cx="45" cy="95" r="2" fill="${c}" opacity="0.3"/>
-      <circle cx="95" cy="95" r="2" fill="${c}" opacity="0.3"/>
-    </svg>`;
-  }
-  if (p === 'romantico') {
-    return `<svg width="${tamanho}" height="${tamanho}" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
-      <path d="M70,25 C55,10 35,25 35,45 C35,65 70,85 70,85 C70,85 105,65 105,45 C105,25 85,10 70,25" fill="none" stroke="${c}" stroke-width="1" opacity="0.4"/>
-      <text x="70" y="100" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="30" fill="${c}" letter-spacing="1">${i1} & ${i2}</text>
-    </svg>`;
-  }
-  return `<svg width="${tamanho}" height="${tamanho}" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
-    <line x1="20" y1="70" x2="120" y2="70" stroke="${c}" stroke-width="1" opacity="0.6"/>
-    <text x="70" y="65" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="36" fill="${c}" letter-spacing="2">${i1} & ${i2}</text>
-    <line x1="20" y1="75" x2="120" y2="75" stroke="${c}" stroke-width="0.5" opacity="0.3"/>
-  </svg>`;
-}
-
-function svgDecoracaoPerfil(perfil, cor, largura = 160) {
-  const p = String(perfil || 'minimalista').toLowerCase();
-  const c = String(cor || '#1A1714');
-  const h = 40;
-  if (p === 'classico') {
-    return `<svg width="${largura}" height="${h}" viewBox="0 0 ${largura} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <path d="M0,20 Q${largura/4},5 ${largura/2},20 T${largura},20" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.5"/>
-      <path d="M${largura*0.15},25 Q${largura*0.35},10 ${largura*0.5},25 T${largura*0.85},25" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.35"/>
-      <circle cx="${largura/2}" cy="12" r="3" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.4"/>
-    </svg>`;
-  }
-  if (p === 'boho') {
-    return `<svg width="${largura}" height="${h}" viewBox="0 0 ${largura} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <path d="M10,35 Q20,10 35,25 Q50,5 65,28 Q80,8 95,26 Q110,6 125,25 Q135,15 ${largura-10},35" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.5"/>
-      <path d="M25,38 Q35,18 45,32 Q55,15 70,33 Q85,16 100,32 Q115,18 125,35" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.35"/>
-      <circle cx="35" cy="22" r="2" fill="${c}" opacity="0.3"/>
-      <circle cx="95" cy="20" r="2" fill="${c}" opacity="0.3"/>
-    </svg>`;
-  }
-  if (p === 'moderno') {
-    return `<svg width="${largura}" height="${h}" viewBox="0 0 ${largura} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <rect x="${largura*0.1}" y="15" width="${largura*0.15}" height="10" fill="none" stroke="${c}" stroke-width="1" opacity="0.5"/>
-      <rect x="${largura*0.35}" y="12" width="${largura*0.25}" height="16" fill="none" stroke="${c}" stroke-width="1" opacity="0.5"/>
-      <rect x="${largura*0.7}" y="15" width="${largura*0.2}" height="10" fill="none" stroke="${c}" stroke-width="1" opacity="0.5"/>
-      <line x1="0" y1="32" x2="${largura}" y2="32" stroke="${c}" stroke-width="1.5" opacity="0.6"/>
-    </svg>`;
-  }
-  if (p === 'rustico') {
-    return `<svg width="${largura}" height="${h}" viewBox="0 0 ${largura} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <path d="M5,30 Q15,15 25,28 Q35,10 50,30 Q65,12 80,28 Q95,14 110,30 Q125,16 ${largura-5},30" fill="none" stroke="${c}" stroke-width="1.5" opacity="0.5"/>
-      <path d="M20,35 Q30,22 40,33 Q55,18 70,34 Q85,20 100,33 Q115,22 125,35" fill="none" stroke="${c}" stroke-width="1" opacity="0.35"/>
-      <circle cx="50" cy="18" r="2.5" fill="${c}" opacity="0.25"/>
-      <circle cx="100" cy="20" r="2" fill="${c}" opacity="0.25"/>
-    </svg>`;
-  }
-  if (p === 'romantico') {
-    return `<svg width="${largura}" height="${h}" viewBox="0 0 ${largura} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <path d="M${largura/2},12 C${largura/2-8},2 ${largura/2-16},8 ${largura/2-16},16 C${largura/2-16},24 ${largura/2},32 ${largura/2},32 C${largura/2},32 ${largura/2+16},24 ${largura/2+16},16 C${largura/2+16},8 ${largura/2+8},2 ${largura/2},12" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.5"/>
-      <path d="M0,28 Q${largura/3},20 ${largura/2},28 T${largura},28" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.35"/>
-    </svg>`;
-  }
-  return `<svg width="${largura}" height="${h}" viewBox="0 0 ${largura} ${h}" xmlns="http://www.w3.org/2000/svg">
-    <line x1="${largura*0.2}" y1="20" x2="${largura*0.8}" y2="20" stroke="${c}" stroke-width="1" opacity="0.6"/>
+function logoSVG(corDescomplica = '#8B6F5E', corI = '#10B981', height = 24) {
+  // SVG inline com font-family fallback. Se as fontes não carregarem, o texto ainda aparece.
+  return `<svg xmlns="http://www.w3.org/2000/svg" height="${height}" viewBox="0 0 260 36" style="display:inline-block;vertical-align:middle;">
+    <text x="0" y="26" font-family="'DM Sans', 'Helvetica Neue', Arial, sans-serif" font-weight="300" font-size="28" fill="${corDescomplica}">descomplica</text>
+    <text x="186" y="26" font-family="'Space Mono', 'Courier New', monospace" font-weight="400" font-style="italic" font-size="30" fill="${corI}">í</text>
   </svg>`;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   RENDERIZADORES DE TEXTO
+   MONOGRAMAS POR PERFIL — criativos e impactantes
    ═══════════════════════════════════════════════════════════ */
-function renderTextoSecao(secao) {
-  if (!secao || typeof secao !== 'object' || !Array.isArray(secao.linhas) || secao.linhas.length === 0) {
-    return '<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">Conteúdo personalizado para este casal.</p>';
+function svgMonogramaPorPerfil(inicial1, inicial2, perfil, cor, tamanho = 160) {
+  const i1 = String(inicial1 || 'N').charAt(0).toUpperCase();
+  const i2 = String(inicial2 || 'N').charAt(0).toUpperCase();
+  const c = String(cor || '#1A1714');
+  const p = String(perfil || 'minimalista').toLowerCase();
+  const s = tamanho;
+  const hs = s / 2;
+
+  if (p === 'classico') {
+    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="${s*0.08}" y="${s*0.08}" width="${s*0.84}" height="${s*0.84}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.25"/>
+      <rect x="${s*0.15}" y="${s*0.15}" width="${s*0.70}" height="${s*0.70}" fill="none" stroke="${c}" stroke-width="${s*0.006}" opacity="0.15"/>
+      <text x="${hs}" y="${s*0.58}" text-anchor="middle" font-family="DisplayFont, Georgia, 'Times New Roman', serif" font-size="${s*0.38}" fill="${c}" letter-spacing="${s*0.01}">${i1}<tspan font-size="${s*0.22}" dy="${-s*0.04}">&</tspan>${i2}</text>
+      <line x1="${s*0.22}" y1="${s*0.72}" x2="${s*0.78}" y2="${s*0.72}" stroke="${c}" stroke-width="${s*0.008}" opacity="0.4"/>
+      <line x1="${s*0.28}" y1="${s*0.76}" x2="${s*0.72}" y2="${s*0.76}" stroke="${c}" stroke-width="${s*0.004}" opacity="0.25"/>
+    </svg>`;
   }
-  return secao.linhas.map(linha => {
-    if (typeof linha !== 'string') return '';
-    const texto = filtrarHexDoTexto(linha.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').trim());
-    if (!texto) return '';
-    if (linha.startsWith('### ')) return `<h3 style="font-family:var(--font-display);font-size:12pt;color:var(--color-primary);margin-top:12px;margin-bottom:5px;">${texto}</h3>`;
-    if (linha.startsWith('- ') || linha.startsWith('* ')) return `<p style="font-family:var(--font-body);font-size:10pt;line-height:1.6;color:var(--color-text);margin-bottom:4px;margin-left:10px;">&bull; ${texto}</p>`;
-    return `<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${texto}</p>`;
-  }).join('');
+  if (p === 'boho') {
+    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="${hs}" cy="${hs}" r="${s*0.42}" fill="none" stroke="${c}" stroke-width="${s*0.01}" opacity="0.2" stroke-dasharray="${s*0.06} ${s*0.04}"/>
+      <path d="M${s*0.15},${s*0.82} Q${s*0.30},${s*0.65} ${s*0.45},${s*0.78} Q${s*0.60},${s*0.62} ${s*0.75},${s*0.80} Q${s*0.88},${s*0.70} ${s*0.92},${s*0.82}" fill="none" stroke="${c}" stroke-width="${s*0.008}" opacity="0.35"/>
+      <path d="M${s*0.20},${s*0.86} Q${s*0.35},${s*0.72} ${s*0.50},${s*0.84} Q${s*0.65},${s*0.70} ${s*0.80},${s*0.86}" fill="none" stroke="${c}" stroke-width="${s*0.005}" opacity="0.25"/>
+      <text x="${hs}" y="${s*0.56}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.34}" fill="${c}" letter-spacing="${s*0.008}">${i1}<tspan font-size="${s*0.20}" dy="${-s*0.03}">&</tspan>${i2}</text>
+      <circle cx="${s*0.30}" cy="${s*0.75}" r="${s*0.018}" fill="${c}" opacity="0.3"/>
+      <circle cx="${s*0.70}" cy="${s*0.78}" r="${s*0.014}" fill="${c}" opacity="0.25"/>
+    </svg>`;
+  }
+  if (p === 'moderno') {
+    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="${s*0.12}" y="${s*0.12}" width="${s*0.76}" height="${s*0.76}" fill="none" stroke="${c}" stroke-width="${s*0.015}" opacity="0.35"/>
+      <rect x="${s*0.22}" y="${s*0.22}" width="${s*0.56}" height="${s*0.56}" fill="none" stroke="${c}" stroke-width="${s*0.008}" opacity="0.2"/>
+      <line x1="${s*0.12}" y1="${hs}" x2="${s*0.88}" y2="${hs}" stroke="${c}" stroke-width="${s*0.006}" opacity="0.15"/>
+      <line x1="${hs}" y1="${s*0.12}" x2="${hs}" y2="${s*0.88}" stroke="${c}" stroke-width="${s*0.006}" opacity="0.15"/>
+      <text x="${hs}" y="${s*0.58}" text-anchor="middle" font-family="DisplayFont, 'Helvetica Neue', Arial, sans-serif" font-size="${s*0.32}" fill="${c}" font-weight="bold" letter-spacing="${s*0.02}">${i1} / ${i2}</text>
+    </svg>`;
+  }
+  if (p === 'rustico') {
+    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="${hs}" cy="${hs}" r="${s*0.40}" fill="none" stroke="${c}" stroke-width="${s*0.014}" opacity="0.25"/>
+      <text x="${hs}" y="${s*0.56}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.34}" fill="${c}" letter-spacing="${s*0.01}">${i1} + ${i2}</text>
+      <path d="M${s*0.12},${s*0.78} Q${s*0.30},${s*0.62} ${s*0.50},${s*0.76} Q${s*0.70},${s*0.60} ${s*0.88},${s*0.78}" fill="none" stroke="${c}" stroke-width="${s*0.01}" opacity="0.3"/>
+      <path d="M${s*0.18},${s*0.84} Q${s*0.35},${s*0.70} ${s*0.50},${s*0.82} Q${s*0.65},${s*0.68} ${s*0.82},${s*0.84}" fill="none" stroke="${c}" stroke-width="${s*0.006}" opacity="0.2"/>
+      <circle cx="${s*0.28}" cy="${s*0.70}" r="${s*0.016}" fill="${c}" opacity="0.25"/>
+      <circle cx="${s*0.72}" cy="${s*0.68}" r="${s*0.012}" fill="${c}" opacity="0.2"/>
+    </svg>`;
+  }
+  if (p === 'romantico') {
+    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
+      <path d="M${hs},${s*0.18} C${hs-s*0.10},${s*0.06} ${hs-s*0.22},${s*0.14} ${hs-s*0.22},${s*0.26} C${hs-s*0.22},${s*0.38} ${hs},${s*0.52} ${hs},${s*0.52} C${hs},${s*0.52} ${hs+s*0.22},${s*0.38} ${hs+s*0.22},${s*0.26} C${hs+s*0.22},${s*0.14} ${hs+s*0.10},${s*0.06} ${hs},${s*0.18}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.3"/>
+      <text x="${hs}" y="${s*0.68}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.30}" fill="${c}" letter-spacing="${s*0.008}">${i1} & ${i2}</text>
+      <path d="M${s*0.10},${s*0.82} Q${s*0.35},${s*0.72} ${hs},${s*0.82} Q${s*0.65},${s*0.72} ${s*0.90},${s*0.82}" fill="none" stroke="${c}" stroke-width="${s*0.006}" opacity="0.25"/>
+    </svg>`;
+  }
+  // Minimalista fallback
+  return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
+    <line x1="${s*0.10}" y1="${hs}" x2="${s*0.90}" y2="${hs}" stroke="${c}" stroke-width="${s*0.01}" opacity="0.4"/>
+    <text x="${hs}" y="${s*0.54}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.36}" fill="${c}" letter-spacing="${s*0.015}">${i1} & ${i2}</text>
+    <line x1="${s*0.10}" y1="${s*0.56}" x2="${s*0.90}" y2="${s*0.56}" stroke="${c}" stroke-width="${s*0.005}" opacity="0.2"/>
+  </svg>`;
 }
 
-function renderTextoEditorial(secoesNormais) {
-  if (!Array.isArray(secoesNormais) || secoesNormais.length === 0) {
-    return '<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">Memorial do casamento.</p>';
+/* ═══════════════════════════════════════════════════════════
+   ELEMENTO GRÁFICO REAL DO PERFIL — arabesco/folha/geometria/flor
+   ═══════════════════════════════════════════════════════════ */
+function svgElementoGrafico(perfil, cor, largura = 200, altura = 60) {
+  const p = String(perfil || 'minimalista').toLowerCase();
+  const c = String(cor || '#1A1714');
+  const w = largura;
+  const h = altura;
+  if (p === 'classico') {
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0,${h*0.55} Q${w*0.20},${h*0.15} ${w*0.35},${h*0.45} Q${w*0.50},${h*0.10} ${w*0.65},${h*0.45} Q${w*0.80},${h*0.15} ${w},${h*0.55}" fill="none" stroke="${c}" stroke-width="1.5" opacity="0.45"/>
+      <path d="M${w*0.08},${h*0.65} Q${w*0.25},${h*0.30} ${w*0.40},${h*0.55} Q${w*0.55},${h*0.25} ${w*0.70},${h*0.55} Q${w*0.85},${h*0.30} ${w*0.92},${h*0.65}" fill="none" stroke="${c}" stroke-width="1" opacity="0.3"/>
+      <circle cx="${w*0.35}" cy="${h*0.35}" r="3" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.35"/>
+      <circle cx="${w*0.65}" cy="${h*0.32}" r="2.5" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.3"/>
+    </svg>`;
   }
-  const todasLinhas = [];
-  for (const sec of secoesNormais) {
-    if (!sec || !Array.isArray(sec.linhas)) continue;
-    for (const linha of sec.linhas) {
-      if (typeof linha !== 'string') continue;
-      const limpa = filtrarHexDoTexto(linha.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').trim());
-      if (limpa && !limpa.startsWith('##') && !limpa.startsWith('---')) todasLinhas.push(limpa);
-    }
+  if (p === 'boho') {
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+      <path d="M${w*0.05},${h*0.70} C${w*0.15},${h*0.20} ${w*0.25},${h*0.60} ${w*0.35},${h*0.30} C${w*0.45},${h*0.55} ${w*0.55},${h*0.15} ${w*0.65},${h*0.50} C${w*0.75},${h*0.25} ${w*0.85},${h*0.65} ${w*0.95},${h*0.35}" fill="none" stroke="${c}" stroke-width="1.4" opacity="0.4"/>
+      <path d="M${w*0.10},${h*0.80} C${w*0.20},${h*0.40} ${w*0.30},${h*0.75} ${w*0.40},${h*0.45} C${w*0.50},${h*0.70} ${w*0.60},${h*0.35} ${w*0.70},${h*0.65} C${w*0.80},${h*0.40} ${w*0.90},${h*0.75} ${w*0.95},${h*0.50}" fill="none" stroke="${c}" stroke-width="1" opacity="0.25"/>
+      <circle cx="${w*0.35}" cy="${h*0.28}" r="2" fill="${c}" opacity="0.25"/>
+      <circle cx="${w*0.65}" cy="${h*0.45}" r="2" fill="${c}" opacity="0.25"/>
+    </svg>`;
   }
-  if (todasLinhas.length === 0) {
-    return '<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">Memorial do casamento.</p>';
+  if (p === 'moderno') {
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="${w*0.08}" y="${h*0.25}" width="${w*0.18}" height="${h*0.35}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4"/>
+      <rect x="${w*0.32}" y="${h*0.18}" width="${w*0.28}" height="${h*0.50}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4"/>
+      <rect x="${w*0.66}" y="${h*0.25}" width="${w*0.26}" height="${h*0.35}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4"/>
+      <line x1="0" y1="${h*0.82}" x2="${w}" y2="${h*0.82}" stroke="${c}" stroke-width="2" opacity="0.5"/>
+    </svg>`;
   }
-  let html = '';
-  const primeiro = todasLinhas[0];
-  const resto = todasLinhas.slice(1);
-  html += `<p class="editorial-dropcap" style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${primeiro}</p>`;
-  for (const par of resto) {
-    html += `<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${par}</p>`;
+  if (p === 'rustico') {
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+      <path d="M${w*0.04},${h*0.65} Q${w*0.18},${h*0.25} ${w*0.32},${h*0.55} Q${w*0.46},${h*0.20} ${w*0.60},${h*0.55} Q${w*0.74},${h*0.25} ${w*0.88},${h*0.60} Q${w*0.96},${h*0.40} ${w*0.98},${h*0.70}" fill="none" stroke="${c}" stroke-width="1.6" opacity="0.4"/>
+      <path d="M${w*0.12},${h*0.78} Q${w*0.24},${h*0.40} ${w*0.38},${h*0.68} Q${w*0.52},${h*0.35} ${w*0.66},${h*0.68} Q${w*0.80},${h*0.40} ${w*0.92},${h*0.75}" fill="none" stroke="${c}" stroke-width="1" opacity="0.25"/>
+      <circle cx="${w*0.32}" cy="${h*0.38}" r="2.5" fill="${c}" opacity="0.2"/>
+      <circle cx="${w*0.66}" cy="${h*0.42}" r="2" fill="${c}" opacity="0.2"/>
+    </svg>`;
   }
-  return html;
-}
-
-function gerarSvgPizza(itens, size = 260) {
-  const cx = size / 2, cy = size / 2, r = size / 2 - 20;
-  const total = itens.reduce((s, d) => s + d.percentual, 0);
-  let startAngle = -Math.PI / 2;
-  let paths = '';
-  let legendHtml = '';
-
-  itens.slice(0, 8).forEach((item, i) => {
-    const angle = (item.percentual / total) * 2 * Math.PI;
-    const endAngle = startAngle + angle;
-    const x1 = cx + r * Math.cos(startAngle);
-    const y1 = cy + r * Math.sin(startAngle);
-    const x2 = cx + r * Math.cos(endAngle);
-    const y2 = cy + r * Math.sin(endAngle);
-    const largeArc = angle > Math.PI ? 1 : 0;
-    const cor = CORES_GRAFICO[i % CORES_GRAFICO.length];
-    paths += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z" fill="${cor}" stroke="#FFFFFF" stroke-width="2"/>`;
-    legendHtml += `
-      <div style="display:flex;align-items:center;margin-bottom:6px;">
-        <div style="width:14px;height:14px;background:${cor};border-radius:2px;margin-right:8px;flex-shrink:0;"></div>
-        <span style="font-family:var(--font-body);font-size:10px;color:var(--color-text);">${item.item} <strong>(${item.percentual}%)</strong></span>
-      </div>
-    `;
-    startAngle = endAngle;
-  });
-
-  return { svg: `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0;">${paths}</svg>`, legend: legendHtml };
+  if (p === 'romantico') {
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+      <path d="M${w*0.48},${h*0.15} C${w*0.38},${h*0.02} ${w*0.28},${h*0.10} ${w*0.28},${h*0.22} C${w*0.28},${h*0.34} ${w*0.48},${h*0.48} ${w*0.48},${h*0.48} C${w*0.48},${h*0.48} ${w*0.68},${h*0.34} ${w*0.68},${h*0.22} C${w*0.68},${h*0.10} ${w*0.58},${h*0.02} ${w*0.48},${h*0.15}" fill="none" stroke="${c}" stroke-width="1.3" opacity="0.35"/>
+      <path d="M0,${h*0.72} Q${w*0.30},${h*0.55} ${w*0.48},${h*0.72} Q${w*0.66},${h*0.55} ${w},${h*0.72}" fill="none" stroke="${c}" stroke-width="0.9" opacity="0.3"/>
+      <path d="M${w*0.15},${h*0.82} Q${w*0.35},${h*0.68} ${w*0.48},${h*0.82} Q${w*0.61},${h*0.68} ${w*0.85},${h*0.82}" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.2"/>
+    </svg>`;
+  }
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+    <line x1="${w*0.20}" y1="${h*0.50}" x2="${w*0.80}" y2="${h*0.50}" stroke="${c}" stroke-width="1.2" opacity="0.5"/>
+  </svg>`;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -398,11 +317,14 @@ function gerarTextoIneditoSecao(tituloSecao, dados) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   CARD TÉCNICO — dados do questionário
+   CARD TÉCNICO — dados do questionário formatados elegantemente
    ═══════════════════════════════════════════════════════════ */
 function cardTecnico(tituloSecao, dados) {
   const campos = [];
-  const add = (label, val) => { if (val) campos.push(`<<span style="display:inline-block;margin-right:8px;margin-bottom:2px;"><strong>${label}:</strong> ${val}</span>`); };
+  const add = (label, val) => {
+    const v = sanitizarValor(val);
+    if (v && v !== 'a definir' && v !== 'Não' && v !== '') campos.push(`<span style="display:inline-block;margin-right:10px;margin-bottom:3px;"><strong style="color:var(--color-primary);">${label}:</strong> <span style="color:var(--color-text);">${v}</span></span>`);
+  };
 
   if (tituloSecao === 'Cerimônia') {
     add('Tipo', dados?.tipoCerimonia);
@@ -434,14 +356,14 @@ function cardTecnico(tituloSecao, dados) {
   }
 
   if (campos.length === 0) return '';
-  return `<div class="info-box" style="margin-top:3mm;">
-    <p style="font-size:9pt;line-height:1.5;margin-bottom:2px;"><strong style="color:var(--color-primary);">Dados do questionário</strong></p>
+  return `<div class="info-box" style="margin-top:4mm;">
+    <p style="font-size:9pt;line-height:1.5;margin-bottom:3px;color:var(--color-primary);"><strong>Dados do questionário</strong></p>
     <p style="font-size:9pt;line-height:1.5;">${campos.join('')}</p>
   </div>`;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   MINI CHECKLIST DA SEÇÃO
+   MINI CHECKLIST — checkbox real ☑, não o í da logo
    ═══════════════════════════════════════════════════════════ */
 function miniChecklistSecao(tituloSecao, dados) {
   const checks = {
@@ -455,9 +377,13 @@ function miniChecklistSecao(tituloSecao, dados) {
     'Identidade Visual': ['Aprovar monograma', 'Definir paleta final', 'Testar fontes em impressão', 'Criar guia de identidade'],
   };
   const items = checks[tituloSecao] || ['Definir detalhes', 'Contratar fornecedores', 'Confirmar prazos'];
-  return `<div style="margin-top:3mm;padding:2mm;background:${dados?.paleta?.[2] || '#F9F7F4'}22;border-radius:2px;">
-    <p style="font-size:9pt;color:var(--color-primary);margin-bottom:2px;"><strong>Mini-checklist</strong></p>
-    ${items.map(i => `<div style="font-size:8.5pt;line-height:1.5;display:flex;align-items:center;gap:2mm;"><span style="color:#10B981;font-weight:bold;">í</span> ${i}</div>`).join('')}
+  const corCheck = '#10B981';
+  return `<div style="margin-top:4mm;padding:3mm;background:${dados?.paleta?.[2] || '#F9F7F4'}22;border-radius:3px;">
+    <p style="font-size:9pt;color:var(--color-primary);margin-bottom:3px;"><strong>Mini-checklist</strong></p>
+    ${items.map(i => `<div style="font-size:8.5pt;line-height:1.6;display:flex;align-items:center;gap:2mm;margin-bottom:1.5mm;">
+      <span style="display:inline-block;width:3mm;height:3mm;border:0.8pt solid ${corCheck};border-radius:1px;flex-shrink:0;position:relative;top:0.5mm;"></span>
+      <span>${i}</span>
+    </div>`).join('')}
   </div>`;
 }
 
@@ -476,6 +402,82 @@ function dicaSecao(tituloSecao) {
     'Papelaria e Identidade': 'Imprima 10% a mais de convites para imprevistos. Envie save the date com 8 meses de antecedência.',
   };
   return dicas[tituloSecao] || 'Planeje com antecedência e mantenha uma lista de contatos atualizada.';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GRÁFICO PIZZA SVG
+   ═══════════════════════════════════════════════════════════ */
+function gerarSvgPizza(itens, size = 220) {
+  const cx = size / 2, cy = size / 2, r = size / 2 - 16;
+  const total = itens.reduce((s, d) => s + d.percentual, 0);
+  let startAngle = -Math.PI / 2;
+  let paths = '';
+  let legendHtml = '';
+
+  itens.slice(0, 8).forEach((item, i) => {
+    const angle = (item.percentual / total) * 2 * Math.PI;
+    const endAngle = startAngle + angle;
+    const x1 = cx + r * Math.cos(startAngle);
+    const y1 = cy + r * Math.sin(startAngle);
+    const x2 = cx + r * Math.cos(endAngle);
+    const y2 = cy + r * Math.sin(endAngle);
+    const largeArc = angle > Math.PI ? 1 : 0;
+    const cor = CORES_GRAFICO[i % CORES_GRAFICO.length];
+    paths += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z" fill="${cor}" stroke="#FFFFFF" stroke-width="2"/>`;
+    legendHtml += `
+      <div style="display:flex;align-items:center;margin-bottom:5px;gap:6px;">
+        <div style="width:12px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;"></div>
+        <span style="font-family:var(--font-body);font-size:9.5px;color:var(--color-text);">${item.item} <strong>(${item.percentual}%)</strong></span>
+      </div>
+    `;
+    startAngle = endAngle;
+  });
+
+  return { svg: `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0;">${paths}</svg>`, legend: legendHtml };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDERIZADORES DE TEXTO
+   ═══════════════════════════════════════════════════════════ */
+function renderTextoSecao(secao) {
+  if (!secao || typeof secao !== 'object' || !Array.isArray(secao.linhas) || secao.linhas.length === 0) {
+    return '<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">Conteúdo personalizado para este casal.</p>';
+  }
+  return secao.linhas.map(linha => {
+    if (typeof linha !== 'string') return '';
+    const texto = filtrarHexDoTexto(linha.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').trim());
+    if (!texto) return '';
+    if (linha.startsWith('### ')) return `<h3 style="font-family:var(--font-display);font-size:12pt;color:var(--color-primary);margin-top:12px;margin-bottom:5px;">${texto}</h3>`;
+    if (linha.startsWith('- ') || linha.startsWith('* ')) return `<p style="font-family:var(--font-body);font-size:10pt;line-height:1.6;color:var(--color-text);margin-bottom:4px;margin-left:10px;">&bull; ${texto}</p>`;
+    return `<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${texto}</p>`;
+  }).join('');
+}
+
+function renderTextoEditorial(secoesNormais) {
+  if (!Array.isArray(secoesNormais) || secoesNormais.length === 0) {
+    return '<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">Memorial do casamento.</p>';
+  }
+  const todasLinhas = [];
+  for (const sec of secoesNormais) {
+    if (!sec || !Array.isArray(sec.linhas)) continue;
+    for (const linha of sec.linhas) {
+      if (typeof linha !== 'string') continue;
+      const limpa = filtrarHexDoTexto(linha.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').trim());
+      if (limpa && !limpa.startsWith('##') && !limpa.startsWith('---')) todasLinhas.push(limpa);
+    }
+  }
+  if (todasLinhas.length === 0) {
+    return '<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">Memorial do casamento.</p>';
+  }
+  let html = '';
+  const primeiro = todasLinhas[0];
+  const resto = todasLinhas.slice(1);
+  // Drop-cap ajustado para 3 linhas de altura
+  html += `<p class="editorial-dropcap" style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;text-align:justify;">${primeiro}</p>`;
+  for (const par of resto) {
+    html += `<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;text-align:justify;">${par}</p>`;
+  }
+  return html;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -576,56 +578,64 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   };
 
   const grafico = gerarSvgPizza(itensOrcamento.slice(0, 8));
-  const svgDeco = svgDecoracaoPerfil(perfil, corPrimaria);
-  const svgMono = svgMonogramaPorPerfil(inicial1, inicial2, perfil, corContraste);
-  const logoHtml = logoDescomplicaiHTML(corPrimaria, '#10B981');
+  const svgDeco = svgElementoGrafico(perfil, corPrimaria, 200, 50);
+  const svgDecoLarge = svgElementoGrafico(perfil, corContraste, 280, 70);
+  const svgMono = svgMonogramaPorPerfil(inicial1, inicial2, perfil, corContraste, 160);
+  const svgMonoLarge = svgMonogramaPorPerfil(inicial1, inicial2, perfil, corContraste, 220);
+  const logoSvg = logoSVG('#8B6F5E', '#10B981', 22);
+  const logoSvgSmall = logoSVG('#8B6F5E', '#10B981', 16);
 
   const secoesTematicas = [
-    { titulo: 'Identidade Visual', imagens: imgDecoracao, layout: 0 },
-    { titulo: 'Cerimônia', imagens: imgCerimonia, layout: 1 },
-    { titulo: 'Decoração', imagens: imgFlores.length ? imgFlores : imgDecoracao, layout: 2 },
-    { titulo: 'Mesa Posta', imagens: imgMesa, layout: 3 },
-    { titulo: 'Alimentação e Bebidas', imagens: imgAlimentacao, layout: 0 },
-    { titulo: 'Entretenimento', imagens: imgEntretenimento, layout: 1 },
-    { titulo: 'Vestuário e Beleza', imagens: imgVestido.length ? imgVestido : imgBeleza, layout: 2 },
-    { titulo: 'Papelaria e Identidade', imagens: imgPapelaria, layout: 3 },
+    { titulo: 'Identidade Visual', imagens: imgDecoracao, layout: 'hero' },
+    { titulo: 'Cerimônia', imagens: imgCerimonia, layout: 'side' },
+    { titulo: 'Decoração', imagens: imgFlores.length ? imgFlores : imgDecoracao, layout: 'grid' },
+    { titulo: 'Mesa Posta', imagens: imgMesa, layout: 'overlay' },
+    { titulo: 'Alimentação e Bebidas', imagens: imgAlimentacao, layout: 'hero' },
+    { titulo: 'Entretenimento', imagens: imgEntretenimento, layout: 'side' },
+    { titulo: 'Vestuário e Beleza', imagens: imgVestido.length ? imgVestido : imgBeleza, layout: 'grid' },
+    { titulo: 'Papelaria e Identidade', imagens: imgPapelaria, layout: 'overlay' },
   ];
 
-  const renderPaginaSecao = (titulo, secao, imagens, layoutIdx) => {
+  const renderPaginaSecao = (titulo, secao, imagens, layout) => {
     const textoInedito = gerarTextoIneditoSecao(titulo, dadosEvento);
-    const layout = (layoutIdx % 4);
     let corpo = '';
 
-    if (layout === 0) {
-      const imgHero = (imagens && imagens[0]) ? `<img src="${imagens[0]}" style="width:100%;max-height:85mm;object-fit:cover;border-radius:3px;display:block;margin-bottom:5mm;"/>` : '';
+    if (layout === 'hero') {
+      const imgHero = (imagens && imagens[0]) ? `<img src="${imagens[0]}" style="width:100%;height:90mm;object-fit:cover;border-radius:4px;display:block;margin-bottom:5mm;"/>` : '';
       corpo = `
         ${imgHero}
-        <div style="column-count:2;column-gap:5mm;font-size:10pt;line-height:1.65;">
+        <div style="font-size:10.5pt;line-height:1.7;text-align:justify;">
           <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${textoInedito}</p>
         </div>
       `;
-    } else if (layout === 1) {
-      const imgLat = (imagens && imagens[0]) ? `<img src="${imagens[0]}" style="width:100%;max-height:200mm;object-fit:cover;border-radius:3px;display:block;"/>` : '';
+    } else if (layout === 'side') {
+      const imgLat = (imagens && imagens[0]) ? `<img src="${imagens[0]}" style="width:100%;height:100%;object-fit:cover;border-radius:4px;display:block;"/>` : '';
       corpo = `
-        <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:5mm;align-items:start;">
-          <div><p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${textoInedito}</p></div>
-          <div style="display:flex;align-items:flex-start;justify-content:center;">${imgLat}</div>
+        <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:5mm;align-items:start;height:calc(100% - 20mm);">
+          <div style="font-size:10.5pt;line-height:1.7;text-align:justify;">
+            <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${textoInedito}</p>
+          </div>
+          <div style="height:100%;min-height:80mm;">${imgLat}</div>
         </div>
       `;
-    } else if (layout === 2) {
-      const imgs = (imagens || []).slice(0, 4).map((imgSrc) => imgSrc ? `<img src="${imgSrc}" style="width:100%;height:55mm;object-fit:cover;border-radius:3px;display:block;"/>` : '').join('');
+    } else if (layout === 'grid') {
+      const imgs = (imagens || []).slice(0, 4).map((imgSrc) => imgSrc ? `<img src="${imgSrc}" style="width:100%;height:55mm;object-fit:cover;border-radius:4px;display:block;"/>` : '').join('');
       corpo = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin-bottom:4mm;">
           ${imgs}
         </div>
-        <div style="font-size:10pt;line-height:1.65;"><p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${textoInedito}</p></div>
+        <div style="font-size:10.5pt;line-height:1.7;text-align:justify;">
+          <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${textoInedito}</p>
+        </div>
       `;
     } else {
       const imgBack = (imagens && imagens[0]) ? `background-image:url(${imagens[0]});background-size:cover;background-position:center;` : '';
       corpo = `
-        <div style="position:relative;border-radius:3px;overflow:hidden;min-height:120mm;${imgBack}">
-          <div style="background:rgba(249,247,244,0.88);padding:5mm;position:absolute;bottom:0;left:0;right:0;">
-            <div style="font-size:10pt;line-height:1.65;"><p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${textoInedito}</p></div>
+        <div style="position:relative;border-radius:4px;overflow:hidden;min-height:120mm;${imgBack}">
+          <div style="background:rgba(249,247,244,0.90);padding:5mm;position:absolute;bottom:0;left:0;right:0;">
+            <div style="font-size:10.5pt;line-height:1.7;text-align:justify;">
+              <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${textoInedito}</p>
+            </div>
           </div>
         </div>
       `;
@@ -643,15 +653,15 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   ${miniChecklistSecao(titulo, dadosEvento)}
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoHtml}</span>
+    <span>${logoSvgSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>`;
   };
 
   let paginasTematicas = '';
-  secoesTematicas.forEach((sec, idx) => {
-    paginasTematicas += renderPaginaSecao(sec.titulo, getSecao(sec.titulo), sec.imagens, idx);
+  secoesTematicas.forEach((sec) => {
+    paginasTematicas += renderPaginaSecao(sec.titulo, getSecao(sec.titulo), sec.imagens, sec.layout);
   });
 
   const html = `
@@ -668,11 +678,12 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     --color-fundo: ${corFundo};
     --color-text: ${corTexto};
     --color-text-soft: ${corTextoSuave};
-    --font-display: 'DisplayFont', Georgia, serif;
+    --font-display: 'DisplayFont', Georgia, 'Times New Roman', serif;
     --font-body: 'BodyFont', Helvetica, Arial, sans-serif;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   @page { size: A4; margin: 0; }
+  @page landscape { size: A4 landscape; margin: 0; }
   body { font-family: var(--font-body); color: var(--color-text); counter-reset: pagina; }
 
   .page {
@@ -685,6 +696,18 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     counter-increment: pagina;
   }
   .page:last-child { page-break-after: auto; }
+
+  .page-landscape {
+    width: 297mm;
+    min-height: 210mm;
+    padding: 14mm 18mm 18mm 18mm;
+    position: relative;
+    page-break-after: always;
+    overflow: visible;
+    counter-increment: pagina;
+    page: landscape;
+  }
+  .page-landscape:last-child { page-break-after: auto; }
 
   .footer {
     position: absolute;
@@ -702,6 +725,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   }
   .page-number::after { content: counter(pagina); }
 
+  /* ═══ CAPA ═══ */
   .cover {
     position: relative;
     display: flex;
@@ -723,45 +747,51 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   .cover-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(to bottom, rgba(26,23,20,0.35) 0%, rgba(26,23,20,0.65) 100%);
+    background: linear-gradient(to bottom, rgba(26,23,20,0.40) 0%, rgba(26,23,20,0.75) 100%);
     z-index: 1;
   }
   .cover-content {
     position: relative;
     z-index: 2;
     color: ${corContraste};
+    width: 100%;
+    max-width: 170mm;
   }
-  .cover-monogram { margin-bottom: 8mm; }
+  .cover-monogram { margin-bottom: 6mm; }
   .cover-monogram svg { display: block; margin: 0 auto; }
   .cover-title {
     font-family: var(--font-display);
-    font-size: 42pt;
-    margin-bottom: 4mm;
+    font-size: 46pt;
+    margin-bottom: 3mm;
     letter-spacing: 1px;
-    line-height: 1.1;
+    line-height: 1.05;
+    font-weight: bold;
   }
   .cover-subtitle {
     font-family: var(--font-body);
     font-size: 11pt;
-    letter-spacing: 5px;
+    letter-spacing: 6px;
     text-transform: uppercase;
-    margin-bottom: 10mm;
+    margin-bottom: 8mm;
+    opacity: 0.95;
   }
   .cover-local {
     font-family: var(--font-body);
-    font-size: 12pt;
-    margin-bottom: 3mm;
+    font-size: 13pt;
+    margin-bottom: 2mm;
+    opacity: 0.9;
   }
   .cover-date {
     font-family: var(--font-body);
-    font-size: 11pt;
-    margin-bottom: 10mm;
+    font-size: 12pt;
+    margin-bottom: 8mm;
+    opacity: 0.85;
   }
   .cover-palette {
     display: flex;
-    gap: 10mm;
+    gap: 8mm;
     justify-content: center;
-    margin-top: 8mm;
+    margin-top: 6mm;
   }
   .palette-item {
     display: flex;
@@ -769,17 +799,17 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     align-items: center;
   }
   .palette-circle {
-    width: 14mm;
-    height: 14mm;
+    width: 12mm;
+    height: 12mm;
     border-radius: 50%;
-    border: 2.5pt solid ${corContraste};
+    border: 2pt solid ${corContraste};
     margin-bottom: 2mm;
   }
-  .palette-name { font-size: 8pt; font-family: var(--font-body); }
-  .palette-role { font-size: 7pt; opacity: 0.8; font-family: var(--font-body); }
+  .palette-name { font-size: 8.5pt; font-family: var(--font-body); font-weight: 500; }
+  .palette-role { font-size: 7.5pt; opacity: 0.8; font-family: var(--font-body); }
   .cover-deco {
     position: absolute;
-    bottom: 18mm;
+    bottom: 22mm;
     left: 0; right: 0;
     z-index: 2;
     display: flex;
@@ -800,35 +830,39 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     color: ${corContraste};
   }
 
+  /* ═══ ÍNDICE ═══ */
   .toc-intro {
     font-size: 11pt;
     line-height: 1.7;
     margin-bottom: 6mm;
     font-style: italic;
     color: var(--color-text-soft);
+    text-align: center;
   }
   .toc-row {
     display: flex;
     justify-content: space-between;
-    padding: 2.2mm 0;
-    border-bottom: 0.3pt solid #E5E0D9;
+    align-items: baseline;
+    padding: 2.5mm 0;
     font-size: 10.5pt;
+    line-height: 1.4;
   }
   .toc-row strong { color: var(--color-primary); }
   .toc-dots {
     flex: 1;
     border-bottom: 1pt dotted #C8BFB4;
-    margin: 0 3mm 2mm 3mm;
+    margin: 0 3mm 1.5mm 3mm;
     min-width: 10mm;
   }
 
+  /* ═══ EDITORIAL ═══ */
   .editorial-header {
     text-align: center;
-    margin-bottom: 6mm;
+    margin-bottom: 8mm;
   }
   .editorial-header h2 {
     font-family: var(--font-display);
-    font-size: 26pt;
+    font-size: 28pt;
     color: var(--color-primary);
     margin-bottom: 2mm;
   }
@@ -838,12 +872,12 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     letter-spacing: 3px;
     text-transform: uppercase;
   }
-  .editorial-columns {
+  .editorial-body {
     column-count: 2;
     column-gap: 6mm;
     column-rule: 0.5pt solid #E5E0D9;
   }
-  .editorial-columns p {
+  .editorial-body p {
     font-family: var(--font-body);
     font-size: 10.5pt;
     line-height: 1.7;
@@ -853,52 +887,27 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   }
   .editorial-dropcap::first-letter {
     font-family: var(--font-display);
-    font-size: 3.2em;
+    font-size: 3.4em;
     float: left;
-    line-height: 0.85;
-    margin-right: 0.08em;
-    margin-top: 0.02em;
+    line-height: 0.82;
+    margin-right: 0.06em;
+    margin-top: 0.04em;
     color: var(--color-primary);
     font-weight: bold;
   }
   .editorial-image-inline {
     break-inside: avoid;
-    margin: 4mm 0;
+    margin: 5mm 0;
   }
   .editorial-image-inline img {
     width: 100%;
     max-height: 70mm;
     object-fit: cover;
-    border-radius: 3px;
-    display: block;
-  }
-  .editorial-image-float-left {
-    float: left;
-    width: 45%;
-    margin: 2mm 3mm 2mm 0;
-    break-inside: avoid;
-  }
-  .editorial-image-float-left img {
-    width: 100%;
-    max-height: 55mm;
-    object-fit: cover;
-    border-radius: 3px;
-    display: block;
-  }
-  .editorial-image-float-right {
-    float: right;
-    width: 45%;
-    margin: 2mm 0 2mm 3mm;
-    break-inside: avoid;
-  }
-  .editorial-image-float-right img {
-    width: 100%;
-    max-height: 55mm;
-    object-fit: cover;
-    border-radius: 3px;
+    border-radius: 4px;
     display: block;
   }
 
+  /* ═══ IDENTIDADE VISUAL ═══ */
   .idv-page {
     display: flex;
     flex-direction: column;
@@ -906,13 +915,12 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     justify-content: flex-start;
     text-align: center;
   }
-  .idv-monogram-repeat { margin: 4mm 0; opacity: 0.15; }
-  .idv-monogram-main { margin: 2mm 0 6mm 0; }
+  .idv-monogram-main { margin: 2mm 0 5mm 0; }
   .idv-swatches {
     display: flex;
-    gap: 8mm;
+    gap: 10mm;
     justify-content: center;
-    margin: 4mm 0;
+    margin: 4mm 0 6mm 0;
   }
   .idv-swatch {
     display: flex;
@@ -920,29 +928,41 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     align-items: center;
   }
   .idv-swatch-box {
-    width: 22mm;
-    height: 22mm;
+    width: 18mm;
+    height: 18mm;
     border-radius: 3px;
     margin-bottom: 2mm;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   }
-  .idv-swatch-name { font-size: 9pt; font-family: var(--font-body); }
-  .idv-swatch-hex { font-size: 7.5pt; font-family: 'LogoFont2', monospace; color: var(--color-text-soft); }
+  .idv-swatch-name { font-size: 9pt; font-family: var(--font-body); font-weight: 500; }
+  .idv-swatch-role { font-size: 7.5pt; font-family: var(--font-body); color: var(--color-text-soft); margin-top: 1px; }
   .idv-typo-sample {
     font-family: var(--font-display);
-    font-size: 18pt;
+    font-size: 20pt;
     margin: 4mm 0;
-    line-height: 1.3;
+    line-height: 1.4;
+    color: var(--color-primary);
   }
   .idv-typo-body {
     font-family: var(--font-body);
     font-size: 10pt;
     line-height: 1.6;
     max-width: 140mm;
-    margin: 0 auto;
+    margin: 0 auto 4mm auto;
+    text-align: center;
+  }
+  .idv-explanation {
+    font-family: var(--font-body);
+    font-size: 10pt;
+    line-height: 1.7;
+    max-width: 150mm;
+    margin: 3mm auto 4mm auto;
+    text-align: justify;
+    color: var(--color-text);
   }
   .idv-elemento { margin: 4mm 0; }
 
+  /* ═══ SEÇÕES TEMÁTICAS ═══ */
   .section-title {
     font-family: var(--font-display);
     font-size: 24pt;
@@ -961,11 +981,11 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     line-height: 1.3;
   }
   .info-box {
-    background: ${corSecundaria}15;
+    background: ${corSecundaria}18;
     border-left: 2.5pt solid var(--color-primary);
     padding: 3mm;
     margin: 3mm 0;
-    border-radius: 2px;
+    border-radius: 3px;
     page-break-inside: avoid;
   }
   .info-box p {
@@ -974,6 +994,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     margin-bottom: 2px;
   }
 
+  /* ═══ TABELAS ═══ */
   .data-table {
     width: 100%;
     border-collapse: collapse;
@@ -983,7 +1004,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   }
   .data-table th {
     text-align: left;
-    padding: 2mm 2mm;
+    padding: 2mm 2.5mm;
     border-bottom: 1pt solid var(--color-primary);
     background: ${corSecundaria}22;
     font-family: var(--font-body);
@@ -992,7 +1013,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     font-size: 8.5pt;
   }
   .data-table td {
-    padding: 1.8mm 2mm;
+    padding: 1.8mm 2.5mm;
     border-bottom: 0.4pt solid #E5E0D9;
     font-family: var(--font-body);
     vertical-align: top;
@@ -1000,64 +1021,61 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   }
   .data-table tr { page-break-inside: avoid; }
 
-  .timeline-horizontal {
+  /* ═══ LINHA DO TEMPO (LANDSCAPE) ═══ */
+  .timeline-landscape {
     display: flex;
-    gap: 4mm;
+    gap: 5mm;
     margin-top: 4mm;
-    overflow: visible;
+    align-items: stretch;
   }
   .timeline-card {
     flex: 1;
     min-width: 0;
-    border-radius: 3px;
+    border-radius: 4px;
     padding: 4mm;
     page-break-inside: avoid;
     position: relative;
+    background: #fff;
+    border: 0.5pt solid #E5E0D9;
   }
-  .timeline-card::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    right: -4mm;
-    width: 4mm;
-    height: 1pt;
-    background: #C8BFB4;
-  }
-  .timeline-card:last-child::after { display: none; }
   .timeline-card h4 {
     font-family: var(--font-display);
     font-size: 11pt;
     margin-bottom: 2mm;
+    color: var(--color-primary);
   }
   .timeline-card p {
     font-size: 9pt;
     line-height: 1.5;
     margin-bottom: 1px;
+    color: var(--color-text);
   }
   .timeline-connector {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 3mm 0;
+    margin: 4mm 0;
   }
   .timeline-connector-line {
     width: 100%;
-    height: 2pt;
+    height: 2.5pt;
     background: linear-gradient(to right, #4CAF50, #FFC107, #FF9800, #F44336);
-    border-radius: 1pt;
+    border-radius: 1.5pt;
   }
 
+  /* ═══ CALENDÁRIO (LANDSCAPE) ═══ */
   .calendario-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 3mm;
     margin-top: 4mm;
   }
   .calendario-mes {
     border: 0.5pt solid #E5E0D9;
-    border-radius: 2px;
+    border-radius: 3px;
     padding: 3mm;
     page-break-inside: avoid;
+    background: #fff;
   }
   .calendario-mes h5 {
     font-family: var(--font-display);
@@ -1071,17 +1089,78 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     font-size: 8.5pt;
     line-height: 1.5;
     margin-bottom: 1px;
+    color: var(--color-text);
   }
 
-  .budget-grid {
+  /* ═══ ORÇAMENTO (LANDSCAPE) ═══ */
+  .budget-landscape {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: 5mm;
+    gap: 6mm;
     align-items: start;
     margin-bottom: 4mm;
   }
   .budget-chart svg { display: block; }
 
+  /* ═══ FORNECEDORES (LANDSCAPE) ═══ */
+  .fornecedores-table th { font-size: 9pt; padding: 2.5mm; }
+  .fornecedores-table td { font-size: 9pt; padding: 2mm 2.5mm; }
+
+  /* ═══ CHECKLIST ═══ */
+  .checklist-clean td { border-bottom: 0.5pt solid #E5E0D9; }
+  .checklist-clean th { border-bottom: 1pt solid var(--color-primary); background: transparent; }
+  .checklist-clean { border: none; }
+  .checklist-clean tr:first-child th { border-top: 1pt solid var(--color-primary); }
+  .check-icon {
+    display: inline-block;
+    width: 3.5mm;
+    height: 3.5mm;
+    border: 0.8pt solid var(--color-primary);
+    border-radius: 1px;
+    position: relative;
+  }
+  .check-icon::after {
+    content: '';
+    position: absolute;
+    left: 0.7mm;
+    top: -0.3mm;
+    width: 1.2mm;
+    height: 2.2mm;
+    border: solid var(--color-primary);
+    border-width: 0 0.8pt 0.8pt 0;
+    transform: rotate(45deg);
+    opacity: 0.3;
+  }
+
+  /* ═══ DICAS REGIONAIS ═══ */
+  .dicas-clima-box {
+    background: ${corSecundaria}18;
+    border-left: 2.5pt solid var(--color-primary);
+    padding: 3mm;
+    margin: 3mm 0;
+    border-radius: 3px;
+  }
+  .epoca-badge {
+    display: inline-block;
+    padding: 1.2mm 2.5mm;
+    border-radius: 3px;
+    font-size: 8.5pt;
+    margin: 1.5mm;
+    background: ${corSecundaria}33;
+    color: var(--color-text);
+  }
+  .fornecedor-local {
+    display: inline-block;
+    padding: 1.2mm 2.5mm;
+    border-radius: 3px;
+    font-size: 8.5pt;
+    margin: 1.5mm;
+    background: ${corPrimaria}15;
+    color: var(--color-primary);
+    border: 0.5pt solid ${corPrimaria}40;
+  }
+
+  /* ═══ CTA ═══ */
   .cta-page {
     display: flex;
     flex-direction: column;
@@ -1116,62 +1195,26 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     margin-top: 4mm;
   }
 
-  .checklist-clean td { border-bottom: 0.5pt solid #E5E0D9; }
-  .checklist-clean th { border-bottom: 1pt solid var(--color-primary); background: transparent; }
-  .checklist-clean { border: none; }
-  .checklist-clean tr:first-child th { border-top: 1pt solid var(--color-primary); }
-  .check-icon {
-    display: inline-block;
-    width: 3mm;
-    height: 3mm;
-    border: 0.8pt solid var(--color-primary);
-    border-radius: 1px;
-    position: relative;
-  }
-  .check-icon::after {
-    content: '';
-    position: absolute;
-    left: 0.6mm;
-    top: -0.3mm;
-    width: 1.2mm;
-    height: 2mm;
-    border: solid var(--color-primary);
-    border-width: 0 0.8pt 0.8pt 0;
-    transform: rotate(45deg);
-    opacity: 0.3;
-  }
-
-  .dicas-clima-box {
-    background: ${corSecundaria}15;
-    border-left: 2.5pt solid var(--color-primary);
-    padding: 3mm;
-    margin: 3mm 0;
-    border-radius: 2px;
-  }
-  .epoca-badge {
-    display: inline-block;
-    padding: 1mm 2mm;
-    border-radius: 2px;
-    font-size: 8.5pt;
-    margin: 1mm;
-    background: ${corSecundaria}33;
-  }
-
-  p, .info-box, .timeline-item, .data-table tr {
+  /* Quebras de conteúdo */
+  .section-title, .section-subtitle, .info-box, .timeline-card, .calendario-mes, .data-table {
     page-break-inside: avoid;
   }
   .section-title, .section-subtitle {
     page-break-after: avoid;
   }
+  img {
+    page-break-inside: avoid;
+  }
 </style>
 </head>
 <body>
+
 <!-- ═══════════════════════════════════════════════════ CAPA -->
 <div class="page cover">
   <div class="cover-bg" style="background-image:url(${imgCapa || ''});"></div>
   <div class="cover-overlay"></div>
   <div class="cover-content">
-    <div class="cover-monogram">${svgMono}</div>
+    <div class="cover-monogram">${svgMonoLarge}</div>
     <div class="cover-title">${nomeCasal}</div>
     <div class="cover-subtitle">Memorial do Casamento</div>
     <div class="cover-local">${localCompleto}</div>
@@ -1186,19 +1229,19 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
       `).join('')}
     </div>
   </div>
-  <div class="cover-deco">${svgDecoracaoPerfil(perfil, corContraste, 200)}</div>
+  <div class="cover-deco">${svgDecoLarge}</div>
   <div class="cover-footer">
     <span>${nomeCasal}</span>
-    <span>${logoHtml}</span>
+    <span>${logoSvg}</span>
     <span>arxum.csstudios.site/descomplicai</span>
   </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════ ÍNDICE -->
 <div class="page">
-  <div style="text-align:center;margin-bottom:4mm;">${svgDecoracaoPerfil(perfil, corPrimaria, 140)}</div>
+  <div style="text-align:center;margin-bottom:4mm;">${svgDeco}</div>
   <div class="section-title" style="font-size:18pt;text-align:center;border:none;">Bem-vindos ao seu Memorial</div>
-  <p class="toc-intro" style="text-align:center;">
+  <p class="toc-intro">
     Este memorial foi criado exclusivamente para <strong>${nomeCasal}</strong> pelo descomplicaí.
     Ele reúne todas as decisões, referências visuais e orientações práticas para tornar o planejamento
     do seu casamento uma experiência leve, organizada e inesquecível.
@@ -1223,18 +1266,18 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   ].map(([s, p]) => `<div class="toc-row"><span><strong>${s}</strong></span><span class="toc-dots"></span><span style="color:var(--color-text-soft);">${p}</span></div>`).join('')}
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoHtml}</span>
+    <span>${logoSvgSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════ EDITORIAL NARRATIVO -->
+<!-- ═══════════════════════════════════════════════════ EDITORIAL -->
 <div class="page">
   <div class="editorial-header">
     <h2>EDITORIAL</h2>
     <div class="sub">A história do casamento de ${nomeCasal}</div>
   </div>
-  <div class="editorial-columns">
+  <div class="editorial-body">
     ${renderTextoEditorial(secoesNormais)}
   </div>
   ${(imgDetalhes && imgDetalhes[0]) ? `
@@ -1244,122 +1287,137 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   ` : ''}
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoHtml}</span>
+    <span>${logoSvgSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
 
-${(imgDetalhes && imgDetalhes[1]) ? `
+<!-- Página 4 do Editorial — estrutura coerente, sem float maluco -->
 <div class="page">
-  <div class="editorial-columns" style="margin-top:8mm;">
-    <div class="editorial-image-float-left"><img src="${imgDetalhes[1]}" alt="detalhes"/></div>
-    <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">
+  <div style="text-align:center;margin-bottom:4mm;">${svgDeco}</div>
+  <div class="section-title" style="font-size:18pt;text-align:center;border:none;">A Visão do Casal</div>
+  <div class="editorial-body">
+    <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;text-align:justify;">
       Cada detalhe deste memorial foi pensado para refletir a personalidade única de ${nomeCasal}.
       Das cores à escolha das flores, da cerimônia à festa, tudo converge para uma experiência
-      autêntica e inesquecível.
+      autêntica e inesquecível. O estilo ${estilo} não é apenas uma etiqueta — é a essência
+      que permeia cada decisão, cada fornecedor escolhido, cada momento planejado.
     </p>
-    <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">
+    <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;text-align:justify;">
       Use este documento como guia visual e prático durante todo o planejamento.
       Compartilhe com fornecedores, padrinhos e familiares para que todos estejam alinhados
-      com a visão do casal.
+      com a visão do casal. A consistência visual é o que transforma um evento em uma experiência imersiva.
+    </p>
+    <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;text-align:justify;">
+      A jornada começa agora. Cada página deste memorial é um passo em direção ao dia mais especial
+      de suas vidas. Organização, inspiração e praticidade — tudo em um só lugar, criado com carinho
+      pelo descomplicaí.
     </p>
   </div>
+  ${(imgDetalhes && imgDetalhes[1]) ? `
+    <div class="editorial-image-inline" style="margin-top:5mm;">
+      <img src="${imgDetalhes[1]}" alt="detalhes"/>
+    </div>
+  ` : ''}
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoHtml}</span>
+    <span>${logoSvgSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
-` : ''}
 
-<!-- ═══════════════════════════════════════════════════ IDENTIDADE VISUAL — O ESPETÁCULO -->
+<!-- ═══════════════════════════════════════════════════ IDENTIDADE VISUAL -->
 <div class="page idv-page">
-  <div style="text-align:center;margin-bottom:3mm;">${svgDecoracaoPerfil(perfil, corPrimaria, 160)}</div>
+  <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title" style="text-align:center;border:none;">Identidade Visual</div>
-  
-  <div class="idv-monogram-repeat">${svgMonogramaPorPerfil(inicial1, inicial2, perfil, corPrimaria, 80)}</div>
+
   <div class="idv-monogram-main">${svgMonogramaPorPerfil(inicial1, inicial2, perfil, corPrimaria, 180)}</div>
-  <div class="idv-monogram-repeat">${svgMonogramaPorPerfil(inicial1, inicial2, perfil, corPrimaria, 80)}</div>
-  
+
   <div style="font-family:var(--font-display);font-size:14pt;color:var(--color-primary);margin:3mm 0;">
     Estilo: <strong>${capitalizarNome(estilo)}</strong> &mdash; Perfil: <strong>${capitalizarNome(perfil)}</strong>
   </div>
-  
+
   <div class="idv-swatches">
     ${paleta.map((cor, i) => `
       <div class="idv-swatch">
         <div class="idv-swatch-box" style="background:${cor};"></div>
         <div class="idv-swatch-name">${getNomeCor(cor)}</div>
-        <div class="idv-swatch-hex">${cor.toUpperCase()}</div>
+        <div class="idv-swatch-role">${i===0?'Principal':i===1?'Secundária':'Terciária'}</div>
       </div>
     `).join('')}
   </div>
-  
+
   <div class="idv-typo-sample">
-    ABCĆČÇĎĐ &mdash; abcćčçďđ<br/>
-    0123456789 &mdash; !?@#$%
+    Aa Bb Cc Dd Ee Ff Gg
   </div>
   <div class="idv-typo-body">
-    <strong>Display:</strong> ${fonteDisplay} &mdash; <strong>Corpo:</strong> ${fonteCorpo}<br/>
-    A tipografia foi escolhida para refletir o estilo ${estilo} do casal, garantindo legibilidade
-    em todos os materiais e criando uma hierarquia visual elegante.
+    <strong>Display:</strong> ${fonteDisplay} &mdash; <strong>Corpo:</strong> ${fonteCorpo}
   </div>
-  
+
+  <div class="idv-explanation">
+    A identidade visual deste casamento foi construída para ser reconhecível em todas as peças de comunicação.
+    Use o monograma em selos, menus e plaquinhas. Aplique a paleta de forma hierárquica: a cor principal
+    domina os elementos grandes (capa, convite), a secundária cria contraste em detalhes e bordas,
+    e a terciária ilumina fundos e espaços em branco. A tipografia display deve ser usada em títulos
+    e nomes; a fonte de corpo garante legibilidade em textos longos. O elemento gráfico abaixo pode
+    ser repetido em cantos de página, divisórias e materiais impressos para reforçar a coesão visual.
+  </div>
+
   <div class="idv-elemento">
-    ${svgDecoracaoPerfil(perfil, corPrimaria, 200)}
+    ${svgElementoGrafico(perfil, corPrimaria, 240, 70)}
   </div>
-  
+
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoHtml}</span>
+    <span>${logoSvgSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════ SEÇÕES TEMÁTICAS (dinâmicas) -->
+<!-- ═══════════════════════════════════════════════════ SEÇÕES TEMÁTICAS -->
 ${paginasTematicas}
 
-<!-- ═══════════════════════════════════════════════════ LINHA DO TEMPO -->
-<div class="page">
+<!-- ═══════════════════════════════════════════════════ LINHA DO TEMPO (LANDSCAPE) -->
+<div class="page-landscape">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Linha do Tempo</div>
   <p style="font-size:10.5pt;line-height:1.7;margin-bottom:5mm;">O planejamento exige organização. Aqui está o cronograma ideal para ${nomeCasal}.</p>
-  
+
   <div class="timeline-connector">
     <div class="timeline-connector-line"></div>
   </div>
-  
-  <div class="timeline-horizontal">
+
+  <div class="timeline-landscape">
     ${[
       {meses:'12-8 meses',cor:'#4CAF50',tarefas:['Definir data e reservar local','Contratar cerimonialista','Iniciar lista de convidados','Definir estilo e paleta']},
       {meses:'7-4 meses',cor:'#FFC107',tarefas:['Fechar buffet e bebidas','Contratar fotógrafo e vídeo','Provar vestido e traje','Definir decoração e flores']},
       {meses:'3-1 mês',cor:'#FF9800',tarefas:['Enviar convites','Confirmar presenças','Ajustar detalhes decorativos','Prova de cabelo e maquiagem']},
       {meses:'Última semana',cor:'#F44336',tarefas:['Ensaio geral','Confirmar fornecedores','Separar itens do dia','Descansar e se hidratar']},
     ].map((item,i)=>`
-      <div class="timeline-card" style="background:${item.cor}11;border-top:2.5pt solid ${item.cor};">
+      <div class="timeline-card" style="border-top:3pt solid ${item.cor};">
         <h4 style="color:${item.cor};">${item.meses}</h4>
         ${item.tarefas.map(t=>`<p>&bull; ${t}</p>`).join('')}
       </div>
     `).join('')}
   </div>
-  
-  <div style="display:flex;gap:6mm;margin-top:5mm;flex-wrap:wrap;justify-content:center;">
+
+  <div style="display:flex;gap:8mm;margin-top:6mm;flex-wrap:wrap;justify-content:center;">
     ${[{c:'#4CAF50',l:'Tranquilo'},{c:'#FFC107',l:'Atenção'},{c:'#FF9800',l:'Urgente'},{c:'#F44336',l:'Crítico'}].map(x=>`
       <div style="display:flex;align-items:center;gap:2mm;">
-        <div style="width:3mm;height:3mm;background:${x.c};border-radius:1px;"></div>
+        <div style="width:4mm;height:4mm;background:${x.c};border-radius:2px;"></div>
         <span style="font-size:9pt;">${x.l}</span>
       </div>
     `).join('')}
   </div>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoHtml}</span>
+    <span>${logoSvgSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════ CALENDÁRIO MENSAL -->
-<div class="page">
+<!-- ═══════════════════════════════════════════════════ CALENDÁRIO MENSAL (LANDSCAPE) -->
+<div class="page-landscape">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Calendário Mensal</div>
   <div class="calendario-grid">
@@ -1385,7 +1443,7 @@ ${paginasTematicas}
   </div>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoHtml}</span>
+    <span>${logoSvgSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
@@ -1395,53 +1453,53 @@ ${paginasTematicas}
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Checklist de Decisões</div>
   <table class="data-table checklist-clean">
-    <tr><th>Decisão Pendente</th><th style="width:25mm;">Prazo</th><th style="width:10mm;"></th><th>Anotações</th></tr>
-    ${checklist.slice(0,12).map(item=>`
+    <tr><th>Decisão Pendente</th><th style="width:25mm;">Prazo</th><th style="width:12mm;"></th><th>Anotações</th></tr>
+    ${checklist.slice(0,16).map(item=>`
       <tr>
         <td>${item.item}</td>
         <td>${item.prazo}</td>
         <td style="text-align:center;"><span class="check-icon"></span></td>
-        <td style="border-bottom:0.5pt dashed #D4CFC9;height:5mm;"></td>
+        <td style="border-bottom:0.5pt dashed #D4CFC9;height:6mm;"></td>
       </tr>
     `).join('')}
   </table>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoHtml}</span>
+    <span>${logoSvgSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
 
-${checklist.length > 12 ? `
+${checklist.length > 16 ? `
 <div class="page">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Checklist &mdash; Continuação</div>
   <table class="data-table checklist-clean">
-    <tr><th>Decisão Pendente</th><th style="width:25mm;">Prazo</th><th style="width:10mm;"></th><th>Anotações</th></tr>
-    ${checklist.slice(12).map(item=>`
+    <tr><th>Decisão Pendente</th><th style="width:25mm;">Prazo</th><th style="width:12mm;"></th><th>Anotações</th></tr>
+    ${checklist.slice(16).map(item=>`
       <tr>
         <td>${item.item}</td>
         <td>${item.prazo}</td>
         <td style="text-align:center;"><span class="check-icon"></span></td>
-        <td style="border-bottom:0.5pt dashed #D4CFC9;height:5mm;"></td>
+        <td style="border-bottom:0.5pt dashed #D4CFC9;height:6mm;"></td>
       </tr>
     `).join('')}
   </table>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoHtml}</span>
+    <span>${logoSvgSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
 ` : ''}
 
-<!-- ═══════════════════════════════════════════════════ FORNECEDORES -->
-<div class="page">
+<!-- ═══════════════════════════════════════════════════ FORNECEDORES (LANDSCAPE) -->
+<div class="page-landscape">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Fornecedores</div>
-  <table class="data-table">
-    <tr><th style="width:25mm;">Categoria</th><th>Nome</th><th style="width:22mm;">Telefone</th><th style="width:30mm;">E-mail</th><th style="width:15mm;">Status</th></tr>
-    ${fornecedores.slice(0,14).map(f=>`
+  <table class="data-table fornecedores-table">
+    <tr><th style="width:28mm;">Categoria</th><th style="width:45mm;">Nome</th><th style="width:28mm;">Telefone</th><th style="width:40mm;">E-mail</th><th style="width:18mm;">Status</th></tr>
+    ${fornecedores.slice(0,20).map(f=>`
       <tr>
         <td>${f.categoria}</td>
         <td>${f.nome}</td>
@@ -1453,18 +1511,18 @@ ${checklist.length > 12 ? `
   </table>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoHtml}</span>
+    <span>${logoSvgSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
 
-${fornecedores.length > 14 ? `
-<div class="page">
+${fornecedores.length > 20 ? `
+<div class="page-landscape">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Fornecedores &mdash; Continuação</div>
-  <table class="data-table">
-    <tr><th style="width:25mm;">Categoria</th><th>Nome</th><th style="width:22mm;">Telefone</th><th style="width:30mm;">E-mail</th><th style="width:15mm;">Status</th></tr>
-    ${fornecedores.slice(14).map(f=>`
+  <table class="data-table fornecedores-table">
+    <tr><th style="width:28mm;">Categoria</th><th style="width:45mm;">Nome</th><th style="width:28mm;">Telefone</th><th style="width:40mm;">E-mail</th><th style="width:18mm;">Status</th></tr>
+    ${fornecedores.slice(20).map(f=>`
       <tr>
         <td>${f.categoria}</td>
         <td>${f.nome}</td>
@@ -1476,45 +1534,45 @@ ${fornecedores.length > 14 ? `
   </table>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoHtml}</span>
+    <span>${logoSvgSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
 ` : ''}
 
-<div class="page">
+<div class="page-landscape">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Fornecedores &mdash; Anotações de Valor e Prazo</div>
-  <table class="data-table">
-    <tr><th style="width:25mm;">Categoria</th><th style="width:25mm;">Valor</th><th style="width:20mm;">Prazo</th><th>Anotações</th></tr>
-    ${fornecedores.slice(0,10).map(f=>`
+  <table class="data-table fornecedores-table">
+    <tr><th style="width:28mm;">Categoria</th><th style="width:28mm;">Valor</th><th style="width:22mm;">Prazo</th><th>Anotações</th></tr>
+    ${fornecedores.slice(0,15).map(f=>`
       <tr>
         <td>${f.categoria}</td>
         <td>R$ ____________</td>
         <td>____________</td>
-        <td style="border-bottom:0.5pt dashed #D4CFC9;height:5mm;"></td>
+        <td style="border-bottom:0.5pt dashed #D4CFC9;height:6mm;"></td>
       </tr>
     `).join('')}
   </table>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoHtml}</span>
+    <span>${logoSvgSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════ ORÇAMENTO (páginas juntas) -->
-<div class="page">
+<!-- ═══════════════════════════════════════════════════ ORÇAMENTO (LANDSCAPE, JUNTO) -->
+<div class="page-landscape">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Orçamento Detalhado</div>
   <p style="font-size:10pt;line-height:1.6;margin-bottom:4mm;">Esta estimativa foi regionalizada com base em <strong>${cidade || 'sua cidade'}</strong> / <strong>${estado || 'seu estado'}</strong>.</p>
-  <div class="budget-grid">
+  <div class="budget-landscape">
     <div class="budget-chart">${grafico.svg}</div>
     <div>${grafico.legend}</div>
   </div>
   <table class="data-table">
     <tr><th>Item</th><th style="width:12mm;">%</th><th style="width:22mm;">Valor Est.</th><th style="width:22mm;">Valor Real</th></tr>
-    ${itensOrcamento.slice(0,15).map(item=>`
+    ${itensOrcamento.slice(0,20).map(item=>`
       <tr>
         <td>${item.item}</td>
         <td>${item.percentual}%</td>
@@ -1525,17 +1583,17 @@ ${fornecedores.length > 14 ? `
   </table>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoHtml}</span>
+    <span>${logoSvgSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
 
-<div class="page">
+<div class="page-landscape">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Orçamento &mdash; Continuação</div>
   <table class="data-table">
     <tr><th>Item</th><th style="width:12mm;">%</th><th style="width:22mm;">Valor Est.</th><th style="width:22mm;">Valor Real</th></tr>
-    ${itensOrcamento.slice(15).map(item=>`
+    ${itensOrcamento.slice(20).map(item=>`
       <tr>
         <td>${item.item}</td>
         <td>${item.percentual}%</td>
@@ -1555,7 +1613,7 @@ ${fornecedores.length > 14 ? `
   </div>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoHtml}</span>
+    <span>${logoSvgSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
@@ -1565,29 +1623,40 @@ ${fornecedores.length > 14 ? `
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Dicas Regionais</div>
   <p style="font-size:10.5pt;line-height:1.7;margin-bottom:5mm;">Informações específicas para <strong>${localCompleto}</strong>.</p>
-  
+
   <div class="section-subtitle">Clima Local</div>
   <div class="dicas-clima-box">
     <p style="font-size:10pt;line-height:1.6;">${dicasRegionais.clima}</p>
   </div>
-  
+
   <div class="section-subtitle">Cuidados Especiais</div>
   ${dicasRegionais.cuidados.map(c=>`<p style="font-size:10pt;line-height:1.6;margin-bottom:2px;margin-left:3mm;">&bull; ${c}</p>`).join('')}
-  
-  <div class="section-subtitle" style="margin-top:5mm;">Melhores Épocas</div>
+
+  <div class="section-subtitle" style="margin-top:5mm;">Melhores Épocas para Casar</div>
   <div style="margin:2mm 0;">
     ${dicasRegionais.melhoresEpocas.map(e=>`<span class="epoca-badge">${e}</span>`).join('')}
   </div>
-  
+
   <div class="section-subtitle" style="margin-top:5mm;">Fornecedores Locais Recomendados</div>
-  <p style="font-size:9.5pt;line-height:1.6;color:var(--color-text-soft);margin-left:3mm;">
+  <div style="margin:2mm 0;">
+    <span class="fornecedor-local">Espaços &amp; Venues</span>
+    <span class="fornecedor-local">Buffet &amp; Bar</span>
+    <span class="fornecedor-local">Fotografia</span>
+    <span class="fornecedor-local">Decoração &amp; Flores</span>
+    <span class="fornecedor-local">Música &amp; DJ</span>
+    <span class="fornecedor-local">Beleza &amp; Vestido</span>
+    <span class="fornecedor-local">Papelaria</span>
+    <span class="fornecedor-local">Cerimonialista</span>
+  </div>
+  <p style="font-size:9.5pt;line-height:1.6;color:var(--color-text-soft);margin-left:3mm;margin-top:2mm;">
     Consulte a lista de fornecedores verificados em ${cidade || 'sua região'}. 
     Prefira profissionais com experiência em casamentos no estilo ${estilo}.
+    Solicite orçamentos detalhados com 8 meses de antecedência e visite os espaços pessoalmente antes de fechar contrato.
   </p>
-  
+
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoHtml}</span>
+    <span>${logoSvgSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
@@ -1600,10 +1669,10 @@ ${fornecedores.length > 14 ? `
   <div style="font-size:9pt;color:var(--color-text-soft);margin-bottom:6mm;">&mdash; Honoré de Balzac</div>
   ${qrCodeDataUri ? `<img src="${qrCodeDataUri}" class="cta-qr" alt="QR Code"/>` : ''}
   <div style="font-size:10pt;color:var(--color-primary);margin-top:3mm;">arxum.csstudios.site/descomplicai</div>
-  <div style="margin-top:6mm;font-size:14pt;">${logoHtml}</div>
+  <div style="margin-top:6mm;">${logoSvg}</div>
   <div class="footer">
     <span>${nomeCasal}</span>
-    <span>${logoHtml}</span>
+    <span>${logoSvgSmall}</span>
     <span class="page-number"></span>
   </div>
 </div>
@@ -1613,4 +1682,4 @@ ${fornecedores.length > 14 ? `
   `;
 
   return html;
-}
+} novo 
