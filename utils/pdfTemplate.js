@@ -1,4 +1,4 @@
-// utils/pdfTemplate.js — Template Editorial de Revista (v3)
+// utils/pdfTemplate.js — Template Editorial de Revista (v3 blindado)
 import fs from 'fs';
 import path from 'path';
 import {
@@ -11,6 +11,7 @@ import { sugerirFontes } from './sugestoes';
 const CORES_GRAFICO = ['#2E7D32', '#1565C0', '#C62828', '#F9A825', '#6A1B9A', '#E65100', '#00838F', '#AD1457'];
 
 function normalizar(str) {
+  if (typeof str !== 'string') return '';
   return str.toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9\s]/g, '');
@@ -20,6 +21,7 @@ function normalizar(str) {
    FONTES — carrega Regular e Bold em base64
    ═══════════════════════════════════════════════════════════ */
 function fonteToBase64(nomeFonte, peso = 'regular') {
+  if (typeof nomeFonte !== 'string') return null;
   const mapa = {
     'Cormorant Garamond': { regular: 'cormorant-garamond-v21-latin-regular.woff2', bold: 'cormorant-garamond-v21-latin-700.woff2' },
     'Playfair Display': { regular: 'playfair-display-v40-latin-regular.woff2', bold: 'playfair-display-v40-latin-700.woff2' },
@@ -58,7 +60,7 @@ function fonteToBase64(nomeFonte, peso = 'regular') {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   IMAGENS — base64 única e múltiplas
+   IMAGENS — base64 única e múltiplas (SEM readdirSync)
    ═══════════════════════════════════════════════════════════ */
 function imagemToBase64(categoria, chave) {
   const src = getImagem(categoria, chave);
@@ -75,89 +77,155 @@ function imagemToBase64(categoria, chave) {
 }
 
 function getImagensMultiplas(categoria, estilo, quantidade = 3) {
-  const base = path.join(process.cwd(), 'public', 'images', categoria);
-  if (!fs.existsSync(base)) return [];
-  const todos = fs.readdirSync(base)
-    .filter(f => /\.(jpg|jpeg|png)$/i.test(f))
-    .sort();
-  const comEstilo = todos.filter(f => f.toLowerCase().includes(estilo.toLowerCase()));
-  const resto = todos.filter(f => !f.toLowerCase().includes(estilo.toLowerCase()));
-  const selecionados = [...comEstilo, ...resto].slice(0, quantidade);
-  return selecionados.map(f => {
+  const resultado = [];
+  const estiloStr = String(estilo || 'default').toLowerCase();
+
+  // 1. Imagem principal via getImagem
+  const principal = getImagem(categoria, estiloStr);
+  if (principal) {
     try {
-      const buf = fs.readFileSync(path.join(base, f));
-      return `data:image/jpeg;base64,${buf.toString('base64')}`;
-    } catch (e) {
-      return null;
+      if (fs.existsSync(principal)) {
+        const buf = fs.readFileSync(principal);
+        resultado.push(`data:image/jpeg;base64,${buf.toString('base64')}`);
+      }
+    } catch (e) { console.warn('Img principal falhou:', categoria, estiloStr, e.message); }
+  }
+
+  // 2. Fallback default se principal falhou
+  if (resultado.length === 0) {
+    const fallback = getImagem(categoria, 'default');
+    if (fallback) {
+      try {
+        if (fs.existsSync(fallback)) {
+          const buf = fs.readFileSync(fallback);
+          resultado.push(`data:image/jpeg;base64,${buf.toString('base64')}`);
+        }
+      } catch (e) {}
     }
-  }).filter(Boolean);
+  }
+
+  // 3. Variações numéricas do mesmo prefixo
+  if (principal && resultado.length > 0) {
+    const dir = path.dirname(principal);
+    const ext = path.extname(principal);
+    const baseName = path.basename(principal, ext);
+    const prefixMatch = baseName.match(/^(.+)-(\d+)$/);
+    const prefix = prefixMatch ? prefixMatch[1] : baseName;
+
+    for (let i = 2; i <= 6; i++) {
+      if (resultado.length >= quantidade) break;
+      const candidato = path.join(dir, `${prefix}-${i}${ext}`);
+      try {
+        if (fs.existsSync(candidato)) {
+          const buf = fs.readFileSync(candidato);
+          resultado.push(`data:image/jpeg;base64,${buf.toString('base64')}`);
+        }
+      } catch (e) {}
+    }
+  }
+
+  // 4. Se ainda faltando, tenta outros padrões conhecidos por categoria
+  if (resultado.length < quantidade) {
+    const extrasPorCategoria = {
+      decoracao: ['decor-default-1', 'decor-default-2', 'decor-default-3'],
+      cerimonia: ['cerimonia-default-1', 'cerimonia-beijo-1', 'cerimonia-corredor-1'],
+      flores: ['flores-default-1', 'flores-default-2', 'rosas-1'],
+      mesa: ['mesa-default-1', 'mesa-default-2'],
+      alimentacao: ['bolo-casamento-2', 'mesa-doces-1', 'coquetel-drinks-1'],
+      entretenimento: ['pista-danca-2', 'dj-banda-1', 'cabine-fotos-1'],
+      vestidos: ['vestido-default-1', 'vestido-default-2'],
+      papelaria: ['convite-2', 'menu-lugar-1', 'monograma-1'],
+      beleza: ['making-of-noiva-1', 'maquiagem-noiva-1', 'acessorios-noiva-1'],
+      detalhes: ['aliancas-1', 'buque-1', 'lembrancinhas-1'],
+      local: ['local-default-1', 'local-jardim-1', 'local-salao-1'],
+    };
+    const extras = extrasPorCategoria[categoria] || [];
+    const baseDir = path.join(process.cwd(), 'public', 'images', categoria);
+    for (const nome of extras) {
+      if (resultado.length >= quantidade) break;
+      const candidato = path.join(baseDir, `${nome}.jpg`);
+      try {
+        if (fs.existsSync(candidato)) {
+          const buf = fs.readFileSync(candidato);
+          resultado.push(`data:image/jpeg;base64,${buf.toString('base64')}`);
+        }
+      } catch (e) {}
+    }
+  }
+
+  return resultado;
 }
 
 /* ═══════════════════════════════════════════════════════════
    SVGs DECORATIVOS
    ═══════════════════════════════════════════════════════════ */
 function svgMonograma(inicial1, inicial2, cor, tamanho = 140) {
-  const i1 = (inicial1 || 'N').charAt(0).toUpperCase();
-  const i2 = (inicial2 || 'N').charAt(0).toUpperCase();
+  const i1 = String(inicial1 || 'N').charAt(0).toUpperCase();
+  const i2 = String(inicial2 || 'N').charAt(0).toUpperCase();
+  const c = String(cor || '#1A1714');
   return `<svg width="${tamanho}" height="${tamanho}" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="70" cy="70" r="65" fill="none" stroke="${cor}" stroke-width="1.2" opacity="0.6"/>
-    <circle cx="70" cy="70" r="58" fill="none" stroke="${cor}" stroke-width="0.6" opacity="0.4"/>
-    <text x="70" y="78" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="38" fill="${cor}" letter-spacing="2">${i1} <tspan font-size="24" dy="-4">&</tspan> ${i2}</text>
-    <line x1="35" y1="95" x2="105" y2="95" stroke="${cor}" stroke-width="1" opacity="0.5"/>
+    <circle cx="70" cy="70" r="65" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.6"/>
+    <circle cx="70" cy="70" r="58" fill="none" stroke="${c}" stroke-width="0.6" opacity="0.4"/>
+    <text x="70" y="78" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="38" fill="${c}" letter-spacing="2">${i1} <tspan font-size="24" dy="-4">&amp;</tspan> ${i2}</text>
+    <line x1="35" y1="95" x2="105" y2="95" stroke="${c}" stroke-width="1" opacity="0.5"/>
   </svg>`;
 }
 
 function svgDecoracaoPerfil(perfil, cor, largura = 160) {
+  const p = String(perfil || 'minimalista').toLowerCase();
+  const c = String(cor || '#1A1714');
   const h = 40;
-  if (perfil === 'classico') {
+  if (p === 'classico') {
     return `<svg width="${largura}" height="${h}" viewBox="0 0 ${largura} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <path d="M0,20 Q${largura/4},5 ${largura/2},20 T${largura},20" fill="none" stroke="${cor}" stroke-width="1.2" opacity="0.5"/>
-      <path d="M${largura*0.15},25 Q${largura*0.35},10 ${largura*0.5},25 T${largura*0.85},25" fill="none" stroke="${cor}" stroke-width="0.8" opacity="0.35"/>
-      <circle cx="${largura/2}" cy="12" r="3" fill="none" stroke="${cor}" stroke-width="0.8" opacity="0.4"/>
+      <path d="M0,20 Q${largura/4},5 ${largura/2},20 T${largura},20" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.5"/>
+      <path d="M${largura*0.15},25 Q${largura*0.35},10 ${largura*0.5},25 T${largura*0.85},25" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.35"/>
+      <circle cx="${largura/2}" cy="12" r="3" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.4"/>
     </svg>`;
   }
-  if (perfil === 'boho') {
+  if (p === 'boho') {
     return `<svg width="${largura}" height="${h}" viewBox="0 0 ${largura} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <path d="M10,35 Q20,10 35,25 Q50,5 65,28 Q80,8 95,26 Q110,6 125,25 Q135,15 ${largura-10},35" fill="none" stroke="${cor}" stroke-width="1.2" opacity="0.5"/>
-      <path d="M25,38 Q35,18 45,32 Q55,15 70,33 Q85,16 100,32 Q115,18 125,35" fill="none" stroke="${cor}" stroke-width="0.8" opacity="0.35"/>
-      <circle cx="35" cy="22" r="2" fill="${cor}" opacity="0.3"/>
-      <circle cx="95" cy="20" r="2" fill="${cor}" opacity="0.3"/>
+      <path d="M10,35 Q20,10 35,25 Q50,5 65,28 Q80,8 95,26 Q110,6 125,25 Q135,15 ${largura-10},35" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.5"/>
+      <path d="M25,38 Q35,18 45,32 Q55,15 70,33 Q85,16 100,32 Q115,18 125,35" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.35"/>
+      <circle cx="35" cy="22" r="2" fill="${c}" opacity="0.3"/>
+      <circle cx="95" cy="20" r="2" fill="${c}" opacity="0.3"/>
     </svg>`;
   }
-  if (perfil === 'moderno') {
+  if (p === 'moderno') {
     return `<svg width="${largura}" height="${h}" viewBox="0 0 ${largura} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <rect x="${largura*0.1}" y="15" width="${largura*0.15}" height="10" fill="none" stroke="${cor}" stroke-width="1" opacity="0.5"/>
-      <rect x="${largura*0.35}" y="12" width="${largura*0.25}" height="16" fill="none" stroke="${cor}" stroke-width="1" opacity="0.5"/>
-      <rect x="${largura*0.7}" y="15" width="${largura*0.2}" height="10" fill="none" stroke="${cor}" stroke-width="1" opacity="0.5"/>
-      <line x1="0" y1="32" x2="${largura}" y2="32" stroke="${cor}" stroke-width="1.5" opacity="0.6"/>
+      <rect x="${largura*0.1}" y="15" width="${largura*0.15}" height="10" fill="none" stroke="${c}" stroke-width="1" opacity="0.5"/>
+      <rect x="${largura*0.35}" y="12" width="${largura*0.25}" height="16" fill="none" stroke="${c}" stroke-width="1" opacity="0.5"/>
+      <rect x="${largura*0.7}" y="15" width="${largura*0.2}" height="10" fill="none" stroke="${c}" stroke-width="1" opacity="0.5"/>
+      <line x1="0" y1="32" x2="${largura}" y2="32" stroke="${c}" stroke-width="1.5" opacity="0.6"/>
     </svg>`;
   }
-  if (perfil === 'rustico') {
+  if (p === 'rustico') {
     return `<svg width="${largura}" height="${h}" viewBox="0 0 ${largura} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <path d="M5,30 Q15,15 25,28 Q35,10 50,30 Q65,12 80,28 Q95,14 110,30 Q125,16 ${largura-5},30" fill="none" stroke="${cor}" stroke-width="1.5" opacity="0.5"/>
-      <path d="M20,35 Q30,22 40,33 Q55,18 70,34 Q85,20 100,33 Q115,22 125,35" fill="none" stroke="${cor}" stroke-width="1" opacity="0.35"/>
-      <circle cx="50" cy="18" r="2.5" fill="${cor}" opacity="0.25"/>
-      <circle cx="100" cy="20" r="2" fill="${cor}" opacity="0.25"/>
+      <path d="M5,30 Q15,15 25,28 Q35,10 50,30 Q65,12 80,28 Q95,14 110,30 Q125,16 ${largura-5},30" fill="none" stroke="${c}" stroke-width="1.5" opacity="0.5"/>
+      <path d="M20,35 Q30,22 40,33 Q55,18 70,34 Q85,20 100,33 Q115,22 125,35" fill="none" stroke="${c}" stroke-width="1" opacity="0.35"/>
+      <circle cx="50" cy="18" r="2.5" fill="${c}" opacity="0.25"/>
+      <circle cx="100" cy="20" r="2" fill="${c}" opacity="0.25"/>
     </svg>`;
   }
-  if (perfil === 'romantico') {
+  if (p === 'romantico') {
     return `<svg width="${largura}" height="${h}" viewBox="0 0 ${largura} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <path d="M${largura/2},12 C${largura/2-8},2 ${largura/2-16},8 ${largura/2-16},16 C${largura/2-16},24 ${largura/2},32 ${largura/2},32 C${largura/2},32 ${largura/2+16},24 ${largura/2+16},16 C${largura/2+16},8 ${largura/2+8},2 ${largura/2},12" fill="none" stroke="${cor}" stroke-width="1.2" opacity="0.5"/>
-      <path d="M0,28 Q${largura/3},20 ${largura/2},28 T${largura},28" fill="none" stroke="${cor}" stroke-width="0.8" opacity="0.35"/>
+      <path d="M${largura/2},12 C${largura/2-8},2 ${largura/2-16},8 ${largura/2-16},16 C${largura/2-16},24 ${largura/2},32 ${largura/2},32 C${largura/2},32 ${largura/2+16},24 ${largura/2+16},16 C${largura/2+16},8 ${largura/2+8},2 ${largura/2},12" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.5"/>
+      <path d="M0,28 Q${largura/3},20 ${largura/2},28 T${largura},28" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.35"/>
     </svg>`;
   }
   // minimalista
   return `<svg width="${largura}" height="${h}" viewBox="0 0 ${largura} ${h}" xmlns="http://www.w3.org/2000/svg">
-    <line x1="${largura*0.2}" y1="20" x2="${largura*0.8}" y2="20" stroke="${cor}" stroke-width="1" opacity="0.6"/>
+    <line x1="${largura*0.2}" y1="20" x2="${largura*0.8}" y2="20" stroke="${c}" stroke-width="1" opacity="0.6"/>
   </svg>`;
 }
 
 function svgLogoDescomplicai(corPrimaria, corTexto = '#1A1714', largura = 110) {
+  const cp = String(corPrimaria || '#8B6F5E');
+  const ct = String(corTexto || '#1A1714');
   return `<svg width="${largura}" height="28" viewBox="0 0 110 28" xmlns="http://www.w3.org/2000/svg">
-    <text x="0" y="18" font-family="Georgia, serif" font-size="11" fill="${corTexto}" font-weight="normal">des</text>
-    <text x="22" y="18" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="${corTexto}" font-weight="normal">complicaí</text>
-    <circle cx="98" cy="14" r="7" fill="${corPrimaria}" opacity="0.9"/>
-    <circle cx="98" cy="14" r="4" fill="none" stroke="${corTexto}" stroke-width="0.8" opacity="0.3"/>
+    <text x="0" y="18" font-family="Georgia, serif" font-size="11" fill="${ct}" font-weight="normal">des</text>
+    <text x="22" y="18" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="${ct}" font-weight="normal">complicaí</text>
+    <circle cx="98" cy="14" r="7" fill="${cp}" opacity="0.9"/>
+    <circle cx="98" cy="14" r="4" fill="none" stroke="${ct}" stroke-width="0.8" opacity="0.3"/>
   </svg>`;
 }
 
@@ -165,10 +233,11 @@ function svgLogoDescomplicai(corPrimaria, corTexto = '#1A1714', largura = 110) {
    RENDERIZADORES DE TEXTO
    ═══════════════════════════════════════════════════════════ */
 function renderTextoSecao(secao) {
-  if (!secao?.linhas?.length) {
+  if (!secao || typeof secao !== 'object' || !Array.isArray(secao.linhas) || secao.linhas.length === 0) {
     return '<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">Conteúdo personalizado para este casal.</p>';
   }
   return secao.linhas.map(linha => {
+    if (typeof linha !== 'string') return '';
     const texto = linha.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').trim();
     if (!texto) return '';
     if (linha.startsWith('### ')) return `<h3 style="font-family:var(--font-display);font-size:12pt;color:var(--color-primary);margin-top:12px;margin-bottom:5px;">${texto}</h3>`;
@@ -178,10 +247,14 @@ function renderTextoSecao(secao) {
 }
 
 function renderTextoEditorial(secoesNormais) {
-  // Junta todas as linhas de todas as seções em um texto contínuo
+  if (!Array.isArray(secoesNormais) || secoesNormais.length === 0) {
+    return '<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">Memorial do casamento.</p>';
+  }
   const todasLinhas = [];
   for (const sec of secoesNormais) {
+    if (!sec || !Array.isArray(sec.linhas)) continue;
     for (const linha of sec.linhas) {
+      if (typeof linha !== 'string') continue;
       const limpa = linha.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').trim();
       if (limpa && !limpa.startsWith('##') && !limpa.startsWith('---')) todasLinhas.push(limpa);
     }
@@ -189,7 +262,6 @@ function renderTextoEditorial(secoesNormais) {
   if (todasLinhas.length === 0) {
     return '<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">Memorial do casamento.</p>';
   }
-  // Primeiro parágrafo com drop-cap
   let html = '';
   const primeiro = todasLinhas[0];
   const resto = todasLinhas.slice(1);
@@ -233,8 +305,9 @@ function gerarSvgPizza(itens, size = 260) {
    FUNÇÃO PRINCIPAL
    ═══════════════════════════════════════════════════════════ */
 export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null }) {
-  const estilo = dadosEvento?.estilo || 'classico';
-  const perfil = dadosEvento?.perfilCasal || estilo;
+  // Defesas totais nos dados de entrada
+  const estilo = String(dadosEvento?.estilo || 'classico').toLowerCase();
+  const perfil = String(dadosEvento?.perfilCasal || estilo).toLowerCase();
   const paleta = getPaleta(dadosEvento);
   const [cor1, cor2, cor3] = paleta;
 
@@ -250,21 +323,22 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   const fonteDisplay = fontes.find(f => f.uso === 'display')?.nome || 'Georgia';
   const fonteCorpo = fontes.find(f => f.uso === 'corpo')?.nome || 'Helvetica';
 
-  const nome1 = capitalizarNome(dadosEvento?.nomePessoa1 || '');
-  const nome2 = capitalizarNome(dadosEvento?.nomePessoa2 || '');
-  const nomeCasal = nome1 && nome2 ? `${nome1} & ${nome2}` : 'Nosso Casamento';
-  const inicial1 = nome1.charAt(0) || 'N';
-  const inicial2 = nome2.charAt(0) || 'N';
+  const nome1 = capitalizarNome(dadosEvento?.nomePessoa1);
+  const nome2 = capitalizarNome(dadosEvento?.nomePessoa2);
+  const nomeCasal = (nome1 && nome2) ? `${nome1} & ${nome2}` : 'Nosso Casamento';
+  const inicial1 = nome1 ? nome1.charAt(0) : 'N';
+  const inicial2 = nome2 ? nome2.charAt(0) : 'N';
   const dataFormatada = formatarData(dadosEvento?.dataEvento);
-  const cidade = dadosEvento?.cidadeEvento || '';
-  const estado = dadosEvento?.estadoEvento || '';
-  const localCompleto = cidade && estado ? `${cidade}, ${estado}` : cidade || estado || 'Local a definir';
+  const cidade = String(dadosEvento?.cidadeEvento || '');
+  const estado = String(dadosEvento?.estadoEvento || '');
+  const localCompleto = (cidade && estado) ? `${cidade}, ${estado}` : (cidade || estado || 'Local a definir');
 
   const secoes = parsearMemorial(memorial);
-  const secoesNormais = secoes.filter(s => {
+  const secoesNormais = Array.isArray(secoes) ? secoes.filter(s => {
+    if (!s || typeof s !== 'object') return false;
     const t = normalizar(s.titulo);
     return !t.includes('fornecedor') && !t.includes('orcamento') && !t.includes('checklist') && !t.includes('decisoes') && !t.includes('linha do tempo');
-  });
+  }) : [];
 
   const checklist = extrairChecklist(secoes);
   const fornecedores = extrairFornecedores(secoes);
@@ -309,8 +383,10 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   const imgDetalhes = getImagensMultiplas('detalhes', estilo, 2);
 
   const getSecao = (tituloBusca) => {
+    if (typeof tituloBusca !== 'string') return null;
     const buscaNormalizada = normalizar(tituloBusca);
-    return secoesNormais.find(s => normalizar(s.titulo).includes(buscaNormalizada));
+    if (!Array.isArray(secoesNormais)) return null;
+    return secoesNormais.find(s => normalizar(s.titulo).includes(buscaNormalizada)) || null;
   };
 
   const grafico = gerarSvgPizza(itensOrcamento.slice(0, 8));
@@ -318,7 +394,6 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   const svgLogo = svgLogoDescomplicai(corPrimaria, corTexto);
   const svgMono = svgMonograma(inicial1, inicial2, corContraste);
 
-  // Dicas por seção
   const dicasPorSecao = {
     'Identidade Visual': 'Mantenha a coerência visual em todos os materiais. Teste as fontes em tamanhos pequenos antes de aprovar.',
     'Cerimônia': 'Chegue 30 minutos antes para acertos finais. Verifique a acústica do local com antecedência.',
@@ -332,15 +407,13 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     'Dicas Regionais': 'Consulte o calendário de eventos da cidade para evitar conflitos de data.',
   };
 
-  // Renderizador de página de seção temática
   const renderPaginaSecao = (titulo, secao, imagens, layoutIdx, dica) => {
     const texto = renderTextoSecao(secao);
-    const layout = layoutIdx % 4;
+    const layout = (layoutIdx % 4);
     let corpo = '';
 
     if (layout === 0) {
-      // Hero: imagem larga + texto em colunas
-      const imgHero = imagens[0] ? `<img src="${imagens[0]}" style="width:100%;max-height:85mm;object-fit:cover;border-radius:3px;display:block;margin-bottom:5mm;"/>` : '';
+      const imgHero = (imagens && imagens[0]) ? `<img src="${imagens[0]}" style="width:100%;max-height:85mm;object-fit:cover;border-radius:3px;display:block;margin-bottom:5mm;"/>` : '';
       corpo = `
         ${imgHero}
         <div style="column-count:2;column-gap:5mm;font-size:10pt;line-height:1.65;">
@@ -348,8 +421,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
         </div>
       `;
     } else if (layout === 1) {
-      // Magazine: texto + imagem lateral
-      const imgLat = imagens[0] ? `<img src="${imagens[0]}" style="width:100%;max-height:200mm;object-fit:cover;border-radius:3px;display:block;"/>` : '';
+      const imgLat = (imagens && imagens[0]) ? `<img src="${imagens[0]}" style="width:100%;max-height:200mm;object-fit:cover;border-radius:3px;display:block;"/>` : '';
       corpo = `
         <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:5mm;align-items:start;">
           <div>${texto}</div>
@@ -357,8 +429,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
         </div>
       `;
     } else if (layout === 2) {
-      // Grid: imagens 2x2 + texto
-      const imgs = imagens.slice(0, 4).map((img, i) => img ? `<img src="${img}" style="width:100%;height:55mm;object-fit:cover;border-radius:3px;display:block;"/>` : '').join('');
+      const imgs = (imagens || []).slice(0, 4).map((imgSrc) => imgSrc ? `<img src="${imgSrc}" style="width:100%;height:55mm;object-fit:cover;border-radius:3px;display:block;"/>` : '').join('');
       corpo = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin-bottom:4mm;">
           ${imgs}
@@ -366,8 +437,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
         <div style="font-size:10pt;line-height:1.65;">${texto}</div>
       `;
     } else {
-      // Overlay: imagem de fundo com texto
-      const imgBack = imagens[0] ? `background-image:url(${imagens[0]});background-size:cover;background-position:center;` : '';
+      const imgBack = (imagens && imagens[0]) ? `background-image:url(${imagens[0]});background-size:cover;background-position:center;` : '';
       corpo = `
         <div style="position:relative;border-radius:3px;overflow:hidden;min-height:120mm;${imgBack}">
           <div style="background:rgba(249,247,244,0.88);padding:5mm;position:absolute;bottom:0;left:0;right:0;">
@@ -380,10 +450,10 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     return `
 <div class="page">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
-  <div class="section-title">${titulo}</div>
+  <div class="section-title">${String(titulo || '')}</div>
   ${corpo}
   <div class="info-box" style="margin-top:4mm;">
-    <p style="font-size:9.5pt;line-height:1.6;"><strong>Dica:</strong> ${dica}</p>
+    <p style="font-size:9.5pt;line-height:1.6;"><strong>Dica:</strong> ${String(dica || '')}</p>
   </div>
   <div class="footer">
     <span>${nomeCasal}</span>
@@ -864,7 +934,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   <div class="editorial-columns">
     ${renderTextoEditorial(secoesNormais)}
   </div>
-  ${imgDetalhes.length > 0 ? `
+  ${(imgDetalhes && imgDetalhes[0]) ? `
     <div class="editorial-image-inline" style="margin-top:5mm;">
       <img src="${imgDetalhes[0]}" alt="detalhes"/>
     </div>
@@ -876,7 +946,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   </div>
 </div>
 
-${imgDetalhes.length > 1 ? `
+${(imgDetalhes && imgDetalhes[1]) ? `
 <div class="page">
   <div class="editorial-columns" style="margin-top:8mm;">
     <div class="editorial-image-float-left"><img src="${imgDetalhes[1]}" alt="detalhes"/></div>
@@ -902,11 +972,11 @@ ${imgDetalhes.length > 1 ? `
 <!-- ═══════════════════════════════════════════════════ SEÇÕES TEMÁTICAS -->
 ${renderPaginaSecao('Identidade Visual', getSecao('identidade'), imgDecoracao, 0, dicasPorSecao['Identidade Visual'])}
 ${renderPaginaSecao('Cerimônia', getSecao('cerimonia'), imgCerimonia, 1, dicasPorSecao['Cerimônia'])}
-${renderPaginaSecao('Decoração', getSecao('decoracao'), imgFlores.length ? imgFlores : imgDecoracao, 2, dicasPorSecao['Decoração'])}
+${renderPaginaSecao('Decoração', getSecao('decoracao'), (imgFlores.length ? imgFlores : imgDecoracao), 2, dicasPorSecao['Decoração'])}
 ${renderPaginaSecao('Mesa Posta', getSecao('mesa'), imgMesa, 3, dicasPorSecao['Mesa Posta'])}
 ${renderPaginaSecao('Alimentação e Bebidas', getSecao('alimentacao'), imgAlimentacao, 0, dicasPorSecao['Alimentação e Bebidas'])}
 ${renderPaginaSecao('Entretenimento', getSecao('entretenimento'), imgEntretenimento, 1, dicasPorSecao['Entretenimento'])}
-${renderPaginaSecao('Vestuário e Beleza', getSecao('vestuario'), imgVestido.length ? imgVestido : imgBeleza, 2, dicasPorSecao['Vestuário e Beleza'])}
+${renderPaginaSecao('Vestuário e Beleza', getSecao('vestuario'), (imgVestido.length ? imgVestido : imgBeleza), 2, dicasPorSecao['Vestuário e Beleza'])}
 ${renderPaginaSecao('Papelaria e Identidade', getSecao('papelaria'), imgPapelaria, 3, dicasPorSecao['Papelaria e Identidade'])}
 
 <!-- ═══════════════════════════════════════════════════ LINHA DO TEMPO -->

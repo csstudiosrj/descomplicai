@@ -15,7 +15,7 @@ function img(categoria, arquivo) {
  * Capitaliza nome próprio
  */
 export function capitalizarNome(nome) {
-  if (!nome) return '';
+  if (!nome || typeof nome !== 'string') return '';
   return nome
     .split(' ')
     .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
@@ -26,7 +26,7 @@ export function capitalizarNome(nome) {
  * Formata data ISO para DD/MM/AAAA
  */
 export function formatarData(dataISO) {
-  if (!dataISO) return 'Data a definir';
+  if (!dataISO || typeof dataISO !== 'string') return 'Data a definir';
   const [ano, mes, dia] = dataISO.split('-');
   if (!ano || !mes || !dia) return 'Data a definir';
   return `${dia}/${mes}/${ano}`;
@@ -37,7 +37,7 @@ export function formatarData(dataISO) {
  */
 export function getPaleta(dados) {
   if (dados?.paleta && Array.isArray(dados.paleta) && dados.paleta.length >= 3) {
-    return dados.paleta.slice(0, 3);
+    return dados.paleta.slice(0, 3).map(c => String(c || '#8B6F5E'));
   }
   return ['#8B6F5E', '#E5E0D9', '#F9F7F4'];
 }
@@ -46,10 +46,11 @@ export function getPaleta(dados) {
  * Verifica se cor é escura (luminância < 128)
  */
 export function isCorEscura(hex) {
-  if (!hex || hex.length < 7) return false;
-  const r = parseInt(hex.substring(1, 3), 16);
-  const g = parseInt(hex.substring(3, 5), 16);
-  const b = parseInt(hex.substring(5, 7), 16);
+  const h = String(hex || '');
+  if (h.length < 7) return false;
+  const r = parseInt(h.substring(1, 3), 16);
+  const g = parseInt(h.substring(3, 5), 16);
+  const b = parseInt(h.substring(5, 7), 16);
   if (isNaN(r) || isNaN(g) || isNaN(b)) return false;
   return 0.299 * r + 0.587 * g + 0.114 * b < 128;
 }
@@ -65,7 +66,7 @@ export function getCorContraste(hex) {
  * Retorna a cor mais escura da paleta (para bordas)
  */
 export function getCorBorda(paleta) {
-  if (!paleta || paleta.length === 0) return '#8B6F5E';
+  if (!paleta || !Array.isArray(paleta) || paleta.length === 0) return '#8B6F5E';
   const escuras = paleta.filter(isCorEscura);
   if (escuras.length > 0) return escuras[0];
   return paleta[0];
@@ -108,15 +109,15 @@ export function getNomeCor(hex) {
     '#D8BFD8': 'Lilás',
     '#4A0E0E': 'Vinho Escuro',
   };
-  return mapa[hex.toUpperCase()] || hex.toUpperCase();
+  return mapa[String(hex || '').toUpperCase()] || String(hex || '').toUpperCase();
 }
 
 /**
  * Calcula valor médio regionalizado
  */
 export function getValorRegionalizado(categoria, cidade, estado) {
-  const estadoLower = (estado || '').toLowerCase().trim();
-  const cidadeLower = (cidade || '').toLowerCase().trim();
+  const estadoLower = String(estado || '').toLowerCase().trim();
+  const cidadeLower = String(cidade || '').toLowerCase().trim();
 
   let multiplicador = 1.0;
   if (['sp', 'são paulo', 'sao paulo'].includes(estadoLower)) multiplicador = 1.3;
@@ -179,8 +180,8 @@ export function getValorRegionalizado(categoria, cidade, estado) {
  * Retorna dicas regionais
  */
 export function getDicasRegionais(cidade, estado) {
-  const estadoLower = (estado || '').toLowerCase().trim();
-  const cidadeLower = (cidade || '').toLowerCase().trim();
+  const estadoLower = String(estado || '').toLowerCase().trim();
+  const cidadeLower = String(cidade || '').toLowerCase().trim();
 
   const dicas = {
     clima: 'Consulte a previsão do tempo próximo à data do evento.',
@@ -224,7 +225,7 @@ export function getDicasRegionais(cidade, estado) {
 
 /**
  * Parseia o texto markdown do memorial em seções
- * AGORA COM FALLBACK ROBUSTO: se não encontrar ##, retorna o texto inteiro como uma seção
+ * FALLBACK ROBUSTO: se não encontrar ##, retorna o texto inteiro como uma seção
  */
 export function parsearMemorial(memorial) {
   if (!memorial || typeof memorial !== 'string') {
@@ -238,14 +239,14 @@ export function parsearMemorial(memorial) {
   let temH2 = false;
 
   for (const linha of linhas) {
-    if (linha.startsWith('## ')) {
+    if (typeof linha === 'string' && linha.startsWith('## ')) {
       temH2 = true;
       break;
     }
   }
 
   if (!temH2) {
-    const linhasFiltradas = linhas.filter(l => l.trim());
+    const linhasFiltradas = linhas.filter(l => typeof l === 'string' && l.trim());
     if (linhasFiltradas.length === 0) {
       return [{ titulo: 'Memorial do Casamento', linhas: ['Memorial gerado com sucesso.'] }];
     }
@@ -253,17 +254,17 @@ export function parsearMemorial(memorial) {
   }
 
   for (const linha of linhas) {
-    if (linha.startsWith('## ')) {
+    if (typeof linha === 'string' && linha.startsWith('## ')) {
       if (atual) secoes.push(atual);
       atual = { titulo: linha.replace('## ', '').trim(), linhas: [] };
-    } else if (atual) {
+    } else if (atual && typeof linha === 'string') {
       atual.linhas.push(linha);
     }
   }
   if (atual) secoes.push(atual);
 
   if (secoes.length === 0) {
-    return [{ titulo: 'Memorial do Casamento', linhas: linhas.filter(l => l.trim()) }];
+    return [{ titulo: 'Memorial do Casamento', linhas: linhas.filter(l => typeof l === 'string' && l.trim()) }];
   }
 
   return secoes;
@@ -274,8 +275,11 @@ export function parsearMemorial(memorial) {
  */
 export function extrairChecklist(secoes) {
   const checklist = [];
+  if (!Array.isArray(secoes)) return checklist;
   for (const secao of secoes) {
+    if (!secao?.linhas || !Array.isArray(secao.linhas)) continue;
     for (const linha of secao.linhas) {
+      if (typeof linha !== 'string') continue;
       const lower = linha.toLowerCase();
       if (lower.includes('ainda não sei') || lower.includes('ainda nao sei') || lower.includes('pendente') || lower.includes('a definir') || lower.includes('a decidir')) {
         const item = linha.replace(/[*\-]\s*/, '').replace(/\*\*/g, '').trim();
@@ -302,7 +306,6 @@ export function extrairChecklist(secoes) {
 
 /**
  * Extrai fornecedores — CORRIGIDO: retorna só categoria + "A definir"
- * Não puxa mais texto descritivo do memorial como nome de fornecedor.
  */
 export function extrairFornecedores(secoes) {
   const categorias = [
@@ -333,8 +336,33 @@ export function extrairFornecedores(secoes) {
 
   const encontradas = new Set();
 
+  if (!Array.isArray(secoes)) {
+    return [
+      { categoria: 'Espaço / Venue', nome: 'A definir' },
+      { categoria: 'Buffet', nome: 'A definir' },
+      { categoria: 'Bebidas', nome: 'A definir' },
+      { categoria: 'Decoração', nome: 'A definir' },
+      { categoria: 'Flores', nome: 'A definir' },
+      { categoria: 'Fotografia', nome: 'A definir' },
+      { categoria: 'Filmagem', nome: 'A definir' },
+      { categoria: 'Música / DJ', nome: 'A definir' },
+      { categoria: 'Vestido', nome: 'A definir' },
+      { categoria: 'Terno', nome: 'A definir' },
+      { categoria: 'Beleza', nome: 'A definir' },
+      { categoria: 'Papelaria', nome: 'A definir' },
+      { categoria: 'Bolo e Doces', nome: 'A definir' },
+      { categoria: 'Cerimonialista', nome: 'A definir' },
+      { categoria: 'Transporte', nome: 'A definir' },
+      { categoria: 'Iluminação', nome: 'A definir' },
+      { categoria: 'Som', nome: 'A definir' },
+      { categoria: 'Segurança', nome: 'A definir' },
+    ];
+  }
+
   for (const secao of secoes) {
+    if (!secao?.linhas || !Array.isArray(secao.linhas)) continue;
     for (const linha of secao.linhas) {
+      if (typeof linha !== 'string') continue;
       const lower = linha.toLowerCase();
       for (const cat of categorias) {
         if (lower.includes(cat)) {
@@ -347,13 +375,12 @@ export function extrairFornecedores(secoes) {
 
   const fornecedores = [];
   for (const cat of encontradas) {
-    const nomeCat = mapaNomes[cat] || cat.charAt(0).toUpperCase() + cat.slice(1);
+    const nomeCat = mapaNomes[cat] || (cat.charAt(0).toUpperCase() + cat.slice(1));
     if (!fornecedores.find(f => f.categoria === nomeCat)) {
       fornecedores.push({ categoria: nomeCat, nome: 'A definir' });
     }
   }
 
-  // Fallback padronizado se nenhuma categoria for detectada
   if (fornecedores.length === 0) {
     return [
       { categoria: 'Espaço / Venue', nome: 'A definir' },
