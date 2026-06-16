@@ -1,4 +1,5 @@
-// utils/pdfTemplate.js — Memorial descomplicaí v6 (Correções Cirúrgicas)
+// utils/pdfTemplate.js — Memorial descomplicaí v7 (Reescrita Completa)
+// Foco: zero vazamento, IDV em 1 página, layouts compactos, quebras controladas
 
 import fs from 'fs';
 import path from 'path';
@@ -18,7 +19,13 @@ function normalizar(str) {
 
 function filtrarHexDoTexto(texto) {
   if (!texto || typeof texto !== 'string') return texto;
-  return texto.replace(/#[0-9A-Fa-f]{3,8}\b/g, '').replace(/\s{2,}/g, ' ').trim();
+  let t = texto.replace(/#[0-9A-Fa-f]{3,8}\b/gi, '');
+  // Remove pontuação órfã deixada pela remoção dos hex
+  t = t.replace(/[,;.]\s*(?=[,;.\s])/g, ' ');
+  t = t.replace(/\s{2,}/g, ' ');
+  t = t.replace(/[,;.]\s*$/g, '');
+  t = t.replace(/^\s*[,;.]/g, '');
+  return t.trim();
 }
 
 function sanitizarValor(val) {
@@ -141,7 +148,7 @@ function getImagensMultiplas(categoria, chave, quantidade = 3) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   LOGO DESCOMPLECAÍ — HTML span com font-face (funcionava antes)
+   LOGO DESCOMPLECAÍ — HTML span com font-face
    ═══════════════════════════════════════════════════════════ */
 function logoHTML(corDescomplica = '#8B6F5E', corI = '#10B981') {
   return `<span style="display:inline-flex;align-items:baseline;white-space:nowrap;font-size:1em;">
@@ -151,205 +158,50 @@ function logoHTML(corDescomplica = '#8B6F5E', corI = '#10B981') {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   MONOGRAMAS POR PERFIL — designs criativos e impactantes
+   MONOGRAMA ELEGANTE (estilo Claude)
    ═══════════════════════════════════════════════════════════ */
-function svgMonogramaPorPerfil(inicial1, inicial2, perfil, cor, tamanho = 200) {
+function svgMonogramaElegante(inicial1, inicial2, corPrimaria, corSecundaria, size = 160) {
   const i1 = String(inicial1 || 'N').charAt(0).toUpperCase();
   const i2 = String(inicial2 || 'N').charAt(0).toUpperCase();
-  const c = String(cor || '#1A1714');
-  const s = tamanho;
+  const c1 = String(corPrimaria || '#1A1714');
+  const c2 = String(corSecundaria || '#8B6F5E');
+  const s = size;
   const hs = s / 2;
-
-  if (perfil === 'classico') {
-    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Moldura ornamental com cantos -->
-      <path d="M${s*0.12},${s*0.18} Q${s*0.12},${s*0.12} ${s*0.18},${s*0.12}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.5"/>
-      <path d="M${s*0.82},${s*0.12} Q${s*0.88},${s*0.12} ${s*0.88},${s*0.18}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.5"/>
-      <path d="M${s*0.88},${s*0.82} Q${s*0.88},${s*0.88} ${s*0.82},${s*0.88}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.5"/>
-      <path d="M${s*0.18},${s*0.88} Q${s*0.12},${s*0.88} ${s*0.12},${s*0.82}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.5"/>
-      <!-- Linhas decorativas horizontais -->
-      <line x1="${s*0.22}" y1="${s*0.28}" x2="${s*0.78}" y2="${s*0.28}" stroke="${c}" stroke-width="${s*0.004}" opacity="0.3"/>
-      <line x1="${s*0.22}" y1="${s*0.72}" x2="${s*0.78}" y2="${s*0.72}" stroke="${c}" stroke-width="${s*0.004}" opacity="0.3"/>
-      <!-- Volutas laterais -->
-      <path d="M${s*0.15},${s*0.45} Q${s*0.08},${s*0.5} ${s*0.15},${s*0.55}" fill="none" stroke="${c}" stroke-width="${s*0.006}" opacity="0.35"/>
-      <path d="M${s*0.85},${s*0.45} Q${s*0.92},${s*0.5} ${s*0.85},${s*0.55}" fill="none" stroke="${c}" stroke-width="${s*0.006}" opacity="0.35"/>
-      <!-- Iniciais -->
-      <text x="${hs}" y="${s*0.54}" text-anchor="middle" font-family="DisplayFont, Georgia, 'Times New Roman', serif" font-size="${s*0.32}" fill="${c}" font-weight="bold" letter-spacing="${s*0.01}">${i1}<tspan font-size="${s*0.20}" dy="${-s*0.04}" font-weight="normal">&</tspan>${i2}</text>
-      <!-- Ornamento inferior -->
-      <path d="M${s*0.38},${s*0.68} Q${hs},${s*0.78} ${s*0.62},${s*0.68}" fill="none" stroke="${c}" stroke-width="${s*0.008}" opacity="0.4"/>
-      <circle cx="${s*0.35}" cy="${s*0.74}" r="${s*0.008}" fill="${c}" opacity="0.3"/>
-      <circle cx="${s*0.65}" cy="${s*0.74}" r="${s*0.008}" fill="${c}" opacity="0.3"/>
-    </svg>`;
-  }
-  if (perfil === 'boho') {
-    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Círculo pontilhado -->
-      <circle cx="${hs}" cy="${hs}" r="${s*0.40}" fill="none" stroke="${c}" stroke-width="${s*0.008}" opacity="0.2" stroke-dasharray="${s*0.06} ${s*0.03}"/>
-      <!-- Ramos orgânicos -->
-      <path d="M${s*0.10},${s*0.62} C${s*0.20},${s*0.35} ${s*0.30},${s*0.55} ${s*0.42},${s*0.42} C${s*0.55},${s*0.30} ${s*0.65},${s*0.48} ${s*0.78},${s*0.38} C${s*0.88},${s*0.30} ${s*0.90},${s*0.55} ${s*0.85},${s*0.65}" fill="none" stroke="${c}" stroke-width="${s*0.010}" opacity="0.35"/>
-      <path d="M${s*0.15},${s*0.68} C${s*0.25},${s*0.45} ${s*0.35},${s*0.62} ${s*0.48},${s*0.50} C${s*0.60},${s*0.38} ${s*0.70},${s*0.55} ${s*0.82},${s*0.48} C${s*0.90},${s*0.42} ${s*0.88},${s*0.65} ${s*0.80},${s*0.72}" fill="none" stroke="${c}" stroke-width="${s*0.007}" opacity="0.25"/>
-      <!-- Folhas -->
-      <path d="M${s*0.32},${s*0.35} Q${s*0.28},${s*0.25} ${s*0.35},${s*0.22} Q${s*0.42},${s*0.25} ${s*0.38},${s*0.35} Z" fill="none" stroke="${c}" stroke-width="${s*0.005}" opacity="0.3"/>
-      <path d="M${s*0.62},${s*0.35} Q${s*0.58},${s*0.25} ${s*0.65},${s*0.22} Q${s*0.72},${s*0.25} ${s*0.68},${s*0.35} Z" fill="none" stroke="${c}" stroke-width="${s*0.005}" opacity="0.3"/>
-      <!-- Iniciais -->
-      <text x="${hs}" y="${s*0.54}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.30}" fill="${c}" font-weight="bold">${i1} & ${i2}</text>
-      <!-- Pontos decorativos -->
-      <circle cx="${s*0.28}" cy="${s*0.75}" r="${s*0.012}" fill="${c}" opacity="0.25"/>
-      <circle cx="${s*0.72}" cy="${s*0.75}" r="${s*0.012}" fill="${c}" opacity="0.25"/>
-      <circle cx="${s*0.50}" cy="${s*0.80}" r="${s*0.008}" fill="${c}" opacity="0.2"/>
-    </svg>`;
-  }
-  if (perfil === 'moderno') {
-    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Moldura geométrica dupla -->
-      <rect x="${s*0.12}" y="${s*0.12}" width="${s*0.76}" height="${s*0.76}" fill="none" stroke="${c}" stroke-width="${s*0.016}" opacity="0.35" rx="${s*0.02}"/>
-      <rect x="${s*0.20}" y="${s*0.20}" width="${s*0.60}" height="${s*0.60}" fill="none" stroke="${c}" stroke-width="${s*0.008}" opacity="0.2" rx="${s*0.01}"/>
-      <!-- Linhas de cruz -->
-      <line x1="${s*0.12}" y1="${hs}" x2="${s*0.88}" y2="${hs}" stroke="${c}" stroke-width="${s*0.005}" opacity="0.15"/>
-      <line x1="${hs}" y1="${s*0.12}" x2="${hs}" y2="${s*0.88}" stroke="${c}" stroke-width="${s*0.005}" opacity="0.15"/>
-      <!-- Diagonais -->
-      <line x1="${s*0.20}" y1="${s*0.20}" x2="${s*0.30}" y2="${s*0.30}" stroke="${c}" stroke-width="${s*0.008}" opacity="0.3"/>
-      <line x1="${s*0.80}" y1="${s*0.20}" x2="${s*0.70}" y2="${s*0.30}" stroke="${c}" stroke-width="${s*0.008}" opacity="0.3"/>
-      <line x1="${s*0.20}" y1="${s*0.80}" x2="${s*0.30}" y2="${s*0.70}" stroke="${c}" stroke-width="${s*0.008}" opacity="0.3"/>
-      <line x1="${s*0.80}" y1="${s*0.80}" x2="${s*0.70}" y2="${s*0.70}" stroke="${c}" stroke-width="${s*0.008}" opacity="0.3"/>
-      <!-- Iniciais -->
-      <text x="${hs}" y="${s*0.56}" text-anchor="middle" font-family="DisplayFont, 'Helvetica Neue', Arial, sans-serif" font-size="${s*0.34}" fill="${c}" font-weight="bold" letter-spacing="${s*0.015}">${i1} / ${i2}</text>
-      <!-- Barra inferior -->
-      <rect x="${s*0.38}" y="${s*0.68}" width="${s*0.24}" height="${s*0.012}" fill="${c}" opacity="0.4"/>
-    </svg>`;
-  }
-  if (perfil === 'rustico') {
-    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Círculo orgânico -->
-      <circle cx="${hs}" cy="${hs}" r="${s*0.38}" fill="none" stroke="${c}" stroke-width="${s*0.014}" opacity="0.25"/>
-      <!-- Galhos principais -->
-      <path d="M${s*0.08},${s*0.65} Q${s*0.25},${s*0.45} ${s*0.45},${s*0.58} Q${s*0.65},${s*0.42} ${s*0.82},${s*0.55} Q${s*0.92},${s*0.48} ${s*0.92},${s*0.68}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.4"/>
-      <path d="M${s*0.15},${s*0.72} Q${s*0.30},${s*0.55} ${s*0.50},${s*0.68} Q${s*0.70},${s*0.52} ${s*0.85},${s*0.65}" fill="none" stroke="${c}" stroke-width="${s*0.008}" opacity="0.25"/>
-      <!-- Folhas estilizadas -->
-      <ellipse cx="${s*0.30}" cy="${s*0.48}" rx="${s*0.025}" ry="${s*0.055}" fill="none" stroke="${c}" stroke-width="${s*0.005}" opacity="0.3" transform="rotate(-25 ${s*0.30} ${s*0.48})"/>
-      <ellipse cx="${s*0.70}" cy="${s*0.48}" rx="${s*0.025}" ry="${s*0.055}" fill="none" stroke="${c}" stroke-width="${s*0.005}" opacity="0.3" transform="rotate(25 ${s*0.70} ${s*0.48})"/>
-      <ellipse cx="${s*0.40}" cy="${s*0.40}" rx="${s*0.02}" ry="${s*0.04}" fill="none" stroke="${c}" stroke-width="${s*0.004}" opacity="0.25" transform="rotate(-40 ${s*0.40} ${s*0.40})"/>
-      <ellipse cx="${s*0.60}" cy="${s*0.40}" rx="${s*0.02}" ry="${s*0.04}" fill="none" stroke="${c}" stroke-width="${s*0.004}" opacity="0.25" transform="rotate(40 ${s*0.60} ${s*0.40})"/>
-      <!-- Iniciais -->
-      <text x="${hs}" y="${s*0.54}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.30}" fill="${c}" font-weight="bold">${i1} + ${i2}</text>
-      <!-- Círculos decorativos -->
-      <circle cx="${s*0.25}" cy="${s*0.75}" r="${s*0.010}" fill="${c}" opacity="0.25"/>
-      <circle cx="${s*0.75}" cy="${s*0.75}" r="${s*0.010}" fill="${c}" opacity="0.25"/>
-    </svg>`;
-  }
-  if (perfil === 'romantico') {
-    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Coração estilizado -->
-      <path d="M${hs},${s*0.22} C${s*0.35},${s*0.08} ${s*0.15},${s*0.18} ${s*0.15},${s*0.38} C${s*0.15},${s*0.58} ${hs},${s*0.78} ${hs},${s*0.78} C${hs},${s*0.78} ${s*0.85},${s*0.58} ${s*0.85},${s*0.38} C${s*0.85},${s*0.18} ${s*0.65},${s*0.08} ${hs},${s*0.22}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.35"/>
-      <!-- Iniciais -->
-      <text x="${hs}" y="${s*0.52}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.28}" fill="${c}" font-weight="bold">${i1} & ${i2}</text>
-      <!-- Enfeites florais -->
-      <path d="M${s*0.25},${s*0.72} Q${s*0.38},${s*0.62} ${hs},${s*0.72} Q${s*0.62},${s*0.62} ${s*0.75},${s*0.72}" fill="none" stroke="${c}" stroke-width="${s*0.006}" opacity="0.3"/>
-      <path d="M${s*0.30},${s*0.78} Q${s*0.40},${s*0.70} ${hs},${s*0.78} Q${s*0.60},${s*0.70} ${s*0.70},${s*0.78}" fill="none" stroke="${c}" stroke-width="${s*0.005}" opacity="0.2"/>
-      <!-- Pétalas -->
-      <circle cx="${s*0.28}" cy="${s*0.32}" r="${s*0.015}" fill="none" stroke="${c}" stroke-width="${s*0.004}" opacity="0.25"/>
-      <circle cx="${s*0.72}" cy="${s*0.32}" r="${s*0.015}" fill="none" stroke="${c}" stroke-width="${s*0.004}" opacity="0.25"/>
-      <circle cx="${s*0.35}" cy="${s*0.25}" r="${s*0.010}" fill="${c}" opacity="0.2"/>
-      <circle cx="${s*0.65}" cy="${s*0.25}" r="${s*0.010}" fill="${c}" opacity="0.2"/>
-    </svg>`;
-  }
-  // Minimalista fallback
-  return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-    <line x1="${s*0.10}" y1="${hs}" x2="${s*0.90}" y2="${hs}" stroke="${c}" stroke-width="${s*0.010}" opacity="0.4"/>
-    <text x="${hs}" y="${s*0.54}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.36}" fill="${c}" font-weight="bold" letter-spacing="${s*0.015}">${i1} & ${i2}</text>
-    <line x1="${s*0.10}" y1="${s*0.58}" x2="${s*0.90}" y2="${s*0.58}" stroke="${c}" stroke-width="${s*0.005}" opacity="0.2"/>
+  return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto;">
+    <circle cx="${hs}" cy="${hs}" r="${s*0.45}" fill="none" stroke="${c2}" stroke-width="1"/>
+    <circle cx="${hs}" cy="${hs}" r="${s*0.42}" fill="none" stroke="${c2}" stroke-width="0.5"/>
+    <text x="${s*0.30}" y="${s*0.58}" font-family="DisplayFont, Georgia, 'Times New Roman', serif" font-size="${s*0.35}" fill="${c1}" text-anchor="middle" font-weight="bold">${i1}</text>
+    <text x="${s*0.70}" y="${s*0.58}" font-family="DisplayFont, Georgia, 'Times New Roman', serif" font-size="${s*0.35}" fill="${c1}" text-anchor="middle" font-weight="bold">${i2}</text>
+    <text x="${hs}" y="${s*0.55}" font-family="DisplayFont, Georgia, 'Times New Roman', serif" font-size="${s*0.20}" fill="${c2}" text-anchor="middle">&</text>
+    <line x1="${s*0.15}" y1="${s*0.75}" x2="${s*0.42}" y2="${s*0.75}" stroke="${c2}" stroke-width="0.5"/>
+    <line x1="${s*0.58}" y1="${s*0.75}" x2="${s*0.85}" y2="${s*0.75}" stroke="${c2}" stroke-width="0.5"/>
+    <circle cx="${hs}" cy="${s*0.75}" r="${s*0.012}" fill="${c2}"/>
   </svg>`;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   ELEMENTO GRÁFICO REAL DO PERFIL — arabesco/folha/geometria/flor
+   ELEMENTO GRÁFICO NO TOPO (linhas duplas simples)
    ═══════════════════════════════════════════════════════════ */
-function svgElementoGrafico(perfil, cor, largura = 240, altura = 70) {
-  const p = String(perfil || 'minimalista').toLowerCase();
-  const c = String(cor || '#1A1714');
-  const w = largura;
-  const h = altura;
-
-  if (p === 'classico') {
-    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Arabesco central com volutas -->
-      <path d="M${w*0.05},${h*0.55} C${w*0.15},${h*0.20} ${w*0.30},${h*0.45} ${w*0.42},${h*0.35} C${w*0.50},${h*0.28} ${w*0.55},${h*0.42} ${w*0.60},${h*0.35} C${w*0.70},${h*0.25} ${w*0.85},${h*0.20} ${w*0.95},${h*0.55}" fill="none" stroke="${c}" stroke-width="1.4" opacity="0.45"/>
-      <path d="M${w*0.10},${h*0.65} C${w*0.20},${h*0.35} ${w*0.32},${h*0.55} ${w*0.45},${h*0.45} C${w*0.52},${h*0.38} ${w*0.56},${h*0.52} ${w*0.62},${h*0.45} C${w*0.72},${h*0.35} ${w*0.80},${h*0.35} ${w*0.90},${h*0.65}" fill="none" stroke="${c}" stroke-width="1" opacity="0.3"/>
-      <!-- Volutas laterais -->
-      <path d="M${w*0.25},${h*0.30} Q${w*0.20},${h*0.15} ${w*0.30},${h*0.12} Q${w*0.40},${h*0.15} ${w*0.35},${h*0.30}" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.35"/>
-      <path d="M${w*0.65},${h*0.30} Q${w*0.60},${h*0.15} ${w*0.70},${h*0.12} Q${w*0.80},${h*0.15} ${w*0.75},${h*0.30}" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.35"/>
-      <!-- Círculos decorativos -->
-      <circle cx="${w*0.35}" cy="${h*0.40}" r="2.5" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3"/>
-      <circle cx="${w*0.65}" cy="${h*0.38}" r="2" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.25"/>
-    </svg>`;
-  }
-  if (p === 'boho') {
-    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Ramos ondulantes -->
-      <path d="M${w*0.04},${h*0.70} C${w*0.12},${h*0.25} ${w*0.22},${h*0.55} ${w*0.32},${h*0.35} C${w*0.42},${h*0.55} ${w*0.52},${h*0.20} ${w*0.62},${h*0.40} C${w*0.72},${h*0.25} ${w*0.82},${h*0.55} ${w*0.92},${h*0.30} C${w*0.96},${h*0.20} ${w*0.98},${h*0.45} ${w*0.98},${h*0.70}" fill="none" stroke="${c}" stroke-width="1.4" opacity="0.4"/>
-      <path d="M${w*0.08},${h*0.78} C${w*0.15},${h*0.40} ${w*0.25},${h*0.65} ${w*0.35},${h*0.45} C${w*0.45},${h*0.65} ${w*0.55},${h*0.35} ${w*0.65},${h*0.50} C${w*0.75},${h*0.35} ${w*0.85},${h*0.60} ${w*0.95},${h*0.40}" fill="none" stroke="${c}" stroke-width="1" opacity="0.25"/>
-      <!-- Folhas -->
-      <path d="M${w*0.22},${h*0.32} Q${w*0.18},${h*0.22} ${w*0.25},${h*0.18} Q${w*0.32},${h*0.22} ${w*0.28},${h*0.32} Z" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3"/>
-      <path d="M${w*0.48},${h*0.28} Q${w*0.44},${h*0.18} ${w*0.50},${h*0.15} Q${w*0.56},${h*0.18} ${w*0.52},${h*0.28} Z" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3"/>
-      <path d="M${w*0.75},${h*0.30} Q${w*0.71},${h*0.20} ${w*0.78},${h*0.17} Q${w*0.85},${h*0.20} ${w*0.81},${h*0.30} Z" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3"/>
-      <!-- Pontos -->
-      <circle cx="${w*0.35}" cy="${h*0.25}" r="1.5" fill="${c}" opacity="0.25"/>
-      <circle cx="${w*0.65}" cy="${h*0.22}" r="1.5" fill="${c}" opacity="0.25"/>
-    </svg>`;
-  }
-  if (p === 'moderno') {
-    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Formas geométricas -->
-      <rect x="${w*0.06}" y="${h*0.25}" width="${w*0.14}" height="${h*0.40}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4" rx="2"/>
-      <rect x="${w*0.24}" y="${h*0.18}" width="${w*0.22}" height="${h*0.55}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4" rx="2"/>
-      <rect x="${w*0.50}" y="${h*0.25}" width="${w*0.18}" height="${h*0.40}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4" rx="2"/>
-      <rect x="${w*0.72}" y="${h*0.18}" width="${w*0.22}" height="${h*0.55}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4" rx="2"/>
-      <!-- Linha base -->
-      <line x1="0" y1="${h*0.82}" x2="${w}" y2="${h*0.82}" stroke="${c}" stroke-width="2" opacity="0.5"/>
-      <!-- Pontos -->
-      <circle cx="${w*0.13}" cy="${h*0.72}" r="2" fill="${c}" opacity="0.3"/>
-      <circle cx="${w*0.35}" cy="${h*0.78}" r="2" fill="${c}" opacity="0.3"/>
-      <circle cx="${w*0.59}" cy="${h*0.72}" r="2" fill="${c}" opacity="0.3"/>
-      <circle cx="${w*0.83}" cy="${h*0.78}" r="2" fill="${c}" opacity="0.3"/>
-    </svg>`;
-  }
-  if (p === 'rustico') {
-    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Galhos principais -->
-      <path d="M${w*0.03},${h*0.65} Q${w*0.15},${h*0.30} ${w*0.28},${h*0.50} Q${w*0.42},${h*0.25} ${w*0.55},${h*0.48} Q${w*0.68},${h*0.28} ${w*0.82},${h*0.50} Q${w*0.92},${h*0.35} ${w*0.97},${h*0.65}" fill="none" stroke="${c}" stroke-width="1.6" opacity="0.4"/>
-      <path d="M${w*0.08},${h*0.75} Q${w*0.18},${h*0.45} ${w*0.30},${h*0.62} Q${w*0.42},${h*0.40} ${w*0.55},${h*0.58} Q${w*0.68},${h*0.38} ${w*0.80},${h*0.60} Q${w*0.90},${h*0.45} ${w*0.95},${h*0.75}" fill="none" stroke="${c}" stroke-width="1" opacity="0.25"/>
-      <!-- Folhas estilizadas -->
-      <ellipse cx="${w*0.20}" cy="${h*0.38}" rx="3" ry="7" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3" transform="rotate(-30 ${w*0.20} ${h*0.38})"/>
-      <ellipse cx="${w*0.38}" cy="${h*0.32}" rx="2.5" ry="6" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3" transform="rotate(-15 ${w*0.38} ${h*0.32})"/>
-      <ellipse cx="${w*0.62}" cy="${h*0.30}" rx="2.5" ry="6" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3" transform="rotate(15 ${w*0.62} ${h*0.30})"/>
-      <ellipse cx="${w*0.80}" cy="${h*0.38}" rx="3" ry="7" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3" transform="rotate(30 ${w*0.80} ${h*0.38})"/>
-      <!-- Círculos -->
-      <circle cx="${w*0.30}" cy="${h*0.22}" r="1.5" fill="${c}" opacity="0.2"/>
-      <circle cx="${w*0.70}" cy="${h*0.20}" r="1.5" fill="${c}" opacity="0.2"/>
-    </svg>`;
-  }
-  if (p === 'romantico') {
-    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Corações estilizados -->
-      <path d="M${w*0.15},${h*0.45} C${w*0.10},${h*0.30} ${w*0.22},${h*0.25} ${w*0.25},${h*0.35} C${w*0.28},${h*0.25} ${w*0.40},${h*0.30} ${w*0.35},${h*0.45} C${w*0.35},${h*0.55} ${w*0.25},${h*0.65} ${w*0.25},${h*0.65} C${w*0.25},${h*0.65} ${w*0.15},${h*0.55} ${w*0.15},${h*0.45}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.35"/>
-      <path d="M${w*0.65},${h*0.45} C${w*0.60},${h*0.30} ${w*0.72},${h*0.25} ${w*0.75},${h*0.35} C${w*0.78},${h*0.25} ${w*0.90},${h*0.30} ${w*0.85},${h*0.45} C${w*0.85},${h*0.55} ${w*0.75},${h*0.65} ${w*0.75},${h*0.65} C${w*0.75},${h*0.65} ${w*0.65},${h*0.55} ${w*0.65},${h*0.45}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.35"/>
-      <!-- Linha ondulada central -->
-      <path d="M0,${h*0.55} Q${w*0.25},${h*0.40} ${w*0.50},${h*0.55} Q${w*0.75},${h*0.70} ${w},${h*0.55}" fill="none" stroke="${c}" stroke-width="1.3" opacity="0.4"/>
-      <path d="M${w*0.05},${h*0.65} Q${w*0.30},${h*0.50} ${w*0.50},${h*0.65} Q${w*0.70},${h*0.80} ${w*0.95},${h*0.65}" fill="none" stroke="${c}" stroke-width="0.9" opacity="0.25"/>
-      <!-- Pétalas -->
-      <circle cx="${w*0.50}" cy="${h*0.25}" r="2" fill="none" stroke="${c}" stroke-width="0.6" opacity="0.3"/>
-      <circle cx="${w*0.42}" cy="${h*0.30}" r="1.5" fill="${c}" opacity="0.2"/>
-      <circle cx="${w*0.58}" cy="${h*0.30}" r="1.5" fill="${c}" opacity="0.2"/>
-    </svg>`;
-  }
-  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-    <line x1="${w*0.15}" y1="${h*0.50}" x2="${w*0.85}" y2="${h*0.50}" stroke="${c}" stroke-width="1.2" opacity="0.5"/>
-    <line x1="${w*0.25}" y1="${h*0.58}" x2="${w*0.75}" y2="${h*0.58}" stroke="${c}" stroke-width="0.8" opacity="0.3"/>
+function svgElementoTopo(cor, largura = '100%') {
+  return `<svg width="${largura}" height="16" style="display:block;margin:0 auto 10px auto;" xmlns="http://www.w3.org/2000/svg">
+    <line x1="0" y1="4" x2="100%" y2="4" stroke="${cor}" stroke-width="1"/>
+    <line x1="0" y1="9" x2="100%" y2="9" stroke="${cor}" stroke-width="0.4"/>
   </svg>`;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   TEXTO INÉDITO POR SEÇÃO TEMÁTICA
+   ELEMENTO GRÁFICO DO PERFIL (para IDV e capa)
+   ═══════════════════════════════════════════════════════════ */
+function svgElementoGraficoPerfil(perfil, cor, largura = 200, altura = 50) {
+  const c = String(cor || '#1A1714');
+  return `<svg width="${largura}" height="${altura}" viewBox="0 0 ${largura} ${altura}" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto;">
+    <line x1="${largura*0.15}" y1="${altura*0.5}" x2="${largura*0.85}" y2="${altura*0.5}" stroke="${c}" stroke-width="1.2" opacity="0.5"/>
+    <line x1="${largura*0.25}" y1="${altura*0.62}" x2="${largura*0.75}" y2="${altura*0.62}" stroke="${c}" stroke-width="0.8" opacity="0.3"/>
+  </svg>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TEXTO INÉDITO POR SEÇÃO (compacto, sem overflow)
    ═══════════════════════════════════════════════════════════ */
 function gerarTextoIneditoSecao(tituloSecao, dados) {
   const estilo = String(dados?.estilo || 'classico').toLowerCase();
@@ -372,93 +224,71 @@ function gerarTextoIneditoSecao(tituloSecao, dados) {
   const totalConvidados = dados?.totalConvidados || 'a definir';
   const cidade = dados?.cidadeEvento || 'sua cidade';
 
+  const vibe = perfil === 'romantico' ? 'ternura e delicadeza' : perfil === 'boho' ? 'liberdade e organicidade' : perfil === 'moderno' ? 'sofisticação e precisão' : perfil === 'rustico' ? 'acolhimento e raízes' : 'elegância atemporal';
+
   const textos = {
-    'Identidade Visual': `A identidade visual deste casamento traduz a essência de ${n1} e ${n2} em cada elemento gráfico. O estilo ${estilo} guia todas as escolhas tipográficas e cromáticas, criando uma narrativa visual coesa desde o primeiro convite até a última lembrança. O monograma personalizado será o selo de autenticidade em todos os materiais, desde menus e plaquinhas até a assinatura digital. A paleta de cores foi escolhida para evocar ${perfil === 'romantico' ? 'ternura e delicadeza' : perfil === 'boho' ? 'liberdade e organicidade' : perfil === 'moderno' ? 'sofisticação e precisão' : perfil === 'rustico' ? 'acolhimento e raízes' : 'elegância atemporal'}. Cada fonte, cada espaçamento, cada textura foi pensado para que os convidados sintam a personalidade do casal antes mesmo de chegar ao local.`,
-
-    'Cerimônia': `A cerimônia de ${n1} e ${n2} será um momento de profunda conexão e emoção. Realizada de forma ${tipoCerimonia}, em um ambiente ${tipoLocal}, às ${horario}, cada detalhe foi pensado para criar uma atmosfera ${perfil === 'romantico' ? 'etérea e sonhadora' : perfil === 'boho' ? 'livre e despojada' : perfil === 'moderno' ? 'limpa e impactante' : perfil === 'rustico' ? 'acolhedora e genuína' : 'elegante e atemporal'}. A entrada será marcada por uma trilha sonora cuidadosamente selecionada, e a decoração do altar refletirá a paleta de cores escolhida. Com ${totalConvidados} convidados, a cerimônia será ${totalConvidados === 'intimo' ? 'um momento íntimo e profundo' : totalConvidados === 'grande' ? 'uma celebração grandiosa e vibrante' : 'uma celebração equilibrada e acolhedora'}.`,
-
-    'Decoração': `A decoração do casamento de ${n1} e ${n2} é um convite sensorial. Flores como ${flores} serão dispostas em arranjos que conversam com a iluminação ${iluminacao}, criando pontos de interesse em cada canto do espaço. ${velas !== 'Nenhuma' ? `As ${velas} adicionarão camadas de luz quente e acolhedora.` : 'A iluminação arquitetural será o protagonista da atmosfera.'} O mobiliário ${mobiliario} complementa o estilo ${estilo}, criando ambientes que convidam à permanência. Cada mesa, cada centro de mesa, cada cortina foi pensado para que os convidados se sintam imersos na narrativa visual do casal.`,
-
-    'Mesa Posta': `A mesa posta é a primeira impressão que os convidados terão da experiência gastronômica. Com um jantar ${tipoJantar} e bar ${tipoBar}, cada detalhe da montagem das mesas foi pensado para elevar o momento. A louça, os talheres, as taças e os guardanapos foram selecionados para dialogar com o estilo ${estilo} e a paleta de cores do evento. Sousplats, porta-guardanapos personalizados e menus individuais transformam cada lugar à mesa em uma experiência única. A atenção aos detalhes da mesa posta reflete o cuidado que ${n1} e ${n2} têm com cada convidado.`,
-
-    'Alimentação e Bebidas': `A experiência gastronômica do casamento de ${n1} e ${n2} é tão importante quanto a cerimônia. O jantar ${tipoJantar} será preparado com ingredientes selecionados, respeitando a estação e a região de ${cidade}. O bar ${tipoBar} oferecerá uma carta de bebidas que vai desde clássicos atemporais até criações exclusivas para a noite. A degustação prévia é fundamental para ajustar sabores e apresentação. A mesa de doces e o bolo serão o ponto alto do final da noite, com opções que agradam desde o paladar mais clássico até o mais moderno.`,
-
-    'Entretenimento': `A festa de ${n1} e ${n2} será inesquecível. Com ${musica} animando a pista de dança e atividades como ${atividades}, cada momento foi pensado para criar memórias coletivas. A iluminação de pista, os efeitos especiais e a curadoria musical garantem que a energia se mantenha alta do início ao fim. ${atividades.includes('cabine-fotos') ? 'A cabine de fotos será um ponto de encontro para risadas e lembranças instantâneas.' : ''} ${atividades.includes('drone') ? 'Imagens aéreas capturarão a magnitude da celebração.' : ''} O entretenimento não é apenas diversão — é a celebração da união de duas famílias em uma só.`,
-
-    'Vestuário e Beleza': `O visual de ${n1} e ${n2} no dia do casamento será ${estiloVestido === 'princesa' ? 'um conto de fadas contemporâneo' : estiloVestido === 'sereia' ? 'uma declaração de sensualidade elegante' : estiloVestido === 'minimalista' ? 'uma expressão de sofisticação discreta' : estiloVestido === 'boho' ? 'uma celebração da liberdade e do movimento' : 'uma expressão de elegância pessoal'}. A beleza será trabalhada para realçar traços naturais, com maquiagem e cabelo que resistam às emoções e às horas de festa. Os acessórios, o véu, o bouquet e os detalhes do traje do noivo completam um visual harmonioso e memorável. A prova final, agendada com antecedência, garante que tudo esteja perfeito.`,
-
-    'Papelaria e Identidade': `A papelaria do casamento de ${n1} e ${n2} é a primeira pista que os convidados recebem sobre o que os espera. Os convites no formato ${formatoConvite} carregam o monograma do casal, a paleta de cores e a tipografia escolhida, criando uma expectativa visual coerente. Save the date, RSVP, mapa de localização, menu, plaquinhas de mesa e lembrancinhas formam um universo gráfico completo. Cada peça é uma oportunidade de surpreender e encantar, transformando informação em arte.`,
+    'Identidade Visual': `A identidade visual traduz a essência de ${n1} e ${n2} em cada elemento. O estilo ${estilo} guia tipografia e cores, criando coesão do convite às lembranças. A paleta evoca ${vibe}. Cada detalhe foi pensado para que os convidados sintam a personalidade do casal antes de chegar.`,
+    'Cerimônia': `Cerimônia ${tipoCerimonia} em ${tipoLocal}, às ${horario}. Cada detalhe cria uma atmosfera ${vibe}. Com ${totalConvidados} convidados, a celebração será ${totalConvidados === 'intimo' ? 'íntima e profunda' : totalConvidados === 'grande' ? 'grandiosa e vibrante' : 'equilibrada e acolhedora'}.`,
+    'Decoração': `Flores como ${flores} e iluminação ${iluminacao} criam pontos de interesse. ${velas !== 'Nenhuma' ? `As ${velas} adicionam luz quente.` : 'A iluminação arquitetural protagoniza a atmosfera.'} O mobiliário ${mobiliario} complementa o estilo ${estilo}.`,
+    'Mesa Posta': `Jantar ${tipoJantar} e bar ${tipoBar}. Louça, talheres e taças dialogam com o estilo ${estilo}. Sousplats e menus individuais transformam cada lugar em experiência única.`,
+    'Alimentação e Bebidas': `Jantar ${tipoJantar} preparado com ingredientes da estação e região de ${cidade}. O bar ${tipoBar} oferece clássicos e criações exclusivas. A degustação prévia ajusta sabores e apresentação.`,
+    'Entretenimento': `Música por ${musica} e atividades como ${atividades}. A iluminação de pista e curadoria musical mantêm a energia do início ao fim. O entretenimento celebra a união de duas famílias.`,
+    'Vestuário e Beleza': `Visual ${estiloVestido === 'princesa' ? 'de conto de fadas' : estiloVestido === 'sereia' ? 'de sensualidade elegante' : estiloVestido === 'minimalista' ? 'de sofisticação discreta' : estiloVestido === 'boho' ? 'de liberdade e movimento' : 'de elegância pessoal'}. Beleza que realça traços naturais e resiste às emoções da festa.`,
+    'Papelaria e Identidade': `Convites no formato ${formatoConvite} carregam o monograma e a paleta. Save the date, RSVP, menu e plaquinhas formam um universo gráfico coeso e surpreendente.`,
   };
-
-  return textos[tituloSecao] || `Esta seção apresenta as decisões e referências de ${n1} e ${n2} para ${tituloSecao.toLowerCase()}. Cada detalhe foi pensado para criar uma experiência coesa e memorável no estilo ${estilo}.`;
+  return textos[tituloSecao] || `Decisões de ${n1} e ${n2} para ${tituloSecao.toLowerCase()}, pensadas para criar experiência coesa no estilo ${estilo}.`;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   CARD TÉCNICO — dados do questionário formatados elegantemente
+   CARD TÉCNICO COMPACTO
    ═══════════════════════════════════════════════════════════ */
-function cardTecnico(tituloSecao, dados) {
+function cardTecnicoCompacto(tituloSecao, dados, corPrimaria, corSecundaria) {
   const campos = [];
   const add = (label, val) => {
     const v = sanitizarValor(val);
-    if (v && v !== 'a definir' && v !== 'Não' && v !== '') campos.push(`<span style="display:inline-block;margin-right:10px;margin-bottom:3px;"><strong style="color:var(--color-primary);">${label}:</strong> <span style="color:var(--color-text);">${v}</span></span>`);
+    if (v && v !== 'a definir' && v !== 'Não' && v !== '') campos.push(`<strong style="color:${corPrimaria};">${label}:</strong> ${v}`);
   };
-
   if (tituloSecao === 'Cerimônia') {
-    add('Tipo', dados?.tipoCerimonia);
-    add('Local', dados?.tipoLocal);
-    add('Horário', dados?.horarioCasamento);
-    add('Convidados', dados?.totalConvidados);
+    add('Tipo', dados?.tipoCerimonia); add('Local', dados?.tipoLocal); add('Horário', dados?.horarioCasamento); add('Convidados', dados?.totalConvidados);
   } else if (tituloSecao === 'Decoração') {
-    add('Flores', dados?.flores);
-    add('Iluminação', dados?.iluminacao);
-    add('Velas', dados?.velas);
-    add('Mobiliário', dados?.mobiliarioEspecial);
+    add('Flores', dados?.flores); add('Iluminação', dados?.iluminacao); add('Velas', dados?.velas); add('Mobiliário', dados?.mobiliarioEspecial);
   } else if (tituloSecao === 'Mesa Posta') {
-    add('Jantar', dados?.tipoJantar);
-    add('Bar', dados?.tipoBar);
+    add('Jantar', dados?.tipoJantar); add('Bar', dados?.tipoBar);
   } else if (tituloSecao === 'Alimentação e Bebidas') {
-    add('Jantar', dados?.tipoJantar);
-    add('Bar', dados?.tipoBar);
-    add('Convidados', dados?.totalConvidados);
+    add('Jantar', dados?.tipoJantar); add('Bar', dados?.tipoBar); add('Convidados', dados?.totalConvidados);
   } else if (tituloSecao === 'Entretenimento') {
-    add('Música', dados?.musicaFesta);
-    add('Atividades', Array.isArray(dados?.atividadesEntretenimento) ? dados.atividadesEntretenimento.join(', ') : '');
+    add('Música', dados?.musicaFesta); add('Atividades', Array.isArray(dados?.atividadesEntretenimento) ? dados.atividadesEntretenimento.join(', ') : '');
   } else if (tituloSecao === 'Vestuário e Beleza') {
     add('Vestido', dados?.estiloVestido);
   } else if (tituloSecao === 'Papelaria e Identidade') {
     add('Convite', dados?.formatoConvite);
   } else if (tituloSecao === 'Identidade Visual') {
-    add('Estilo', dados?.estilo);
-    add('Perfil', dados?.perfilCasal);
+    add('Estilo', dados?.estilo); add('Perfil', dados?.perfilCasal);
   }
-
   if (campos.length === 0) return '';
-  return `<div class="info-box" style="margin-top:4mm;">
-    <p style="font-size:9pt;line-height:1.5;margin-bottom:3px;color:var(--color-primary);"><strong>Dados do questionário</strong></p>
-    <p style="font-size:9pt;line-height:1.5;">${campos.join('')}</p>
+  return `<div style="margin-top:2mm;padding:2mm 3mm;background:${corSecundaria}15;border-left:2pt solid ${corPrimaria};border-radius:2px;font-size:8.5pt;line-height:1.5;">
+    ${campos.join(' &nbsp;•&nbsp; ')}
   </div>`;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   MINI CHECKLIST — checkbox real ☐
+   MINI CHECKLIST COMPACTO
    ═══════════════════════════════════════════════════════════ */
-function miniChecklistSecao(tituloSecao, dados) {
+function miniChecklistCompacto(tituloSecao, dados) {
   const checks = {
-    'Cerimônia': ['Definir tipo de cerimônia', 'Reservar local', 'Contratar oficializante/celebrante', 'Escolher trilha sonora de entrada'],
-    'Decoração': ['Definir paleta final', 'Contratar florista', 'Confirmar iluminação', 'Verificar mobiliário especial'],
-    'Mesa Posta': ['Definir tipo de jantar', 'Escolher louças e talheres', 'Confirmar bar', 'Aprovar menu'],
-    'Alimentação e Bebidas': ['Realizar degustação', 'Definir cardápio', 'Confirmar bar e bebidas', 'Verificar restrições alimentares'],
-    'Entretenimento': ['Contratar música/entretenimento', 'Definir playlist', 'Confirmar atividades extras', 'Testar equipamento de som'],
-    'Vestuário e Beleza': ['Provar vestido final', 'Agendar cabelo e maquiagem', 'Confirmar traje do noivo', 'Separar acessórios'],
-    'Papelaria e Identidade': ['Aprovar design do convite', 'Definir lista de convidados', 'Enviar save the date', 'Confirmar gráfica'],
-    'Identidade Visual': ['Aprovar monograma', 'Definir paleta final', 'Testar fontes em impressão', 'Criar guia de identidade'],
+    'Identidade Visual': ['Aprovar monograma','Definir paleta final','Testar fontes em impressão'],
+    'Cerimônia': ['Definir tipo de cerimônia','Reservar local','Contratar celebrante','Escolher trilha sonora'],
+    'Decoração': ['Definir paleta final','Contratar florista','Confirmar iluminação','Verificar mobiliário'],
+    'Mesa Posta': ['Definir tipo de jantar','Escolher louças','Confirmar bar','Aprovar menu'],
+    'Alimentação e Bebidas': ['Realizar degustação','Definir cardápio','Confirmar bar','Verificar restrições'],
+    'Entretenimento': ['Contratar música','Definir playlist','Confirmar atividades','Testar som'],
+    'Vestuário e Beleza': ['Provar vestido final','Agendar cabelo/maquiagem','Confirmar traje','Separar acessórios'],
+    'Papelaria e Identidade': ['Aprovar design do convite','Definir lista','Enviar save the date','Confirmar gráfica'],
   };
-  const items = checks[tituloSecao] || ['Definir detalhes', 'Contratar fornecedores', 'Confirmar prazos'];
-  const corCheck = '#10B981';
-  return `<div style="margin-top:4mm;padding:3mm;background:${dados?.paleta?.[2] || '#F9F7F4'}22;border-radius:3px;">
-    <p style="font-size:9pt;color:var(--color-primary);margin-bottom:3px;"><strong>Mini-checklist</strong></p>
-    ${items.map(i => `<div style="font-size:8.5pt;line-height:1.6;display:flex;align-items:center;gap:2mm;margin-bottom:1.5mm;">
-      <span style="display:inline-block;width:3mm;height:3mm;border:0.8pt solid ${corCheck};border-radius:1px;flex-shrink:0;position:relative;top:0.5mm;"></span>
+  const items = checks[tituloSecao] || ['Definir detalhes','Contratar fornecedores','Confirmar prazos'];
+  return `<div style="margin-top:2mm;display:grid;grid-template-columns:1fr 1fr;gap:1mm 3mm;">
+    ${items.map(i => `<div style="font-size:8pt;line-height:1.5;display:flex;align-items:center;gap:1.5mm;">
+      <span style="width:2.5mm;height:2.5mm;border:0.6pt solid #10B981;border-radius:1px;flex-shrink:0;display:inline-block;"></span>
       <span>${i}</span>
     </div>`).join('')}
   </div>`;
@@ -469,12 +299,12 @@ function miniChecklistSecao(tituloSecao, dados) {
    ═══════════════════════════════════════════════════════════ */
 function dicaSecao(tituloSecao) {
   const dicas = {
-    'Identidade Visual': 'Mantenha a coerência visual em todos os materiais. Teste as fontes em tamanhos pequenos antes de aprovar.',
+    'Identidade Visual': 'Mantenha coerência visual em todos os materiais. Teste fontes em tamanhos pequenos antes de aprovar.',
     'Cerimônia': 'Chegue 30 minutos antes para acertos finais. Verifique a acústica do local com antecedência.',
     'Decoração': 'Reserve 10% do orçamento de decoração para itens de última hora. Flores frescas chegam no dia do evento.',
     'Mesa Posta': 'Confirme a quantidade de louças uma semana antes. Sousplats elevam o visual sem custos altos.',
-    'Alimentação e Bebidas': 'Faça degustação com pelo menos 3 opções de menu. Reserve água e bebidas não alcoólicas generosamente.',
-    'Entretenimento': 'Teste o equipamento de som no local. Prepare uma playlist de reserva caso o DJ precise.',
+    'Alimentação e Bebidas': 'Faça degustação com pelo menos 3 opções. Reserve água e bebidas não alcoólicas generosamente.',
+    'Entretenimento': 'Teste o equipamento de som no local. Prepare uma playlist de reserva para o DJ.',
     'Vestuário e Beleza': 'Agende a prova final 2 semanas antes. Leve os sapatos para a prova de altura.',
     'Papelaria e Identidade': 'Imprima 10% a mais de convites para imprevistos. Envie save the date com 8 meses de antecedência.',
   };
@@ -484,13 +314,12 @@ function dicaSecao(tituloSecao) {
 /* ═══════════════════════════════════════════════════════════
    GRÁFICO PIZZA SVG
    ═══════════════════════════════════════════════════════════ */
-function gerarSvgPizza(itens, size = 280) {
-  const cx = size / 2, cy = size / 2, r = size / 2 - 18;
+function gerarSvgPizza(itens, size = 220) {
+  const cx = size / 2, cy = size / 2, r = size / 2 - 14;
   const total = itens.reduce((s, d) => s + d.percentual, 0);
   let startAngle = -Math.PI / 2;
   let paths = '';
   let legendHtml = '';
-
   itens.slice(0, 8).forEach((item, i) => {
     const angle = (item.percentual / total) * 2 * Math.PI;
     const endAngle = startAngle + angle;
@@ -501,16 +330,10 @@ function gerarSvgPizza(itens, size = 280) {
     const largeArc = angle > Math.PI ? 1 : 0;
     const cor = CORES_GRAFICO[i % CORES_GRAFICO.length];
     paths += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z" fill="${cor}" stroke="#FFFFFF" stroke-width="2"/>`;
-    legendHtml += `
-      <div style="display:flex;align-items:center;margin-bottom:5px;gap:6px;">
-        <div style="width:12px;height:12px;background:${cor};border-radius:2px;flex-shrink:0;"></div>
-        <span style="font-family:var(--font-body);font-size:9px;color:var(--color-text);">${item.item} <strong>(${item.percentual}%)</strong></span>
-      </div>
-    `;
+    legendHtml += `<div style="display:flex;align-items:center;margin-bottom:3px;gap:5px;"><div style="width:10px;height:10px;background:${cor};border-radius:2px;flex-shrink:0;"></div><span style="font-family:var(--font-body);font-size:8.5px;color:var(--color-text);">${item.item} <strong>(${item.percentual}%)</strong></span></div>`;
     startAngle = endAngle;
   });
-
-  return { svg: `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0;">${paths}</svg>`, legend: legendHtml };
+  return { svg: `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex-shrink:0;display:block;">${paths}</svg>`, legend: legendHtml };
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -518,21 +341,21 @@ function gerarSvgPizza(itens, size = 280) {
    ═══════════════════════════════════════════════════════════ */
 function renderTextoSecao(secao) {
   if (!secao || typeof secao !== 'object' || !Array.isArray(secao.linhas) || secao.linhas.length === 0) {
-    return '<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">Conteúdo personalizado para este casal.</p>';
+    return '<p style="font-family:var(--font-body);font-size:10pt;line-height:1.6;color:var(--color-text);margin-bottom:6px;">Conteúdo personalizado para este casal.</p>';
   }
   return secao.linhas.map(linha => {
     if (typeof linha !== 'string') return '';
     const texto = filtrarHexDoTexto(linha.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').trim());
     if (!texto) return '';
-    if (linha.startsWith('### ')) return `<h3 style="font-family:var(--font-display);font-size:12pt;color:var(--color-primary);margin-top:12px;margin-bottom:5px;">${texto}</h3>`;
-    if (linha.startsWith('- ') || linha.startsWith('* ')) return `<p style="font-family:var(--font-body);font-size:10pt;line-height:1.6;color:var(--color-text);margin-bottom:4px;margin-left:10px;">&bull; ${texto}</p>`;
-    return `<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${texto}</p>`;
+    if (linha.startsWith('### ')) return `<h3 style="font-family:var(--font-display);font-size:11pt;color:var(--color-primary);margin-top:8px;margin-bottom:4px;">${texto}</h3>`;
+    if (linha.startsWith('- ') || linha.startsWith('* ')) return `<p style="font-family:var(--font-body);font-size:9.5pt;line-height:1.5;color:var(--color-text);margin-bottom:3px;margin-left:8px;">&bull; ${texto}</p>`;
+    return `<p style="font-family:var(--font-body);font-size:10pt;line-height:1.6;color:var(--color-text);margin-bottom:6px;">${texto}</p>`;
   }).join('');
 }
 
 function renderTextoEditorial(secoesNormais) {
   if (!Array.isArray(secoesNormais) || secoesNormais.length === 0) {
-    return '<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">Memorial do casamento.</p>';
+    return '<p style="font-family:var(--font-body);font-size:10pt;line-height:1.6;color:var(--color-text);margin-bottom:6px;">Memorial do casamento.</p>';
   }
   const todasLinhas = [];
   for (const sec of secoesNormais) {
@@ -544,14 +367,14 @@ function renderTextoEditorial(secoesNormais) {
     }
   }
   if (todasLinhas.length === 0) {
-    return '<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">Memorial do casamento.</p>';
+    return '<p style="font-family:var(--font-body);font-size:10pt;line-height:1.6;color:var(--color-text);margin-bottom:6px;">Memorial do casamento.</p>';
   }
   let html = '';
   const primeiro = todasLinhas[0];
   const resto = todasLinhas.slice(1);
-  html += `<p class="editorial-dropcap" style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;text-align:justify;">${primeiro}</p>`;
+  html += `<p class="editorial-dropcap" style="font-family:var(--font-body);font-size:10pt;line-height:1.6;color:var(--color-text);margin-bottom:6px;text-align:justify;">${primeiro}</p>`;
   for (const par of resto) {
-    html += `<p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;text-align:justify;">${par}</p>`;
+    html += `<p style="font-family:var(--font-body);font-size:10pt;line-height:1.6;color:var(--color-text);margin-bottom:6px;text-align:justify;">${par}</p>`;
   }
   return html;
 }
@@ -635,15 +458,15 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   }
 
   const imgCapa = imagemToBase64('local', estilo) || imagemToBase64('cerimonia', estilo);
-  const imgDecoracao = getImagensMultiplas('decoracao', estilo, 3);
-  const imgCerimonia = getImagensMultiplas('cerimonia', estilo, 3);
-  const imgFlores = getImagensMultiplas('flores', dadosEvento?.flores || estilo, 3);
-  const imgMesa = getImagensMultiplas('mesa', estilo, 3);
-  const imgAlimentacao = getImagensMultiplas('alimentacao', estilo, 3);
-  const imgEntretenimento = getImagensMultiplas('entretenimento', estilo, 3);
-  const imgVestido = getImagensMultiplas('vestidos', dadosEvento?.estiloVestido || estilo, 3);
-  const imgPapelaria = getImagensMultiplas('papelaria', estilo, 3);
-  const imgBeleza = getImagensMultiplas('beleza', estilo, 3);
+  const imgDecoracao = getImagensMultiplas('decoracao', estilo, 2);
+  const imgCerimonia = getImagensMultiplas('cerimonia', estilo, 2);
+  const imgFlores = getImagensMultiplas('flores', dadosEvento?.flores || estilo, 2);
+  const imgMesa = getImagensMultiplas('mesa', estilo, 2);
+  const imgAlimentacao = getImagensMultiplas('alimentacao', estilo, 2);
+  const imgEntretenimento = getImagensMultiplas('entretenimento', estilo, 2);
+  const imgVestido = getImagensMultiplas('vestidos', dadosEvento?.estiloVestido || estilo, 2);
+  const imgPapelaria = getImagensMultiplas('papelaria', estilo, 2);
+  const imgBeleza = getImagensMultiplas('beleza', estilo, 2);
   const imgDetalhes = getImagensMultiplas('detalhes', estilo, 2);
 
   const getSecao = (tituloBusca) => {
@@ -653,80 +476,52 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     return secoesNormais.find(s => normalizar(s.titulo).includes(buscaNormalizada)) || null;
   };
 
-  const grafico = gerarSvgPizza(itensOrcamento.slice(0, 8));
-  const svgDeco = svgElementoGrafico(perfil, corPrimaria, 200, 50);
-  const svgDecoLarge = svgElementoGrafico(perfil, corContraste, 280, 70);
-  const svgMono = svgMonogramaPorPerfil(inicial1, inicial2, perfil, corContraste, 200);
-  const svgMonoLarge = svgMonogramaPorPerfil(inicial1, inicial2, perfil, corContraste, 260);
+  const grafico = gerarSvgPizza(itensOrcamento.slice(0, 8), 200);
+  const svgTopo = svgElementoTopo(corPrimaria);
+  const svgMonoCapa = svgMonogramaElegante(inicial1, inicial2, corContraste, corContraste, 180);
+  const svgMonoIDV = svgMonogramaElegante(inicial1, inicial2, corPrimaria, corSecundaria, 150);
   const logoHtml = logoHTML('#8B6F5E', '#10B981');
   const logoHtmlSmall = logoHTML('#8B6F5E', '#10B981');
 
   const secoesTematicas = [
-    { titulo: 'Identidade Visual', imagens: imgDecoracao, layout: 'hero' },
+    { titulo: 'Identidade Visual', imagens: imgDecoracao, layout: 'grid' },
     { titulo: 'Cerimônia', imagens: imgCerimonia, layout: 'side' },
     { titulo: 'Decoração', imagens: imgFlores.length ? imgFlores : imgDecoracao, layout: 'grid' },
-    { titulo: 'Mesa Posta', imagens: imgMesa, layout: 'overlay' },
-    { titulo: 'Alimentação e Bebidas', imagens: imgAlimentacao, layout: 'hero' },
+    { titulo: 'Mesa Posta', imagens: imgMesa, layout: 'side' },
+    { titulo: 'Alimentação e Bebidas', imagens: imgAlimentacao, layout: 'grid' },
     { titulo: 'Entretenimento', imagens: imgEntretenimento, layout: 'side' },
     { titulo: 'Vestuário e Beleza', imagens: imgVestido.length ? imgVestido : imgBeleza, layout: 'grid' },
-    { titulo: 'Papelaria e Identidade', imagens: imgPapelaria, layout: 'overlay' },
+    { titulo: 'Papelaria e Identidade', imagens: imgPapelaria, layout: 'side' },
   ];
 
   const renderPaginaSecao = (titulo, secao, imagens, layout) => {
     const textoInedito = gerarTextoIneditoSecao(titulo, dadosEvento);
-    let corpo = '';
+    let imgHtml = '';
+    let textoHtml = '';
 
-    if (layout === 'hero') {
-      const imgHero = (imagens && imagens[0]) ? `<img src="${imagens[0]}" style="width:100%;height:85mm;object-fit:cover;border-radius:4px;display:block;margin-bottom:5mm;"/>` : '';
-      corpo = `
-        ${imgHero}
-        <div style="font-size:10.5pt;line-height:1.7;text-align:justify;">
-          <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${textoInedito}</p>
-        </div>
-      `;
-    } else if (layout === 'side') {
-      const imgLat = (imagens && imagens[0]) ? `<img src="${imagens[0]}" style="width:100%;height:100%;min-height:80mm;object-fit:cover;border-radius:4px;display:block;"/>` : '';
-      corpo = `
-        <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:5mm;align-items:start;">
-          <div style="font-size:10.5pt;line-height:1.7;text-align:justify;">
-            <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${textoInedito}</p>
-          </div>
-          <div style="min-height:80mm;">${imgLat}</div>
-        </div>
-      `;
-    } else if (layout === 'grid') {
-      const imgs = (imagens || []).slice(0, 4).map((imgSrc) => imgSrc ? `<img src="${imgSrc}" style="width:100%;height:55mm;object-fit:cover;border-radius:4px;display:block;"/>` : '').join('');
-      corpo = `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin-bottom:4mm;">
-          ${imgs}
-        </div>
-        <div style="font-size:10.5pt;line-height:1.7;text-align:justify;">
-          <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${textoInedito}</p>
-        </div>
-      `;
+    if (layout === 'side' && imagens?.[0]) {
+      imgHtml = `<div style="display:grid;grid-template-columns:1.3fr 1fr;gap:4mm;margin-bottom:3mm;align-items:start;">
+        <div style="font-size:9.5pt;line-height:1.55;text-align:justify;">${textoInedito}</div>
+        <div><img src="${imagens[0]}" style="width:100%;height:48mm;object-fit:cover;border-radius:3px;display:block;"/></div>
+      </div>`;
+    } else if (layout === 'grid' && imagens?.length) {
+      const imgs = imagens.slice(0, 2).map(imgSrc => `<img src="${imgSrc}" style="width:100%;height:32mm;object-fit:cover;border-radius:3px;display:block;"/>`).join('');
+      imgHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin-bottom:3mm;">${imgs}</div>`;
+      textoHtml = `<div style="font-size:9.5pt;line-height:1.55;text-align:justify;margin-bottom:3mm;">${textoInedito}</div>`;
     } else {
-      const imgBack = (imagens && imagens[0]) ? `background-image:url(${imagens[0]});background-size:cover;background-position:center;` : '';
-      corpo = `
-        <div style="position:relative;border-radius:4px;overflow:hidden;min-height:120mm;${imgBack}">
-          <div style="background:rgba(249,247,244,0.92);padding:5mm;position:absolute;bottom:0;left:0;right:0;">
-            <div style="font-size:10.5pt;line-height:1.7;text-align:justify;">
-              <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;">${textoInedito}</p>
-            </div>
-          </div>
-        </div>
-      `;
+      textoHtml = `<div style="font-size:9.5pt;line-height:1.55;text-align:justify;margin-bottom:3mm;">${textoInedito}</div>`;
     }
 
-    return `
-<div class="page">
-  <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
-  <div class="section-title">${String(titulo || '')}</div>
-  ${corpo}
-  ${cardTecnico(titulo, dadosEvento)}
-  <div class="info-box" style="margin-top:3mm;">
-    <p style="font-size:9.5pt;line-height:1.6;"><span style="color:#10B981;font-weight:bold;font-size:11pt;margin-right:4px;">í</span><strong>Dica:</strong> ${dicaSecao(titulo)}</p>
+    return `<div class="page">
+  ${svgTopo}
+  <div class="section-title">${titulo}</div>
+  ${imgHtml}
+  ${textoHtml}
+  ${cardTecnicoCompacto(titulo, dadosEvento, corPrimaria, corSecundaria)}
+  <div style="margin-top:2mm;padding:2mm 3mm;background:#10B98108;border-radius:2px;font-size:8.5pt;line-height:1.5;">
+    <span style="color:#10B981;font-weight:bold;">í</span> <strong>Dica:</strong> ${dicaSecao(titulo)}
   </div>
-  ${miniChecklistSecao(titulo, dadosEvento)}
+  ${miniChecklistCompacto(titulo, dadosEvento)}
   <div class="footer">
     <span>${nomeCasal}</span>
     <span>${logoHtmlSmall}</span>
@@ -758,13 +553,13 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     --font-body: 'BodyFont', Helvetica, Arial, sans-serif;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  @page { size: A4; margin: 0; }
+  @page { size: A4 portrait; margin: 0; }
   body { font-family: var(--font-body); color: var(--color-text); counter-reset: pagina; }
 
   .page {
     width: 210mm;
     min-height: 297mm;
-    padding: 14mm 18mm 22mm 18mm;
+    padding: 12mm 16mm 18mm 16mm;
     position: relative;
     page-break-after: always;
     overflow: visible;
@@ -774,14 +569,14 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
 
   .footer {
     position: absolute;
-    bottom: 8mm;
-    left: 18mm;
-    right: 18mm;
+    bottom: 6mm;
+    left: 16mm;
+    right: 16mm;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-top: 0.5pt solid #C8BFB4;
-    padding-top: 2.5mm;
+    padding-top: 2mm;
     font-size: 8pt;
     color: var(--color-text-soft);
     font-family: var(--font-body);
@@ -796,7 +591,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 30mm 20mm;
+    padding: 25mm 18mm;
     min-height: 297mm;
     overflow: hidden;
   }
@@ -820,41 +615,40 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     width: 100%;
     max-width: 170mm;
   }
-  .cover-monogram { margin-bottom: 6mm; }
-  .cover-monogram svg { display: block; margin: 0 auto; }
+  .cover-monogram { margin-bottom: 5mm; }
   .cover-title {
     font-family: var(--font-display);
-    font-size: 46pt;
-    margin-bottom: 3mm;
+    font-size: 40pt;
+    margin-bottom: 2mm;
     letter-spacing: 1px;
     line-height: 1.05;
     font-weight: bold;
   }
   .cover-subtitle {
     font-family: var(--font-body);
-    font-size: 11pt;
-    letter-spacing: 6px;
+    font-size: 10pt;
+    letter-spacing: 5px;
     text-transform: uppercase;
-    margin-bottom: 8mm;
+    margin-bottom: 6mm;
     opacity: 0.95;
   }
   .cover-local {
     font-family: var(--font-body);
-    font-size: 13pt;
-    margin-bottom: 2mm;
+    font-size: 12pt;
+    margin-bottom: 1mm;
     opacity: 0.9;
   }
   .cover-date {
     font-family: var(--font-body);
-    font-size: 12pt;
-    margin-bottom: 8mm;
+    font-size: 11pt;
+    margin-bottom: 6mm;
     opacity: 0.85;
   }
   .cover-palette {
     display: flex;
-    gap: 8mm;
+    gap: 6mm;
     justify-content: center;
-    margin-top: 6mm;
+    margin-top: 4mm;
   }
   .palette-item {
     display: flex;
@@ -862,26 +656,26 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     align-items: center;
   }
   .palette-circle {
-    width: 12mm;
-    height: 12mm;
+    width: 10mm;
+    height: 10mm;
     border-radius: 50%;
-    border: 2pt solid ${corContraste};
-    margin-bottom: 2mm;
+    border: 1.5pt solid ${corContraste};
+    margin-bottom: 1.5mm;
     display: flex;
     align-items: center;
     justify-content: center;
   }
   .palette-hex {
-    font-size: 6.5pt;
+    font-size: 5.5pt;
     font-family: 'LogoFont2', monospace;
     color: ${corContraste};
     opacity: 0.9;
   }
-  .palette-name { font-size: 8.5pt; font-family: var(--font-body); font-weight: 500; }
-  .palette-role { font-size: 7.5pt; opacity: 0.8; font-family: var(--font-body); }
+  .palette-name { font-size: 7.5pt; font-family: var(--font-body); font-weight: 500; }
+  .palette-role { font-size: 6.5pt; opacity: 0.8; font-family: var(--font-body); }
   .cover-deco {
     position: absolute;
-    bottom: 22mm;
+    bottom: 20mm;
     left: 0; right: 0;
     z-index: 2;
     display: flex;
@@ -889,24 +683,24 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   }
   .cover-footer {
     position: absolute;
-    bottom: 8mm;
-    left: 18mm;
-    right: 18mm;
+    bottom: 6mm;
+    left: 16mm;
+    right: 16mm;
     z-index: 2;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-top: 0.5pt solid ${corContraste};
-    padding-top: 2.5mm;
+    padding-top: 2mm;
     font-size: 8pt;
     color: ${corContraste};
   }
 
   /* ═══ ÍNDICE ═══ */
   .toc-intro {
-    font-size: 11pt;
-    line-height: 1.7;
-    margin-bottom: 6mm;
+    font-size: 10pt;
+    line-height: 1.6;
+    margin-bottom: 4mm;
     font-style: italic;
     color: var(--color-text-soft);
     text-align: center;
@@ -915,71 +709,71 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    padding: 2.5mm 0;
-    font-size: 10.5pt;
-    line-height: 1.4;
+    padding: 2mm 0;
+    font-size: 10pt;
+    line-height: 1.3;
   }
   .toc-row strong { color: var(--color-primary); }
   .toc-dots {
     flex: 1;
     border-bottom: 1pt dotted #C8BFB4;
-    margin: 0 3mm 1.5mm 3mm;
+    margin: 0 2mm 1mm 2mm;
     min-width: 10mm;
   }
 
   /* ═══ EDITORIAL ═══ */
   .editorial-header {
     text-align: center;
-    margin-bottom: 8mm;
+    margin-bottom: 6mm;
   }
   .editorial-header h2 {
     font-family: var(--font-display);
-    font-size: 28pt;
+    font-size: 24pt;
     color: var(--color-primary);
-    margin-bottom: 2mm;
+    margin-bottom: 1mm;
   }
   .editorial-header .sub {
-    font-size: 10pt;
+    font-size: 9pt;
     color: var(--color-text-soft);
     letter-spacing: 3px;
     text-transform: uppercase;
   }
   .editorial-body {
     column-count: 2;
-    column-gap: 6mm;
+    column-gap: 5mm;
     column-rule: 0.5pt solid #E5E0D9;
   }
   .editorial-body p {
     font-family: var(--font-body);
-    font-size: 10.5pt;
-    line-height: 1.7;
+    font-size: 10pt;
+    line-height: 1.6;
     color: var(--color-text);
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     text-align: justify;
   }
   .editorial-dropcap::first-letter {
     font-family: var(--font-display);
-    font-size: 4.5em;
+    font-size: 3.2em;
     float: left;
-    line-height: 0.72;
-    margin-right: 0.06em;
-    margin-top: 0.06em;
+    line-height: 0.85;
+    margin-right: 0.05em;
+    margin-top: 0.04em;
     color: var(--color-primary);
     font-weight: bold;
   }
   .editorial-image-inline {
     break-inside: avoid;
-    margin: 5mm 0;
+    margin: 4mm 0;
   }
   .editorial-image-inline img {
     width: 100%;
-    max-height: 70mm;
+    max-height: 55mm;
     object-fit: cover;
-    border-radius: 4px;
+    border-radius: 3px;
     display: block;
   }
 
-  /* ═══ IDENTIDADE VISUAL ═══ */
+  /* ═══ IDENTIDADE VISUAL (1 página) ═══ */
   .idv-page {
     display: flex;
     flex-direction: column;
@@ -987,12 +781,12 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     justify-content: flex-start;
     text-align: center;
   }
-  .idv-monogram-main { margin: 2mm 0 5mm 0; }
+  .idv-monogram-main { margin: 2mm 0 3mm 0; }
   .idv-swatches {
     display: flex;
-    gap: 10mm;
+    gap: 8mm;
     justify-content: center;
-    margin: 4mm 0 6mm 0;
+    margin: 3mm 0 4mm 0;
   }
   .idv-swatch {
     display: flex;
@@ -1000,140 +794,136 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     align-items: center;
   }
   .idv-swatch-box {
-    width: 18mm;
-    height: 18mm;
-    border-radius: 3px;
-    margin-bottom: 2mm;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    width: 15mm;
+    height: 15mm;
+    border-radius: 2px;
+    margin-bottom: 1.5mm;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
     display: flex;
     align-items: center;
     justify-content: center;
-    position: relative;
   }
   .idv-swatch-hex {
-    font-size: 6.5pt;
+    font-size: 6pt;
     font-family: 'LogoFont2', monospace;
     color: #fff;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.6);
     font-weight: bold;
   }
-  .idv-swatch-name { font-size: 9pt; font-family: var(--font-body); font-weight: 500; }
-  .idv-swatch-role { font-size: 7.5pt; font-family: var(--font-body); color: var(--color-text-soft); margin-top: 1px; }
-  .idv-typo-sample {
+  .idv-swatch-name { font-size: 8pt; font-family: var(--font-body); font-weight: 500; }
+  .idv-swatch-role { font-size: 6.5pt; font-family: var(--font-body); color: var(--color-text-soft); margin-top: 1px; }
+  .idv-typo-display {
     font-family: var(--font-display);
-    font-size: 22pt;
-    margin: 4mm 0;
-    line-height: 1.4;
+    font-size: 26pt;
+    line-height: 1.3;
     color: var(--color-primary);
+    margin: 2mm 0;
+    text-align: center;
   }
   .idv-typo-body {
     font-family: var(--font-body);
-    font-size: 10pt;
-    line-height: 1.6;
-    max-width: 140mm;
-    margin: 0 auto 4mm auto;
+    font-size: 11pt;
+    line-height: 1.4;
+    color: var(--color-text);
+    margin: 2mm 0;
     text-align: center;
   }
-  .idv-typo-alphabet {
-    font-size: 11pt;
-    line-height: 1.8;
+  .idv-typo-label {
+    font-size: 8pt;
+    color: var(--color-text-soft);
+    text-align: center;
+    margin-bottom: 2mm;
+  }
+  .idv-exemplo-box {
+    border: 0.5pt solid var(--color-secondary);
+    border-radius: 3px;
+    padding: 3mm 5mm;
     margin: 3mm 0;
     text-align: center;
+    max-width: 130mm;
+  }
+  .idv-exemplo-display {
+    font-family: var(--font-display);
+    font-size: 20pt;
+    color: var(--color-primary);
+  }
+  .idv-exemplo-body {
+    font-family: var(--font-body);
+    font-size: 10pt;
+    color: var(--color-text-soft);
+    margin-top: 1mm;
   }
   .idv-explanation {
     font-family: var(--font-body);
-    font-size: 10pt;
-    line-height: 1.7;
-    max-width: 150mm;
-    margin: 3mm auto 4mm auto;
-    text-align: justify;
+    font-size: 9pt;
+    line-height: 1.55;
+    max-width: 140mm;
+    margin: 2mm auto 3mm auto;
+    text-align: center;
     color: var(--color-text);
   }
-  .idv-elemento { margin: 4mm 0; }
 
   /* ═══ SEÇÕES TEMÁTICAS ═══ */
   .section-title {
     font-family: var(--font-display);
-    font-size: 24pt;
+    font-size: 20pt;
     color: var(--color-primary);
-    margin-bottom: 5mm;
-    padding-bottom: 3mm;
-    border-bottom: 1.5pt solid var(--color-secondary);
-    line-height: 1.2;
-  }
-  .section-subtitle {
-    font-family: var(--font-display);
-    font-size: 13pt;
-    color: var(--color-primary);
-    margin-top: 5mm;
     margin-bottom: 3mm;
-    line-height: 1.3;
-  }
-  .info-box {
-    background: ${corSecundaria}18;
-    border-left: 2.5pt solid var(--color-primary);
-    padding: 3mm;
-    margin: 3mm 0;
-    border-radius: 3px;
-    break-inside: avoid;
-  }
-  .info-box p {
-    font-size: 9.5pt;
-    line-height: 1.6;
-    margin-bottom: 2px;
+    padding-bottom: 2mm;
+    border-bottom: 1.5pt solid var(--color-secondary);
+    line-height: 1.15;
   }
 
   /* ═══ TABELAS ═══ */
   .data-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 3mm;
-    font-size: 9pt;
-    break-inside: avoid;
+    margin-top: 2mm;
+    font-size: 8.5pt;
   }
   .data-table th {
     text-align: left;
-    padding: 2mm 2.5mm;
+    padding: 1.5mm 2mm;
     border-bottom: 1pt solid var(--color-primary);
-    background: ${corSecundaria}22;
+    background: ${corSecundaria}18;
     font-family: var(--font-body);
     font-weight: 600;
     color: var(--color-primary);
-    font-size: 8.5pt;
+    font-size: 8pt;
   }
   .data-table td {
-    padding: 1.8mm 2.5mm;
+    padding: 1.2mm 2mm;
     border-bottom: 0.4pt solid #E5E0D9;
     font-family: var(--font-body);
     vertical-align: top;
-    font-size: 9pt;
+    font-size: 8.5pt;
   }
   .data-table tr { break-inside: avoid; }
 
-  /* ═══ LINHA DO TEMPO (VERTICAL A4) ═══ */
-  .timeline-vertical {
+  /* ═══ LINHA DO TEMPO (vertical A4, cards horizontais) ═══ */
+  .timeline-container {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4mm;
-    margin-top: 4mm;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3mm;
+    margin-top: 3mm;
   }
   .timeline-card {
-    border-radius: 4px;
-    padding: 4mm;
-    break-inside: avoid;
+    border-radius: 3px;
+    padding: 3mm;
     background: #fff;
     border: 0.5pt solid #E5E0D9;
-    border-top: 3pt solid var(--color-primary);
+    border-top: 2.5pt solid var(--color-primary);
+    break-inside: avoid;
   }
   .timeline-card h4 {
     font-family: var(--font-display);
-    font-size: 11pt;
-    margin-bottom: 2mm;
+    font-size: 10pt;
+    margin-bottom: 1.5mm;
     color: var(--color-primary);
   }
   .timeline-card p {
-    font-size: 9pt;
-    line-height: 1.5;
+    font-size: 8pt;
+    line-height: 1.45;
     margin-bottom: 1px;
     color: var(--color-text);
   }
@@ -1141,41 +931,47 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 4mm 0;
+    margin: 3mm 0;
   }
   .timeline-connector-line {
     width: 100%;
-    height: 2.5pt;
+    height: 2pt;
     background: linear-gradient(to right, #4CAF50, #FFC107, #FF9800, #F44336);
-    border-radius: 1.5pt;
+    border-radius: 1pt;
+  }
+  .timeline-legend {
+    display: flex;
+    gap: 5mm;
+    margin-top: 4mm;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
-  /* ═══ CALENDÁRIO (VERTICAL A4) ═══ */
+  /* ═══ CALENDÁRIO ═══ */
   .calendario-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 3mm;
-    margin-top: 4mm;
+    gap: 2.5mm;
+    margin-top: 3mm;
   }
   .calendario-mes {
     border: 0.5pt solid #E5E0D9;
-    border-radius: 3px;
-    padding: 3mm;
+    border-radius: 2px;
+    padding: 2.5mm;
     break-inside: avoid;
     background: #fff;
   }
   .calendario-mes h5 {
     font-family: var(--font-display);
-    font-size: 10pt;
+    font-size: 9pt;
     color: var(--color-primary);
-    margin-bottom: 2mm;
+    margin-bottom: 1.5mm;
     border-bottom: 0.5pt solid #E5E0D9;
     padding-bottom: 1mm;
   }
   .calendario-mes p {
-    font-size: 8.5pt;
-    line-height: 1.5;
-    margin-bottom: 1px;
+    font-size: 8pt;
+    line-height: 1.4;
     color: var(--color-text);
   }
 
@@ -1183,30 +979,29 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   .budget-header {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: 6mm;
+    gap: 5mm;
     align-items: start;
-    margin-bottom: 4mm;
+    margin-bottom: 3mm;
   }
-  .budget-chart svg { display: block; }
   .budget-dicas {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 3mm;
-    margin-top: 4mm;
+    gap: 2.5mm;
+    margin-top: 3mm;
   }
   .budget-dica-box {
-    background: ${corSecundaria}15;
-    border-left: 2pt solid var(--color-primary);
-    padding: 2.5mm;
+    background: ${corSecundaria}12;
+    border-left: 1.5pt solid var(--color-primary);
+    padding: 2mm;
     border-radius: 2px;
-    font-size: 9pt;
-    line-height: 1.5;
+    font-size: 8.5pt;
+    line-height: 1.45;
     break-inside: avoid;
   }
 
   /* ═══ FORNECEDORES ═══ */
-  .fornecedores-table th { font-size: 9pt; padding: 2.5mm; }
-  .fornecedores-table td { font-size: 9pt; padding: 2mm 2.5mm; }
+  .fornecedores-table th { font-size: 8pt; padding: 1.5mm 2mm; }
+  .fornecedores-table td { font-size: 8.5pt; padding: 1.2mm 2mm; }
 
   /* ═══ CHECKLIST ═══ */
   .checklist-clean td { border-bottom: 0.5pt solid #E5E0D9; }
@@ -1215,51 +1010,41 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   .checklist-clean tr:first-child th { border-top: 1pt solid var(--color-primary); }
   .check-icon {
     display: inline-block;
-    width: 3.5mm;
-    height: 3.5mm;
-    border: 0.8pt solid var(--color-primary);
+    width: 3mm;
+    height: 3mm;
+    border: 0.7pt solid var(--color-primary);
     border-radius: 1px;
     position: relative;
   }
   .check-icon::after {
     content: '';
     position: absolute;
-    left: 0.7mm;
+    left: 0.6mm;
     top: -0.3mm;
-    width: 1.2mm;
-    height: 2.2mm;
+    width: 1mm;
+    height: 1.8mm;
     border: solid var(--color-primary);
-    border-width: 0 0.8pt 0.8pt 0;
+    border-width: 0 0.7pt 0.7pt 0;
     transform: rotate(45deg);
     opacity: 0.3;
   }
 
   /* ═══ DICAS REGIONAIS ═══ */
   .dicas-clima-box {
-    background: ${corSecundaria}18;
-    border-left: 2.5pt solid var(--color-primary);
-    padding: 3mm;
-    margin: 3mm 0;
-    border-radius: 3px;
+    background: ${corSecundaria}15;
+    border-left: 2pt solid var(--color-primary);
+    padding: 2.5mm;
+    margin: 2mm 0;
+    border-radius: 2px;
   }
   .epoca-badge {
     display: inline-block;
-    padding: 1.2mm 2.5mm;
-    border-radius: 3px;
-    font-size: 8.5pt;
-    margin: 1.5mm;
-    background: ${corSecundaria}33;
+    padding: 1mm 2mm;
+    border-radius: 2px;
+    font-size: 8pt;
+    margin: 1mm;
+    background: ${corSecundaria}25;
     color: var(--color-text);
-  }
-  .dica-box {
-    display: inline-block;
-    padding: 1.2mm 2.5mm;
-    border-radius: 3px;
-    font-size: 8.5pt;
-    margin: 1.5mm;
-    background: ${corPrimaria}15;
-    color: var(--color-primary);
-    border: 0.5pt solid ${corPrimaria}40;
   }
 
   /* ═══ CTA ═══ */
@@ -1273,36 +1058,33 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   }
   .cta-title {
     font-family: var(--font-display);
-    font-size: 26pt;
+    font-size: 22pt;
     color: var(--color-primary);
-    margin-bottom: 5mm;
+    margin-bottom: 4mm;
     line-height: 1.2;
   }
   .cta-text {
-    font-size: 11pt;
-    line-height: 1.7;
-    max-width: 140mm;
-    margin-bottom: 4mm;
+    font-size: 10pt;
+    line-height: 1.6;
+    max-width: 130mm;
+    margin-bottom: 3mm;
   }
   .cta-quote {
     font-family: var(--font-display);
-    font-size: 14pt;
+    font-size: 12pt;
     color: var(--color-primary);
     font-style: italic;
-    margin: 4mm 0;
+    margin: 3mm 0;
   }
   .cta-qr {
-    width: 30mm;
-    height: 30mm;
-    margin-top: 4mm;
+    width: 28mm;
+    height: 28mm;
+    margin-top: 3mm;
   }
 
   /* Quebras de conteúdo */
-  .section-title, .section-subtitle, .info-box, .timeline-card, .calendario-mes, .data-table, img {
+  .section-title, .timeline-card, .calendario-mes, .data-table, img {
     break-inside: avoid;
-  }
-  .section-title, .section-subtitle {
-    break-after: avoid;
   }
 </style>
 </head>
@@ -1313,7 +1095,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   <div class="cover-bg" style="background-image:url(${imgCapa || ''});"></div>
   <div class="cover-overlay"></div>
   <div class="cover-content">
-    <div class="cover-monogram">${svgMonoLarge}</div>
+    <div class="cover-monogram">${svgMonoCapa}</div>
     <div class="cover-title">${nomeCasal}</div>
     <div class="cover-subtitle">Memorial do Casamento</div>
     <div class="cover-local">${localCompleto}</div>
@@ -1330,7 +1112,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
       `).join('')}
     </div>
   </div>
-  <div class="cover-deco">${svgDecoLarge}</div>
+  <div class="cover-deco">${svgElementoGraficoPerfil(perfil, corContraste, 220, 55)}</div>
   <div class="cover-footer">
     <span>${nomeCasal}</span>
     <span>${logoHtml}</span>
@@ -1340,14 +1122,14 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
 
 <!-- ═══════════════════════════════════════════════════ ÍNDICE -->
 <div class="page">
-  <div style="text-align:center;margin-bottom:4mm;">${svgDeco}</div>
-  <div class="section-title" style="font-size:18pt;text-align:center;border:none;">Bem-vindos ao seu Memorial</div>
+  ${svgTopo}
+  <div class="section-title" style="font-size:16pt;text-align:center;border:none;">Bem-vindos ao seu Memorial</div>
   <p class="toc-intro">
     Este memorial foi criado exclusivamente para <strong>${nomeCasal}</strong> pelo descomplicaí.
-    Ele reúne todas as decisões, referências visuais e orientações práticas para tornar o planejamento
-    do seu casamento uma experiência leve, organizada e inesquecível.
+    Reúne decisões, referências visuais e orientações práticas para tornar o planejamento
+    leve, organizado e inesquecível.
   </p>
-  <div class="section-title" style="font-size:16pt;margin-top:5mm;">Índice</div>
+  <div class="section-title" style="font-size:14pt;margin-top:4mm;">Índice</div>
   ${[
     ['O Memorial', 'Memorial'],
     ['Identidade Visual', 'Identidade Visual'],
@@ -1382,7 +1164,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     ${renderTextoEditorial(secoesNormais)}
   </div>
   ${(imgDetalhes && imgDetalhes[0]) ? `
-    <div class="editorial-image-inline" style="margin-top:5mm;">
+    <div class="editorial-image-inline" style="margin-top:4mm;">
       <img src="${imgDetalhes[0]}" alt="detalhes"/>
     </div>
   ` : ''}
@@ -1393,30 +1175,28 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   </div>
 </div>
 
-<!-- Página 4 do Editorial — estrutura coerente -->
+<!-- Página 4 do Editorial -->
 <div class="page">
-  <div style="text-align:center;margin-bottom:4mm;">${svgDeco}</div>
-  <div class="section-title" style="font-size:18pt;text-align:center;border:none;">A Visão do Casal</div>
+  ${svgTopo}
+  <div class="section-title" style="font-size:16pt;text-align:center;border:none;">A Visão do Casal</div>
   <div class="editorial-body">
-    <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;text-align:justify;">
-      Cada detalhe deste memorial foi pensado para refletir a personalidade única de ${nomeCasal}.
-      Das cores à escolha das flores, da cerimônia à festa, tudo converge para uma experiência
-      autêntica e inesquecível. O estilo ${estilo} não é apenas uma etiqueta — é a essência
-      que permeia cada decisão, cada fornecedor escolhido, cada momento planejado.
+    <p style="font-family:var(--font-body);font-size:10pt;line-height:1.6;color:var(--color-text);margin-bottom:6px;text-align:justify;">
+      Cada detalhe deste memorial reflete a personalidade única de ${nomeCasal}.
+      Das cores às flores, da cerimônia à festa, tudo converge para uma experiência
+      autêntica. O estilo ${estilo} permeia cada decisão e fornecedor escolhido.
     </p>
-    <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;text-align:justify;">
-      Use este documento como guia visual e prático durante todo o planejamento.
-      Compartilhe com fornecedores, padrinhos e familiares para que todos estejam alinhados
-      com a visão do casal. A consistência visual é o que transforma um evento em uma experiência imersiva.
+    <p style="font-family:var(--font-body);font-size:10pt;line-height:1.6;color:var(--color-text);margin-bottom:6px;text-align:justify;">
+      Use este documento como guia visual e prático. Compartilhe com fornecedores
+      e familiares para que todos estejam alinhados com a visão do casal.
+      A consistência visual transforma um evento em experiência imersiva.
     </p>
-    <p style="font-family:var(--font-body);font-size:10.5pt;line-height:1.7;color:var(--color-text);margin-bottom:8px;text-align:justify;">
-      A jornada começa agora. Cada página deste memorial é um passo em direção ao dia mais especial
-      de suas vidas. Organização, inspiração e praticidade — tudo em um só lugar, criado com carinho
-      pelo descomplicaí.
+    <p style="font-family:var(--font-body);font-size:10pt;line-height:1.6;color:var(--color-text);margin-bottom:6px;text-align:justify;">
+      A jornada começa agora. Cada página é um passo em direção ao dia mais especial
+      de suas vidas. Organização, inspiração e praticidade — tudo em um só lugar.
     </p>
   </div>
   ${(imgDetalhes && imgDetalhes[1]) ? `
-    <div class="editorial-image-inline" style="margin-top:5mm;">
+    <div class="editorial-image-inline" style="margin-top:4mm;">
       <img src="${imgDetalhes[1]}" alt="detalhes"/>
     </div>
   ` : ''}
@@ -1427,14 +1207,14 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════ IDENTIDADE VISUAL -->
+<!-- ═══════════════════════════════════════════════════ IDENTIDADE VISUAL (1 página) -->
 <div class="page idv-page">
-  <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
-  <div class="section-title" style="text-align:center;border:none;">Identidade Visual</div>
+  ${svgTopo}
+  <div class="section-title" style="text-align:center;border:none;font-size:18pt;">Identidade Visual</div>
 
-  <div class="idv-monogram-main">${svgMonogramaPorPerfil(inicial1, inicial2, perfil, corPrimaria, 200)}</div>
+  <div class="idv-monogram-main">${svgMonoIDV}</div>
 
-  <div style="font-family:var(--font-display);font-size:14pt;color:var(--color-primary);margin:3mm 0;">
+  <div style="font-family:var(--font-display);font-size:11pt;color:var(--color-primary);margin:2mm 0;">
     Estilo: <strong>${capitalizarNome(estilo)}</strong> &mdash; Perfil: <strong>${capitalizarNome(perfil)}</strong>
   </div>
 
@@ -1450,31 +1230,32 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     `).join('')}
   </div>
 
-  <div class="idv-typo-sample" style="font-family:var(--font-display);font-size:24pt;margin:5mm 0;">
-    ${nomeCasal}
+  <div class="idv-typo-display">
+    Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz 0123456789
   </div>
-  <div class="idv-typo-alphabet" style="font-family:var(--font-display);">
-    Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz
+  <div class="idv-typo-label">
+    Display: ${fonteDisplay} — títulos, nomes, destaques
   </div>
+
   <div class="idv-typo-body">
-    <strong>Display:</strong> ${fonteDisplay} &mdash; <strong>Corpo:</strong> ${fonteCorpo}
+    Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz 0123456789
   </div>
-  <div class="idv-typo-alphabet" style="font-family:var(--font-body);font-size:10pt;">
-    Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz
+  <div class="idv-typo-label">
+    Corpo: ${fonteCorpo} — textos corridos, tabelas, listas
+  </div>
+
+  <div class="idv-exemplo-box">
+    <div class="idv-exemplo-display">${nomeCasal}</div>
+    <div class="idv-exemplo-body">${dataFormatada} &mdash; ${localCompleto}</div>
   </div>
 
   <div class="idv-explanation">
-    A identidade visual deste casamento foi construída para ser reconhecível em todas as peças de comunicação.
-    Use o monograma em selos, menus e plaquinhas. Aplique a paleta de forma hierárquica: a cor principal
-    domina os elementos grandes (capa, convite), a secundária cria contraste em detalhes e bordas,
-    e a terciária ilumina fundos e espaços em branco. A tipografia display deve ser usada em títulos
-    e nomes; a fonte de corpo garante legibilidade em textos longos. O elemento gráfico abaixo pode
-    ser repetido em cantos de página, divisórias e materiais impressos para reforçar a coesão visual.
+    Use o monograma em selos e menus. Aplique a paleta hierarquicamente: a cor principal
+    domina destaques, a secundária cria contraste em detalhes, e a terciária ilumina fundos.
+    A tipografia display serve para títulos; a fonte de corpo garante legibilidade.
   </div>
 
-  <div class="idv-elemento">
-    ${svgElementoGrafico(perfil, corPrimaria, 240, 70)}
-  </div>
+  <div style="margin-top:auto;margin-bottom:3mm;">${svgElementoGraficoPerfil(perfil, corPrimaria, 180, 45)}</div>
 
   <div class="footer">
     <span>${nomeCasal}</span>
@@ -1486,17 +1267,17 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
 <!-- ═══════════════════════════════════════════════════ SEÇÕES TEMÁTICAS -->
 ${paginasTematicas}
 
-<!-- ═══════════════════════════════════════════════════ LINHA DO TEMPO (A4 VERTICAL) -->
+<!-- ═══════════════════════════════════════════════════ LINHA DO TEMPO (A4 VERTICAL, cards horizontais) -->
 <div class="page">
-  <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
+  ${svgTopo}
   <div class="section-title">Linha do Tempo</div>
-  <p style="font-size:10.5pt;line-height:1.7;margin-bottom:5mm;">O planejamento exige organização. Aqui está o cronograma ideal para ${nomeCasal}.</p>
+  <p style="font-size:10pt;line-height:1.5;margin-bottom:3mm;">Cronograma ideal para ${nomeCasal}.</p>
 
   <div class="timeline-connector">
     <div class="timeline-connector-line"></div>
   </div>
 
-  <div class="timeline-vertical">
+  <div class="timeline-container">
     ${[
       {meses:'12-8 meses',cor:'#4CAF50',tarefas:['Definir data e reservar local','Contratar cerimonialista','Iniciar lista de convidados','Definir estilo e paleta']},
       {meses:'7-4 meses',cor:'#FFC107',tarefas:['Fechar buffet e bebidas','Contratar fotógrafo e vídeo','Provar vestido e traje','Definir decoração e flores']},
@@ -1510,11 +1291,11 @@ ${paginasTematicas}
     `).join('')}
   </div>
 
-  <div style="display:flex;gap:8mm;margin-top:6mm;flex-wrap:wrap;justify-content:center;">
+  <div class="timeline-legend">
     ${[{c:'#4CAF50',l:'Tranquilo'},{c:'#FFC107',l:'Atenção'},{c:'#FF9800',l:'Urgente'},{c:'#F44336',l:'Crítico'}].map(x=>`
-      <div style="display:flex;align-items:center;gap:2mm;">
-        <div style="width:4mm;height:4mm;background:${x.c};border-radius:2px;"></div>
-        <span style="font-size:9pt;">${x.l}</span>
+      <div style="display:flex;align-items:center;gap:1.5mm;">
+        <div style="width:3mm;height:3mm;background:${x.c};border-radius:1.5px;"></div>
+        <span style="font-size:8.5pt;">${x.l}</span>
       </div>
     `).join('')}
   </div>
@@ -1525,9 +1306,9 @@ ${paginasTematicas}
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════ CALENDÁRIO MENSAL (A4 VERTICAL) -->
+<!-- ═══════════════════════════════════════════════════ CALENDÁRIO MENSAL -->
 <div class="page">
-  <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
+  ${svgTopo}
   <div class="section-title">Calendário Mensal</div>
   <div class="calendario-grid">
     ${[
@@ -1559,16 +1340,16 @@ ${paginasTematicas}
 
 <!-- ═══════════════════════════════════════════════════ CHECKLIST -->
 <div class="page">
-  <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
+  ${svgTopo}
   <div class="section-title">Checklist de Decisões</div>
   <table class="data-table checklist-clean">
-    <tr><th>Decisão Pendente</th><th style="width:25mm;">Prazo</th><th style="width:12mm;"></th><th>Anotações</th></tr>
-    ${checklist.slice(0,16).map(item=>`
+    <tr><th>Decisão Pendente</th><th style="width:22mm;">Prazo</th><th style="width:10mm;"></th><th>Anotações</th></tr>
+    ${checklist.slice(0,12).map(item=>`
       <tr>
         <td>${item.item}</td>
         <td>${item.prazo}</td>
         <td style="text-align:center;"><span class="check-icon"></span></td>
-        <td style="border-bottom:0.5pt dashed #D4CFC9;height:6mm;"></td>
+        <td style="border-bottom:0.5pt dashed #D4CFC9;height:5mm;"></td>
       </tr>
     `).join('')}
   </table>
@@ -1579,18 +1360,18 @@ ${paginasTematicas}
   </div>
 </div>
 
-${checklist.length > 16 ? `
+${checklist.length > 12 ? `
 <div class="page">
-  <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
+  ${svgTopo}
   <div class="section-title">Checklist &mdash; Continuação</div>
   <table class="data-table checklist-clean">
-    <tr><th>Decisão Pendente</th><th style="width:25mm;">Prazo</th><th style="width:12mm;"></th><th>Anotações</th></tr>
-    ${checklist.slice(16).map(item=>`
+    <tr><th>Decisão Pendente</th><th style="width:22mm;">Prazo</th><th style="width:10mm;"></th><th>Anotações</th></tr>
+    ${checklist.slice(12).map(item=>`
       <tr>
         <td>${item.item}</td>
         <td>${item.prazo}</td>
         <td style="text-align:center;"><span class="check-icon"></span></td>
-        <td style="border-bottom:0.5pt dashed #D4CFC9;height:6mm;"></td>
+        <td style="border-bottom:0.5pt dashed #D4CFC9;height:5mm;"></td>
       </tr>
     `).join('')}
   </table>
@@ -1602,13 +1383,13 @@ ${checklist.length > 16 ? `
 </div>
 ` : ''}
 
-<!-- ═══════════════════════════════════════════════════ FORNECEDORES (A4 VERTICAL) -->
+<!-- ═══════════════════════════════════════════════════ FORNECEDORES -->
 <div class="page">
-  <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
+  ${svgTopo}
   <div class="section-title">Fornecedores</div>
   <table class="data-table fornecedores-table">
-    <tr><th style="width:28mm;">Categoria</th><th style="width:45mm;">Nome</th><th style="width:28mm;">Telefone</th><th style="width:40mm;">E-mail</th><th style="width:18mm;">Status</th></tr>
-    ${fornecedores.slice(0,20).map(f=>`
+    <tr><th style="width:24mm;">Categoria</th><th style="width:40mm;">Nome</th><th style="width:24mm;">Telefone</th><th style="width:36mm;">E-mail</th><th style="width:16mm;">Status</th></tr>
+    ${fornecedores.slice(0,14).map(f=>`
       <tr>
         <td>${f.categoria}</td>
         <td>${f.nome}</td>
@@ -1625,13 +1406,13 @@ ${checklist.length > 16 ? `
   </div>
 </div>
 
-${fornecedores.length > 20 ? `
+${fornecedores.length > 14 ? `
 <div class="page">
-  <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
+  ${svgTopo}
   <div class="section-title">Fornecedores &mdash; Continuação</div>
   <table class="data-table fornecedores-table">
-    <tr><th style="width:28mm;">Categoria</th><th style="width:45mm;">Nome</th><th style="width:28mm;">Telefone</th><th style="width:40mm;">E-mail</th><th style="width:18mm;">Status</th></tr>
-    ${fornecedores.slice(20).map(f=>`
+    <tr><th style="width:24mm;">Categoria</th><th style="width:40mm;">Nome</th><th style="width:24mm;">Telefone</th><th style="width:36mm;">E-mail</th><th style="width:16mm;">Status</th></tr>
+    ${fornecedores.slice(14).map(f=>`
       <tr>
         <td>${f.categoria}</td>
         <td>${f.nome}</td>
@@ -1650,16 +1431,16 @@ ${fornecedores.length > 20 ? `
 ` : ''}
 
 <div class="page">
-  <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
-  <div class="section-title">Fornecedores &mdash; Anotações de Valor e Prazo</div>
+  ${svgTopo}
+  <div class="section-title">Fornecedores &mdash; Anotações</div>
   <table class="data-table fornecedores-table">
-    <tr><th style="width:28mm;">Categoria</th><th style="width:28mm;">Valor</th><th style="width:22mm;">Prazo</th><th>Anotações</th></tr>
-    ${fornecedores.slice(0,15).map(f=>`
+    <tr><th style="width:24mm;">Categoria</th><th style="width:26mm;">Valor</th><th style="width:20mm;">Prazo</th><th>Anotações</th></tr>
+    ${fornecedores.slice(0,12).map(f=>`
       <tr>
         <td>${f.categoria}</td>
         <td>R$ ____________</td>
         <td>____________</td>
-        <td style="border-bottom:0.5pt dashed #D4CFC9;height:6mm;"></td>
+        <td style="border-bottom:0.5pt dashed #D4CFC9;height:5mm;"></td>
       </tr>
     `).join('')}
   </table>
@@ -1670,16 +1451,18 @@ ${fornecedores.length > 20 ? `
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════ ORÇAMENTO (A4 VERTICAL) -->
+<!-- ═══════════════════════════════════════════════════ ORÇAMENTO (gráfico + legendas + dicas) -->
 <div class="page">
-  <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
+  ${svgTopo}
   <div class="section-title">Orçamento Detalhado</div>
-  <p style="font-size:10pt;line-height:1.6;margin-bottom:4mm;">Esta estimativa foi regionalizada com base em <strong>${cidade || 'sua cidade'}</strong> / <strong>${estado || 'seu estado'}</strong>.</p>
+  <p style="font-size:9.5pt;line-height:1.5;margin-bottom:3mm;">Estimativa regionalizada para <strong>${cidade || 'sua cidade'}</strong> / <strong>${estado || 'seu estado'}</strong>.</p>
   <div class="budget-header">
     <div class="budget-chart">${grafico.svg}</div>
     <div>
-      <p style="font-size:10pt;line-height:1.6;margin-bottom:3mm;"><strong>Como ler este gráfico:</strong> cada fatia representa a proporção ideal do orçamento total para cada categoria. Use os valores estimados como ponto de partida para suas negociações.</p>
-      ${grafico.legend}
+      <p style="font-size:9pt;line-height:1.45;margin-bottom:2mm;"><strong>Como ler:</strong> cada fatia representa a proporção ideal do orçamento total para cada categoria.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5mm;">
+        ${grafico.legend}
+      </div>
     </div>
   </div>
   <div class="budget-dicas">
@@ -1703,12 +1486,13 @@ ${fornecedores.length > 20 ? `
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════ ORÇAMENTO TABELA -->
 <div class="page">
-  <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
-  <div class="section-title">Orçamento &mdash; Tabela Completa</div>
+  ${svgTopo}
+  <div class="section-title">Orçamento &mdash; Tabela</div>
   <table class="data-table">
-    <tr><th>Item</th><th style="width:12mm;">%</th><th style="width:24mm;">Valor Est.</th><th style="width:24mm;">Valor Real</th></tr>
-    ${itensOrcamento.slice(0,18).map(item=>`
+    <tr><th>Item</th><th style="width:10mm;">%</th><th style="width:22mm;">Valor Est.</th><th style="width:22mm;">Valor Real</th></tr>
+    ${itensOrcamento.slice(0,12).map(item=>`
       <tr>
         <td>${item.item}</td>
         <td>${item.percentual}%</td>
@@ -1724,12 +1508,49 @@ ${fornecedores.length > 20 ? `
   </div>
 </div>
 
+${itensOrcamento.length > 12 ? `
 <div class="page">
-  <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
+  ${svgTopo}
   <div class="section-title">Orçamento &mdash; Continuação</div>
   <table class="data-table">
-    <tr><th>Item</th><th style="width:12mm;">%</th><th style="width:24mm;">Valor Est.</th><th style="width:24mm;">Valor Real</th></tr>
-    ${itensOrcamento.slice(18).map(item=>`
+    <tr><th>Item</th><th style="width:10mm;">%</th><th style="width:22mm;">Valor Est.</th><th style="width:22mm;">Valor Real</th></tr>
+    ${itensOrcamento.slice(12,24).map(item=>`
+      <tr>
+        <td>${item.item}</td>
+        <td>${item.percentual}%</td>
+        <td>R$ ${item.valor.toLocaleString('pt-BR')}</td>
+        <td>R$ ____________</td>
+      </tr>
+    `).join('')}
+    ${itensOrcamento.length <= 24 ? `
+    <tr style="border-top:1.5pt solid var(--color-primary);font-weight:bold;">
+      <td>TOTAL ESTIMADO</td>
+      <td>100%</td>
+      <td>R$ ${itensOrcamento.reduce((s,i)=>s+i.valor,0).toLocaleString('pt-BR')}</td>
+      <td>R$ ____________</td>
+    </tr>
+    ` : ''}
+  </table>
+  ${itensOrcamento.length <= 24 ? `
+  <div style="margin-top:2mm;padding:2mm 3mm;background:#10B98108;border-radius:2px;font-size:8.5pt;line-height:1.5;">
+    <span style="color:#10B981;font-weight:bold;">í</span> <strong>Importante:</strong> os valores são estimativas regionalizadas. Solicite orçamentos detalhados de pelo menos 3 fornecedores por categoria.
+  </div>
+  ` : ''}
+  <div class="footer">
+    <span>${nomeCasal}</span>
+    <span>${logoHtmlSmall}</span>
+    <span class="page-number"></span>
+  </div>
+</div>
+` : ''}
+
+${itensOrcamento.length > 24 ? `
+<div class="page">
+  ${svgTopo}
+  <div class="section-title">Orçamento &mdash; Continuação</div>
+  <table class="data-table">
+    <tr><th>Item</th><th style="width:10mm;">%</th><th style="width:22mm;">Valor Est.</th><th style="width:22mm;">Valor Real</th></tr>
+    ${itensOrcamento.slice(24).map(item=>`
       <tr>
         <td>${item.item}</td>
         <td>${item.percentual}%</td>
@@ -1744,8 +1565,8 @@ ${fornecedores.length > 20 ? `
       <td>R$ ____________</td>
     </tr>
   </table>
-  <div class="info-box" style="margin-top:4mm;">
-    <p><span style="color:#10B981;font-weight:bold;font-size:11pt;margin-right:4px;">í</span><strong>Importante:</strong> os valores são estimativas regionalizadas. Solicite orçamentos detalhados de pelo menos 3 fornecedores por categoria antes de tomar decisões finais.</p>
+  <div style="margin-top:2mm;padding:2mm 3mm;background:#10B98108;border-radius:2px;font-size:8.5pt;line-height:1.5;">
+    <span style="color:#10B981;font-weight:bold;">í</span> <strong>Importante:</strong> os valores são estimativas regionalizadas. Solicite orçamentos detalhados de pelo menos 3 fornecedores por categoria.
   </div>
   <div class="footer">
     <span>${nomeCasal}</span>
@@ -1753,33 +1574,34 @@ ${fornecedores.length > 20 ? `
     <span class="page-number"></span>
   </div>
 </div>
+` : ''}
 
 <!-- ═══════════════════════════════════════════════════ DICAS REGIONAIS -->
 <div class="page">
-  <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
+  ${svgTopo}
   <div class="section-title">Dicas Regionais</div>
-  <p style="font-size:10.5pt;line-height:1.7;margin-bottom:5mm;">Informações específicas para <strong>${localCompleto}</strong>.</p>
+  <p style="font-size:10pt;line-height:1.5;margin-bottom:3mm;">Informações específicas para <strong>${localCompleto}</strong>.</p>
 
-  <div class="section-subtitle">Clima Local</div>
+  <div style="font-family:var(--font-display);font-size:12pt;color:var(--color-primary);margin-bottom:2mm;">Clima Local</div>
   <div class="dicas-clima-box">
-    <p style="font-size:10pt;line-height:1.6;">${dicasRegionais.clima}</p>
+    <p style="font-size:9.5pt;line-height:1.5;">${dicasRegionais.clima}</p>
   </div>
 
-  <div class="section-subtitle">Cuidados Especiais</div>
-  ${dicasRegionais.cuidados.map(c=>`<p style="font-size:10pt;line-height:1.6;margin-bottom:2px;margin-left:3mm;">&bull; ${c}</p>`).join('')}
+  <div style="font-family:var(--font-display);font-size:12pt;color:var(--color-primary);margin-top:3mm;margin-bottom:2mm;">Cuidados Especiais</div>
+  ${dicasRegionais.cuidados.map(c=>`<p style="font-size:9.5pt;line-height:1.5;margin-bottom:1px;margin-left:2mm;">&bull; ${c}</p>`).join('')}
 
-  <div class="section-subtitle" style="margin-top:5mm;">Melhores Épocas para Casar</div>
-  <div style="margin:2mm 0;">
+  <div style="font-family:var(--font-display);font-size:12pt;color:var(--color-primary);margin-top:3mm;margin-bottom:2mm;">Melhores Épocas</div>
+  <div style="margin:1mm 0;">
     ${dicasRegionais.melhoresEpocas.map(e=>`<span class="epoca-badge">${e}</span>`).join('')}
   </div>
 
-  <div class="section-subtitle" style="margin-top:5mm;">Dicas de Planejamento</div>
-  <p style="font-size:9.5pt;line-height:1.6;color:var(--color-text-soft);margin-left:3mm;margin-top:2mm;">
-    &bull; Solicite orçamentos detalhados com 8 meses de antecedência.<br/>
+  <div style="font-family:var(--font-display);font-size:12pt;color:var(--color-primary);margin-top:3mm;margin-bottom:2mm;">Dicas de Planejamento</div>
+  <p style="font-size:9pt;line-height:1.5;color:var(--color-text-soft);margin-left:2mm;">
+    &bull; Solicite orçamentos com 8 meses de antecedência.<br/>
     &bull; Visite os espaços pessoalmente antes de fechar contrato.<br/>
-    &bull; Verifique a disponibilidade de fornecedores para a data escolhida.<br/>
+    &bull; Verifique a disponibilidade de fornecedores para a data.<br/>
     &bull; Considere a logística de acesso para convidados de outras cidades.<br/>
-    &bull; Reserve acomodações com antecedência se o evento for em cidade turística.
+    &bull; Reserve acomodações com antecedência se for cidade turística.
   </p>
 
   <div class="footer">
@@ -1794,10 +1616,10 @@ ${fornecedores.length > 20 ? `
   <div class="cta-title">Obrigado por confiar no descomplicaí</div>
   <div class="cta-text">${nomeCasal}, este memorial é apenas o começo. Assine o descomplicaí e tenha acesso à gestão completa do seu casamento.</div>
   <div class="cta-quote">"O amor é a poesia dos sentidos."</div>
-  <div style="font-size:9pt;color:var(--color-text-soft);margin-bottom:6mm;">&mdash; Honoré de Balzac</div>
+  <div style="font-size:8pt;color:var(--color-text-soft);margin-bottom:4mm;">&mdash; Honoré de Balzac</div>
   ${qrCodeDataUri ? `<img src="${qrCodeDataUri}" class="cta-qr" alt="QR Code"/>` : ''}
-  <div style="font-size:10pt;color:var(--color-primary);margin-top:3mm;">arxum.csstudios.site/descomplicai</div>
-  <div style="margin-top:6mm;">${logoHtml}</div>
+  <div style="font-size:9pt;color:var(--color-primary);margin-top:2mm;">arxum.csstudios.site/descomplicai</div>
+  <div style="margin-top:4mm;">${logoHtml}</div>
   <div class="footer">
     <span>${nomeCasal}</span>
     <span>${logoHtmlSmall}</span>
