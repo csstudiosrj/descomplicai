@@ -170,6 +170,135 @@ function svgMonogramaPorPerfil(inicial1, inicial2, perfil, cor, tamanho = 200) {
   </svg>`;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   ELEMENTO GRÁFICO REAL DO PERFIL — arabesco/folha/geometria/flor
+   ═══════════════════════════════════════════════════════════ */
+function svgElementoGrafico(perfil, cor, largura = 240, altura = 70) {
+  const p = String(perfil || 'minimalista').toLowerCase();
+  const c = String(cor || '#1A1714');
+  const w = largura;
+  const h = altura;
+
+  if (p === 'classico') {
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+      <!-- Arabesco central com volutas -->
+      <path d="M${w*0.05},${h*0.55} C${w*0.15},${h*0.20} ${w*0.30},${h*0.45} ${w*0.42},${h*0.35} C${w*0.50},${h*0.28} ${w*0.55},${h*0.42} ${w*0.60},${h*0.35} C${w*0.70},${h*0.25} ${w*0.85},${h*0.20} ${w*0.95},${h*0.55}" fill="none" stroke="${c}" stroke-width="1.4" opacity="0.45"/>
+      <path d="M${w*0.10},${h*0.65} C${w*0.20},${h*0.35} ${w*0.32},${h*0.55} ${w*0.45},${h*0.45} C${w*0.52},${h*0.38} ${w*0.56},${h*0.52} ${w*0.62},${h*0.45} C${w*0.72},${h*0.35} ${w*0.80},${h*0.35} ${w*0.90},${h*0.65}" fill="none" stroke="${c}" stroke-width="1" opacity="0.3"/>
+      <!-- Volutas laterais -->
+      <path d="M${w*0.25},${h*0.30} Q${w*0.20},${h*0.15} ${w*0.30},${h*0.12} Q${w*0.40},${h*0.15} ${w*0.35},${h*0.30}" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.35"/>
+      <path d="M${w*0.65},${h*0.30} Q${w*0.60},${h*0.15} ${w*0.70},${h*0.12} Q${w*0.80},${h*0.15} ${w*0.75},${h*0.30}" fill="none" stroke="${c}" stroke-width="0.8" opacity="0.35"/>
+      <!-- Círculos decorativos -->
+      <circle cx="${w*0.35}" cy="${h*0.40}" r="2.5" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3"/>
+      <circle cx="${w*0.65}" cy="${h*0.38}" r="2" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.25"/>
+    </svg>`;
+  }
+  if (p === 'boho') {
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+      <!-- Ramos ondulantes -->
+      <path d="M${w*0.04},${h*0.70} C${w*0.12},${h*0.25} ${w*0.22},${h*0.55} ${w*0.32},${h*0.35} C${w*0.42},${h*0.55} ${w*0.52},${h*0.20} ${w*0.62},${h*0.40} C${w*0.72},${h*0.25} ${w*0.82},${h*0.55} ${w*0.92},${h*0.30} C${w*0.96},${h*0.20} ${w*0.98},${h*0.45} ${w*0.98},${h*0.70}" fill="none" stroke="${c}" stroke-width="1.4" opacity="0.4"/>
+      <path d="M${w*0.08},${h*0.78} C${w*0.15},${h*0.40} ${w*0.25},${h*0.65} ${w*0.35},${h*0.45} C${w*0.45},${h*0.65} ${w*0.55},${h*0.35} ${w*0.65},${h*0.50} C${w*0.75},${h*0.35} ${w*0.85},${h*0.60} ${w*0.95},${h*0.40}" fill="none" stroke="${c}" stroke-width="1" opacity="0.25"/>
+      <!-- Folhas -->
+      <path d="M${w*0.22},${h*0.32} Q${w*0.18},${h*0.22} ${w*0.25},${h*0.18} Q${w*0.32},${h*0.22} ${w*0.28},${h*0.32} Z" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3"/>
+      <path d="M${w*0.48},${h*0.28} Q${w*0.44},${h*0.18} ${w*0.50},${h*0.15} Q${w*0.56},${h*0.18} ${w*0.52},${h*0.28} Z" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3"/>
+      <path d="M${w*0.75},${h*0.30} Q${w*0.71},${h*0.20} ${w*0.78},${h*0.17} Q${w*0.85},${h*0.20} ${w*0.81},${h*0.30} Z" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3"/>
+      <!-- Pontos -->
+      <circle cx="${w*0.35}" cy="${h*0.25}" r="1.5" fill="${c}" opacity="0.25"/>
+      <circle cx="${w*0.65}" cy="${h*0.22}" r="1.5" fill="${c}" opacity="0.25"/>
+    </svg>`;
+  }
+  if (p === 'moderno') {
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+      <!-- Formas geométricas -->
+      <rect x="${w*0.06}" y="${h*0.25}" width="${w*0.14}" height="${h*0.40}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4" rx="2"/>
+      <rect x="${w*0.24}" y="${h*0.18}" width="${w*0.22}" height="${h*0.55}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4" rx="2"/>
+      <rect x="${w*0.50}" y="${h*0.25}" width="${w*0.18}" height="${h*0.40}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4" rx="2"/>
+      <rect x="${w*0.72}" y="${h*0.18}" width="${w*0.22}" height="${h*0.55}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.4" rx="2"/>
+      <!-- Linha base -->
+      <line x1="0" y1="${h*0.82}" x2="${w}" y2="${h*0.82}" stroke="${c}" stroke-width="2" opacity="0.5"/>
+      <!-- Pontos -->
+      <circle cx="${w*0.13}" cy="${h*0.72}" r="2" fill="${c}" opacity="0.3"/>
+      <circle cx="${w*0.35}" cy="${h*0.78}" r="2" fill="${c}" opacity="0.3"/>
+      <circle cx="${w*0.59}" cy="${h*0.72}" r="2" fill="${c}" opacity="0.3"/>
+      <circle cx="${w*0.83}" cy="${h*0.78}" r="2" fill="${c}" opacity="0.3"/>
+    </svg>`;
+  }
+  if (p === 'rustico') {
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+      <!-- Galhos principais -->
+      <path d="M${w*0.03},${h*0.65} Q${w*0.15},${h*0.30} ${w*0.28},${h*0.50} Q${w*0.42},${h*0.25} ${w*0.55},${h*0.48} Q${w*0.68},${h*0.28} ${w*0.82},${h*0.50} Q${w*0.92},${h*0.35} ${w*0.97},${h*0.65}" fill="none" stroke="${c}" stroke-width="1.6" opacity="0.4"/>
+      <path d="M${w*0.08},${h*0.75} Q${w*0.18},${h*0.45} ${w*0.30},${h*0.62} Q${w*0.42},${h*0.40} ${w*0.55},${h*0.58} Q${w*0.68},${h*0.38} ${w*0.80},${h*0.60} Q${w*0.90},${h*0.45} ${w*0.95},${h*0.75}" fill="none" stroke="${c}" stroke-width="1" opacity="0.25"/>
+      <!-- Folhas estilizadas -->
+      <ellipse cx="${w*0.20}" cy="${h*0.38}" rx="3" ry="7" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3" transform="rotate(-30 ${w*0.20} ${h*0.38})"/>
+      <ellipse cx="${w*0.38}" cy="${h*0.32}" rx="2.5" ry="6" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3" transform="rotate(-15 ${w*0.38} ${h*0.32})"/>
+      <ellipse cx="${w*0.62}" cy="${h*0.30}" rx="2.5" ry="6" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3" transform="rotate(15 ${w*0.62} ${h*0.30})"/>
+      <ellipse cx="${w*0.80}" cy="${h*0.38}" rx="3" ry="7" fill="none" stroke="${c}" stroke-width="0.7" opacity="0.3" transform="rotate(30 ${w*0.80} ${h*0.38})"/>
+      <!-- Círculos -->
+      <circle cx="${w*0.30}" cy="${h*0.22}" r="1.5" fill="${c}" opacity="0.2"/>
+      <circle cx="${w*0.70}" cy="${h*0.20}" r="1.5" fill="${c}" opacity="0.2"/>
+    </svg>`;
+  }
+  if (p === 'romantico') {
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+      <!-- Corações estilizados -->
+      <path d="M${w*0.15},${h*0.45} C${w*0.10},${h*0.30} ${w*0.22},${h*0.25} ${w*0.25},${h*0.35} C${w*0.28},${h*0.25} ${w*0.40},${h*0.30} ${w*0.35},${h*0.45} C${w*0.35},${h*0.55} ${w*0.25},${h*0.65} ${w*0.25},${h*0.65} C${w*0.25},${h*0.65} ${w*0.15},${h*0.55} ${w*0.15},${h*0.45}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.35"/>
+      <path d="M${w*0.65},${h*0.45} C${w*0.60},${h*0.30} ${w*0.72},${h*0.25} ${w*0.75},${h*0.35} C${w*0.78},${h*0.25} ${w*0.90},${h*0.30} ${w*0.85},${h*0.45} C${w*0.85},${h*0.55} ${w*0.75},${h*0.65} ${w*0.75},${h*0.65} C${w*0.75},${h*0.65} ${w*0.65},${h*0.55} ${w*0.65},${h*0.45}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.35"/>
+      <!-- Linha ondulada central -->
+      <path d="M0,${h*0.55} Q${w*0.25},${h*0.40} ${w*0.50},${h*0.55} Q${w*0.75},${h*0.70} ${w},${h*0.55}" fill="none" stroke="${c}" stroke-width="1.3" opacity="0.4"/>
+      <path d="M${w*0.05},${h*0.65} Q${w*0.30},${h*0.50} ${w*0.50},${h*0.65} Q${w*0.70},${h*0.80} ${w*0.95},${h*0.65}" fill="none" stroke="${c}" stroke-width="0.9" opacity="0.25"/>
+      <!-- Pétalas -->
+      <circle cx="${w*0.50}" cy="${h*0.25}" r="2" fill="none" stroke="${c}" stroke-width="0.6" opacity="0.3"/>
+      <circle cx="${w*0.42}" cy="${h*0.30}" r="1.5" fill="${c}" opacity="0.2"/>
+      <circle cx="${w*0.58}" cy="${h*0.30}" r="1.5" fill="${c}" opacity="0.2"/>
+    </svg>`;
+  }
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+    <line x1="${w*0.15}" y1="${h*0.50}" x2="${w*0.85}" y2="${h*0.50}" stroke="${c}" stroke-width="1.2" opacity="0.5"/>
+    <line x1="${w*0.25}" y1="${h*0.58}" x2="${w*0.75}" y2="${h*0.58}" stroke="${c}" stroke-width="0.8" opacity="0.3"/>
+  </svg>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TEXTO INÉDITO POR SEÇÃO TEMÁTICA
+   ═══════════════════════════════════════════════════════════ */
+function gerarTextoIneditoSecao(tituloSecao, dados) {
+  const estilo = String(dados?.estilo || 'classico').toLowerCase();
+  const perfil = String(dados?.perfilCasal || estilo).toLowerCase();
+  const n1 = capitalizarNome(dados?.nomePessoa1) || 'Noivo';
+  const n2 = capitalizarNome(dados?.nomePessoa2) || 'Noiva';
+  const flores = dados?.flores || 'flores variadas';
+  const iluminacao = dados?.iluminacao || 'natural';
+  const velas = dados?.velas || 'velas decorativas';
+  const mobiliario = dados?.mobiliarioEspecial || 'mobiliário padrão';
+  const tipoJantar = dados?.tipoJantar || 'a definir';
+  const tipoBar = dados?.tipoBar || 'a definir';
+  const musica = dados?.musicaFesta || 'a definir';
+  const atividades = Array.isArray(dados?.atividadesEntretenimento) ? dados.atividadesEntretenimento.join(', ') : 'dança e celebração';
+  const estiloVestido = dados?.estiloVestido || 'a definir';
+  const formatoConvite = dados?.formatoConvite || 'a definir';
+  const tipoCerimonia = dados?.tipoCerimonia || 'simbólica';
+  const tipoLocal = dados?.tipoLocal || 'a definir';
+  const horario = dados?.horarioCasamento || 'hora a definir';
+  const totalConvidados = dados?.totalConvidados || 'a definir';
+  const cidade = dados?.cidadeEvento || 'sua cidade';
+
+  const textos = {
+    'Identidade Visual': `A identidade visual deste casamento traduz a essência de ${n1} e ${n2} em cada elemento gráfico. O estilo ${estilo} guia todas as escolhas tipográficas e cromáticas, criando uma narrativa visual coesa desde o primeiro convite até a última lembrança. O monograma personalizado será o selo de autenticidade em todos os materiais, desde menus e plaquinhas até a assinatura digital. A paleta de cores foi escolhida para evocar ${perfil === 'romantico' ? 'ternura e delicadeza' : perfil === 'boho' ? 'liberdade e organicidade' : perfil === 'moderno' ? 'sofisticação e precisão' : perfil === 'rustico' ? 'acolhimento e raízes' : 'elegância atemporal'}. Cada fonte, cada espaçamento, cada textura foi pensado para que os convidados sintam a personalidade do casal antes mesmo de chegar ao local.`,
+
+    'Cerimônia': `A cerimônia de ${n1} e ${n2} será um momento de profunda conexão e emoção. Realizada de forma ${tipoCerimonia}, em um ambiente ${tipoLocal}, às ${horario}, cada detalhe foi pensado para criar uma atmosfera ${perfil === 'romantico' ? 'etérea e sonhadora' : perfil === 'boho' ? 'livre e despojada' : perfil === 'moderno' ? 'limpa e impactante' : perfil === 'rustico' ? 'acolhedora e genuína' : 'elegante e atemporal'}. A entrada será marcada por uma trilha sonora cuidadosamente selecionada, e a decoração do altar refletirá a paleta de cores escolhida. Com ${totalConvidados} convidados, a cerimônia será ${totalConvidados === 'intimo' ? 'um momento íntimo e profundo' : totalConvidados === 'grande' ? 'uma celebração grandiosa e vibrante' : 'uma celebração equilibrada e acolhedora'}.`,
+
+    'Decoração': `A decoração do casamento de ${n1} e ${n2} é um convite sensorial. Flores como ${flores} serão dispostas em arranjos que conversam com a iluminação ${iluminacao}, criando pontos de interesse em cada canto do espaço. ${velas !== 'Nenhuma' ? `As ${velas} adicionarão camadas de luz quente e acolhedora.` : 'A iluminação arquitetural será o protagonista da atmosfera.'} O mobiliário ${mobiliario} complementa o estilo ${estilo}, criando ambientes que convidam à permanência. Cada mesa, cada centro de mesa, cada cortina foi pensado para que os convidados se sintam imersos na narrativa visual do casal.`,
+
+    'Mesa Posta': `A mesa posta é a primeira impressão que os convidados terão da experiência gastronômica. Com um jantar ${tipoJantar} e bar ${tipoBar}, cada detalhe da montagem das mesas foi pensado para elevar o momento. A louça, os talheres, as taças e os guardanapos foram selecionados para dialogar com o estilo ${estilo} e a paleta de cores do evento. Sousplats, porta-guardanapos personalizados e menus individuais transformam cada lugar à mesa em uma experiência única. A atenção aos detalhes da mesa posta reflete o cuidado que ${n1} e ${n2} têm com cada convidado.`,
+
+    'Alimentação e Bebidas': `A experiência gastronômica do casamento de ${n1} e ${n2} é tão importante quanto a cerimônia. O jantar ${tipoJantar} será preparado com ingredientes selecionados, respeitando a estação e a região de ${cidade}. O bar ${tipoBar} oferecerá uma carta de bebidas que vai desde clássicos atemporais até criações exclusivas para a noite. A degustação prévia é fundamental para ajustar sabores e apresentação. A mesa de doces e o bolo serão o ponto alto do final da noite, com opções que agradam desde o paladar mais clássico até o mais moderno.`,
+
+    'Entretenimento': `A festa de ${n1} e ${n2} será inesquecível. Com ${musica} animando a pista de dança e atividades como ${atividades}, cada momento foi pensado para criar memórias coletivas. A iluminação de pista, os efeitos especiais e a curadoria musical garantem que a energia se mantenha alta do início ao fim. ${atividades.includes('cabine-fotos') ? 'A cabine de fotos será um ponto de encontro para risadas e lembranças instantâneas.' : ''} ${atividades.includes('drone') ? 'Imagens aéreas capturarão a magnitude da celebração.' : ''} O entretenimento não é apenas diversão — é a celebração da união de duas famílias em uma só.`,
+
+    'Vestuário e Beleza': `O visual de ${n1} e ${n2} no dia do casamento será ${estiloVestido === 'princesa' ? 'um conto de fadas contemporâneo' : estiloVestido === 'sereia' ? 'uma declaração de sensualidade elegante' : estiloVestido === 'minimalista' ? 'uma expressão de sofisticação discreta' : estiloVestido === 'boho' ? 'uma celebração da liberdade e do movimento' : 'uma expressão de elegância pessoal'}. A beleza será trabalhada para realçar traços naturais, com maquiagem e cabelo que resistam às emoções e às horas de festa. Os acessórios, o véu, o bouquet e os detalhes do traje do noivo completam um visual harmonioso e memorável. A prova final, agendada com antecedência, garante que tudo esteja perfeito.`,
+
+    'Papelaria e Identidade': `A papelaria do casamento de ${n1} e ${n2} é a primeira pista que os convidados recebem sobre o que os espera. Os convites no formato ${formatoConvite} carregam o monograma do casal, a paleta de cores e a tipografia escolhida, criando uma expectativa visual coerente. Save the date, RSVP, mapa de localização, menu, plaquinhas de mesa e lembrancinhas formam um universo gráfico completo. Cada peça é uma oportunidade de surpreender e encantar, transformando informação em arte.`,
+  };
+
   return textos[tituloSecao] || `Esta seção apresenta as decisões e referências de ${n1} e ${n2} para ${tituloSecao.toLowerCase()}. Cada detalhe foi pensado para criar uma experiência coesa e memorável no estilo ${estilo}.`;
 }
 
@@ -1217,18 +1346,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title" style="text-align:center;border:none;">Identidade Visual</div>
 
-  <div class="idv-monogram-main" style="text-align:center;margin:20px 0;">
-    <svg width="200" height="200" viewBox="0 0 200 200" style="display:block;margin:0 auto;">
-      <circle cx="100" cy="100" r="90" fill="none" stroke="${corSecundaria}" stroke-width="1"/>
-      <circle cx="100" cy="100" r="85" fill="none" stroke="${corSecundaria}" stroke-width="0.5"/>
-      <text x="60" y="120" font-family="DisplayFont, Georgia, 'Times New Roman', serif" font-size="72" fill="${corPrimaria}" text-anchor="middle">${inicial1}</text>
-      <text x="140" y="120" font-family="DisplayFont, Georgia, 'Times New Roman', serif" font-size="72" fill="${corPrimaria}" text-anchor="middle">${inicial2}</text>
-      <text x="100" y="115" font-family="DisplayFont, Georgia, 'Times New Roman', serif" font-size="40" fill="${corSecundaria}" text-anchor="middle">&</text>
-      <line x1="20" y1="155" x2="80" y2="155" stroke="${corSecundaria}" stroke-width="0.5"/>
-      <line x1="120" y1="155" x2="180" y2="155" stroke="${corSecundaria}" stroke-width="0.5"/>
-      <circle cx="100" cy="155" r="2" fill="${corSecundaria}"/>
-    </svg>
-  </div>
+  <div class="idv-monogram-main">${svgMonogramaPorPerfil(inicial1, inicial2, perfil, corPrimaria, 200)}</div>
 
   <div style="font-family:var(--font-display);font-size:14pt;color:var(--color-primary);margin:3mm 0;">
     Estilo: <strong>${capitalizarNome(estilo)}</strong> &mdash; Perfil: <strong>${capitalizarNome(perfil)}</strong>
@@ -1246,26 +1364,17 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     `).join('')}
   </div>
 
-  <div style="font-family:var(--font-display);font-size:32px;color:var(--color-primary);margin:4mm 0;text-align:center;">
+  <div class="idv-typo-sample" style="font-family:var(--font-display);font-size:24pt;margin:5mm 0;">
+    ${nomeCasal}
+  </div>
+  <div class="idv-typo-alphabet" style="font-family:var(--font-display);">
     Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz
   </div>
-  <p style="font-size:10px;color:var(--color-text-soft);text-align:center;">
-    <strong>Display:</strong> ${fonteDisplay} — títulos, nomes, destaques
-  </p>
-  <div style="font-family:var(--font-body);font-size:13px;color:var(--color-text);line-height:1.8;text-align:center;margin:3mm 0;">
-    Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk — corpo de texto, parágrafos, descrições
+  <div class="idv-typo-body">
+    <strong>Display:</strong> ${fonteDisplay} &mdash; <strong>Corpo:</strong> ${fonteCorpo}
   </div>
-  <p style="font-size:10px;color:var(--color-text-soft);text-align:center;">
-    <strong>Corpo:</strong> ${fonteCorpo} — textos corridos, tabelas, listas
-  </p>
-
-  <div style="text-align:center;padding:4mm;border:0.5pt solid var(--color-secondary);margin:4mm auto;max-width:130mm;">
-    <div style="font-family:var(--font-display);font-size:28px;color:var(--color-primary);">
-      ${nomeCasal}
-    </div>
-    <div style="font-family:var(--font-body);font-size:10px;color:var(--color-text-soft);letter-spacing:2px;margin-top:4px;">
-      ${dataFormatada} · ${localCompleto}
-    </div>
+  <div class="idv-typo-alphabet" style="font-family:var(--font-body);font-size:10pt;">
+    Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz
   </div>
 
   <div class="idv-explanation">
