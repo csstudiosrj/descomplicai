@@ -28,7 +28,6 @@ function PainelContent() {
   }, [evento]);
 
   const buscarDados = async () => {
-    // Buscar tarefas
     const { data: tarefasData } = await supabase
       .from('tarefas')
       .select('*')
@@ -47,7 +46,6 @@ function PainelContent() {
       setTarefas(tarefasComStatus);
     }
 
-    // Buscar pagamentos
     const { data: pagosData } = await supabase
       .from('pagamentos')
       .select('*')
@@ -66,7 +64,9 @@ function PainelContent() {
   };
 
   const nomeCasal = evento
-    ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}`
+    ? (evento.nome_pessoa1 && evento.nome_pessoa2
+        ? `${evento.nome_pessoa1} & ${evento.nome_pessoa2}`
+        : evento.nome_evento || 'Seu Casamento')
     : '';
 
   return (

@@ -17,18 +17,26 @@ export default function HeaderPainel({ nomeCasal, dataEvento, onLogout }) {
     return `${dia}/${mes}/${ano}`;
   }, [dataEvento]);
 
+  const temData = dataFormatada !== '';
+
   return (
     <header style={styles.header}>
       <div style={styles.container}>
         <div style={styles.brand}>
           <h1 style={styles.title}>{nomeCasal || 'Seu Casamento'}</h1>
           <div style={styles.meta}>
-            <Icon name="calendar" size={14} color="var(--color-text-soft)" />
-            <span style={styles.metaText}>{dataFormatada}</span>
-            {diasRestantes !== null && (
-              <span style={styles.badge}>
-                {diasRestantes} dia{diasRestantes !== 1 ? 's' : ''}
-              </span>
+            {temData ? (
+              <>
+                <Icon name="calendar" size={14} color="var(--color-text-soft)" />
+                <span style={styles.metaText}>{dataFormatada}</span>
+                {diasRestantes !== null && (
+                  <span style={styles.badge}>
+                    {diasRestantes} dia{diasRestantes !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span style={styles.metaText}>Data do evento não definida</span>
             )}
           </div>
         </div>
@@ -75,6 +83,7 @@ const styles = {
     gap: '8px',
     fontSize: '13px',
     color: 'var(--color-text-soft)',
+    minHeight: '20px',
   },
   metaText: {
     fontFamily: 'var(--font-body)',
