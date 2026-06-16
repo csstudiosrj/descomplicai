@@ -145,8 +145,7 @@ function getImagensMultiplas(categoria, chave, quantidade = 3) {
    ═══════════════════════════════════════════════════════════ */
 function logoHTML(corDescomplica = '#8B6F5E', corI = '#10B981') {
   return `<span style="display:inline-flex;align-items:baseline;white-space:nowrap;font-size:1em;">
-    <span style="font-family:'LogoFont1','DM Sans','Helvetica Neue',Arial,sans-serif;font-weight:300;color:${corDescomplica};">descomplica</span>
-    <span style="font-family:'LogoFont2','Space Mono','Courier New',monospace;font-weight:400;font-style:italic;font-size:1.08em;color:${corI};margin-left:0.02em;">í</span>
+    <span style="font-family:'LogoFont1','DM Sans','Helvetica Neue',Arial,sans-serif;font-weight:300;color:${corDescomplica};vertical-align:baseline;">descomplica</span><span style="font-family:'LogoFont2','Space Mono','Courier New',monospace;font-weight:400;font-style:italic;font-size:1.08em;color:${corI};vertical-align:baseline;">í</span>
   </span>`;
 }
 
@@ -160,107 +159,18 @@ function svgMonogramaPorPerfil(inicial1, inicial2, perfil, cor, tamanho = 200) {
   const s = tamanho;
   const hs = s / 2;
 
-  if (perfil === 'classico') {
-    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Moldura ornamental com cantos -->
-      <path d="M${s*0.12},${s*0.18} Q${s*0.12},${s*0.12} ${s*0.18},${s*0.12}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.5"/>
-      <path d="M${s*0.82},${s*0.12} Q${s*0.88},${s*0.12} ${s*0.88},${s*0.18}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.5"/>
-      <path d="M${s*0.88},${s*0.82} Q${s*0.88},${s*0.88} ${s*0.82},${s*0.88}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.5"/>
-      <path d="M${s*0.18},${s*0.88} Q${s*0.12},${s*0.88} ${s*0.12},${s*0.82}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.5"/>
-      <!-- Linhas decorativas horizontais -->
-      <line x1="${s*0.22}" y1="${s*0.28}" x2="${s*0.78}" y2="${s*0.28}" stroke="${c}" stroke-width="${s*0.004}" opacity="0.3"/>
-      <line x1="${s*0.22}" y1="${s*0.72}" x2="${s*0.78}" y2="${s*0.72}" stroke="${c}" stroke-width="${s*0.004}" opacity="0.3"/>
-      <!-- Volutas laterais -->
-      <path d="M${s*0.15},${s*0.45} Q${s*0.08},${s*0.5} ${s*0.15},${s*0.55}" fill="none" stroke="${c}" stroke-width="${s*0.006}" opacity="0.35"/>
-      <path d="M${s*0.85},${s*0.45} Q${s*0.92},${s*0.5} ${s*0.85},${s*0.55}" fill="none" stroke="${c}" stroke-width="${s*0.006}" opacity="0.35"/>
-      <!-- Iniciais -->
-      <text x="${hs}" y="${s*0.54}" text-anchor="middle" font-family="DisplayFont, Georgia, 'Times New Roman', serif" font-size="${s*0.32}" fill="${c}" font-weight="bold" letter-spacing="${s*0.01}">${i1}<tspan font-size="${s*0.20}" dy="${-s*0.04}" font-weight="normal">&</tspan>${i2}</text>
-      <!-- Ornamento inferior -->
-      <path d="M${s*0.38},${s*0.68} Q${hs},${s*0.78} ${s*0.62},${s*0.68}" fill="none" stroke="${c}" stroke-width="${s*0.008}" opacity="0.4"/>
-      <circle cx="${s*0.35}" cy="${s*0.74}" r="${s*0.008}" fill="${c}" opacity="0.3"/>
-      <circle cx="${s*0.65}" cy="${s*0.74}" r="${s*0.008}" fill="${c}" opacity="0.3"/>
-    </svg>`;
-  }
-  if (perfil === 'boho') {
-    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Círculo pontilhado -->
-      <circle cx="${hs}" cy="${hs}" r="${s*0.40}" fill="none" stroke="${c}" stroke-width="${s*0.008}" opacity="0.2" stroke-dasharray="${s*0.06} ${s*0.03}"/>
-      <!-- Ramos orgânicos -->
-      <path d="M${s*0.10},${s*0.62} C${s*0.20},${s*0.35} ${s*0.30},${s*0.55} ${s*0.42},${s*0.42} C${s*0.55},${s*0.30} ${s*0.65},${s*0.48} ${s*0.78},${s*0.38} C${s*0.88},${s*0.30} ${s*0.90},${s*0.55} ${s*0.85},${s*0.65}" fill="none" stroke="${c}" stroke-width="${s*0.010}" opacity="0.35"/>
-      <path d="M${s*0.15},${s*0.68} C${s*0.25},${s*0.45} ${s*0.35},${s*0.62} ${s*0.48},${s*0.50} C${s*0.60},${s*0.38} ${s*0.70},${s*0.55} ${s*0.82},${s*0.48} C${s*0.90},${s*0.42} ${s*0.88},${s*0.65} ${s*0.80},${s*0.72}" fill="none" stroke="${c}" stroke-width="${s*0.007}" opacity="0.25"/>
-      <!-- Folhas -->
-      <path d="M${s*0.32},${s*0.35} Q${s*0.28},${s*0.25} ${s*0.35},${s*0.22} Q${s*0.42},${s*0.25} ${s*0.38},${s*0.35} Z" fill="none" stroke="${c}" stroke-width="${s*0.005}" opacity="0.3"/>
-      <path d="M${s*0.62},${s*0.35} Q${s*0.58},${s*0.25} ${s*0.65},${s*0.22} Q${s*0.72},${s*0.25} ${s*0.68},${s*0.35} Z" fill="none" stroke="${c}" stroke-width="${s*0.005}" opacity="0.3"/>
-      <!-- Iniciais -->
-      <text x="${hs}" y="${s*0.54}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.30}" fill="${c}" font-weight="bold">${i1} & ${i2}</text>
-      <!-- Pontos decorativos -->
-      <circle cx="${s*0.28}" cy="${s*0.75}" r="${s*0.012}" fill="${c}" opacity="0.25"/>
-      <circle cx="${s*0.72}" cy="${s*0.75}" r="${s*0.012}" fill="${c}" opacity="0.25"/>
-      <circle cx="${s*0.50}" cy="${s*0.80}" r="${s*0.008}" fill="${c}" opacity="0.2"/>
-    </svg>`;
-  }
-  if (perfil === 'moderno') {
-    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Moldura geométrica dupla -->
-      <rect x="${s*0.12}" y="${s*0.12}" width="${s*0.76}" height="${s*0.76}" fill="none" stroke="${c}" stroke-width="${s*0.016}" opacity="0.35" rx="${s*0.02}"/>
-      <rect x="${s*0.20}" y="${s*0.20}" width="${s*0.60}" height="${s*0.60}" fill="none" stroke="${c}" stroke-width="${s*0.008}" opacity="0.2" rx="${s*0.01}"/>
-      <!-- Linhas de cruz -->
-      <line x1="${s*0.12}" y1="${hs}" x2="${s*0.88}" y2="${hs}" stroke="${c}" stroke-width="${s*0.005}" opacity="0.15"/>
-      <line x1="${hs}" y1="${s*0.12}" x2="${hs}" y2="${s*0.88}" stroke="${c}" stroke-width="${s*0.005}" opacity="0.15"/>
-      <!-- Diagonais -->
-      <line x1="${s*0.20}" y1="${s*0.20}" x2="${s*0.30}" y2="${s*0.30}" stroke="${c}" stroke-width="${s*0.008}" opacity="0.3"/>
-      <line x1="${s*0.80}" y1="${s*0.20}" x2="${s*0.70}" y2="${s*0.30}" stroke="${c}" stroke-width="${s*0.008}" opacity="0.3"/>
-      <line x1="${s*0.20}" y1="${s*0.80}" x2="${s*0.30}" y2="${s*0.70}" stroke="${c}" stroke-width="${s*0.008}" opacity="0.3"/>
-      <line x1="${s*0.80}" y1="${s*0.80}" x2="${s*0.70}" y2="${s*0.70}" stroke="${c}" stroke-width="${s*0.008}" opacity="0.3"/>
-      <!-- Iniciais -->
-      <text x="${hs}" y="${s*0.56}" text-anchor="middle" font-family="DisplayFont, 'Helvetica Neue', Arial, sans-serif" font-size="${s*0.34}" fill="${c}" font-weight="bold" letter-spacing="${s*0.015}">${i1} / ${i2}</text>
-      <!-- Barra inferior -->
-      <rect x="${s*0.38}" y="${s*0.68}" width="${s*0.24}" height="${s*0.012}" fill="${c}" opacity="0.4"/>
-    </svg>`;
-  }
-  if (perfil === 'rustico') {
-    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Círculo orgânico -->
-      <circle cx="${hs}" cy="${hs}" r="${s*0.38}" fill="none" stroke="${c}" stroke-width="${s*0.014}" opacity="0.25"/>
-      <!-- Galhos principais -->
-      <path d="M${s*0.08},${s*0.65} Q${s*0.25},${s*0.45} ${s*0.45},${s*0.58} Q${s*0.65},${s*0.42} ${s*0.82},${s*0.55} Q${s*0.92},${s*0.48} ${s*0.92},${s*0.68}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.4"/>
-      <path d="M${s*0.15},${s*0.72} Q${s*0.30},${s*0.55} ${s*0.50},${s*0.68} Q${s*0.70},${s*0.52} ${s*0.85},${s*0.65}" fill="none" stroke="${c}" stroke-width="${s*0.008}" opacity="0.25"/>
-      <!-- Folhas estilizadas -->
-      <ellipse cx="${s*0.30}" cy="${s*0.48}" rx="${s*0.025}" ry="${s*0.055}" fill="none" stroke="${c}" stroke-width="${s*0.005}" opacity="0.3" transform="rotate(-25 ${s*0.30} ${s*0.48})"/>
-      <ellipse cx="${s*0.70}" cy="${s*0.48}" rx="${s*0.025}" ry="${s*0.055}" fill="none" stroke="${c}" stroke-width="${s*0.005}" opacity="0.3" transform="rotate(25 ${s*0.70} ${s*0.48})"/>
-      <ellipse cx="${s*0.40}" cy="${s*0.40}" rx="${s*0.02}" ry="${s*0.04}" fill="none" stroke="${c}" stroke-width="${s*0.004}" opacity="0.25" transform="rotate(-40 ${s*0.40} ${s*0.40})"/>
-      <ellipse cx="${s*0.60}" cy="${s*0.40}" rx="${s*0.02}" ry="${s*0.04}" fill="none" stroke="${c}" stroke-width="${s*0.004}" opacity="0.25" transform="rotate(40 ${s*0.60} ${s*0.40})"/>
-      <!-- Iniciais -->
-      <text x="${hs}" y="${s*0.54}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.30}" fill="${c}" font-weight="bold">${i1} + ${i2}</text>
-      <!-- Círculos decorativos -->
-      <circle cx="${s*0.25}" cy="${s*0.75}" r="${s*0.010}" fill="${c}" opacity="0.25"/>
-      <circle cx="${s*0.75}" cy="${s*0.75}" r="${s*0.010}" fill="${c}" opacity="0.25"/>
-    </svg>`;
-  }
-  if (perfil === 'romantico') {
-    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Coração estilizado -->
-      <path d="M${hs},${s*0.22} C${s*0.35},${s*0.08} ${s*0.15},${s*0.18} ${s*0.15},${s*0.38} C${s*0.15},${s*0.58} ${hs},${s*0.78} ${hs},${s*0.78} C${hs},${s*0.78} ${s*0.85},${s*0.58} ${s*0.85},${s*0.38} C${s*0.85},${s*0.18} ${s*0.65},${s*0.08} ${hs},${s*0.22}" fill="none" stroke="${c}" stroke-width="${s*0.012}" opacity="0.35"/>
-      <!-- Iniciais -->
-      <text x="${hs}" y="${s*0.52}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.28}" fill="${c}" font-weight="bold">${i1} & ${i2}</text>
-      <!-- Enfeites florais -->
-      <path d="M${s*0.25},${s*0.72} Q${s*0.38},${s*0.62} ${hs},${s*0.72} Q${s*0.62},${s*0.62} ${s*0.75},${s*0.72}" fill="none" stroke="${c}" stroke-width="${s*0.006}" opacity="0.3"/>
-      <path d="M${s*0.30},${s*0.78} Q${s*0.40},${s*0.70} ${hs},${s*0.78} Q${s*0.60},${s*0.70} ${s*0.70},${s*0.78}" fill="none" stroke="${c}" stroke-width="${s*0.005}" opacity="0.2"/>
-      <!-- Pétalas -->
-      <circle cx="${s*0.28}" cy="${s*0.32}" r="${s*0.015}" fill="none" stroke="${c}" stroke-width="${s*0.004}" opacity="0.25"/>
-      <circle cx="${s*0.72}" cy="${s*0.32}" r="${s*0.015}" fill="none" stroke="${c}" stroke-width="${s*0.004}" opacity="0.25"/>
-      <circle cx="${s*0.35}" cy="${s*0.25}" r="${s*0.010}" fill="${c}" opacity="0.2"/>
-      <circle cx="${s*0.65}" cy="${s*0.25}" r="${s*0.010}" fill="${c}" opacity="0.2"/>
-    </svg>`;
-  }
-  // Minimalista fallback
-  return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
-    <line x1="${s*0.10}" y1="${hs}" x2="${s*0.90}" y2="${hs}" stroke="${c}" stroke-width="${s*0.010}" opacity="0.4"/>
-    <text x="${hs}" y="${s*0.54}" text-anchor="middle" font-family="DisplayFont, Georgia, serif" font-size="${s*0.36}" fill="${c}" font-weight="bold" letter-spacing="${s*0.015}">${i1} & ${i2}</text>
-    <line x1="${s*0.10}" y1="${s*0.58}" x2="${s*0.90}" y2="${s*0.58}" stroke="${c}" stroke-width="${s*0.005}" opacity="0.2"/>
+  // Design elegante universal — círculos + iniciais separadas + &
+  return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto;">
+    <circle cx="${hs}" cy="${hs}" r="${s*0.46}" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.7"/>
+    <circle cx="${hs}" cy="${hs}" r="${s*0.43}" fill="none" stroke="${c}" stroke-width="0.6" opacity="0.4"/>
+    <text x="${s*0.30}" y="${s*0.58}" font-family="DisplayFont, Georgia, 'Times New Roman', serif" font-size="${s*0.34}" fill="${c}" text-anchor="middle" font-weight="bold">${i1}</text>
+    <text x="${s*0.70}" y="${s*0.58}" font-family="DisplayFont, Georgia, 'Times New Roman', serif" font-size="${s*0.34}" fill="${c}" text-anchor="middle" font-weight="bold">${i2}</text>
+    <text x="${hs}" y="${s*0.55}" font-family="DisplayFont, Georgia, 'Times New Roman', serif" font-size="${s*0.18}" fill="${c}" text-anchor="middle" opacity="0.8">&</text>
+    <line x1="${s*0.12}" y1="${s*0.75}" x2="${s*0.42}" y2="${s*0.75}" stroke="${c}" stroke-width="0.8" opacity="0.5"/>
+    <line x1="${s*0.58}" y1="${s*0.75}" x2="${s*0.88}" y2="${s*0.75}" stroke="${c}" stroke-width="0.8" opacity="0.5"/>
+    <circle cx="${hs}" cy="${s*0.75}" r="${s*0.015}" fill="${c}" opacity="0.7"/>
   </svg>`;
 }
-
 /* ═══════════════════════════════════════════════════════════
    ELEMENTO GRÁFICO REAL DO PERFIL — arabesco/folha/geometria/flor
    ═══════════════════════════════════════════════════════════ */
@@ -657,7 +567,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   const svgDeco = svgElementoGrafico(perfil, corPrimaria, 200, 50);
   const svgDecoLarge = svgElementoGrafico(perfil, corContraste, 280, 70);
   const svgMono = svgMonogramaPorPerfil(inicial1, inicial2, perfil, corContraste, 200);
-  const svgMonoLarge = svgMonogramaPorPerfil(inicial1, inicial2, perfil, corContraste, 260);
+  const svgMonoLarge = svgMonogramaPorPerfil(inicial1, inicial2, perfil, corSecundaria, 260);
   const logoHtml = logoHTML('#8B6F5E', '#10B981');
   const logoHtmlSmall = logoHTML('#8B6F5E', '#10B981');
 
@@ -695,9 +605,9 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
         </div>
       `;
     } else if (layout === 'grid') {
-      const imgs = (imagens || []).slice(0, 4).map((imgSrc) => imgSrc ? `<img src="${imgSrc}" style="width:100%;height:55mm;object-fit:cover;border-radius:4px;display:block;"/>` : '').join('');
+      const imgs = (imagens || []).slice(0, 4).map((imgSrc) => imgSrc ? `<div class="img-container"><img src="${imgSrc}" style="width:100%;height:55mm;object-fit:cover;border-radius:4px;display:block;"/></div>` : '').join('');
       corpo = `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin-bottom:4mm;">
+        <div class="img-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:3mm;margin-bottom:4mm;">
           ${imgs}
         </div>
         <div style="font-size:10.5pt;line-height:1.7;text-align:justify;">
@@ -771,11 +681,6 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
     counter-increment: pagina;
   }
   .page:last-child { page-break-after: auto; }
-  .page.landscape {
-    width: 297mm;
-    min-height: 210mm;
-    padding: 12mm 16mm 16mm 16mm;
-  }
 
   .footer {
     position: absolute;
@@ -815,7 +720,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   .cover-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(to bottom, rgba(26,23,20,0.55) 0%, rgba(26,23,20,0.85) 100%);
+    background: linear-gradient(to bottom, rgba(26,23,20,0.40) 0%, rgba(26,23,20,0.75) 100%);
     z-index: 1;
   }
   .cover-content {
@@ -1159,26 +1064,27 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   .calendario-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 3mm;
+    gap: 4mm;
     margin-top: 4mm;
   }
   .calendario-mes {
     border: 0.5pt solid #E5E0D9;
     border-radius: 3px;
-    padding: 3mm;
+    padding: 4mm;
     break-inside: avoid;
     background: #fff;
+    min-height: 45mm;
   }
   .calendario-mes h5 {
     font-family: var(--font-display);
-    font-size: 10pt;
+    font-size: 11pt;
     color: var(--color-primary);
-    margin-bottom: 2mm;
+    margin-bottom: 2.5mm;
     border-bottom: 0.5pt solid #E5E0D9;
-    padding-bottom: 1mm;
+    padding-bottom: 1.5mm;
   }
   .calendario-mes p {
-    font-size: 8.5pt;
+    font-size: 9.5pt;
     line-height: 1.5;
     margin-bottom: 1px;
     color: var(--color-text);
@@ -1210,8 +1116,8 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   }
 
   /* ═══ FORNECEDORES ═══ */
-  .fornecedores-table th { font-size: 10.5pt; padding: 3.5mm 2.5mm; }
-  .fornecedores-table td { font-size: 10.5pt; padding: 3mm 2.5mm; }
+  .fornecedores-table th { font-size: 8.5pt; padding: 1.5mm 2mm; }
+  .fornecedores-table td { font-size: 8.5pt; padding: 1.2mm 2mm; }
 
   /* ═══ CHECKLIST ═══ */
   .checklist-clean td { border-bottom: 0.5pt solid #E5E0D9; }
@@ -1309,6 +1215,10 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   .section-title, .section-subtitle {
     break-after: avoid;
   }
+  .img-container, .img-grid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 </style>
 </head>
 <body>
@@ -1318,7 +1228,7 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
   <div class="cover-bg" style="background-image:url(${imgCapa || ''});"></div>
   <div class="cover-overlay"></div>
   <div class="cover-content">
-    <div class="cover-monogram">${svgMonogramaPorPerfil(inicial1, inicial2, perfil, corPrimaria, 260)}</div>
+    <div class="cover-monogram">${svgMonoLarge}</div>
     <div class="cover-title">${nomeCasal}</div>
     <div class="cover-subtitle">Memorial do Casamento</div>
     <div class="cover-local">${localCompleto}</div>
@@ -1491,8 +1401,8 @@ export function gerarTemplateHTML({ memorial, dadosEvento, qrCodeDataUri = null 
 <!-- ═══════════════════════════════════════════════════ SEÇÕES TEMÁTICAS -->
 ${paginasTematicas}
 
-<!-- ═══════════════════════════════════════════════════ LINHA DO TEMPO (A4 LANDSCAPE) -->
-<div class="page landscape">
+<!-- ═══════════════════════════════════════════════════ LINHA DO TEMPO -->
+<div class="page">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Linha do Tempo</div>
   <p style="font-size:10.5pt;line-height:1.7;margin-bottom:5mm;">O planejamento exige organização. Aqui está o cronograma ideal para ${nomeCasal}.</p>
@@ -1530,8 +1440,8 @@ ${paginasTematicas}
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════ CALENDÁRIO MENSAL (A4 LANDSCAPE) -->
-<div class="page landscape">
+<!-- ═══════════════════════════════════════════════════ CALENDÁRIO MENSAL -->
+<div class="page">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Calendário Mensal</div>
   <div class="calendario-grid">
@@ -1573,7 +1483,7 @@ ${paginasTematicas}
         <td>${item.item}</td>
         <td>${item.prazo}</td>
         <td style="text-align:center;"><span class="check-icon"></span></td>
-        <td style="border-bottom:0.5pt dashed #D4CFC9;height:8mm;"></td>
+        <td style="border-bottom:0.5pt dashed #D4CFC9;height:6mm;"></td>
       </tr>
     `).join('')}
   </table>
@@ -1595,7 +1505,7 @@ ${checklist.length > 16 ? `
         <td>${item.item}</td>
         <td>${item.prazo}</td>
         <td style="text-align:center;"><span class="check-icon"></span></td>
-        <td style="border-bottom:0.5pt dashed #D4CFC9;height:8mm;"></td>
+        <td style="border-bottom:0.5pt dashed #D4CFC9;height:6mm;"></td>
       </tr>
     `).join('')}
   </table>
@@ -1607,21 +1517,25 @@ ${checklist.length > 16 ? `
 </div>
 ` : ''}
 
-<!-- ═══════════════════════════════════════════════════ FORNECEDORES (A4 VERTICAL) -->
+<!-- ═══════════════════════════════════════════════════ FORNECEDORES -->
 <div class="page">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Fornecedores</div>
   <table class="data-table fornecedores-table">
-    <tr><th style="width:28mm;">Categoria</th><th style="width:45mm;">Nome</th><th style="width:28mm;">Telefone</th><th style="width:40mm;">E-mail</th><th style="width:18mm;">Status</th></tr>
-    ${fornecedores.slice(0,20).map(f=>`
-      <tr>
-        <td>${f.categoria}</td>
-        <td>${f.nome}</td>
-        <td>________________</td>
-        <td>________________</td>
-        <td>A definir</td>
-      </tr>
-    `).join('')}
+    <thead>
+      <tr><th style="width:28mm;">Categoria</th><th style="width:45mm;">Nome</th><th style="width:28mm;">Telefone</th><th style="width:40mm;">E-mail</th><th style="width:18mm;">Status</th></tr>
+    </thead>
+    <tbody>
+      ${fornecedores.slice(0,20).map(f=>`
+        <tr>
+          <td>${f.categoria}</td>
+          <td>${f.nome}</td>
+          <td>________________</td>
+          <td>________________</td>
+          <td>A definir</td>
+        </tr>
+      `).join('')}
+    </tbody>
   </table>
   <div class="footer">
     <span>${nomeCasal}</span>
@@ -1635,16 +1549,20 @@ ${fornecedores.length > 20 ? `
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Fornecedores &mdash; Continuação</div>
   <table class="data-table fornecedores-table">
-    <tr><th style="width:28mm;">Categoria</th><th style="width:45mm;">Nome</th><th style="width:28mm;">Telefone</th><th style="width:40mm;">E-mail</th><th style="width:18mm;">Status</th></tr>
-    ${fornecedores.slice(20).map(f=>`
-      <tr>
-        <td>${f.categoria}</td>
-        <td>${f.nome}</td>
-        <td>________________</td>
-        <td>________________</td>
-        <td>A definir</td>
-      </tr>
-    `).join('')}
+    <thead>
+      <tr><th style="width:28mm;">Categoria</th><th style="width:45mm;">Nome</th><th style="width:28mm;">Telefone</th><th style="width:40mm;">E-mail</th><th style="width:18mm;">Status</th></tr>
+    </thead>
+    <tbody>
+      ${fornecedores.slice(20).map(f=>`
+        <tr>
+          <td>${f.categoria}</td>
+          <td>${f.nome}</td>
+          <td>________________</td>
+          <td>________________</td>
+          <td>A definir</td>
+        </tr>
+      `).join('')}
+    </tbody>
   </table>
   <div class="footer">
     <span>${nomeCasal}</span>
@@ -1656,17 +1574,21 @@ ${fornecedores.length > 20 ? `
 
 <div class="page">
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
-  <div class="section-title">Fornecedores &mdash; Anotações de Valor e Prazo</div>
+  <div class="section-title">Fornecedores &mdash; Anotações</div>
   <table class="data-table fornecedores-table">
-    <tr><th style="width:28mm;">Categoria</th><th style="width:28mm;">Valor</th><th style="width:22mm;">Prazo</th><th>Anotações</th></tr>
-    ${fornecedores.slice(0,15).map(f=>`
-      <tr>
-        <td>${f.categoria}</td>
-        <td>R$ ____________</td>
-        <td>____________</td>
-        <td style="border-bottom:0.5pt dashed #D4CFC9;height:8mm;"></td>
-      </tr>
-    `).join('')}
+    <thead>
+      <tr><th style="width:28mm;">Categoria</th><th style="width:28mm;">Valor</th><th style="width:22mm;">Prazo</th><th>Anotações</th></tr>
+    </thead>
+    <tbody>
+      ${fornecedores.slice(0,15).map(f=>`
+        <tr>
+          <td>${f.categoria}</td>
+          <td>R$ ____________</td>
+          <td>____________</td>
+          <td style="border-bottom:0.5pt dashed #D4CFC9;height:6mm;"></td>
+        </tr>
+      `).join('')}
+    </tbody>
   </table>
   <div class="footer">
     <span>${nomeCasal}</span>
@@ -1683,12 +1605,11 @@ ${fornecedores.length > 20 ? `
     Esta estimativa foi regionalizada com base em <strong>${cidade || 'sua cidade'}</strong> / <strong>${estado || 'seu estado'}</strong>.
     Cada fatia do gráfico representa a proporção ideal do orçamento total para cada categoria.
     Use os valores como ponto de partida para suas negociações com fornecedores.
-    Reserve sempre uma margem de 10% para imprevistos e ajustes de última hora.
   </p>
   <div class="budget-header">
     <div class="budget-chart">${grafico.svg}</div>
     <div>
-      <p style="font-size:10pt;line-height:1.6;margin-bottom:3mm;font-weight:bold;color:var(--color-primary);">Distribuição do Orçamento</p>
+      <p style="font-size:10pt;line-height:1.5;margin-bottom:2mm;font-weight:bold;color:var(--color-primary);">Distribuição do Orçamento</p>
       ${grafico.legend}
     </div>
   </div>
@@ -1718,24 +1639,28 @@ ${fornecedores.length > 20 ? `
   <div style="text-align:center;margin-bottom:3mm;">${svgDeco}</div>
   <div class="section-title">Orçamento &mdash; Tabela Completa</div>
   <table class="data-table">
-    <tr><th>Item</th><th style="width:12mm;">%</th><th style="width:24mm;">Valor Est.</th><th style="width:24mm;">Valor Real</th></tr>
-    ${itensOrcamento.map(item=>`
-      <tr>
-        <td>${item.item}</td>
-        <td>${item.percentual}%</td>
-        <td>R$ ${item.valor.toLocaleString('pt-BR')}</td>
+    <thead>
+      <tr><th>Item</th><th style="width:12mm;">%</th><th style="width:24mm;">Valor Est.</th><th style="width:24mm;">Valor Real</th></tr>
+    </thead>
+    <tbody>
+      ${itensOrcamento.map(item=>`
+        <tr>
+          <td>${item.item}</td>
+          <td>${item.percentual}%</td>
+          <td>R$ ${item.valor.toLocaleString('pt-BR')}</td>
+          <td>R$ ____________</td>
+        </tr>
+      `).join('')}
+      <tr style="border-top:1.5pt solid var(--color-primary);font-weight:bold;">
+        <td>TOTAL ESTIMADO</td>
+        <td>100%</td>
+        <td>R$ ${itensOrcamento.reduce((s,i)=>s+i.valor,0).toLocaleString('pt-BR')}</td>
         <td>R$ ____________</td>
       </tr>
-    `).join('')}
-    <tr style="border-top:1.5pt solid var(--color-primary);font-weight:bold;">
-      <td>TOTAL ESTIMADO</td>
-      <td>100%</td>
-      <td>R$ ${itensOrcamento.reduce((s,i)=>s+i.valor,0).toLocaleString('pt-BR')}</td>
-      <td>R$ ____________</td>
-    </tr>
+    </tbody>
   </table>
-  <div class="info-box" style="margin-top:4mm;">
-    <p><span style="color:#10B981;font-weight:bold;font-size:11pt;margin-right:4px;">í</span><strong>Importante:</strong> os valores são estimativas regionalizadas. Solicite orçamentos detalhados de pelo menos 3 fornecedores por categoria antes de tomar decisões finais.</p>
+  <div class="info-box" style="margin-top:3mm;">
+    <p><span style="color:#10B981;font-weight:bold;font-size:10pt;margin-right:3px;">í</span><strong>Importante:</strong> os valores são estimativas regionalizadas. Solicite orçamentos detalhados de pelo menos 3 fornecedores por categoria.</p>
   </div>
   <div class="footer">
     <span>${nomeCasal}</span>
