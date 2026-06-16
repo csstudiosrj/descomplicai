@@ -63,16 +63,19 @@ function PainelContent() {
     }
   };
 
+  // CORRECAO: nomeCasal estava com codigo quebrado no .join()
   const nomeCasal = evento
     ? (evento.nome_pessoa1 && evento.nome_pessoa2
         ? `${evento.nome_pessoa1} & ${evento.nome_pessoa2}`
-        : evento.nome_evento ? evento.nome_evento.split("&").map(n => n.trim().charAt(0).toUpperCase() + n.trim().slice(1)).join(" \evento.nome_evento || 'Seu Casamento' ") : "Seu Casamento")
-    : '';
+        : evento.nome_evento
+          ? evento.nome_evento.split("&").map(n => n.trim().charAt(0).toUpperCase() + n.trim().slice(1)).join(" & ")
+          : "Seu Casamento")
+    : 'Seu Casamento';
 
   return (
     <>
       <Head>
-        <title>Painel | descomplicaí</title>
+        <title>Painel | descomplicai</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
@@ -95,7 +98,7 @@ function PainelContent() {
           </section>
 
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Navegação</h2>
+            <h2 style={styles.sectionTitle}>Navegacao</h2>
             <NavCards />
           </section>
         </main>

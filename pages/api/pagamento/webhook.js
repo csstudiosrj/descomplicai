@@ -21,7 +21,7 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // Registrar pagamento
+    // Registrar pagamento no historico
     await supabaseAdmin.from('pagamentos').insert({
       usuario_id: usuarioId,
       evento_id: eventoId,
@@ -31,11 +31,11 @@ export default async function handler(req, res) {
       mp_payment_id: String(pagamento.id),
     });
 
-    // Ativar plano
+    // CORRECAO: cada produto ativa sua propria flag, SEM misturar
     if (tipo === 'assinatura') {
       await supabaseAdmin
         .from('eventos')
-        .update({ assinatura_ativa: true, plano: 'assinatura' })
+        .update({ assinatura_ativa: true })
         .eq('id', eventoId);
     } else if (tipo === 'memorial_pdf') {
       await supabaseAdmin

@@ -11,7 +11,8 @@ import Button from '../../components/ui/Button';
 export default function ConclusaoPage() {
   const router = useRouter();
   const { estado, carregarEstado } = useMemorial();
-  const { usuario } = useAuth();
+  // CORRECAO: useAuth exporta 'user' e 'evento', nao 'usuario'
+  const { user, evento } = useAuth();
   const { isHydrated, carregarDraft } = useAutoSave(estado);
   const [status, setStatus] = useState('carregando');
   const [memorial, setMemorial] = useState('');
@@ -23,13 +24,16 @@ export default function ConclusaoPage() {
   const { pagamento, tipo: tipoProduto, concluido, collection_status } = router.query;
   const pagamentoAprovado =
     pagamento === 'sucesso' || collection_status === 'approved';
-  const pdfLiberado = pagamentoAprovado && tipoProduto === 'memorial_pdf';
-  const assinaturaAtiva = pagamentoAprovado && tipoProduto === 'assinatura';
+
+  // Estados PERSISTENTES do banco (fonte de verdade)
+  const pdfJaComprado = evento?.plano === 'pdf';
+  const assinaturaAtiva = evento?.assinatura_ativa === true;
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
+  // Se tem assinatura ativa (do banco), manda pro painel
   useEffect(() => {
     if (isMounted && isHydrated && assinaturaAtiva) {
       router.replace('/painel');
@@ -47,7 +51,7 @@ export default function ConclusaoPage() {
       return;
     } else {
       setStatus('erro');
-      setErro('Dados do memorial não encontrados. Por favor, finalize novamente.');
+      setErro('Dados do memorial nao encontrados. Por favor, finalize novamente.');
       return;
     }
   }, [isMounted, isHydrated]);
@@ -91,14 +95,12 @@ export default function ConclusaoPage() {
       });
 
       if (!resposta.ok) {
-        // 🔧 CORREÇÃO: tenta JSON, mas se falhar lê como texto
         let mensagemErro = 'Erro ao gerar PDF';
         const texto = await resposta.text();
         try {
           const json = JSON.parse(texto);
           mensagemErro = json.erro || json.detalhe || mensagemErro;
         } catch {
-          // Se não é JSON, pode ser HTML de erro da Vercel
           mensagemErro = `Erro ${resposta.status} no servidor. Tente novamente.`;
         }
         throw new Error(mensagemErro);
@@ -115,18 +117,22 @@ export default function ConclusaoPage() {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error(err);
-      alert(err.message || 'Não foi possível baixar o PDF. Tente novamente.');
+      alert(err.message || 'Nao foi possivel baixar o PDF. Tente novamente.');
     } finally {
       setBaixandoPDF(false);
     }
   };
 
   const handleComprarPDF = async () => {
+    if (!user?.id || !evento?.id) {
+      alert('Faca login primeiro para continuar.');
+      return;
+    }
     setPagando(true);
     try {
       const dadosEvento = {
         ...montarPayloadParaAPI(estado),
-        email: usuario?.email || null,
+        email: user?.email || null,
       };
 
       const resposta = await fetch('/api/pagamento/criar', {
@@ -134,6 +140,8 @@ export default function ConclusaoPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tipo: 'memorial_pdf',
+          usuarioId: user.id,
+          eventoId: evento.id,
           dadosEvento,
         }),
       });
@@ -153,11 +161,15 @@ export default function ConclusaoPage() {
   };
 
   const handleComprarAssinatura = async () => {
+    if (!user?.id || !evento?.id) {
+      alert('Faca login primeiro para continuar.');
+      return;
+    }
     setPagando(true);
     try {
       const dadosEvento = {
         ...montarPayloadParaAPI(estado),
-        email: usuario?.email || null,
+        email: user?.email || null,
       };
 
       const resposta = await fetch('/api/pagamento/criar', {
@@ -165,6 +177,8 @@ export default function ConclusaoPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tipo: 'assinatura',
+          usuarioId: user.id,
+          eventoId: evento.id,
           dadosEvento,
         }),
       });
@@ -209,20 +223,22 @@ export default function ConclusaoPage() {
       <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-4)', backgroundColor: 'var(--color-off-white)' }}>
         <div style={{ textAlign: 'center', maxWidth: '400px' }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-danger)', marginBottom: 'var(--space-2)' }}>Ops!</h2>
-          <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)' }}>{erro || 'Não foi possível gerar o memorial. Tente novamente.'}</p>
+          <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)' }}>{erro || 'Nao foi possivel gerar o memorial. Tente novamente.'}</p>
           <Button variant="primary" onClick={() => router.push('/memorial')}>Voltar ao memorial</Button>
         </div>
       </div>
     );
   }
 
+  // CORRECAO: pdfLiberado agora verifica o banco (persistente), nao so a URL
+  const pdfLiberado = pdfJaComprado || (pagamentoAprovado && tipoProduto === 'memorial_pdf');
   const conteudoMemorial = pdfLiberado ? memorial : memorial.substring(0, 800);
   const mostrarBlur = !pdfLiberado && memorial.length > 800;
 
   return (
     <>
       <Head>
-        <title>Seu memorial está pronto — Descomplicaí</title>
+        <title>Seu memorial esta pronto — Descomplicai</title>
       </Head>
       <div style={{ maxWidth: '640px', margin: '0 auto', padding: 'var(--space-6) var(--space-4) var(--space-8)', fontFamily: 'var(--font-body)' }}>
         <div style={{ marginBottom: 'var(--space-6)' }}>
@@ -249,7 +265,9 @@ export default function ConclusaoPage() {
               lineHeight: 'var(--leading-relaxed)',
               border: '1px dashed var(--color-border)',
             }}>
-              O conteúdo completo do memorial está disponível após a compra do PDF ou assinatura do plano.
+              O conteudo completo do memorial esta disponivel apos a compra do PDF.
+              <br />
+              Quer gerenciar seu casamento? Assine o plano mensal.
             </div>
           )}
         </div>
@@ -261,7 +279,7 @@ export default function ConclusaoPage() {
                 {baixandoPDF ? 'Gerando PDF...' : 'Baixar PDF completo'}
               </Button>
               <p style={{ textAlign: 'center', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-                Seu PDF está liberado! Clique no botão acima para fazer o download.
+                Seu PDF esta liberado! Clique no botao acima para fazer o download.
               </p>
             </>
           ) : (
@@ -270,7 +288,7 @@ export default function ConclusaoPage() {
                 {pagando ? 'Redirecionando...' : 'Baixar PDF completo — R$197'}
               </Button>
               <Button variant="secondary" size="lg" fullWidth loading={pagando} onClick={handleComprarAssinatura}>
-                {pagando ? 'Redirecionando...' : 'Gerenciar meu casamento — R$29,90/mês'}
+                {pagando ? 'Redirecionando...' : 'Gerenciar meu casamento — R$29,90/mes'}
               </Button>
             </>
           )}
@@ -278,13 +296,13 @@ export default function ConclusaoPage() {
 
         {pagamento === 'pendente' && (
           <div style={{ marginBottom: 'var(--space-4)', padding: 'var(--space-3)', backgroundColor: '#FFF3E6', borderRadius: 'var(--radius-md)', color: 'var(--color-warning-dark)', fontFamily: 'var(--font-body)' }}>
-            Pagamento em processamento. Assim que confirmado, você receberá o acesso.
+            Pagamento em processamento. Assim que confirmado, voce recebera o acesso.
           </div>
         )}
 
         {!pdfLiberado && !assinaturaAtiva && (
           <p style={{ textAlign: 'center', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-            Seu memorial ficará salvo por 7 dias. Depois é só assinar para manter o acesso.
+            Seu memorial ficara salvo por 7 dias. Depois e so assinar para manter o acesso.
           </p>
         )}
       </div>

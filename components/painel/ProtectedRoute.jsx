@@ -2,7 +2,6 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
-import Icon from '../ui/Icon';
 
 export default function ProtectedRoute({ children }) {
   const { user, loading, hasAccess } = useAuth();
@@ -13,6 +12,7 @@ export default function ProtectedRoute({ children }) {
       if (!user) {
         router.push('/login');
       } else if (!hasAccess) {
+        // Se nao tem assinatura, manda de volta pra conclusao (nao entra no painel)
         router.push('/memorial/conclusao');
       }
     }

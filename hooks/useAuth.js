@@ -57,9 +57,8 @@ export function useAuth() {
     setEvento(null);
   }, []);
 
-  const hasAccess = Boolean(
-    evento && (evento.assinatura_ativa === true || evento.plano === 'pdf')
-  );
+  // CORRECAO: Painel = EXCLUSIVO para assinantes. PDF nao da acesso ao painel.
+  const hasAccess = Boolean(evento && evento.assinatura_ativa === true);
 
   return { user, evento, loading, carregando: loading, hasAccess, login, signOut, supabase };
 }

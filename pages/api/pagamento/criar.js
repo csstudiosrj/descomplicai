@@ -3,13 +3,17 @@ import { client, Preference } from '../../../lib/mercadopago';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ erro: 'Método não permitido' });
+    return res.status(405).json({ erro: 'Metodo nao permitido' });
   }
 
-  const { tipo } = req.body;
+  const { tipo, usuarioId, eventoId } = req.body;
 
   if (!tipo) {
-    return res.status(400).json({ erro: 'Tipo de pagamento não informado' });
+    return res.status(400).json({ erro: 'Tipo de pagamento nao informado' });
+  }
+
+  if (!usuarioId || !eventoId) {
+    return res.status(400).json({ erro: 'usuarioId e eventoId sao obrigatorios' });
   }
 
   const itens = {
@@ -20,7 +24,7 @@ export default async function handler(req, res) {
       currency_id: 'BRL',
     },
     assinatura: {
-      title: 'Descomplicaí — Plano Mensal',
+      title: 'Descomplicai — Plano Mensal',
       quantity: 1,
       unit_price: 29.9,
       currency_id: 'BRL',
@@ -29,7 +33,7 @@ export default async function handler(req, res) {
 
   const item = itens[tipo];
   if (!item) {
-    return res.status(400).json({ erro: 'Tipo de pagamento inválido' });
+    return res.status(400).json({ erro: 'Tipo de pagamento invalido' });
   }
 
   try {
@@ -44,6 +48,8 @@ export default async function handler(req, res) {
         },
         auto_return: 'approved',
         notification_url: `${process.env.NEXT_PUBLIC_URL}/api/pagamento/webhook`,
+        // CORRECAO CRITICA: external_reference para o webhook identificar o pagamento
+        external_reference: JSON.stringify({ usuarioId, eventoId, tipo }),
       },
     });
 
