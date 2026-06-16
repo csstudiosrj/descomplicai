@@ -7,11 +7,11 @@ import { useAuth } from '../../hooks/useAuth';
 import { useMemorial } from '../../hooks/useMemorial';
 import useAutoSave from '../../hooks/useAutoSave';
 import Button from '../../components/ui/Button';
+import Header from '../../components/ui/Header';
 
 export default function ConclusaoPage() {
   const router = useRouter();
   const { estado, carregarEstado } = useMemorial();
-  // CORRECAO: useAuth exporta 'user' e 'evento', nao 'usuario'
   const { user, evento } = useAuth();
   const { isHydrated, carregarDraft } = useAutoSave(estado);
   const [status, setStatus] = useState('carregando');
@@ -25,7 +25,6 @@ export default function ConclusaoPage() {
   const pagamentoAprovado =
     pagamento === 'sucesso' || collection_status === 'approved';
 
-  // Estados PERSISTENTES do banco (fonte de verdade)
   const pdfJaComprado = evento?.plano === 'pdf';
   const assinaturaAtiva = evento?.assinatura_ativa === true;
 
@@ -33,7 +32,6 @@ export default function ConclusaoPage() {
     setIsMounted(true);
   }, []);
 
-  // Se tem assinatura ativa (do banco), manda pro painel
   useEffect(() => {
     if (isMounted && isHydrated && assinaturaAtiva) {
       router.replace('/painel');
@@ -207,30 +205,35 @@ export default function ConclusaoPage() {
 
   if (status === 'carregando') {
     return (
-      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-4)', backgroundColor: 'var(--color-off-white)' }}>
-        <div style={{ textAlign: 'center', maxWidth: '400px' }}>
-          <div style={{ width: '40px', height: '40px', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-brand)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto var(--space-6)' }} />
-          <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>Gerando seu memorial...</h2>
-          <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>Estamos criando cada detalhe. Isso leva apenas alguns segundos.</p>
+      <>
+        <Header />
+        <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-4)', backgroundColor: 'var(--color-off-white)' }}>
+          <div style={{ textAlign: 'center', maxWidth: '400px' }}>
+            <div style={{ width: '40px', height: '40px', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-brand)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto var(--space-6)' }} />
+            <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>Gerando seu memorial...</h2>
+            <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>Estamos criando cada detalhe. Isso leva apenas alguns segundos.</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (status === 'erro') {
     return (
-      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-4)', backgroundColor: 'var(--color-off-white)' }}>
-        <div style={{ textAlign: 'center', maxWidth: '400px' }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-danger)', marginBottom: 'var(--space-2)' }}>Ops!</h2>
-          <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)' }}>{erro || 'Nao foi possivel gerar o memorial. Tente novamente.'}</p>
-          <Button variant="primary" onClick={() => router.push('/memorial')}>Voltar ao memorial</Button>
+      <>
+        <Header />
+        <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-4)', backgroundColor: 'var(--color-off-white)' }}>
+          <div style={{ textAlign: 'center', maxWidth: '400px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-danger)', marginBottom: 'var(--space-2)' }}>Ops!</h2>
+            <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)' }}>{erro || 'Nao foi possivel gerar o memorial. Tente novamente.'}</p>
+            <Button variant="primary" onClick={() => router.push('/memorial')}>Voltar ao memorial</Button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
-  // CORRECAO: pdfLiberado agora verifica o banco (persistente), nao so a URL
   const pdfLiberado = pdfJaComprado || (pagamentoAprovado && tipoProduto === 'memorial_pdf');
   const conteudoMemorial = pdfLiberado ? memorial : memorial.substring(0, 800);
   const mostrarBlur = !pdfLiberado && memorial.length > 800;
@@ -240,6 +243,9 @@ export default function ConclusaoPage() {
       <Head>
         <title>Seu memorial esta pronto — Descomplicai</title>
       </Head>
+
+      <Header />
+
       <div style={{ maxWidth: '640px', margin: '0 auto', padding: 'var(--space-6) var(--space-4) var(--space-8)', fontFamily: 'var(--font-body)' }}>
         <div style={{ marginBottom: 'var(--space-6)' }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-4xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>Memorial pronto!</h1>
@@ -266,13 +272,12 @@ export default function ConclusaoPage() {
               border: '1px dashed var(--color-border)',
             }}>
               O conteudo completo do memorial esta disponivel apos a compra do PDF.
-              <br />
-              Quer gerenciar seu casamento? Assine o plano mensal.
             </div>
           )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+          {/* PDF */}
           {pdfLiberado ? (
             <>
               <Button variant="primary" size="lg" fullWidth loading={baixandoPDF} onClick={baixarPDF}>
@@ -283,14 +288,16 @@ export default function ConclusaoPage() {
               </p>
             </>
           ) : (
-            <>
-              <Button variant="primary" size="lg" fullWidth loading={pagando} onClick={handleComprarPDF}>
-                {pagando ? 'Redirecionando...' : 'Baixar PDF completo — R$197'}
-              </Button>
-              <Button variant="secondary" size="lg" fullWidth loading={pagando} onClick={handleComprarAssinatura}>
-                {pagando ? 'Redirecionando...' : 'Gerenciar meu casamento — R$29,90/mes'}
-              </Button>
-            </>
+            <Button variant="primary" size="lg" fullWidth loading={pagando} onClick={handleComprarPDF}>
+              {pagando ? 'Redirecionando...' : 'Baixar PDF completo — R$197'}
+            </Button>
+          )}
+
+          {/* ASSINATURA: sempre mostra se nao tiver assinatura */}
+          {!assinaturaAtiva && (
+            <Button variant="secondary" size="lg" fullWidth loading={pagando} onClick={handleComprarAssinatura}>
+              {pagando ? 'Redirecionando...' : 'Gerenciar meu casamento — R$29,90/mes'}
+            </Button>
           )}
         </div>
 
