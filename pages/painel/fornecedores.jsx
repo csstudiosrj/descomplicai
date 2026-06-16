@@ -1,67 +1,179 @@
-// Gestão de fornecedores contratados e em negociação
-// Dependências diretas: React, next/head
-
-import React, { useState } from 'react';
+// pages/painel/fornecedores.jsx — Gestão de fornecedores
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import Card from '../../components/ui/Card';
-import Badge from '../../components/ui/Badge';
-import Input from '../../components/ui/Input';
-import Button from '../../components/ui/Button';
+import ProtectedRoute from '../../components/painel/ProtectedRoute';
+import HeaderPainel from '../../components/painel/HeaderPainel';
+import Icon from '../../components/ui/Icon';
+import { useAuth } from '../../hooks/useAuth';
 
-const FORNECEDORES_INICIAIS = [
-  { id: 1, nome: 'Espaço Villa Real', categoria: 'Espaço', status: 'contratado', valor: 15000 },
-  { id: 2, nome: 'Buffet Sabores', categoria: 'Buffet', status: 'negociacao', valor: 12000 },
-  { id: 3, nome: 'Foto Arte', categoria: 'Fotografia', status: 'orcamento', valor: null },
-];
+const STATUS_LABELS = {
+  a_contratar: 'A contratar',
+  negociando: 'Negociando',
+  contratado: 'Contratado',
+  pago: 'Pago',
+  pendente: 'Pendente',
+  cancelado: 'Cancelado',
+};
 
-const STATUS_BADGE = {
-  contratado: 'success',
-  negociacao: 'warning',
-  orcamento: 'info',
-  cancelado: 'danger',
+const STATUS_COLORS = {
+  a_contratar: '#8B6F5E',
+  negociando: '#1565C0',
+  contratado: '#2E7D32',
+  pago: '#00838F',
+  pendente: '#F9A825',
+  cancelado: '#C62828',
 };
 
 export default function FornecedoresPage() {
-  const [fornecedores, setFornecedores] = useState(FORNECEDORES_INICIAIS);
-  const [busca, setBusca] = useState('');
+  return (
+    <ProtectedRoute>
+      <FornecedoresContent />
+    </ProtectedRoute>
+  );
+}
 
-  const filtrados = fornecedores.filter((f) => f.nome.toLowerCase().includes(busca.toLowerCase()));
+function FornecedoresContent() {
+  const { evento, signOut, supabase } = useAuth();
+  const [fornecedores, setFornecedores] = useState([]);
+  const [modalAberto, setModalAberto] = useState(false);
+  const [form, setForm] = useState({});
+
+  useEffect(() => {
+    if (evento) buscar();
+  }, [evento]);
+
+  const buscar = async () => {
+    const { data } = await supabase
+      .from('fornecedores')
+      .select('*')
+      .eq('evento_id', evento.id)
+      .order('categoria');
+    setFornecedores(data || []);
+  };
+
+  const salvar = async () => {
+    const payload = { ...form, evento_id: evento.id };
+    if (form.id) {
+      await supabase.from('fornecedores').update(payload).eq('id', form.id);
+    } else {
+      await supabase.from('fornecedores').insert(payload);
+    }
+    setModalAberto(false);
+    setForm({});
+    buscar();
+  };
+
+  const excluir = async (id) => {
+    if (!confirm('Excluir fornecedor?')) return;
+    await supabase.from('fornecedores').delete().eq('id', id);
+    buscar();
+  };
+
+  const nomeCasal = evento
+    ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}`
+    : '';
 
   return (
     <>
-      <Head><title>Fornecedores — Descomplicaí</title></Head>
-      <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-off-white)', padding: 'var(--space-6) var(--space-4)' }}>
-        <div style={{ maxWidth: '960px', margin: '0 auto' }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-6)' }}>Fornecedores</h1>
-
-          <div style={{ marginBottom: 'var(--space-6)' }}>
-            <Input type="search" placeholder="Buscar fornecedor..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+      <Head><title>Fornecedores | descomplicaí</title></Head>
+      <div style={styles.page}>
+        <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} onLogout={signOut} />
+        <main style={styles.main}>
+          <div style={styles.header}>
+            <h1 style={styles.title}>Fornecedores</h1>
+            <button onClick={() => { setForm({}); setModalAberto(true); }} style={styles.btnPrimary}>
+              <Icon name="plus" size={16} color="#fff" /> Adicionar
+            </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--space-4)' }}>
-            {filtrados.map((f) => (
-              <Card key={f.id} variant="default" padding="lg">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
-                  <span style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }}>{f.nome}</span>
-                  <Badge variant={STATUS_BADGE[f.status]} size="sm" pill>{f.status}</Badge>
+          <div style={styles.grid}>
+            {fornecedores.map((f) => (
+              <div key={f.id} style={styles.card}>
+                <div style={styles.cardHeader}>
+                  <span style={styles.categoria}>{f.categoria}</span>
+                  <span style={{ ...styles.badge, background: STATUS_COLORS[f.status] || '#8B6F5E' }}>
+                    {STATUS_LABELS[f.status] || f.status}
+                  </span>
                 </div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-2)' }}>{f.categoria}</div>
-                {f.valor && (
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-base)', color: 'var(--color-text-primary)' }}>
-                    R$ {f.valor.toLocaleString('pt-BR')}
-                  </div>
-                )}
-              </Card>
+                <h3 style={styles.nome}>{f.nome}</h3>
+                <p style={styles.empresa}>{f.empresa}</p>
+
+                <div style={styles.contatos}>
+                  {f.telefone && <span><Icon name="phone" size={12} /> {f.telefone}</span>}
+                  {f.email && <span><Icon name="mail" size={12} /> {f.email}</span>}
+                </div>
+
+                <div style={styles.valores}>
+                  <span>Total: <strong>R$ {(f.valor_total || 0).toLocaleString('pt-BR')}</strong></span>
+                  <span>Entrada: R$ {(f.valor_entrada || 0).toLocaleString('pt-BR')}</span>
+                  <span>Saldo: R$ {(f.valor_saldo || 0).toLocaleString('pt-BR')}</span>
+                </div>
+
+                <div style={styles.acoes}>
+                  <button onClick={() => { setForm(f); setModalAberto(true); }} style={styles.btnIcon}>
+                    <Icon name="edit" size={16} />
+                  </button>
+                  <button onClick={() => excluir(f.id)} style={styles.btnIcon}>
+                    <Icon name="trash" size={16} />
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
-
-          {filtrados.length === 0 && (
-            <p style={{ textAlign: 'center', fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)', marginTop: 'var(--space-8)' }}>
-              Nenhum fornecedor encontrado.
-            </p>
-          )}
-        </div>
+        </main>
       </div>
+
+      {modalAberto && (
+        <div style={styles.modalOverlay} onClick={() => setModalAberto(false)}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h2 style={styles.modalTitle}>{form.id ? 'Editar' : 'Novo'} Fornecedor</h2>
+            <input style={styles.input} placeholder="Nome" value={form.nome || ''} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+            <input style={styles.input} placeholder="Empresa" value={form.empresa || ''} onChange={(e) => setForm({ ...form, empresa: e.target.value })} />
+            <input style={styles.input} placeholder="Categoria" value={form.categoria || ''} onChange={(e) => setForm({ ...form, categoria: e.target.value })} />
+            <input style={styles.input} placeholder="Telefone" value={form.telefone || ''} onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
+            <input style={styles.input} placeholder="Email" value={form.email || ''} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <input style={styles.input} placeholder="Instagram" value={form.instagram || ''} onChange={(e) => setForm({ ...form, instagram: e.target.value })} />
+            <input style={styles.input} placeholder="Site" value={form.site || ''} onChange={(e) => setForm({ ...form, site: e.target.value })} />
+            <input style={styles.input} placeholder="Serviço" value={form.servico || ''} onChange={(e) => setForm({ ...form, servico: e.target.value })} />
+            <input style={styles.input} placeholder="Valor Total" type="number" value={form.valor_total || ''} onChange={(e) => setForm({ ...form, valor_total: Number(e.target.value) })} />
+            <input style={styles.input} placeholder="Entrada" type="number" value={form.valor_entrada || ''} onChange={(e) => setForm({ ...form, valor_entrada: Number(e.target.value) })} />
+            <select style={styles.input} value={form.status || 'a_contratar'} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+              {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+            <textarea style={styles.textarea} placeholder="Notas" value={form.notas || ''} onChange={(e) => setForm({ ...form, notas: e.target.value })} />
+            <div style={styles.modalBotoes}>
+              <button onClick={() => setModalAberto(false)} style={styles.btnSecondary}>Cancelar</button>
+              <button onClick={salvar} style={styles.btnPrimary}>Salvar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
+
+const styles = {
+  page: { minHeight: '100vh', background: 'var(--color-fundo)' },
+  main: { maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
+  title: { fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--color-primary)' },
+  btnPrimary: { display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--color-primary)', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 },
+  btnSecondary: { background: 'var(--color-secondary)', color: 'var(--color-text)', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
+  btnIcon: { background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'var(--color-text-soft)' },
+  grid: { display: 'grid', gridTemplateColumns: '1fr', gap: '12px' },
+  card: { background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid var(--color-secondary)' },
+  cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' },
+  categoria: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--color-text-soft)' },
+  badge: { color: '#fff', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600 },
+  nome: { fontSize: '17px', fontWeight: 600, color: 'var(--color-text)', marginBottom: '2px' },
+  empresa: { fontSize: '13px', color: 'var(--color-text-soft)', marginBottom: '10px' },
+  contatos: { display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'var(--color-text-soft)', marginBottom: '10px' },
+  valores: { display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--color-text-soft)', marginBottom: '10px', flexWrap: 'wrap' },
+  acoes: { display: 'flex', gap: '8px', justifyContent: 'flex-end' },
+  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '16px' },
+  modal: { background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflow: 'auto' },
+  modalTitle: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-primary)', marginBottom: '16px' },
+  input: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-secondary)', marginBottom: '10px', fontSize: '14px', fontFamily: 'var(--font-body)' },
+  textarea: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-secondary)', marginBottom: '10px', fontSize: '14px', fontFamily: 'var(--font-body)', minHeight: '80px', resize: 'vertical' },
+  modalBotoes: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' },
+};

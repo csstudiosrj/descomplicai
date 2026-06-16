@@ -1,78 +1,161 @@
-// Checklist de tarefas — acompanhamento de pendências do casamento
-// Dependências diretas: React, next/head
-
-import React, { useState } from 'react';
+// pages/painel/checklist.jsx — Tarefas
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import Card from '../../components/ui/Card';
-import Badge from '../../components/ui/Badge';
-import Button from '../../components/ui/Button';
-
-const TAREFAS_INICIAIS = [
-  { id: 1, texto: 'Definir data do casamento', feita: true, categoria: 'Planejamento' },
-  { id: 2, texto: 'Escolher cidade/local', feita: true, categoria: 'Planejamento' },
-  { id: 3, texto: 'Reservar espaço/cerimonial', feita: false, categoria: 'Fornecedores' },
-  { id: 4, texto: 'Contratar fotógrafo', feita: false, categoria: 'Fornecedores' },
-  { id: 5, texto: 'Enviar save the date', feita: false, categoria: 'Papelaria' },
-];
+import ProtectedRoute from '../../components/painel/ProtectedRoute';
+import HeaderPainel from '../../components/painel/HeaderPainel';
+import Icon from '../../components/ui/Icon';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function ChecklistPage() {
-  const [tarefas, setTarefas] = useState(TAREFAS_INICIAIS);
-  const [nova, setNova] = useState('');
+  return (
+    <ProtectedRoute>
+      <ChecklistContent />
+    </ProtectedRoute>
+  );
+}
 
-  const toggle = (id) => {
-    setTarefas(tarefas.map((t) => t.id === id ? { ...t, feita: !t.feita } : t));
+function ChecklistContent() {
+  const { evento, signOut, supabase } = useAuth();
+  const [tarefas, setTarefas] = useState([]);
+  const [novaTarefa, setNovaTarefa] = useState('');
+  const [novoPrazo, setNovoPrazo] = useState('');
+
+  useEffect(() => {
+    if (evento) buscar();
+  }, [evento]);
+
+  const buscar = async () => {
+    const { data } = await supabase
+      .from('tarefas')
+      .select('*')
+      .eq('evento_id', evento.id)
+      .order('prazo', { ascending: true });
+    setTarefas(data || []);
   };
 
-  const adicionar = (e) => {
-    e.preventDefault();
-    if (!nova.trim()) return;
-    setTarefas([...tarefas, { id: Date.now(), texto: nova.trim(), feita: false, categoria: 'Personalizado' }]);
-    setNova('');
+  const toggle = async (id, concluida) => {
+    await supabase.from('tarefas').update({ concluida: !concluida }).eq('id', id);
+    buscar();
   };
 
-  const pendentes = tarefas.filter((t) => !t.feita).length;
-  const concluidas = tarefas.filter((t) => t.feita).length;
+  const adicionar = async () => {
+    if (!novaTarefa.trim()) return;
+    await supabase.from('tarefas').insert({
+      evento_id: evento.id,
+      titulo: novaTarefa,
+      prazo: novoPrazo || null,
+      concluida: false,
+    });
+    setNovaTarefa('');
+    setNovoPrazo('');
+    buscar();
+  };
+
+  const excluir = async (id) => {
+    if (!confirm('Excluir tarefa?')) return;
+    await supabase.from('tarefas').delete().eq('id', id);
+    buscar();
+  };
+
+  const hoje = new Date();
+  const grupos = {
+    urgente: tarefas.filter(t => !t.concluida && t.prazo && new Date(t.prazo) < hoje),
+    proximos: tarefas.filter(t => !t.concluida && t.prazo && {
+      const d = new Date(t.prazo);
+      return d >= hoje && d <= new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
+    }),
+    futuros: tarefas.filter(t => !t.concluida && (!t.prazo || new Date(t.prazo) > new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000))),
+    concluidos: tarefas.filter(t => t.concluida),
+  };
+
+  const nomeCasal = evento
+    ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}`
+    : '';
 
   return (
     <>
-      <Head><title>Checklist — Descomplicaí</title></Head>
-      <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-off-white)', padding: 'var(--space-6) var(--space-4)' }}>
-        <div style={{ maxWidth: '720px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-6)' }}>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>Checklist</h1>
-            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-              <Badge variant="warning">{pendentes} pendentes</Badge>
-              <Badge variant="success">{concluidas} feitas</Badge>
-            </div>
-          </div>
+      <Head><title>Checklist | descomplicaí</title></Head>
+      <div style={styles.page}>
+        <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} onLogout={signOut} />
+        <main style={styles.main}>
+          <h1 style={styles.title}>Checklist</h1>
 
-          <form onSubmit={adicionar} style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
+          <div style={styles.addBox}>
             <input
-              value={nova}
-              onChange={(e) => setNova(e.target.value)}
+              style={styles.input}
               placeholder="Nova tarefa..."
-              style={{ flex: 1, padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-border)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', outline: 'none' }}
+              value={novaTarefa}
+              onChange={(e) => setNovaTarefa(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && adicionar()}
             />
-            <Button type="submit" variant="primary">Adicionar</Button>
-          </form>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            {tarefas.map((t) => (
-              <Card key={t.id} variant={t.feita ? 'flat' : 'default'} padding="md" interactive onClick={() => toggle(t.id)}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                  <div style={{ width: '24px', height: '24px', borderRadius: 'var(--radius-sm)', border: `2px solid ${t.feita ? 'var(--color-success)' : 'var(--color-border-strong)'}`, backgroundColor: t.feita ? 'var(--color-success)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {t.feita && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}
-                  </div>
-                  <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', textDecoration: t.feita ? 'line-through' : 'none', color: t.feita ? 'var(--color-text-muted)' : 'var(--color-text-primary)', flex: 1 }}>
-                    {t.texto}
-                  </span>
-                  <Badge size="sm" variant="default">{t.categoria}</Badge>
-                </div>
-              </Card>
-            ))}
+            <input
+              style={{ ...styles.input, width: '130px' }}
+              type="date"
+              value={novoPrazo}
+              onChange={(e) => setNovoPrazo(e.target.value)}
+            />
+            <button onClick={adicionar} style={styles.btnPrimary}>
+              <Icon name="plus" size={16} color="#fff" />
+            </button>
           </div>
-        </div>
+
+          {Object.entries({
+            urgente: { label: 'Urgente', color: '#C62828' },
+            proximos: { label: 'Próximos 30 dias', color: '#F9A825' },
+            futuros: { label: 'Futuros', color: '#1565C0' },
+            concluidos: { label: 'Concluídos', color: '#2E7D32' },
+          }).map(([key, meta]) => (
+            grupos[key].length > 0 && (
+              <section key={key} style={styles.section}>
+                <h2 style={{ ...styles.sectionTitle, color: meta.color }}>{meta.label} ({grupos[key].length})</h2>
+                <div style={styles.list}>
+                  {grupos[key].map((t) => (
+                    <div key={t.id} style={styles.item}>
+                      <button
+                        onClick={() => toggle(t.id, t.concluida)}
+                        style={{
+                          ...styles.checkbox,
+                          background: t.concluida ? 'var(--color-primary)' : 'transparent',
+                          borderColor: t.concluida ? 'var(--color-primary)' : 'var(--color-secondary)',
+                        }}
+                      >
+                        {t.concluida && <Icon name="check" size={12} color="#fff" />}
+                      </button>
+                      <div style={styles.itemText}>
+                        <span style={{ ...styles.itemTitle, textDecoration: t.concluida ? 'line-through' : 'none', color: t.concluida ? 'var(--color-text-soft)' : 'var(--color-text)' }}>
+                          {t.titulo}
+                        </span>
+                        {t.prazo && <span style={styles.itemDate}>{t.prazo}</span>}
+                      </div>
+                      <button onClick={() => excluir(t.id)} style={styles.btnIcon}>
+                        <Icon name="trash" size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )
+          ))}
+        </main>
       </div>
     </>
   );
 }
+
+const styles = {
+  page: { minHeight: '100vh', background: 'var(--color-fundo)' },
+  main: { maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px' },
+  title: { fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--color-primary)', marginBottom: '20px' },
+  addBox: { display: 'flex', gap: '8px', marginBottom: '20px' },
+  input: { flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-secondary)', fontSize: '14px', fontFamily: 'var(--font-body)' },
+  btnPrimary: { display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-primary)', color: '#fff', border: 'none', padding: '10px 14px', borderRadius: '8px', cursor: 'pointer' },
+  btnIcon: { background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'var(--color-text-soft)' },
+  section: { marginBottom: '20px' },
+  sectionTitle: { fontFamily: 'var(--font-display)', fontSize: '16px', marginBottom: '10px' },
+  list: { background: '#fff', borderRadius: '12px', border: '1px solid var(--color-secondary)', overflow: 'hidden' },
+  item: { display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderBottom: '1px solid var(--color-secondary)' },
+  checkbox: { width: '20px', height: '20px', borderRadius: '4px', border: '2px solid', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, background: 'none' },
+  itemText: { flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' },
+  itemTitle: { fontSize: '14px', fontWeight: 500 },
+  itemDate: { fontSize: '11px', color: 'var(--color-text-soft)' },
+};

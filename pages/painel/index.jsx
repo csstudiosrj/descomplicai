@@ -1,109 +1,153 @@
-// Dashboard principal do casal — visão geral do planejamento
-// Protegido: redireciona para /memorial se não logado ou sem assinatura ativa
-// Dependências diretas: React, next/head, next/router, useAuth, Header, Card, Badge
-
-import React, { useEffect } from 'react';
+// pages/painel/index.jsx — Dashboard principal
+import { useEffect, useState } from 'react';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
-import Link from 'next/link';
+import ProtectedRoute from '../../components/painel/ProtectedRoute';
+import HeaderPainel from '../../components/painel/HeaderPainel';
+import ProgressBar from '../../components/painel/ProgressBar';
+import AlertCards from '../../components/painel/AlertCards';
+import NavCards from '../../components/painel/NavCards';
 import { useAuth } from '../../hooks/useAuth';
-import Header from '../../components/ui/Header';
-import Card from '../../components/ui/Card';
-import Badge from '../../components/ui/Badge';
-
-const MENU = [
-  { href: '/painel/fornecedores', label: 'Fornecedores', status: 'default' },
-  { href: '/painel/financeiro', label: 'Financeiro', status: 'warning' },
-  { href: '/painel/convidados', label: 'Convidados', status: 'default' },
-  { href: '/painel/checklist', label: 'Checklist', status: 'success' },
-  { href: '/painel/cronograma', label: 'Cronograma', status: 'default' },
-];
 
 export default function PainelPage() {
-  const router = useRouter();
-  const { usuario, logout, carregando, assinaturaAtiva } = useAuth();
+  return (
+    <ProtectedRoute>
+      <PainelContent />
+    </ProtectedRoute>
+  );
+}
+
+function PainelContent() {
+  const { user, evento, signOut, supabase } = useAuth();
+  const [progresso, setProgresso] = useState(0);
+  const [pagamentos, setPagamentos] = useState([]);
+  const [tarefas, setTarefas] = useState([]);
 
   useEffect(() => {
-    if (!carregando) {
-      if (!usuario || !assinaturaAtiva) {
-        router.replace('/memorial');
-      }
-    }
-  }, [carregando, usuario, assinaturaAtiva, router]);
+    if (!evento) return;
+    buscarDados();
+  }, [evento]);
 
-  if (carregando || !usuario || !assinaturaAtiva) {
-    return (
-      <div style={{
-        minHeight: '100dvh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'var(--font-body)',
-        color: 'var(--color-text-muted)',
-        backgroundColor: 'var(--color-off-white)',
-      }}>
-        Verificando acesso...
-      </div>
-    );
-  }
+  const buscarDados = async () => {
+    // Buscar tarefas
+    const { data: tarefasData } = await supabase
+      .from('tarefas')
+      .select('*')
+      .eq('evento_id', evento.id);
+
+    if (tarefasData) {
+      const total = tarefasData.length;
+      const concluidas = tarefasData.filter(t => t.concluida).length;
+      setProgresso(total > 0 ? Math.round((concluidas / total) * 100) : 0);
+
+      const hoje = new Date();
+      const tarefasComStatus = tarefasData.map(t => ({
+        ...t,
+        atrasada: t.prazo && new Date(t.prazo) < hoje && !t.concluida,
+      }));
+      setTarefas(tarefasComStatus);
+    }
+
+    // Buscar pagamentos
+    const { data: pagosData } = await supabase
+      .from('pagamentos')
+      .select('*')
+      .eq('evento_id', evento.id)
+      .eq('status', 'pendente');
+
+    if (pagosData) {
+      const hoje = new Date();
+      const pagosComDias = pagosData.map(p => {
+        const venc = new Date(p.data_vencimento);
+        const dias = Math.ceil((venc - hoje) / (1000 * 60 * 60 * 24));
+        return { ...p, dias };
+      }).filter(p => p.dias <= 7 && p.dias >= 0);
+      setPagamentos(pagosComDias);
+    }
+  };
+
+  const nomeCasal = evento
+    ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}`
+    : '';
 
   return (
     <>
       <Head>
-        <title>Painel — Descomplicaí</title>
+        <title>Painel | descomplicaí</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-off-white)' }}>
-        <Header logoSize="md">
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
-            {usuario?.email}
-          </span>
-          <button
-            onClick={logout}
-            style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-danger)', background: 'none', border: 'none', cursor: 'pointer' }}
-          >
-            Sair
-          </button>
-        </Header>
+      <div style={styles.page}>
+        <HeaderPainel
+          nomeCasal={nomeCasal}
+          dataEvento={evento?.data_evento}
+          onLogout={signOut}
+        />
 
-        <main style={{ maxWidth: '960px', margin: '0 auto', padding: 'var(--space-8) var(--space-4)' }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-6)' }}>
-            Painel
-          </h1>
+        <main style={styles.main}>
+          <ProgressBar
+            percentual={progresso}
+            label="Progresso do planejamento"
+          />
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 'var(--space-4)' }}>
-            {MENU.map((item) => (
-              <Link key={item.href} href={item.href} legacyBehavior>
-                <a style={{ textDecoration: 'none' }}>
-                  <Card variant="elevated" padding="lg" interactive>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
-                      <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }}>
-                        {item.label}
-                      </span>
-                      <Badge variant={item.status} size="sm" pill />
-                    </div>
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-                      Gerenciar {item.label.toLowerCase()}
-                    </span>
-                  </Card>
-                </a>
-              </Link>
-            ))}
-          </div>
+          <section style={styles.section}>
+            <h2 style={styles.sectionTitle}>Alertas</h2>
+            <AlertCards pagamentos={pagamentos} tarefas={tarefas} />
+          </section>
 
-          <div style={{ marginTop: 'var(--space-8)' }}>
-            <Link href="/memorial" legacyBehavior>
-              <a style={{ textDecoration: 'none' }}>
-                <Card variant="outlined" padding="md" interactive>
-                  <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', color: 'var(--color-brand)' }}>
-                    Continuar meu memorial
-                  </span>
-                </Card>
-              </a>
-            </Link>
-          </div>
+          <section style={styles.section}>
+            <h2 style={styles.sectionTitle}>Navegação</h2>
+            <NavCards />
+          </section>
         </main>
       </div>
+
+      <style jsx global>{`
+        :root {
+          --color-primary: #8B6F5E;
+          --color-secondary: #E5E0D9;
+          --color-tertiary: #F9F7F4;
+          --color-fundo: #F9F7F4;
+          --color-text: #1A1714;
+          --color-text-soft: #5C534A;
+          --font-display: 'Cormorant Garamond', Georgia, serif;
+          --font-body: 'DM Sans', Helvetica, Arial, sans-serif;
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+          font-family: var(--font-body);
+          color: var(--color-text);
+          background: var(--color-fundo);
+        }
+      `}</style>
     </>
   );
 }
+
+const styles = {
+  page: {
+    minHeight: '100vh',
+    background: 'var(--color-fundo)',
+  },
+  main: {
+    maxWidth: '960px',
+    margin: '0 auto',
+    padding: '20px 16px 40px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '24px',
+  },
+  section: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+  sectionTitle: {
+    fontFamily: 'var(--font-display)',
+    fontSize: '18px',
+    color: 'var(--color-primary)',
+    fontWeight: 600,
+  },
+};

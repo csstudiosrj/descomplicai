@@ -1,101 +1,144 @@
-// Controle financeiro — orçamento, pagamentos e saldo
-// Dependências diretas: React, next/head
-
-import React, { useState } from 'react';
+// pages/painel/financeiro.jsx — Controle financeiro
+import { useState, useEffect, useMemo } from 'react';
 import Head from 'next/head';
-import Card from '../../components/ui/Card';
-import Badge from '../../components/ui/Badge';
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
+import ProtectedRoute from '../../components/painel/ProtectedRoute';
+import HeaderPainel from '../../components/painel/HeaderPainel';
+import Icon from '../../components/ui/Icon';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function FinanceiroPage() {
-  const [orcamentoTotal, setOrcamentoTotal] = useState(50000);
-  const [despesas, setDespesas] = useState([
-    { id: 1, item: 'Espaço', valor: 15000, pago: true, categoria: 'Local' },
-    { id: 2, item: 'Buffet', valor: 12000, pago: false, categoria: 'Alimentação' },
-    { id: 3, item: 'Fotografia', valor: 4000, pago: false, categoria: 'Serviços' },
-  ]);
-  const [novoItem, setNovoItem] = useState('');
-  const [novoValor, setNovoValor] = useState('');
+  return (
+    <ProtectedRoute>
+      <FinanceiroContent />
+    </ProtectedRoute>
+  );
+}
 
-  const totalGasto = despesas.reduce((acc, d) => acc + d.valor, 0);
-  const totalPago = despesas.filter((d) => d.pago).reduce((acc, d) => acc + d.valor, 0);
-  const percentual = orcamentoTotal > 0 ? (totalGasto / orcamentoTotal) * 100 : 0;
+function FinanceiroContent() {
+  const { evento, signOut, supabase } = useAuth();
+  const [pagamentos, setPagamentos] = useState([]);
 
-  const adicionar = (e) => {
-    e.preventDefault();
-    if (!novoItem || !novoValor) return;
-    setDespesas([...despesas, { id: Date.now(), item: novoItem, valor: Number(novoValor), pago: false, categoria: 'Outros' }]);
-    setNovoItem('');
-    setNovoValor('');
+  useEffect(() => {
+    if (evento) buscar();
+  }, [evento]);
+
+  const buscar = async () => {
+    const { data } = await supabase
+      .from('pagamentos')
+      .select('*')
+      .eq('evento_id', evento.id)
+      .order('data_vencimento');
+    setPagamentos(data || []);
   };
 
-  const togglePago = (id) => {
-    setDespesas(despesas.map((d) => d.id === id ? { ...d, pago: !d.pago } : d));
-  };
+  const resumo = useMemo(() => {
+    const total = evento?.orcamento_total || 0;
+    const comprometido = pagamentos.reduce((s, p) => s + (p.valor_total || 0), 0);
+    const pago = pagamentos.reduce((s, p) => s + (p.valor_pago || 0), 0);
+    const saldo = comprometido - pago;
+    return { total, comprometido, pago, saldo };
+  }, [evento, pagamentos]);
+
+  const porCategoria = useMemo(() => {
+    const map = {};
+    pagamentos.forEach((p) => {
+      const cat = p.categoria || 'Outros';
+      map[cat] = (map[cat] || 0) + (p.valor_total || 0);
+    });
+    return Object.entries(map).sort((a, b) => b[1] - a[1]);
+  }, [pagamentos]);
+
+  const nomeCasal = evento
+    ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}`
+    : '';
 
   return (
     <>
-      <Head><title>Financeiro — Descomplicaí</title></Head>
-      <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-off-white)', padding: 'var(--space-6) var(--space-4)' }}>
-        <div style={{ maxWidth: '960px', margin: '0 auto' }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-6)' }}>Financeiro</h1>
+      <Head><title>Financeiro | descomplicaí</title></Head>
+      <div style={styles.page}>
+        <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} onLogout={signOut} />
+        <main style={styles.main}>
+          <h1 style={styles.title}>Financeiro</h1>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-8)' }}>
-            <Card variant="elevated" padding="lg">
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-1)' }}>Orçamento total</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>R$ {orcamentoTotal.toLocaleString('pt-BR')}</div>
-            </Card>
-            <Card variant="elevated" padding="lg">
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-1)' }}>Total gasto</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-danger)' }}>R$ {totalGasto.toLocaleString('pt-BR')}</div>
-            </Card>
-            <Card variant="elevated" padding="lg">
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-1)' }}>Pago</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-success)' }}>R$ {totalPago.toLocaleString('pt-BR')}</div>
-            </Card>
-          </div>
-
-          <div style={{ marginBottom: 'var(--space-6)' }}>
-            <div style={{ height: '8px', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--color-border)', overflow: 'hidden', marginBottom: 'var(--space-2)' }}>
-              <div style={{ width: `${Math.min(percentual, 100)}%`, height: '100%', backgroundColor: percentual > 100 ? 'var(--color-danger)' : 'var(--color-brand)', transition: 'width 400ms ease' }} />
+          <div style={styles.cards}>
+            <div style={styles.card}>
+              <span style={styles.cardLabel}>Orçamento Total</span>
+              <span style={styles.cardValue}>R$ {resumo.total.toLocaleString('pt-BR')}</span>
             </div>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', textAlign: 'right' }}>
-              {percentual.toFixed(1)}% do orçamento utilizado
+            <div style={styles.card}>
+              <span style={styles.cardLabel}>Comprometido</span>
+              <span style={styles.cardValue}>R$ {resumo.comprometido.toLocaleString('pt-BR')}</span>
+            </div>
+            <div style={styles.card}>
+              <span style={styles.cardLabel}>Pago</span>
+              <span style={styles.cardValue}>R$ {resumo.pago.toLocaleString('pt-BR')}</span>
+            </div>
+            <div style={styles.card}>
+              <span style={styles.cardLabel}>Saldo a Pagar</span>
+              <span style={styles.cardValue}>R$ {resumo.saldo.toLocaleString('pt-BR')}</span>
             </div>
           </div>
 
-          <form onSubmit={adicionar} style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-6)', flexWrap: 'wrap' }}>
-            <div style={{ flex: 2, minWidth: '200px' }}>
-              <Input placeholder="Item (ex: Decoração)" value={novoItem} onChange={(e) => setNovoItem(e.target.value)} />
+          <section style={styles.section}>
+            <h2 style={styles.sectionTitle}>Distribuição por Categoria</h2>
+            <div style={styles.chart}>
+              {porCategoria.map(([cat, val]) => {
+                const pct = resumo.comprometido > 0 ? (val / resumo.comprometido) * 100 : 0;
+                return (
+                  <div key={cat} style={styles.chartRow}>
+                    <span style={styles.chartLabel}>{cat}</span>
+                    <div style={styles.chartTrack}>
+                      <div style={{ ...styles.chartFill, width: `${pct}%` }} />
+                    </div>
+                    <span style={styles.chartValue}>R$ {val.toLocaleString('pt-BR')}</span>
+                  </div>
+                );
+              })}
             </div>
-            <div style={{ flex: 1, minWidth: '120px' }}>
-              <Input type="number" placeholder="Valor R$" value={novoValor} onChange={(e) => setNovoValor(e.target.value)} />
-            </div>
-            <Button type="submit" variant="primary">Adicionar</Button>
-          </form>
+          </section>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            {despesas.map((d) => (
-              <Card key={d.id} variant="default" padding="md" interactive onClick={() => togglePago(d.id)}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-                  <div style={{ width: '24px', height: '24px', borderRadius: 'var(--radius-sm)', border: `2px solid ${d.pago ? 'var(--color-success)' : 'var(--color-border-strong)'}`, backgroundColor: d.pago ? 'var(--color-success)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {d.pago && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>}
+          <section style={styles.section}>
+            <h2 style={styles.sectionTitle}>Vencimentos</h2>
+            <div style={styles.list}>
+              {pagamentos.map((p) => (
+                <div key={p.id} style={styles.listItem}>
+                  <div style={styles.listInfo}>
+                    <span style={styles.listName}>{p.nome}</span>
+                    <span style={styles.listDate}>
+                      <Icon name="calendar" size={12} /> {p.data_vencimento}
+                    </span>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-primary)' }}>{d.item}</div>
-                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{d.categoria}</div>
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-base)', color: 'var(--color-text-primary)' }}>
-                    R$ {d.valor.toLocaleString('pt-BR')}
-                  </div>
-                  <Badge variant={d.pago ? 'success' : 'warning'} size="sm">{d.pago ? 'Pago' : 'Pendente'}</Badge>
+                  <span style={styles.listValue}>R$ {(p.valor_saldo || 0).toLocaleString('pt-BR')}</span>
                 </div>
-              </Card>
-            ))}
-          </div>
-        </div>
+              ))}
+            </div>
+          </section>
+        </main>
       </div>
     </>
   );
 }
+
+const styles = {
+  page: { minHeight: '100vh', background: 'var(--color-fundo)' },
+  main: { maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px' },
+  title: { fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--color-primary)', marginBottom: '20px' },
+  cards: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' },
+  card: { background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid var(--color-secondary)', display: 'flex', flexDirection: 'column', gap: '4px' },
+  cardLabel: { fontSize: '12px', color: 'var(--color-text-soft)', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  cardValue: { fontSize: '18px', fontWeight: 700, color: 'var(--color-text)' },
+  section: { marginBottom: '24px' },
+  sectionTitle: { fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--color-primary)', marginBottom: '12px' },
+  chart: { background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid var(--color-secondary)', display: 'flex', flexDirection: 'column', gap: '10px' },
+  chartRow: { display: 'flex', alignItems: 'center', gap: '10px' },
+  chartLabel: { width: '100px', fontSize: '12px', color: 'var(--color-text)', flexShrink: 0 },
+  chartTrack: { flex: 1, height: '8px', background: 'var(--color-secondary)', borderRadius: '4px', overflow: 'hidden' },
+  chartFill: { height: '100%', background: 'var(--color-primary)', borderRadius: '4px' },
+  chartValue: { width: '80px', fontSize: '12px', color: 'var(--color-text-soft)', textAlign: 'right', flexShrink: 0 },
+  list: { background: '#fff', borderRadius: '12px', border: '1px solid var(--color-secondary)', overflow: 'hidden' },
+  listItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--color-secondary)' },
+  listInfo: { display: 'flex', flexDirection: 'column', gap: '2px' },
+  listName: { fontSize: '14px', fontWeight: 500, color: 'var(--color-text)' },
+  listDate: { fontSize: '12px', color: 'var(--color-text-soft)', display: 'flex', alignItems: 'center', gap: '4px' },
+  listValue: { fontSize: '14px', fontWeight: 600, color: 'var(--color-primary)' },
+};
