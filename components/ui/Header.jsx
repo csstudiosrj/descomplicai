@@ -5,11 +5,11 @@ import { useAuth } from '../../hooks/useAuth';
 import Logo from './Logo';
 
 export default function Header() {
-  const { usuario, carregando, logout } = useAuth();
+  const { user, carregando, signOut } = useAuth();
   const router = useRouter();
 
   const handleLogout = async () => {
-    await logout();
+    await signOut();
     router.push('/');
   };
 
@@ -32,7 +32,7 @@ export default function Header() {
                   Carregando...
                 </span>
               </li>
-            ) : usuario ? (
+            ) : user ? (
               <>
                 <li>
                   <Link href="/painel" className="header-nav-link">
