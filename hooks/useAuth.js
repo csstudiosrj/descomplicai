@@ -38,7 +38,7 @@ export function useAuth() {
     const { data } = await supabase
       .from('eventos')
       .select('*')
-      .eq('user_id', userId)
+      .eq('usuario_id', userId)
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
