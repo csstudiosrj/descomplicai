@@ -39,7 +39,7 @@ export function useAuth() {
       .from('eventos')
       .select('*')
       .eq('usuario_id', userId)
-      .order('created_at', { ascending: false })
+      .order('criado_em', { ascending: false })
       .limit(1)
       .single();
     setEvento(data);
