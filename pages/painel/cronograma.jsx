@@ -1,47 +1,165 @@
-// Cronograma do evento — timeline do grande dia
-// Dependências diretas: React, next/head
-
-import React from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import Card from '../../components/ui/Card';
-
-const EVENTOS = [
-  { hora: '14:00', titulo: 'Chegada dos fornecedores', local: 'Salão', responsavel: 'Cerimonialista' },
-  { hora: '15:30', titulo: 'Início da cerimônia', local: 'Altar', responsavel: 'Celebrante' },
-  { hora: '16:30', titulo: 'Coquetel de recepção', local: 'Jardim', responsavel: 'Buffet' },
-  { hora: '18:00', titulo: 'Início do jantar', local: 'Salão principal', responsavel: 'Buffet' },
-  { hora: '20:00', titulo: 'Abertura da pista', local: 'Salão principal', responsavel: 'DJ/Banda' },
-  { hora: '23:00', titulo: 'Saída dos noivos', local: 'Portaria', responsavel: 'Cerimonialista' },
-];
+import ProtectedRoute from '../../components/painel/ProtectedRoute';
+import HeaderPainel from '../../components/painel/HeaderPainel';
+import Icon from '../../components/ui/Icon';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function CronogramaPage() {
   return (
+    <ProtectedRoute>
+      <CronogramaContent />
+    </ProtectedRoute>
+  );
+}
+
+function CronogramaContent() {
+  const { evento, signOut, supabase } = useAuth();
+  const [itens, setItens] = useState([]);
+  const [novoHora, setNovoHora] = useState('');
+  const [novoTitulo, setNovoTitulo] = useState('');
+  const [novoLocal, setNovoLocal] = useState('');
+  const [novoResp, setNovoResp] = useState('');
+  const [editando, setEditando] = useState(null);
+
+  useEffect(() => {
+    if (evento) buscar();
+  }, [evento]);
+
+  const buscar = async () => {
+    const { data } = await supabase
+      .from('cronograma')
+      .select('*')
+      .eq('evento_id', evento.id)
+      .order('hora');
+    if (data?.length) {
+      setItens(data);
+    } else {
+      gerarDoMemorial();
+    }
+  };
+
+  const gerarDoMemorial = async () => {
+    const { data: mem } = await supabase
+      .from('memoriais')
+      .select('*')
+      .eq('evento_id', evento.id)
+      .limit(1)
+      .single();
+
+    const base = mem?.conteudo || mem?.texto || '';
+    const padrao = [
+      { hora: '14:00', titulo: 'Chegada dos fornecedores', local: 'Salão', responsavel: 'Cerimonialista' },
+      { hora: '15:30', titulo: 'Início da cerimônia', local: 'Altar', responsavel: 'Celebrante' },
+      { hora: '16:30', titulo: 'Coquetel de recepção', local: 'Jardim', responsavel: 'Buffet' },
+      { hora: '18:00', titulo: 'Início do jantar', local: 'Salão principal', responsavel: 'Buffet' },
+      { hora: '20:00', titulo: 'Abertura da pista', local: 'Salão principal', responsavel: 'DJ/Banda' },
+      { hora: '23:00', titulo: 'Saída dos noivos', local: 'Portaria', responsavel: 'Cerimonialista' },
+    ];
+    setItens(padrao);
+  };
+
+  const salvar = async () => {
+    if (!novoHora || !novoTitulo.trim()) return;
+    const payload = {
+      evento_id: evento.id,
+      hora: novoHora,
+      titulo: novoTitulo,
+      local: novoLocal,
+      responsavel: novoResp,
+    };
+    if (editando) {
+      await supabase.from('cronograma').update(payload).eq('id', editando);
+      setEditando(null);
+    } else {
+      await supabase.from('cronograma').insert(payload);
+    }
+    setNovoHora(''); setNovoTitulo(''); setNovoLocal(''); setNovoResp('');
+    buscar();
+  };
+
+  const editar = (item) => {
+    setNovoHora(item.hora);
+    setNovoTitulo(item.titulo);
+    setNovoLocal(item.local || '');
+    setNovoResp(item.responsavel || '');
+    setEditando(item.id);
+  };
+
+  const excluir = async (id) => {
+    if (!confirm('Excluir item?')) return;
+    await supabase.from('cronograma').delete().eq('id', id);
+    buscar();
+  };
+
+  const nomeCasal = evento
+    ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}`
+    : '';
+
+  return (
     <>
-      <Head><title>Cronograma — Descomplicaí</title></Head>
-      <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-off-white)', padding: 'var(--space-6) var(--space-4)' }}>
-        <div style={{ maxWidth: '720px', margin: '0 auto' }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-8)' }}>Cronograma</h1>
+      <Head><title>Cronograma | descomplicaí</title></Head>
+      <div style={styles.page}>
+        <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} onLogout={signOut} />
+        <main style={styles.main}>
+          <h1 style={styles.title}>Cronograma do Dia</h1>
 
-          <div style={{ position: 'relative', paddingLeft: 'var(--space-8)' }}>
-            <div style={{ position: 'absolute', left: '12px', top: 0, bottom: 0, width: '2px', backgroundColor: 'var(--color-border-strong)' }} />
+          <div style={styles.form}>
+            <input style={{ ...styles.input, width: '80px' }} type="time" value={novoHora} onChange={e => setNovoHora(e.target.value)} />
+            <input style={styles.input} placeholder="Título" value={novoTitulo} onChange={e => setNovoTitulo(e.target.value)} />
+            <input style={{ ...styles.input, width: '140px' }} placeholder="Local" value={novoLocal} onChange={e => setNovoLocal(e.target.value)} />
+            <input style={{ ...styles.input, width: '140px' }} placeholder="Responsável" value={novoResp} onChange={e => setNovoResp(e.target.value)} />
+            <button onClick={salvar} style={styles.btnPrimary}>
+              <Icon name={editando ? 'check' : 'plus'} size={16} color="#fff" />
+            </button>
+            {editando && <button onClick={() => { setEditando(null); setNovoHora(''); setNovoTitulo(''); setNovoLocal(''); setNovoResp(''); }} style={styles.btnSecondary}>Cancelar</button>}
+          </div>
 
-            {EVENTOS.map((e, i) => (
-              <div key={i} style={{ position: 'relative', marginBottom: 'var(--space-6)' }}>
-                <div style={{ position: 'absolute', left: '-26px', top: '4px', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--color-brand)', border: '2px solid var(--color-white)' }} />
-                <Card variant="default" padding="md">
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-3)', marginBottom: 'var(--space-1)' }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-bold)', color: 'var(--color-brand)' }}>{e.hora}</span>
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }}>{e.titulo}</span>
+          <div style={styles.timeline}>
+            <div style={styles.line} />
+            {itens.sort((a, b) => a.hora.localeCompare(b.hora)).map((item, i) => (
+              <div key={item.id || i} style={styles.item}>
+                <div style={styles.dot} />
+                <div style={styles.card}>
+                  <div style={styles.cardHeader}>
+                    <span style={styles.hora}>{item.hora}</span>
+                    <span style={styles.titulo}>{item.titulo}</span>
                   </div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
-                    {e.local} · Responsável: {e.responsavel}
+                  <div style={styles.cardMeta}>
+                    {item.local && <span><Icon name="map" size={12} /> {item.local}</span>}
+                    {item.responsavel && <span>· Responsável: {item.responsavel}</span>}
                   </div>
-                </Card>
+                  <div style={styles.cardAcoes}>
+                    <button onClick={() => editar(item)} style={styles.btnIcon}><Icon name="edit" size={14} /></button>
+                    <button onClick={() => excluir(item.id)} style={styles.btnIcon}><Icon name="trash" size={14} /></button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
-        </div>
+        </main>
       </div>
     </>
   );
 }
+
+const styles = {
+  page: { minHeight: '100vh', background: 'var(--color-fundo)' },
+  main: { maxWidth: '720px', margin: '0 auto', padding: '20px 16px 40px' },
+  title: { fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--color-primary)', marginBottom: '20px' },
+  form: { display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center' },
+  input: { flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-secondary)', fontSize: '14px', minWidth: '100px' },
+  btnPrimary: { display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-primary)', color: '#fff', border: 'none', padding: '10px 14px', borderRadius: '8px', cursor: 'pointer' },
+  btnSecondary: { background: 'var(--color-secondary)', color: 'var(--color-text)', border: 'none', padding: '10px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' },
+  btnIcon: { background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--color-text-soft)' },
+  timeline: { position: 'relative', paddingLeft: '28px' },
+  line: { position: 'absolute', left: '10px', top: 0, bottom: 0, width: '2px', background: 'var(--color-secondary)' },
+  item: { position: 'relative', marginBottom: '16px' },
+  dot: { position: 'absolute', left: '-24px', top: '14px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--color-primary)', border: '2px solid var(--color-fundo)' },
+  card: { background: '#fff', borderRadius: '12px', padding: '14px 16px', border: '1px solid var(--color-secondary)' },
+  cardHeader: { display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '6px' },
+  hora: { fontFamily: 'var(--font-mono)', fontSize: '14px', fontWeight: 700, color: 'var(--color-primary)' },
+  titulo: { fontSize: '15px', fontWeight: 600, color: 'var(--color-text)' },
+  cardMeta: { fontSize: '12px', color: 'var(--color-text-soft)', display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' },
+  cardAcoes: { display: 'flex', gap: '8px', justifyContent: 'flex-end' },
+};
