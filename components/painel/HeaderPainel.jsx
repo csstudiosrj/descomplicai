@@ -53,8 +53,7 @@ const styles = {
     background: 'var(--color-fundo)',
     borderBottom: '1px solid var(--color-secondary)',
     padding: '16px 0',
-    position: 'sticky',
-    top: 0,
+    marginTop: '60px', // Compensa header fixo do site
     zIndex: 100,
   },
   container: {
