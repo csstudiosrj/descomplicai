@@ -45,6 +45,12 @@ export function useAuth() {
     setEvento(data);
   }, []);
 
+  const login = useCallback(async (email, senha) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
+    if (data?.user) await buscarEvento(data.user.id);
+    return { data, error };
+  }, []);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -55,7 +61,7 @@ export function useAuth() {
     evento && (evento.assinatura_ativa === true || evento.plano === 'pdf')
   );
 
-  return { user, evento, loading, hasAccess, signOut, supabase };
+  return { user, evento, loading, carregando: loading, hasAccess, login, signOut, supabase };
 }
 
 export { supabase };

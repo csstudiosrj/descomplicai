@@ -9,7 +9,7 @@ import Button from '../components/ui/Button';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, loginSocial, carregando } = useAuth();
+  const { login, carregando } = useAuth();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
@@ -60,10 +60,6 @@ export default function LoginPage() {
 
             <Button type="submit" variant="primary" size="lg" fullWidth loading={enviando || carregando}>Entrar</Button>
           </form>
-
-          <div style={{ marginTop: 'var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            <Button variant="secondary" size="md" fullWidth onClick={() => loginSocial('google')}>Entrar com Google</Button>
-          </div>
 
           <p style={{ textAlign: 'center', marginTop: 'var(--space-6)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
             Ainda não tem conta?{' '}
