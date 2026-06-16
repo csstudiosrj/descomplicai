@@ -1,8 +1,8 @@
-// components/painel/HeaderPainel.jsx — Header do painel
+// components/painel/HeaderPainel.jsx
 import { useMemo } from 'react';
 import Icon from '../ui/Icon';
 
-export default function HeaderPainel({ nomeCasal, dataEvento, onLogout }) {
+export default function HeaderPainel({ nomeCasal, dataEvento }) {
   const diasRestantes = useMemo(() => {
     if (!dataEvento) return null;
     const hoje = new Date();
@@ -40,9 +40,6 @@ export default function HeaderPainel({ nomeCasal, dataEvento, onLogout }) {
             )}
           </div>
         </div>
-        <button onClick={onLogout} style={styles.logoutBtn} aria-label="Sair">
-          <Icon name="logout" size={18} color="var(--color-text-soft)" />
-        </button>
       </div>
     </header>
   );
@@ -53,16 +50,13 @@ const styles = {
     background: 'var(--color-fundo)',
     borderBottom: '1px solid var(--color-secondary)',
     padding: '16px 0',
-    marginTop: '60px', // Compensa header fixo do site
+    marginTop: '60px',
     zIndex: 100,
   },
   container: {
     maxWidth: '960px',
     margin: '0 auto',
     padding: '0 16px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
   brand: {
     display: 'flex',
@@ -94,15 +88,5 @@ const styles = {
     borderRadius: '12px',
     fontSize: '11px',
     fontWeight: 600,
-  },
-  logoutBtn: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: '8px',
-    borderRadius: '8px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 };

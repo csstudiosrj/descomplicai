@@ -66,7 +66,7 @@ function PainelContent() {
   const nomeCasal = evento
     ? (evento.nome_pessoa1 && evento.nome_pessoa2
         ? `${evento.nome_pessoa1} & ${evento.nome_pessoa2}`
-        : evento.nome_evento || 'Seu Casamento')
+        : evento.nome_evento ? evento.nome_evento.split("&").map(n => n.trim().charAt(0).toUpperCase() + n.trim().slice(1)).join(" \evento.nome_evento || 'Seu Casamento' ") : "Seu Casamento")
     : '';
 
   return (
