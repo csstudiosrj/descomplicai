@@ -68,7 +68,7 @@ function PlaceholderStep({ titulo }) {
 export default function MemorialOrchestrator() {
   const router = useRouter();
   const { estado, setRespostas, carregarEstado, irParaEtapa, voltarEtapa } = useMemorial();
-  const { usuario, carregando: carregandoAuth } = useAuth();
+  const { user, loading: carregandoAuth } = useAuth();
   const { temDraft, carregarDraft, limparDraft, salvandoAgora } = useAutoSave(estado);
 
   const [transicionando, setTransicionando] = useState(false);
@@ -78,7 +78,7 @@ export default function MemorialOrchestrator() {
 
   // ========== RESTAURAÇÃO APÓS LOGIN VIA SUPABASE ==========
   useEffect(() => {
-    if (!usuario) return;
+    if (!user) return;
     if (estado.etapaAtual !== 0 || estado.perfilCasal) return;
     if (restauracaoFeita.current) return;
 
@@ -86,12 +86,12 @@ export default function MemorialOrchestrator() {
 
     async function buscarDoSupabase() {
       try {
-        console.log('buscando memorial para user_id:', usuario.id);
+        console.log('buscando memorial para user_id:', user.id);
 
         const { data, error } = await supabase
           .from('memoriais')
           .select('estado')
-          .eq('user_id', usuario.id)
+          .eq('user_id', user.id)
           .maybeSingle();
 
         console.log('resultado supabase:', data, error);
@@ -112,7 +112,7 @@ export default function MemorialOrchestrator() {
     }
 
     buscarDoSupabase();
-  }, [usuario, estado.etapaAtual, estado.perfilCasal, carregarEstado, carregarDraft]);
+  }, [user, estado.etapaAtual, estado.perfilCasal, carregarEstado, carregarDraft]);
 
   const etapasTotais = calcularEtapasTotais(estado);
   const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
@@ -129,7 +129,7 @@ export default function MemorialOrchestrator() {
       const proxima = calcularProximaEtapa(novoEstado, estado.etapaAtual);
       const etapaId = getEtapaPorIndice(proxima)?.id;
 
-      if (!usuario && deveExibirLoginAgora(novoEstado, etapaId)) {
+      if (!user && deveExibirLoginAgora(novoEstado, etapaId)) {
         setMostrandoLogin(true);
         setTransicionando(false);
         return;
@@ -138,7 +138,7 @@ export default function MemorialOrchestrator() {
       irParaEtapa(proxima);
       setTransicionando(false);
     }, 220);
-  }, [estado, setRespostas, irParaEtapa, usuario]);
+  }, [estado, setRespostas, irParaEtapa, user]);
 
   // ========== SALVA ESTADO NO sessionStorage ANTES DE IR PARA LOGIN ==========
   const handleIrParaLogin = (destino) => {
