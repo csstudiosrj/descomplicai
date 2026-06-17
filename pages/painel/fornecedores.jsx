@@ -1,10 +1,10 @@
-// pages/painel/fornecedores.jsx — Gestão de fornecedores
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
 import HeaderPainel from '../../components/painel/HeaderPainel';
 import Icon from '../../components/ui/Icon';
 import { useAuth } from '../../hooks/useAuth';
+import { getPainelServerSideProps } from '../../utils/painelServer';
 
 const STATUS_LABELS = {
   a_contratar: 'A contratar',
@@ -24,15 +24,15 @@ const STATUS_COLORS = {
   cancelado: '#C62828',
 };
 
-export default function FornecedoresPage() {
+export default function FornecedoresPage({ readOnly }) {
   return (
     <ProtectedRoute>
-      <FornecedoresContent />
+      <FornecedoresContent readOnly={readOnly} />
     </ProtectedRoute>
   );
 }
 
-function FornecedoresContent() {
+function FornecedoresContent({ readOnly }) {
   const { evento, signOut, supabase } = useAuth();
   const [fornecedores, setFornecedores] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
@@ -52,6 +52,7 @@ function FornecedoresContent() {
   };
 
   const salvar = async () => {
+    if (readOnly) return;
     const payload = { ...form, evento_id: evento.id };
     if (form.id) {
       await supabase.from('fornecedores').update(payload).eq('id', form.id);
@@ -64,7 +65,7 @@ function FornecedoresContent() {
   };
 
   const excluir = async (id) => {
-    if (!confirm('Excluir fornecedor?')) return;
+    if (readOnly || !confirm('Excluir fornecedor?')) return;
     await supabase.from('fornecedores').delete().eq('id', id);
     buscar();
   };
@@ -79,11 +80,16 @@ function FornecedoresContent() {
       <div style={styles.page}>
         <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} onLogout={signOut} />
         <main style={styles.main}>
+          {readOnly && (
+            <div style={styles.readOnlyBanner}><span style={styles.readOnlyText}>Modo somente leitura. Assine para editar.</span></div>
+          )}
           <div style={styles.header}>
             <h1 style={styles.title}>Fornecedores</h1>
-            <button onClick={() => { setForm({}); setModalAberto(true); }} style={styles.btnPrimary}>
-              <Icon name="plus" size={16} color="#fff" /> Adicionar
-            </button>
+            {!readOnly && (
+              <button onClick={() => { setForm({}); setModalAberto(true); }} style={styles.btnPrimary}>
+                <Icon name="plus" size={16} color="#fff" /> Adicionar
+              </button>
+            )}
           </div>
 
           <div style={styles.grid}>
@@ -109,21 +115,23 @@ function FornecedoresContent() {
                   <span>Saldo: R$ {(f.valor_saldo || 0).toLocaleString('pt-BR')}</span>
                 </div>
 
-                <div style={styles.acoes}>
-                  <button onClick={() => { setForm(f); setModalAberto(true); }} style={styles.btnIcon}>
-                    <Icon name="edit" size={16} />
-                  </button>
-                  <button onClick={() => excluir(f.id)} style={styles.btnIcon}>
-                    <Icon name="trash" size={16} />
-                  </button>
-                </div>
+                {!readOnly && (
+                  <div style={styles.acoes}>
+                    <button onClick={() => { setForm(f); setModalAberto(true); }} style={styles.btnIcon}>
+                      <Icon name="edit" size={16} />
+                    </button>
+                    <button onClick={() => excluir(f.id)} style={styles.btnIcon}>
+                      <Icon name="trash" size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </main>
       </div>
 
-      {modalAberto && (
+      {modalAberto && !readOnly && (
         <div style={styles.modalOverlay} onClick={() => setModalAberto(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h2 style={styles.modalTitle}>{form.id ? 'Editar' : 'Novo'} Fornecedor</h2>
@@ -152,6 +160,10 @@ function FornecedoresContent() {
   );
 }
 
+export async function getServerSideProps(context) {
+  return getPainelServerSideProps(context);
+}
+
 const styles = {
   page: { minHeight: '100vh', background: 'var(--color-fundo)' },
   main: { maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px' },
@@ -176,4 +188,6 @@ const styles = {
   input: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-secondary)', marginBottom: '10px', fontSize: '14px', fontFamily: 'var(--font-body)' },
   textarea: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-secondary)', marginBottom: '10px', fontSize: '14px', fontFamily: 'var(--font-body)', minHeight: '80px', resize: 'vertical' },
   modalBotoes: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' },
+  readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },
+  readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
 };

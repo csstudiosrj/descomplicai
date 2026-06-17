@@ -1,4 +1,3 @@
-// pages/painel/cronograma.jsx
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
@@ -69,7 +68,7 @@ function CronogramaContent({ readOnly }) {
 
   return (
     <>
-      <Head><title>Cronograma | descomplicai</title></Head>
+      <Head><title>Cronograma | descomplicaí</title></Head>
       <div style={styles.page}>
         <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} onLogout={signOut} />
         <main style={styles.main}>

@@ -1,20 +1,20 @@
-// pages/painel/financeiro.jsx — Controle financeiro
 import { useState, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
 import HeaderPainel from '../../components/painel/HeaderPainel';
 import Icon from '../../components/ui/Icon';
 import { useAuth } from '../../hooks/useAuth';
+import { getPainelServerSideProps } from '../../utils/painelServer';
 
-export default function FinanceiroPage() {
+export default function FinanceiroPage({ readOnly }) {
   return (
     <ProtectedRoute>
-      <FinanceiroContent />
+      <FinanceiroContent readOnly={readOnly} />
     </ProtectedRoute>
   );
 }
 
-function FinanceiroContent() {
+function FinanceiroContent({ readOnly }) {
   const { evento, signOut, supabase } = useAuth();
   const [pagamentos, setPagamentos] = useState([]);
 
@@ -58,6 +58,9 @@ function FinanceiroContent() {
       <div style={styles.page}>
         <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} onLogout={signOut} />
         <main style={styles.main}>
+          {readOnly && (
+            <div style={styles.readOnlyBanner}><span style={styles.readOnlyText}>Modo somente leitura. Assine para editar.</span></div>
+          )}
           <h1 style={styles.title}>Financeiro</h1>
 
           <div style={styles.cards}>
@@ -119,6 +122,10 @@ function FinanceiroContent() {
   );
 }
 
+export async function getServerSideProps(context) {
+  return getPainelServerSideProps(context);
+}
+
 const styles = {
   page: { minHeight: '100vh', background: 'var(--color-fundo)' },
   main: { maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px' },
@@ -141,4 +148,6 @@ const styles = {
   listName: { fontSize: '14px', fontWeight: 500, color: 'var(--color-text)' },
   listDate: { fontSize: '12px', color: 'var(--color-text-soft)', display: 'flex', alignItems: 'center', gap: '4px' },
   listValue: { fontSize: '14px', fontWeight: 600, color: 'var(--color-primary)' },
+  readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },
+  readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
 };

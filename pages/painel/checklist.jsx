@@ -1,20 +1,20 @@
-// pages/painel/checklist.jsx — Tarefas
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
 import HeaderPainel from '../../components/painel/HeaderPainel';
 import Icon from '../../components/ui/Icon';
 import { useAuth } from '../../hooks/useAuth';
+import { getPainelServerSideProps } from '../../utils/painelServer';
 
-export default function ChecklistPage() {
+export default function ChecklistPage({ readOnly }) {
   return (
     <ProtectedRoute>
-      <ChecklistContent />
+      <ChecklistContent readOnly={readOnly} />
     </ProtectedRoute>
   );
 }
 
-function ChecklistContent() {
+function ChecklistContent({ readOnly }) {
   const { evento, signOut, supabase } = useAuth();
   const [tarefas, setTarefas] = useState([]);
   const [novaTarefa, setNovaTarefa] = useState('');
@@ -34,12 +34,13 @@ function ChecklistContent() {
   };
 
   const toggle = async (id, concluida) => {
+    if (readOnly) return;
     await supabase.from('tarefas').update({ concluida: !concluida }).eq('id', id);
     buscar();
   };
 
   const adicionar = async () => {
-    if (!novaTarefa.trim()) return;
+    if (readOnly || !novaTarefa.trim()) return;
     await supabase.from('tarefas').insert({
       evento_id: evento.id,
       titulo: novaTarefa,
@@ -52,19 +53,22 @@ function ChecklistContent() {
   };
 
   const excluir = async (id) => {
-    if (!confirm('Excluir tarefa?')) return;
+    if (readOnly || !confirm('Excluir tarefa?')) return;
     await supabase.from('tarefas').delete().eq('id', id);
     buscar();
   };
 
   const hoje = new Date();
+  const trintaDias = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
+
   const grupos = {
     urgente: tarefas.filter(t => !t.concluida && t.prazo && new Date(t.prazo) < hoje),
-    proximos: tarefas.filter(t => !t.concluida && t.prazo && {
+    proximos: tarefas.filter(t => {
+      if (t.concluida || !t.prazo) return false;
       const d = new Date(t.prazo);
-      return d >= hoje && d <= new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
+      return d >= hoje && d <= trintaDias;
     }),
-    futuros: tarefas.filter(t => !t.concluida && (!t.prazo || new Date(t.prazo) > new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000))),
+    futuros: tarefas.filter(t => !t.concluida && (!t.prazo || new Date(t.prazo) > trintaDias)),
     concluidos: tarefas.filter(t => t.concluida),
   };
 
@@ -78,26 +82,31 @@ function ChecklistContent() {
       <div style={styles.page}>
         <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} onLogout={signOut} />
         <main style={styles.main}>
+          {readOnly && (
+            <div style={styles.readOnlyBanner}><span style={styles.readOnlyText}>Modo somente leitura. Assine para editar.</span></div>
+          )}
           <h1 style={styles.title}>Checklist</h1>
 
-          <div style={styles.addBox}>
-            <input
-              style={styles.input}
-              placeholder="Nova tarefa..."
-              value={novaTarefa}
-              onChange={(e) => setNovaTarefa(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && adicionar()}
-            />
-            <input
-              style={{ ...styles.input, width: '130px' }}
-              type="date"
-              value={novoPrazo}
-              onChange={(e) => setNovoPrazo(e.target.value)}
-            />
-            <button onClick={adicionar} style={styles.btnPrimary}>
-              <Icon name="plus" size={16} color="#fff" />
-            </button>
-          </div>
+          {!readOnly && (
+            <div style={styles.addBox}>
+              <input
+                style={styles.input}
+                placeholder="Nova tarefa..."
+                value={novaTarefa}
+                onChange={(e) => setNovaTarefa(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && adicionar()}
+              />
+              <input
+                style={{ ...styles.input, width: '130px' }}
+                type="date"
+                value={novoPrazo}
+                onChange={(e) => setNovoPrazo(e.target.value)}
+              />
+              <button onClick={adicionar} style={styles.btnPrimary}>
+                <Icon name="plus" size={16} color="#fff" />
+              </button>
+            </div>
+          )}
 
           {Object.entries({
             urgente: { label: 'Urgente', color: '#C62828' },
@@ -127,9 +136,11 @@ function ChecklistContent() {
                         </span>
                         {t.prazo && <span style={styles.itemDate}>{t.prazo}</span>}
                       </div>
-                      <button onClick={() => excluir(t.id)} style={styles.btnIcon}>
-                        <Icon name="trash" size={14} />
-                      </button>
+                      {!readOnly && (
+                        <button onClick={() => excluir(t.id)} style={styles.btnIcon}>
+                          <Icon name="trash" size={14} />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -140,6 +151,10 @@ function ChecklistContent() {
       </div>
     </>
   );
+}
+
+export async function getServerSideProps(context) {
+  return getPainelServerSideProps(context);
 }
 
 const styles = {
@@ -158,4 +173,6 @@ const styles = {
   itemText: { flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' },
   itemTitle: { fontSize: '14px', fontWeight: 500 },
   itemDate: { fontSize: '11px', color: 'var(--color-text-soft)' },
+  readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },
+  readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
 };

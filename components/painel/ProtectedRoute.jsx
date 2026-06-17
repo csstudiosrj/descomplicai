@@ -1,22 +1,21 @@
-// components/painel/ProtectedRoute.jsx — Proteção de rota do painel
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
-import Icon from '../ui/Icon';
+import { temAcessoPainel } from '../../utils/acesso';
 
 export default function ProtectedRoute({ children }) {
-  const { user, loading, hasAccess } = useAuth();
+  const { user, loading, evento } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading) {
       if (!user) {
         router.push('/login');
-      } else if (!hasAccess) {
+      } else if (!temAcessoPainel(evento)) {
         router.push('/memorial/conclusao');
       }
     }
-  }, [user, loading, hasAccess, router]);
+  }, [user, loading, evento, router]);
 
   if (loading) {
     return (
@@ -27,7 +26,7 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  if (!user || !hasAccess) {
+  if (!user || !temAcessoPainel(evento)) {
     return (
       <div style={styles.loading}>
         <p style={styles.loadingText}>Redirecionando...</p>
