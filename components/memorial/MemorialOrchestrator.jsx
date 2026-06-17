@@ -4,7 +4,6 @@ import { useRouter } from 'next/router';
 import useMemorial from '../../hooks/useMemorial';
 import { useAuth } from '../../hooks/useAuth';
 import useAutoSave from '../../hooks/useAutoSave';
-import { supabase } from '../../lib/supabase';
 import { calcularProximaEtapa, calcularEtapasTotais, deveExibirLoginAgora, getEtapaPorIndice } from '../../utils/algoritmo';
 import BreathTransition from './BreathTransition';
 import ProgressBar from './ProgressBar';
@@ -68,7 +67,7 @@ function PlaceholderStep({ titulo }) {
 export default function MemorialOrchestrator() {
   const router = useRouter();
   const { estado, setRespostas, carregarEstado, irParaEtapa, voltarEtapa } = useMemorial();
-  const { user, loading: carregandoAuth } = useAuth();
+  const { user, loading: carregandoAuth, supabase } = useAuth();
   const { temDraft, carregarDraft, limparDraft, salvandoAgora } = useAutoSave(estado);
 
   const [transicionando, setTransicionando] = useState(false);
@@ -112,7 +111,7 @@ export default function MemorialOrchestrator() {
     }
 
     buscarDoSupabase();
-  }, [user, estado.etapaAtual, estado.perfilCasal, carregarEstado, carregarDraft]);
+  }, [user, estado.etapaAtual, estado.perfilCasal, carregarEstado, carregarDraft, supabase]);
 
   const etapasTotais = calcularEtapasTotais(estado);
   const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
