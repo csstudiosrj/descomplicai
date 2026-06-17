@@ -6,6 +6,7 @@ import PropTypes from 'prop-types';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import ProgressRing from '../ui/ProgressRing';
+import MarkdownRenderer from '../ui/MarkdownRenderer';
 import { montarMemorial, listarFornecedoresNecessarios } from '../../utils/gerador-memorial';
 
 export default function MemorialConclusao({ estado, memorialGerado, onRecomecar, onIrParaPainel }) {
@@ -40,7 +41,7 @@ export default function MemorialConclusao({ estado, memorialGerado, onRecomecar,
   return (
     <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-off-white)', padding: 'var(--space-6) var(--space-4)' }}>
       <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
-        
+
         {/* Header */}
         <div style={{ textAlign: 'center', animation: 'fadeInUp 600ms ease-out' }}>
           <style jsx>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }`}</style>
@@ -75,11 +76,6 @@ export default function MemorialConclusao({ estado, memorialGerado, onRecomecar,
             </div>
             <div
               style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-base)',
-                lineHeight: 'var(--leading-relaxed)',
-                color: 'var(--color-text-secondary)',
-                whiteSpace: 'pre-wrap',
                 maxHeight: '60vh',
                 overflowY: 'auto',
                 padding: 'var(--space-4)',
@@ -87,7 +83,7 @@ export default function MemorialConclusao({ estado, memorialGerado, onRecomecar,
                 borderRadius: 'var(--radius-md)',
               }}
             >
-              {memorialGerado}
+              <MarkdownRenderer text={memorialGerado} />
             </div>
           </Card>
         ) : (
