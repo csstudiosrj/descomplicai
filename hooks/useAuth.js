@@ -45,6 +45,14 @@ export function useAuth() {
     setEvento(data);
   }, []);
 
+  const login = useCallback(async (email, senha) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: senha,
+    });
+    return { data, error };
+  }, []);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -53,7 +61,7 @@ export function useAuth() {
 
   const hasAccess = temAcessoPainel(evento);
 
-  return { user, evento, loading, hasAccess, signOut, supabase };
+  return { user, evento, loading, carregando: loading, hasAccess, login, signOut, supabase };
 }
 
 export { supabase };
