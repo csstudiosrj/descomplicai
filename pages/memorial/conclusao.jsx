@@ -285,9 +285,9 @@ export default function ConclusaoPage() {
               {pdfLiberado && (
                 <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--color-surface)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--color-border)', textAlign: 'center' }}>
                   <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-2)' }}>
-                    Quer gerenciar seu casamento? Assine agora e ganhe <strong>15 dias gratis</strong> de painel.
+                    Quer gerenciar seu casamento? Assine agora e ganhe <strong>7 dias gratis</strong> de painel.
                   </p>
-                  <Button variant="secondary" size="md" fullWidth onClick={() => setModalPlanos(true)}>Assinar painel — 15 dias gratis</Button>
+                  <Button variant="secondary" size="md" fullWidth onClick={() => setModalPlanos(true)}>Assinar painel — 7 dias gratis</Button>
                 </div>
               )}
 

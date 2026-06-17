@@ -1,4 +1,3 @@
-// pages/api/pagamento/webhook.js
 import { client, Payment } from '../../../lib/mercadopago';
 import { createClient } from '@supabase/supabase-js';
 import { calcularNovaExpiracao } from '../../../utils/acesso';
@@ -42,7 +41,7 @@ export default async function handler(req, res) {
       novaExpiracao = calcularNovaExpiracao(eventoAtual?.acesso_expira_em, duracaoMeses);
       novoPlano = duracaoMeses === 1 ? 'mensal' : `${duracaoMeses}_meses`;
     } else if (tipo === 'memorial_pdf') {
-      novaExpiracao = calcularNovaExpiracao(eventoAtual?.acesso_expira_em, 0.5);
+      novaExpiracao = calcularNovaExpiracao(eventoAtual?.acesso_expira_em, 7 / 30); // 7 dias extras
       novoPlano = 'pdf';
     } else {
       return res.status(400).end();
