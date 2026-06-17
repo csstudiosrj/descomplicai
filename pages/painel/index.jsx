@@ -48,10 +48,10 @@ function PainelContent({ readOnly, eventoServer }) {
     }
 
     const { data: pagosData } = await supabase
-      .from('pagamentos')
+      .from('financeiro')
       .select('*')
       .eq('evento_id', evento.id)
-      .eq('status', 'pendente');
+      .eq('pago', false);
 
     if (pagosData) {
       const hoje = new Date();
@@ -64,9 +64,7 @@ function PainelContent({ readOnly, eventoServer }) {
     }
   };
 
-  const nomeCasal = evento
-    ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}`
-    : '';
+  const nomeCasal = evento?.nome_evento || '';
 
   return (
     <>

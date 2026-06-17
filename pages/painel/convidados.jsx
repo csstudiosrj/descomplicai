@@ -40,16 +40,16 @@ function ConvidadosContent({ readOnly }) {
       evento_id: evento.id,
       nome: novoNome,
       grupo: novoGrupo || 'Geral',
-      status: 'pendente',
+      confirmado: 'pendente',
     });
     setNovoNome('');
     setNovoGrupo('');
     buscar();
   };
 
-  const atualizarStatus = async (id, status) => {
+  const atualizarStatus = async (id, confirmado) => {
     if (readOnly) return;
-    await supabase.from('convidados').update({ status }).eq('id', id);
+    await supabase.from('convidados').update({ confirmado }).eq('id', id);
     buscar();
   };
 
@@ -60,32 +60,30 @@ function ConvidadosContent({ readOnly }) {
   };
 
   const exportarCSV = () => {
-    const headers = ['Nome', 'Grupo', 'Telefone', 'Status', 'Mesa'];
-    const rows = convidados.map(c => [c.nome, c.grupo, c.telefone || '', c.status, c.mesa || '']);
+    const headers = ['Nome', 'Grupo', 'Telefone', 'Confirmado', 'Mesa'];
+    const rows = convidados.map(c => [c.nome, c.grupo, c.telefone || '', c.confirmado, c.mesa || '']);
     const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `convidados-${evento?.nome_pessoa1 || 'casamento'}.csv`;
+    a.download = `convidados-${evento?.nome_evento || 'casamento'}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const resumo = {
     total: convidados.length,
-    confirmados: convidados.filter(c => c.status === 'confirmado').length,
-    pendentes: convidados.filter(c => c.status === 'pendente').length,
-    recusados: convidados.filter(c => c.status === 'recusado').length,
+    confirmados: convidados.filter(c => c.confirmado === 'confirmado').length,
+    pendentes: convidados.filter(c => c.confirmado === 'pendente').length,
+    recusados: convidados.filter(c => c.confirmado === 'recusado').length,
   };
 
   const filtrados = filtro === 'todos'
     ? convidados
-    : convidados.filter(c => c.status === filtro);
+    : convidados.filter(c => c.confirmado === filtro);
 
-  const nomeCasal = evento
-    ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}`
-    : '';
+  const nomeCasal = evento?.nome_evento || '';
 
   return (
     <>
@@ -131,7 +129,7 @@ function ConvidadosContent({ readOnly }) {
                   <span style={styles.itemGrupo}>{c.grupo} {c.mesa && `· Mesa ${c.mesa}`}</span>
                 </div>
                 <div style={styles.itemAcoes}>
-                  <select value={c.status} onChange={(e) => atualizarStatus(c.id, e.target.value)} style={styles.select}>
+                  <select value={c.confirmado} onChange={(e) => atualizarStatus(c.id, e.target.value)} style={styles.select}>
                     <option value="pendente">Pendente</option>
                     <option value="confirmado">Confirmado</option>
                     <option value="recusado">Recusado</option>

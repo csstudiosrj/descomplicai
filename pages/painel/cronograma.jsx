@@ -17,46 +17,43 @@ export default function CronogramaPage({ readOnly }) {
 function CronogramaContent({ readOnly }) {
   const { evento, signOut, supabase } = useAuth();
   const [itens, setItens] = useState([]);
-  const [novoHora, setNovoHora] = useState('');
-  const [novoTitulo, setNovoTitulo] = useState('');
-  const [novoLocal, setNovoLocal] = useState('');
-  const [novoResp, setNovoResp] = useState('');
+  const [novoHorario, setNovoHorario] = useState('');
+  const [novaAtividade, setNovaAtividade] = useState('');
+  const [novoResponsavel, setNovoResponsavel] = useState('');
   const [editando, setEditando] = useState(null);
 
   useEffect(() => { if (evento) buscar(); }, [evento]);
 
   const buscar = async () => {
-    const { data } = await supabase.from('cronograma').select('*').eq('evento_id', evento.id).order('hora');
+    const { data } = await supabase.from('cronograma').select('*').eq('evento_id', evento.id).order('horario');
     if (data?.length) { setItens(data); }
-    else { gerarDoMemorial(); }
+    else { gerarPadrao(); }
   };
 
-  const gerarDoMemorial = async () => {
+  const gerarPadrao = () => {
     if (readOnly) { setItens([]); return; }
-    const { data: mem } = await supabase.from('memoriais').select('*').eq('evento_id', evento.id).limit(1).single();
-    const base = mem?.conteudo || mem?.texto || '';
     const padrao = [
-      { hora: '14:00', titulo: 'Chegada dos fornecedores', local: 'Salao', responsavel: 'Cerimonialista' },
-      { hora: '15:30', titulo: 'Inicio da cerimonia', local: 'Altar', responsavel: 'Celebrante' },
-      { hora: '16:30', titulo: 'Coquetel de recepcao', local: 'Jardim', responsavel: 'Buffet' },
-      { hora: '18:00', titulo: 'Inicio do jantar', local: 'Salao principal', responsavel: 'Buffet' },
-      { hora: '20:00', titulo: 'Abertura da pista', local: 'Salao principal', responsavel: 'DJ/Banda' },
-      { hora: '23:00', titulo: 'Saida dos noivos', local: 'Portaria', responsavel: 'Cerimonialista' },
+      { horario: '14:00', atividade: 'Chegada dos fornecedores', responsavel: 'Cerimonialista' },
+      { horario: '15:30', atividade: 'Inicio da cerimonia', responsavel: 'Celebrante' },
+      { horario: '16:30', atividade: 'Coquetel de recepcao', responsavel: 'Buffet' },
+      { horario: '18:00', atividade: 'Inicio do jantar', responsavel: 'Buffet' },
+      { horario: '20:00', atividade: 'Abertura da pista', responsavel: 'DJ/Banda' },
+      { horario: '23:00', atividade: 'Saida dos noivos', responsavel: 'Cerimonialista' },
     ];
     setItens(padrao);
   };
 
   const salvar = async () => {
-    if (readOnly || !novoHora || !novoTitulo.trim()) return;
-    const payload = { evento_id: evento.id, hora: novoHora, titulo: novoTitulo, local: novoLocal, responsavel: novoResp };
+    if (readOnly || !novoHorario || !novaAtividade.trim()) return;
+    const payload = { evento_id: evento.id, horario: novoHorario, atividade: novaAtividade, responsavel: novoResponsavel };
     if (editando) { await supabase.from('cronograma').update(payload).eq('id', editando); setEditando(null); }
     else { await supabase.from('cronograma').insert(payload); }
-    setNovoHora(''); setNovoTitulo(''); setNovoLocal(''); setNovoResp(''); buscar();
+    setNovoHorario(''); setNovaAtividade(''); setNovoResponsavel(''); buscar();
   };
 
   const editar = (item) => {
     if (readOnly) return;
-    setNovoHora(item.hora); setNovoTitulo(item.titulo); setNovoLocal(item.local || ''); setNovoResp(item.responsavel || ''); setEditando(item.id);
+    setNovoHorario(item.horario); setNovaAtividade(item.atividade); setNovoResponsavel(item.responsavel || ''); setEditando(item.id);
   };
 
   const excluir = async (id) => {
@@ -64,7 +61,7 @@ function CronogramaContent({ readOnly }) {
     await supabase.from('cronograma').delete().eq('id', id); buscar();
   };
 
-  const nomeCasal = evento ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}` : '';
+  const nomeCasal = evento?.nome_evento || '';
 
   return (
     <>
@@ -78,28 +75,26 @@ function CronogramaContent({ readOnly }) {
           )}
           {!readOnly && (
             <div style={styles.form}>
-              <input style={{ ...styles.input, width: '80px' }} type="time" value={novoHora} onChange={e => setNovoHora(e.target.value)} />
-              <input style={styles.input} placeholder="Titulo" value={novoTitulo} onChange={e => setNovoTitulo(e.target.value)} />
-              <input style={{ ...styles.input, width: '140px' }} placeholder="Local" value={novoLocal} onChange={e => setNovoLocal(e.target.value)} />
-              <input style={{ ...styles.input, width: '140px' }} placeholder="Responsavel" value={novoResp} onChange={e => setNovoResp(e.target.value)} />
+              <input style={{ ...styles.input, width: '80px' }} type="time" value={novoHorario} onChange={e => setNovoHorario(e.target.value)} />
+              <input style={styles.input} placeholder="Atividade" value={novaAtividade} onChange={e => setNovaAtividade(e.target.value)} />
+              <input style={{ ...styles.input, width: '160px' }} placeholder="Responsavel" value={novoResponsavel} onChange={e => setNovoResponsavel(e.target.value)} />
               <button onClick={salvar} style={styles.btnPrimary}><Icon name={editando ? 'check' : 'plus'} size={16} color="#fff" /></button>
-              {editando && <button onClick={() => { setEditando(null); setNovoHora(''); setNovoTitulo(''); setNovoLocal(''); setNovoResp(''); }} style={styles.btnSecondary}>Cancelar</button>}
+              {editando && <button onClick={() => { setEditando(null); setNovoHorario(''); setNovaAtividade(''); setNovoResponsavel(''); }} style={styles.btnSecondary}>Cancelar</button>}
             </div>
           )}
 
           <div style={styles.timeline}>
             <div style={styles.line} />
-            {itens.sort((a, b) => a.hora.localeCompare(b.hora)).map((item, i) => (
+            {itens.sort((a, b) => a.horario.localeCompare(b.horario)).map((item, i) => (
               <div key={item.id || i} style={styles.item}>
                 <div style={styles.dot} />
                 <div style={styles.card}>
                   <div style={styles.cardHeader}>
-                    <span style={styles.hora}>{item.hora}</span>
-                    <span style={styles.titulo}>{item.titulo}</span>
+                    <span style={styles.hora}>{item.horario}</span>
+                    <span style={styles.titulo}>{item.atividade}</span>
                   </div>
                   <div style={styles.cardMeta}>
-                    {item.local && <span><Icon name="map" size={12} /> {item.local}</span>}
-                    {item.responsavel && <span>· Responsavel: {item.responsavel}</span>}
+                    {item.responsavel && <span>Responsavel: {item.responsavel}</span>}
                   </div>
                   {!readOnly && (
                     <div style={styles.cardAcoes}>

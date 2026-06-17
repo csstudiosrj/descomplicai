@@ -70,9 +70,7 @@ function FornecedoresContent({ readOnly }) {
     buscar();
   };
 
-  const nomeCasal = evento
-    ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}`
-    : '';
+  const nomeCasal = evento?.nome_evento || '';
 
   return (
     <>
