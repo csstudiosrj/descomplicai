@@ -1,28 +1,33 @@
-// pages/painel/financeiro.jsx
+// pages/painel/financeiro.jsx — Controle financeiro
 import { useState, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
 import HeaderPainel from '../../components/painel/HeaderPainel';
 import Icon from '../../components/ui/Icon';
 import { useAuth } from '../../hooks/useAuth';
-import { getPainelServerSideProps } from '../../utils/painelServer';
 
-export default function FinanceiroPage({ readOnly }) {
+export default function FinanceiroPage() {
   return (
     <ProtectedRoute>
-      <FinanceiroContent readOnly={readOnly} />
+      <FinanceiroContent />
     </ProtectedRoute>
   );
 }
 
-function FinanceiroContent({ readOnly }) {
+function FinanceiroContent() {
   const { evento, signOut, supabase } = useAuth();
   const [pagamentos, setPagamentos] = useState([]);
 
-  useEffect(() => { if (evento) buscar(); }, [evento]);
+  useEffect(() => {
+    if (evento) buscar();
+  }, [evento]);
 
   const buscar = async () => {
-    const { data } = await supabase.from('pagamentos').select('*').eq('evento_id', evento.id).order('data_vencimento');
+    const { data } = await supabase
+      .from('pagamentos')
+      .select('*')
+      .eq('evento_id', evento.id)
+      .order('data_vencimento');
     setPagamentos(data || []);
   };
 
@@ -36,38 +41,55 @@ function FinanceiroContent({ readOnly }) {
 
   const porCategoria = useMemo(() => {
     const map = {};
-    pagamentos.forEach((p) => { const cat = p.categoria || 'Outros'; map[cat] = (map[cat] || 0) + (p.valor_total || 0); });
+    pagamentos.forEach((p) => {
+      const cat = p.categoria || 'Outros';
+      map[cat] = (map[cat] || 0) + (p.valor_total || 0);
+    });
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, [pagamentos]);
 
-  const nomeCasal = evento ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}` : '';
+  const nomeCasal = evento
+    ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}`
+    : '';
 
   return (
     <>
-      <Head><title>Financeiro | descomplicai</title></Head>
+      <Head><title>Financeiro | descomplicaí</title></Head>
       <div style={styles.page}>
         <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} onLogout={signOut} />
         <main style={styles.main}>
           <h1 style={styles.title}>Financeiro</h1>
-          {readOnly && (
-            <div style={styles.readOnlyBanner}><span style={styles.readOnlyText}>Modo somente leitura. Assine para editar.</span></div>
-          )}
+
           <div style={styles.cards}>
-            <div style={styles.card}><span style={styles.cardLabel}>Orcamento Total</span><span style={styles.cardValue}>R$ {resumo.total.toLocaleString('pt-BR')}</span></div>
-            <div style={styles.card}><span style={styles.cardLabel}>Comprometido</span><span style={styles.cardValue}>R$ {resumo.comprometido.toLocaleString('pt-BR')}</span></div>
-            <div style={styles.card}><span style={styles.cardLabel}>Pago</span><span style={styles.cardValue}>R$ {resumo.pago.toLocaleString('pt-BR')}</span></div>
-            <div style={styles.card}><span style={styles.cardLabel}>Saldo a Pagar</span><span style={styles.cardValue}>R$ {resumo.saldo.toLocaleString('pt-BR')}</span></div>
+            <div style={styles.card}>
+              <span style={styles.cardLabel}>Orçamento Total</span>
+              <span style={styles.cardValue}>R$ {resumo.total.toLocaleString('pt-BR')}</span>
+            </div>
+            <div style={styles.card}>
+              <span style={styles.cardLabel}>Comprometido</span>
+              <span style={styles.cardValue}>R$ {resumo.comprometido.toLocaleString('pt-BR')}</span>
+            </div>
+            <div style={styles.card}>
+              <span style={styles.cardLabel}>Pago</span>
+              <span style={styles.cardValue}>R$ {resumo.pago.toLocaleString('pt-BR')}</span>
+            </div>
+            <div style={styles.card}>
+              <span style={styles.cardLabel}>Saldo a Pagar</span>
+              <span style={styles.cardValue}>R$ {resumo.saldo.toLocaleString('pt-BR')}</span>
+            </div>
           </div>
 
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Distribuicao por Categoria</h2>
+            <h2 style={styles.sectionTitle}>Distribuição por Categoria</h2>
             <div style={styles.chart}>
               {porCategoria.map(([cat, val]) => {
                 const pct = resumo.comprometido > 0 ? (val / resumo.comprometido) * 100 : 0;
                 return (
                   <div key={cat} style={styles.chartRow}>
                     <span style={styles.chartLabel}>{cat}</span>
-                    <div style={styles.chartTrack}><div style={{ ...styles.chartFill, width: `${pct}%` }} /></div>
+                    <div style={styles.chartTrack}>
+                      <div style={{ ...styles.chartFill, width: `${pct}%` }} />
+                    </div>
                     <span style={styles.chartValue}>R$ {val.toLocaleString('pt-BR')}</span>
                   </div>
                 );
@@ -82,7 +104,9 @@ function FinanceiroContent({ readOnly }) {
                 <div key={p.id} style={styles.listItem}>
                   <div style={styles.listInfo}>
                     <span style={styles.listName}>{p.nome}</span>
-                    <span style={styles.listDate}><Icon name="calendar" size={12} /> {p.data_vencimento}</span>
+                    <span style={styles.listDate}>
+                      <Icon name="calendar" size={12} /> {p.data_vencimento}
+                    </span>
                   </div>
                   <span style={styles.listValue}>R$ {(p.valor_saldo || 0).toLocaleString('pt-BR')}</span>
                 </div>
@@ -93,10 +117,6 @@ function FinanceiroContent({ readOnly }) {
       </div>
     </>
   );
-}
-
-export async function getServerSideProps(context) {
-  return getPainelServerSideProps(context);
 }
 
 const styles = {
@@ -121,6 +141,4 @@ const styles = {
   listName: { fontSize: '14px', fontWeight: 500, color: 'var(--color-text)' },
   listDate: { fontSize: '12px', color: 'var(--color-text-soft)', display: 'flex', alignItems: 'center', gap: '4px' },
   listValue: { fontSize: '14px', fontWeight: 600, color: 'var(--color-primary)' },
-  readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },
-  readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
 };

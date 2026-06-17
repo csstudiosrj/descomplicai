@@ -1,7 +1,6 @@
-// hooks/useAuth.js — Autenticacao com Supabase
+// hooks/useAuth.js — Autenticação com Supabase
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { temAcessoPainel } from '../utils/acesso';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -39,17 +38,11 @@ export function useAuth() {
     const { data } = await supabase
       .from('eventos')
       .select('*')
-      .eq('usuario_id', userId)
-      .order('criado_em', { ascending: false })
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
       .limit(1)
       .single();
     setEvento(data);
-  }, []);
-
-  const login = useCallback(async (email, senha) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
-    if (data?.user) await buscarEvento(data.user.id);
-    return { data, error };
   }, []);
 
   const signOut = useCallback(async () => {
@@ -58,9 +51,11 @@ export function useAuth() {
     setEvento(null);
   }, []);
 
-  const hasAccess = temAcessoPainel(evento);
+  const hasAccess = Boolean(
+    evento && (evento.assinatura_ativa === true || evento.plano === 'pdf')
+  );
 
-  return { user, evento, loading, carregando: loading, hasAccess, login, signOut, supabase };
+  return { user, evento, loading, hasAccess, signOut, supabase };
 }
 
 export { supabase };

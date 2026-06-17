@@ -1,107 +1,129 @@
-// pages/painel/fornecedores.jsx
+// pages/painel/fornecedores.jsx — Gestão de fornecedores
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
 import HeaderPainel from '../../components/painel/HeaderPainel';
 import Icon from '../../components/ui/Icon';
 import { useAuth } from '../../hooks/useAuth';
-import { getPainelServerSideProps } from '../../utils/painelServer';
 
 const STATUS_LABELS = {
-  a_contratar: 'A contratar', negociando: 'Negociando', contratado: 'Contratado',
-  pago: 'Pago', pendente: 'Pendente', cancelado: 'Cancelado',
-};
-const STATUS_COLORS = {
-  a_contratar: '#8B6F5E', negociando: '#1565C0', contratado: '#2E7D32',
-  pago: '#00838F', pendente: '#F9A825', cancelado: '#C62828',
+  a_contratar: 'A contratar',
+  negociando: 'Negociando',
+  contratado: 'Contratado',
+  pago: 'Pago',
+  pendente: 'Pendente',
+  cancelado: 'Cancelado',
 };
 
-export default function FornecedoresPage({ readOnly }) {
+const STATUS_COLORS = {
+  a_contratar: '#8B6F5E',
+  negociando: '#1565C0',
+  contratado: '#2E7D32',
+  pago: '#00838F',
+  pendente: '#F9A825',
+  cancelado: '#C62828',
+};
+
+export default function FornecedoresPage() {
   return (
     <ProtectedRoute>
-      <FornecedoresContent readOnly={readOnly} />
+      <FornecedoresContent />
     </ProtectedRoute>
   );
 }
 
-function FornecedoresContent({ readOnly }) {
+function FornecedoresContent() {
   const { evento, signOut, supabase } = useAuth();
   const [fornecedores, setFornecedores] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState({});
 
-  useEffect(() => { if (evento) buscar(); }, [evento]);
+  useEffect(() => {
+    if (evento) buscar();
+  }, [evento]);
 
   const buscar = async () => {
-    const { data } = await supabase.from('fornecedores').select('*').eq('evento_id', evento.id).order('categoria');
+    const { data } = await supabase
+      .from('fornecedores')
+      .select('*')
+      .eq('evento_id', evento.id)
+      .order('categoria');
     setFornecedores(data || []);
   };
 
   const salvar = async () => {
-    if (readOnly) return;
     const payload = { ...form, evento_id: evento.id };
-    if (form.id) { await supabase.from('fornecedores').update(payload).eq('id', form.id); }
-    else { await supabase.from('fornecedores').insert(payload); }
-    setModalAberto(false); setForm({}); buscar();
+    if (form.id) {
+      await supabase.from('fornecedores').update(payload).eq('id', form.id);
+    } else {
+      await supabase.from('fornecedores').insert(payload);
+    }
+    setModalAberto(false);
+    setForm({});
+    buscar();
   };
 
   const excluir = async (id) => {
-    if (readOnly) return;
     if (!confirm('Excluir fornecedor?')) return;
     await supabase.from('fornecedores').delete().eq('id', id);
     buscar();
   };
 
-  const nomeCasal = evento ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}` : '';
+  const nomeCasal = evento
+    ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}`
+    : '';
 
   return (
     <>
-      <Head><title>Fornecedores | descomplicai</title></Head>
+      <Head><title>Fornecedores | descomplicaí</title></Head>
       <div style={styles.page}>
         <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} onLogout={signOut} />
         <main style={styles.main}>
           <div style={styles.header}>
             <h1 style={styles.title}>Fornecedores</h1>
-            {!readOnly && (
-              <button onClick={() => { setForm({}); setModalAberto(true); }} style={styles.btnPrimary}>
-                <Icon name="plus" size={16} color="#fff" /> Adicionar
-              </button>
-            )}
+            <button onClick={() => { setForm({}); setModalAberto(true); }} style={styles.btnPrimary}>
+              <Icon name="plus" size={16} color="#fff" /> Adicionar
+            </button>
           </div>
-          {readOnly && (
-            <div style={styles.readOnlyBanner}><span style={styles.readOnlyText}>Modo somente leitura. Assine para editar.</span></div>
-          )}
+
           <div style={styles.grid}>
             {fornecedores.map((f) => (
               <div key={f.id} style={styles.card}>
                 <div style={styles.cardHeader}>
                   <span style={styles.categoria}>{f.categoria}</span>
-                  <span style={{ ...styles.badge, background: STATUS_COLORS[f.status] || '#8B6F5E' }}>{STATUS_LABELS[f.status] || f.status}</span>
+                  <span style={{ ...styles.badge, background: STATUS_COLORS[f.status] || '#8B6F5E' }}>
+                    {STATUS_LABELS[f.status] || f.status}
+                  </span>
                 </div>
                 <h3 style={styles.nome}>{f.nome}</h3>
                 <p style={styles.empresa}>{f.empresa}</p>
+
                 <div style={styles.contatos}>
                   {f.telefone && <span><Icon name="phone" size={12} /> {f.telefone}</span>}
                   {f.email && <span><Icon name="mail" size={12} /> {f.email}</span>}
                 </div>
+
                 <div style={styles.valores}>
                   <span>Total: <strong>R$ {(f.valor_total || 0).toLocaleString('pt-BR')}</strong></span>
                   <span>Entrada: R$ {(f.valor_entrada || 0).toLocaleString('pt-BR')}</span>
                   <span>Saldo: R$ {(f.valor_saldo || 0).toLocaleString('pt-BR')}</span>
                 </div>
-                {!readOnly && (
-                  <div style={styles.acoes}>
-                    <button onClick={() => { setForm(f); setModalAberto(true); }} style={styles.btnIcon}><Icon name="edit" size={16} /></button>
-                    <button onClick={() => excluir(f.id)} style={styles.btnIcon}><Icon name="trash" size={16} /></button>
-                  </div>
-                )}
+
+                <div style={styles.acoes}>
+                  <button onClick={() => { setForm(f); setModalAberto(true); }} style={styles.btnIcon}>
+                    <Icon name="edit" size={16} />
+                  </button>
+                  <button onClick={() => excluir(f.id)} style={styles.btnIcon}>
+                    <Icon name="trash" size={16} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         </main>
       </div>
 
-      {modalAberto && !readOnly && (
+      {modalAberto && (
         <div style={styles.modalOverlay} onClick={() => setModalAberto(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h2 style={styles.modalTitle}>{form.id ? 'Editar' : 'Novo'} Fornecedor</h2>
@@ -112,7 +134,7 @@ function FornecedoresContent({ readOnly }) {
             <input style={styles.input} placeholder="Email" value={form.email || ''} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             <input style={styles.input} placeholder="Instagram" value={form.instagram || ''} onChange={(e) => setForm({ ...form, instagram: e.target.value })} />
             <input style={styles.input} placeholder="Site" value={form.site || ''} onChange={(e) => setForm({ ...form, site: e.target.value })} />
-            <input style={styles.input} placeholder="Servico" value={form.servico || ''} onChange={(e) => setForm({ ...form, servico: e.target.value })} />
+            <input style={styles.input} placeholder="Serviço" value={form.servico || ''} onChange={(e) => setForm({ ...form, servico: e.target.value })} />
             <input style={styles.input} placeholder="Valor Total" type="number" value={form.valor_total || ''} onChange={(e) => setForm({ ...form, valor_total: Number(e.target.value) })} />
             <input style={styles.input} placeholder="Entrada" type="number" value={form.valor_entrada || ''} onChange={(e) => setForm({ ...form, valor_entrada: Number(e.target.value) })} />
             <select style={styles.input} value={form.status || 'a_contratar'} onChange={(e) => setForm({ ...form, status: e.target.value })}>
@@ -128,10 +150,6 @@ function FornecedoresContent({ readOnly }) {
       )}
     </>
   );
-}
-
-export async function getServerSideProps(context) {
-  return getPainelServerSideProps(context);
 }
 
 const styles = {
@@ -158,6 +176,4 @@ const styles = {
   input: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-secondary)', marginBottom: '10px', fontSize: '14px', fontFamily: 'var(--font-body)' },
   textarea: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-secondary)', marginBottom: '10px', fontSize: '14px', fontFamily: 'var(--font-body)', minHeight: '80px', resize: 'vertical' },
   modalBotoes: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' },
-  readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },
-  readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
 };
