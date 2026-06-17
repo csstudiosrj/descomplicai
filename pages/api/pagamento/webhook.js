@@ -1,6 +1,7 @@
 // pages/api/pagamento/webhook.js
 import { client, Payment } from '../../../lib/mercadopago';
 import { createClient } from '@supabase/supabase-js';
+import { calcularNovaExpiracao } from '../../../utils/acesso';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -9,19 +10,53 @@ export default async function handler(req, res) {
   if (type !== 'payment') return res.status(200).end();
 
   try {
-    const payment = new Payment(client);
-    const pagamento = await payment.get({ id: data.id });
+    const paymentClient = new Payment(client);
+    const pagamento = await paymentClient.get({ id: data.id });
 
     if (pagamento.status !== 'approved') return res.status(200).end();
 
-    const { usuarioId, eventoId, tipo } = JSON.parse(pagamento.external_reference);
+    const ref = JSON.parse(pagamento.external_reference || '{}');
+    const { usuarioId, eventoId, tipo } = ref;
+    let duracaoMeses = pagamento.metadata?.duracao_meses ?? ref.duracao_meses ?? 0;
+
+    if (!usuarioId || !eventoId || !tipo) {
+      console.error('Webhook: external_reference invalido', pagamento.external_reference);
+      return res.status(400).end();
+    }
 
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // Registrar pagamento no historico
+    const { data: eventoAtual } = await supabaseAdmin
+      .from('eventos')
+      .select('acesso_expira_em, acesso_iniciado_em')
+      .eq('id', eventoId)
+      .single();
+
+    let novaExpiracao;
+    let novoPlano;
+
+    if (tipo === 'assinatura') {
+      novaExpiracao = calcularNovaExpiracao(eventoAtual?.acesso_expira_em, duracaoMeses);
+      novoPlano = duracaoMeses === 1 ? 'mensal' : `${duracaoMeses}_meses`;
+    } else if (tipo === 'memorial_pdf') {
+      novaExpiracao = calcularNovaExpiracao(eventoAtual?.acesso_expira_em, 0.5);
+      novoPlano = 'pdf';
+    } else {
+      return res.status(400).end();
+    }
+
+    await supabaseAdmin
+      .from('eventos')
+      .update({
+        acesso_expira_em: novaExpiracao,
+        acesso_iniciado_em: eventoAtual?.acesso_iniciado_em || new Date().toISOString(),
+        plano: novoPlano,
+      })
+      .eq('id', eventoId);
+
     await supabaseAdmin.from('pagamentos').insert({
       usuario_id: usuarioId,
       evento_id: eventoId,
@@ -29,20 +64,9 @@ export default async function handler(req, res) {
       valor: pagamento.transaction_amount,
       status: 'aprovado',
       mp_payment_id: String(pagamento.id),
+      duracao_meses: duracaoMeses || null,
+      aceite_termo_em: null,
     });
-
-    // CORRECAO: cada produto ativa sua propria flag, SEM misturar
-    if (tipo === 'assinatura') {
-      await supabaseAdmin
-        .from('eventos')
-        .update({ assinatura_ativa: true })
-        .eq('id', eventoId);
-    } else if (tipo === 'memorial_pdf') {
-      await supabaseAdmin
-        .from('eventos')
-        .update({ plano: 'pdf' })
-        .eq('id', eventoId);
-    }
 
     res.status(200).end();
   } catch (erro) {

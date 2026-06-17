@@ -1,12 +1,20 @@
 // pages/api/pagamento/criar.js
 import { client, Preference } from '../../../lib/mercadopago';
 
+const PLANOS = {
+  mensal: { duracao_meses: 1, preco: 29.9, titulo: 'Descomplicai — Plano Mensal' },
+  '3_meses': { duracao_meses: 3, preco: 79.9, titulo: 'Descomplicai — Plano 3 Meses' },
+  '6_meses': { duracao_meses: 6, preco: 149.9, titulo: 'Descomplicai — Plano 6 Meses' },
+  '12_meses': { duracao_meses: 12, preco: 249.9, titulo: 'Descomplicai — Plano 12 Meses' },
+  '18_meses': { duracao_meses: 18, preco: 349.9, titulo: 'Descomplicai — Plano 18 Meses' },
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ erro: 'Metodo nao permitido' });
   }
 
-  const { tipo, usuarioId, eventoId } = req.body;
+  const { tipo, usuarioId, eventoId, plano } = req.body;
 
   if (!tipo) {
     return res.status(400).json({ erro: 'Tipo de pagamento nao informado' });
@@ -16,23 +24,32 @@ export default async function handler(req, res) {
     return res.status(400).json({ erro: 'usuarioId e eventoId sao obrigatorios' });
   }
 
-  const itens = {
-    memorial_pdf: {
+  let item;
+  let duracaoMeses = 0;
+  let metadata = {};
+
+  if (tipo === 'memorial_pdf') {
+    item = {
       title: 'Memorial do Casamento — PDF Completo',
       quantity: 1,
       unit_price: 197,
       currency_id: 'BRL',
-    },
-    assinatura: {
-      title: 'Descomplicai — Plano Mensal',
+    };
+    metadata = { duracao_meses: 0 };
+  } else if (tipo === 'assinatura') {
+    const planoConfig = PLANOS[plano || 'mensal'];
+    if (!planoConfig) {
+      return res.status(400).json({ erro: 'Plano de assinatura invalido' });
+    }
+    item = {
+      title: planoConfig.titulo,
       quantity: 1,
-      unit_price: 29.9,
+      unit_price: planoConfig.preco,
       currency_id: 'BRL',
-    },
-  };
-
-  const item = itens[tipo];
-  if (!item) {
+    };
+    duracaoMeses = planoConfig.duracao_meses;
+    metadata = { duracao_meses: duracaoMeses };
+  } else {
     return res.status(400).json({ erro: 'Tipo de pagamento invalido' });
   }
 
@@ -41,6 +58,7 @@ export default async function handler(req, res) {
     const resultado = await preference.create({
       body: {
         items: [item],
+        metadata,
         back_urls: {
           success: `${process.env.NEXT_PUBLIC_URL}/memorial/conclusao?pagamento=sucesso&tipo=${tipo}&concluido=1`,
           failure: `${process.env.NEXT_PUBLIC_URL}/memorial/conclusao?pagamento=erro&concluido=1`,
@@ -48,8 +66,7 @@ export default async function handler(req, res) {
         },
         auto_return: 'approved',
         notification_url: `${process.env.NEXT_PUBLIC_URL}/api/pagamento/webhook`,
-        // CORRECAO CRITICA: external_reference para o webhook identificar o pagamento
-        external_reference: JSON.stringify({ usuarioId, eventoId, tipo }),
+        external_reference: JSON.stringify({ usuarioId, eventoId, tipo, duracao_meses: duracaoMeses }),
       },
     });
 

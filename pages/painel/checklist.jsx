@@ -1,19 +1,21 @@
+// pages/painel/checklist.jsx
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
 import HeaderPainel from '../../components/painel/HeaderPainel';
 import Icon from '../../components/ui/Icon';
 import { useAuth } from '../../hooks/useAuth';
+import { getPainelServerSideProps } from '../../utils/painelServer';
 
-export default function ChecklistPage() {
+export default function ChecklistPage({ readOnly }) {
   return (
     <ProtectedRoute>
-      <ChecklistContent />
+      <ChecklistContent readOnly={readOnly} />
     </ProtectedRoute>
   );
 }
 
-function ChecklistContent() {
+function ChecklistContent({ readOnly }) {
   const { evento, signOut, supabase } = useAuth();
   const [tarefas, setTarefas] = useState([]);
   const [novaTarefa, setNovaTarefa] = useState('');
@@ -21,86 +23,60 @@ function ChecklistContent() {
   const [editando, setEditando] = useState(null);
   const [editPrazo, setEditPrazo] = useState('');
 
-  useEffect(() => {
-    if (evento) buscar();
-  }, [evento]);
+  useEffect(() => { if (evento) buscar(); }, [evento]);
 
   const buscar = async () => {
-    const { data } = await supabase
-      .from('tarefas')
-      .select('*')
-      .eq('evento_id', evento.id)
-      .order('prazo', { ascending: true });
+    const { data } = await supabase.from('tarefas').select('*').eq('evento_id', evento.id).order('prazo', { ascending: true });
     const lista = data || [];
     setTarefas(lista);
     if (lista.length === 0) importarDoMemorial();
   };
 
   const importarDoMemorial = async () => {
-    const { data: mem } = await supabase
-      .from('memoriais')
-      .select('*')
-      .eq('evento_id', evento.id)
-      .limit(1)
-      .single();
-
+    if (readOnly) return;
     const tarefasPadrao = [
-      { titulo: 'Reservar o local da cerimônia', prazo: -180 },
+      { titulo: 'Reservar o local da cerimonia', prazo: -180 },
       { titulo: 'Reservar o local da festa', prazo: -180 },
       { titulo: 'Contratar buffet', prazo: -150 },
-      { titulo: 'Contratar fotógrafo', prazo: -150 },
+      { titulo: 'Contratar fotografo', prazo: -150 },
       { titulo: 'Escolher vestido', prazo: -120 },
       { titulo: 'Enviar save the date', prazo: -120 },
-      { titulo: 'Contratar decoração', prazo: -90 },
+      { titulo: 'Contratar decoracao', prazo: -90 },
       { titulo: 'Definir lista de convidados', prazo: -90 },
       { titulo: 'Enviar convites', prazo: -60 },
       { titulo: 'Teste de cabelo e maquiagem', prazo: -30 },
-      { titulo: 'Reunião final com cerimonialista', prazo: -7 },
+      { titulo: 'Reuniao final com cerimonialista', prazo: -7 },
       { titulo: 'Confirmar fornecedores', prazo: -3 },
     ];
-
     const dataEvento = evento?.data_evento ? new Date(evento.data_evento) : null;
     const aInserir = tarefasPadrao.map(t => ({
-      evento_id: evento.id,
-      titulo: t.titulo,
-      concluida: false,
-      prazo: dataEvento
-        ? new Date(dataEvento.getTime() + t.prazo * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-        : null,
+      evento_id: evento.id, titulo: t.titulo, concluida: false,
+      prazo: dataEvento ? new Date(dataEvento.getTime() + t.prazo * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : null,
     }));
-
     await supabase.from('tarefas').insert(aInserir);
     buscar();
   };
 
   const toggle = async (id, concluida) => {
+    if (readOnly) return;
     await supabase.from('tarefas').update({ concluida: !concluida }).eq('id', id);
     buscar();
   };
 
   const adicionar = async () => {
-    if (!novaTarefa.trim()) return;
-    await supabase.from('tarefas').insert({
-      evento_id: evento.id,
-      titulo: novaTarefa,
-      prazo: novoPrazo || null,
-      concluida: false,
-    });
-    setNovaTarefa('');
-    setNovoPrazo('');
-    buscar();
+    if (readOnly || !novaTarefa.trim()) return;
+    await supabase.from('tarefas').insert({ evento_id: evento.id, titulo: novaTarefa, prazo: novoPrazo || null, concluida: false });
+    setNovaTarefa(''); setNovoPrazo(''); buscar();
   };
 
   const salvarPrazo = async (id) => {
-    if (!editPrazo) return;
+    if (readOnly || !editPrazo) return;
     await supabase.from('tarefas').update({ prazo: editPrazo }).eq('id', id);
-    setEditando(null);
-    setEditPrazo('');
-    buscar();
+    setEditando(null); setEditPrazo(''); buscar();
   };
 
   const excluir = async (id) => {
-    if (!confirm('Excluir tarefa?')) return;
+    if (readOnly || !confirm('Excluir tarefa?')) return;
     await supabase.from('tarefas').delete().eq('id', id);
     buscar();
   };
@@ -117,29 +93,31 @@ function ChecklistContent() {
     concluidos: tarefas.filter(t => t.concluida),
   };
 
-  const nomeCasal = evento
-    ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}`
-    : '';
+  const nomeCasal = evento ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}` : '';
 
   return (
     <>
-      <Head><title>Checklist | descomplicaí</title></Head>
+      <Head><title>Checklist | descomplicai</title></Head>
       <div style={styles.page}>
         <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} onLogout={signOut} />
         <main style={styles.main}>
           <h1 style={styles.title}>Checklist</h1>
-
-          <div style={styles.addBox}>
-            <input style={styles.input} placeholder="Nova tarefa..." value={novaTarefa} onChange={e => setNovaTarefa(e.target.value)} onKeyDown={e => e.key === 'Enter' && adicionar()} />
-            <input style={{ ...styles.input, width: '130px' }} type="date" value={novoPrazo} onChange={e => setNovoPrazo(e.target.value)} />
-            <button onClick={adicionar} style={styles.btnPrimary}><Icon name="plus" size={16} color="#fff" /></button>
-          </div>
+          {readOnly && (
+            <div style={styles.readOnlyBanner}><span style={styles.readOnlyText}>Modo somente leitura. Assine para editar.</span></div>
+          )}
+          {!readOnly && (
+            <div style={styles.addBox}>
+              <input style={styles.input} placeholder="Nova tarefa..." value={novaTarefa} onChange={e => setNovaTarefa(e.target.value)} onKeyDown={e => e.key === 'Enter' && adicionar()} />
+              <input style={{ ...styles.input, width: '130px' }} type="date" value={novoPrazo} onChange={e => setNovoPrazo(e.target.value)} />
+              <button onClick={adicionar} style={styles.btnPrimary}><Icon name="plus" size={16} color="#fff" /></button>
+            </div>
+          )}
 
           {Object.entries({
             urgente: { label: 'Urgente', color: '#C62828' },
-            proximos: { label: 'Próximos 30 dias', color: '#F9A825' },
+            proximos: { label: 'Proximos 30 dias', color: '#F9A825' },
             futuros: { label: 'Futuros', color: '#1565C0' },
-            concluidos: { label: 'Concluídos', color: '#2E7D32' },
+            concluidos: { label: 'Concluidos', color: '#2E7D32' },
           }).map(([key, meta]) => (
             grupos[key].length > 0 && (
               <section key={key} style={styles.section}>
@@ -147,33 +125,41 @@ function ChecklistContent() {
                 <div style={styles.list}>
                   {grupos[key].map((t) => (
                     <div key={t.id} style={styles.item}>
-                      <button onClick={() => toggle(t.id, t.concluida)} style={{ ...styles.checkbox, background: t.concluida ? 'var(--color-primary)' : 'transparent', borderColor: t.concluida ? 'var(--color-primary)' : 'var(--color-secondary)' }}>
-                        {t.concluida && <Icon name="check" size={12} color="#fff" />}
-                      </button>
+                      {!readOnly ? (
+                        <button onClick={() => toggle(t.id, t.concluida)} style={{ ...styles.checkbox, background: t.concluida ? 'var(--color-primary)' : 'transparent', borderColor: t.concluida ? 'var(--color-primary)' : 'var(--color-secondary)' }}>
+                          {t.concluida && <Icon name="check" size={12} color="#fff" />}
+                        </button>
+                      ) : (
+                        <div style={{ ...styles.checkbox, background: t.concluida ? 'var(--color-primary)' : 'transparent', borderColor: t.concluida ? 'var(--color-primary)' : 'var(--color-secondary)' }}>
+                          {t.concluida && <Icon name="check" size={12} color="#fff" />}
+                        </div>
+                      )}
                       <div style={styles.itemText}>
                         <span style={{ ...styles.itemTitle, textDecoration: t.concluida ? 'line-through' : 'none', color: t.concluida ? 'var(--color-text-soft)' : 'var(--color-text)' }}>{t.titulo}</span>
                         {t.prazo && (
                           <span style={styles.itemDate}>
-                            {editando === t.id ? (
+                            {editando === t.id && !readOnly ? (
                               <span style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                 <input type="date" value={editPrazo} onChange={e => setEditPrazo(e.target.value)} style={{ ...styles.input, width: '120px', padding: '4px 8px', fontSize: '12px' }} />
                                 <button onClick={() => salvarPrazo(t.id)} style={styles.btnMini}><Icon name="check" size={12} color="#fff" /></button>
                                 <button onClick={() => { setEditando(null); setEditPrazo(''); }} style={styles.btnMiniCancel}>×</button>
                               </span>
                             ) : (
-                              <span onClick={() => { setEditando(t.id); setEditPrazo(t.prazo); }} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
-                                <Icon name="calendar" size={10} /> {t.prazo} (clique para editar)
+                              <span onClick={() => !readOnly && setEditando(t.id) && setEditPrazo(t.prazo)} style={!readOnly ? { cursor: 'pointer', textDecoration: 'underline' } : {}}>
+                                <Icon name="calendar" size={10} /> {t.prazo} {!readOnly && '(clique para editar)'}
                               </span>
                             )}
                           </span>
                         )}
-                        {!t.prazo && !t.concluida && (
+                        {!t.prazo && !t.concluida && !readOnly && (
                           <span style={{ ...styles.itemDate, cursor: 'pointer', textDecoration: 'underline' }} onClick={() => { setEditando(t.id); setEditPrazo(''); }}>
                             <Icon name="calendar" size={10} /> Adicionar prazo
                           </span>
                         )}
                       </div>
-                      <button onClick={() => excluir(t.id)} style={styles.btnIcon}><Icon name="trash" size={14} /></button>
+                      {!readOnly && (
+                        <button onClick={() => excluir(t.id)} style={styles.btnIcon}><Icon name="trash" size={14} /></button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -184,6 +170,10 @@ function ChecklistContent() {
       </div>
     </>
   );
+}
+
+export async function getServerSideProps(context) {
+  return getPainelServerSideProps(context);
 }
 
 const styles = {
@@ -204,4 +194,6 @@ const styles = {
   itemText: { flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' },
   itemTitle: { fontSize: '14px', fontWeight: 500 },
   itemDate: { fontSize: '11px', color: 'var(--color-text-soft)' },
+  readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },
+  readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
 };

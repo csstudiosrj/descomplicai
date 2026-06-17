@@ -1,22 +1,17 @@
-// components/painel/ProtectedRoute.jsx — Proteção de rota do painel
+// components/painel/ProtectedRoute.jsx — Protecao de rota do painel
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function ProtectedRoute({ children }) {
-  const { user, loading, hasAccess } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.push('/login');
-      } else if (!hasAccess) {
-        // Se nao tem assinatura, manda de volta pra conclusao (nao entra no painel)
-        router.push('/memorial/conclusao');
-      }
+    if (!loading && !user) {
+      router.push('/login');
     }
-  }, [user, loading, hasAccess, router]);
+  }, [user, loading, router]);
 
   if (loading) {
     return (
@@ -27,7 +22,7 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  if (!user || !hasAccess) {
+  if (!user) {
     return (
       <div style={styles.loading}>
         <p style={styles.loadingText}>Redirecionando...</p>

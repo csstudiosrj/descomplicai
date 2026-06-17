@@ -1,19 +1,21 @@
+// pages/painel/cronograma.jsx
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
 import HeaderPainel from '../../components/painel/HeaderPainel';
 import Icon from '../../components/ui/Icon';
 import { useAuth } from '../../hooks/useAuth';
+import { getPainelServerSideProps } from '../../utils/painelServer';
 
-export default function CronogramaPage() {
+export default function CronogramaPage({ readOnly }) {
   return (
     <ProtectedRoute>
-      <CronogramaContent />
+      <CronogramaContent readOnly={readOnly} />
     </ProtectedRoute>
   );
 }
 
-function CronogramaContent() {
+function CronogramaContent({ readOnly }) {
   const { evento, signOut, supabase } = useAuth();
   const [itens, setItens] = useState([]);
   const [novoHora, setNovoHora] = useState('');
@@ -22,98 +24,69 @@ function CronogramaContent() {
   const [novoResp, setNovoResp] = useState('');
   const [editando, setEditando] = useState(null);
 
-  useEffect(() => {
-    if (evento) buscar();
-  }, [evento]);
+  useEffect(() => { if (evento) buscar(); }, [evento]);
 
   const buscar = async () => {
-    const { data } = await supabase
-      .from('cronograma')
-      .select('*')
-      .eq('evento_id', evento.id)
-      .order('hora');
-    if (data?.length) {
-      setItens(data);
-    } else {
-      gerarDoMemorial();
-    }
+    const { data } = await supabase.from('cronograma').select('*').eq('evento_id', evento.id).order('hora');
+    if (data?.length) { setItens(data); }
+    else { gerarDoMemorial(); }
   };
 
   const gerarDoMemorial = async () => {
-    const { data: mem } = await supabase
-      .from('memoriais')
-      .select('*')
-      .eq('evento_id', evento.id)
-      .limit(1)
-      .single();
-
+    if (readOnly) { setItens([]); return; }
+    const { data: mem } = await supabase.from('memoriais').select('*').eq('evento_id', evento.id).limit(1).single();
     const base = mem?.conteudo || mem?.texto || '';
     const padrao = [
-      { hora: '14:00', titulo: 'Chegada dos fornecedores', local: 'Salão', responsavel: 'Cerimonialista' },
-      { hora: '15:30', titulo: 'Início da cerimônia', local: 'Altar', responsavel: 'Celebrante' },
-      { hora: '16:30', titulo: 'Coquetel de recepção', local: 'Jardim', responsavel: 'Buffet' },
-      { hora: '18:00', titulo: 'Início do jantar', local: 'Salão principal', responsavel: 'Buffet' },
-      { hora: '20:00', titulo: 'Abertura da pista', local: 'Salão principal', responsavel: 'DJ/Banda' },
-      { hora: '23:00', titulo: 'Saída dos noivos', local: 'Portaria', responsavel: 'Cerimonialista' },
+      { hora: '14:00', titulo: 'Chegada dos fornecedores', local: 'Salao', responsavel: 'Cerimonialista' },
+      { hora: '15:30', titulo: 'Inicio da cerimonia', local: 'Altar', responsavel: 'Celebrante' },
+      { hora: '16:30', titulo: 'Coquetel de recepcao', local: 'Jardim', responsavel: 'Buffet' },
+      { hora: '18:00', titulo: 'Inicio do jantar', local: 'Salao principal', responsavel: 'Buffet' },
+      { hora: '20:00', titulo: 'Abertura da pista', local: 'Salao principal', responsavel: 'DJ/Banda' },
+      { hora: '23:00', titulo: 'Saida dos noivos', local: 'Portaria', responsavel: 'Cerimonialista' },
     ];
     setItens(padrao);
   };
 
   const salvar = async () => {
-    if (!novoHora || !novoTitulo.trim()) return;
-    const payload = {
-      evento_id: evento.id,
-      hora: novoHora,
-      titulo: novoTitulo,
-      local: novoLocal,
-      responsavel: novoResp,
-    };
-    if (editando) {
-      await supabase.from('cronograma').update(payload).eq('id', editando);
-      setEditando(null);
-    } else {
-      await supabase.from('cronograma').insert(payload);
-    }
-    setNovoHora(''); setNovoTitulo(''); setNovoLocal(''); setNovoResp('');
-    buscar();
+    if (readOnly || !novoHora || !novoTitulo.trim()) return;
+    const payload = { evento_id: evento.id, hora: novoHora, titulo: novoTitulo, local: novoLocal, responsavel: novoResp };
+    if (editando) { await supabase.from('cronograma').update(payload).eq('id', editando); setEditando(null); }
+    else { await supabase.from('cronograma').insert(payload); }
+    setNovoHora(''); setNovoTitulo(''); setNovoLocal(''); setNovoResp(''); buscar();
   };
 
   const editar = (item) => {
-    setNovoHora(item.hora);
-    setNovoTitulo(item.titulo);
-    setNovoLocal(item.local || '');
-    setNovoResp(item.responsavel || '');
-    setEditando(item.id);
+    if (readOnly) return;
+    setNovoHora(item.hora); setNovoTitulo(item.titulo); setNovoLocal(item.local || ''); setNovoResp(item.responsavel || ''); setEditando(item.id);
   };
 
   const excluir = async (id) => {
-    if (!confirm('Excluir item?')) return;
-    await supabase.from('cronograma').delete().eq('id', id);
-    buscar();
+    if (readOnly || !confirm('Excluir item?')) return;
+    await supabase.from('cronograma').delete().eq('id', id); buscar();
   };
 
-  const nomeCasal = evento
-    ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}`
-    : '';
+  const nomeCasal = evento ? `${evento.nome_pessoa1 || ''} & ${evento.nome_pessoa2 || ''}` : '';
 
   return (
     <>
-      <Head><title>Cronograma | descomplicaí</title></Head>
+      <Head><title>Cronograma | descomplicai</title></Head>
       <div style={styles.page}>
         <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} onLogout={signOut} />
         <main style={styles.main}>
           <h1 style={styles.title}>Cronograma do Dia</h1>
-
-          <div style={styles.form}>
-            <input style={{ ...styles.input, width: '80px' }} type="time" value={novoHora} onChange={e => setNovoHora(e.target.value)} />
-            <input style={styles.input} placeholder="Título" value={novoTitulo} onChange={e => setNovoTitulo(e.target.value)} />
-            <input style={{ ...styles.input, width: '140px' }} placeholder="Local" value={novoLocal} onChange={e => setNovoLocal(e.target.value)} />
-            <input style={{ ...styles.input, width: '140px' }} placeholder="Responsável" value={novoResp} onChange={e => setNovoResp(e.target.value)} />
-            <button onClick={salvar} style={styles.btnPrimary}>
-              <Icon name={editando ? 'check' : 'plus'} size={16} color="#fff" />
-            </button>
-            {editando && <button onClick={() => { setEditando(null); setNovoHora(''); setNovoTitulo(''); setNovoLocal(''); setNovoResp(''); }} style={styles.btnSecondary}>Cancelar</button>}
-          </div>
+          {readOnly && (
+            <div style={styles.readOnlyBanner}><span style={styles.readOnlyText}>Modo somente leitura. Assine para editar.</span></div>
+          )}
+          {!readOnly && (
+            <div style={styles.form}>
+              <input style={{ ...styles.input, width: '80px' }} type="time" value={novoHora} onChange={e => setNovoHora(e.target.value)} />
+              <input style={styles.input} placeholder="Titulo" value={novoTitulo} onChange={e => setNovoTitulo(e.target.value)} />
+              <input style={{ ...styles.input, width: '140px' }} placeholder="Local" value={novoLocal} onChange={e => setNovoLocal(e.target.value)} />
+              <input style={{ ...styles.input, width: '140px' }} placeholder="Responsavel" value={novoResp} onChange={e => setNovoResp(e.target.value)} />
+              <button onClick={salvar} style={styles.btnPrimary}><Icon name={editando ? 'check' : 'plus'} size={16} color="#fff" /></button>
+              {editando && <button onClick={() => { setEditando(null); setNovoHora(''); setNovoTitulo(''); setNovoLocal(''); setNovoResp(''); }} style={styles.btnSecondary}>Cancelar</button>}
+            </div>
+          )}
 
           <div style={styles.timeline}>
             <div style={styles.line} />
@@ -127,12 +100,14 @@ function CronogramaContent() {
                   </div>
                   <div style={styles.cardMeta}>
                     {item.local && <span><Icon name="map" size={12} /> {item.local}</span>}
-                    {item.responsavel && <span>· Responsável: {item.responsavel}</span>}
+                    {item.responsavel && <span>· Responsavel: {item.responsavel}</span>}
                   </div>
-                  <div style={styles.cardAcoes}>
-                    <button onClick={() => editar(item)} style={styles.btnIcon}><Icon name="edit" size={14} /></button>
-                    <button onClick={() => excluir(item.id)} style={styles.btnIcon}><Icon name="trash" size={14} /></button>
-                  </div>
+                  {!readOnly && (
+                    <div style={styles.cardAcoes}>
+                      <button onClick={() => editar(item)} style={styles.btnIcon}><Icon name="edit" size={14} /></button>
+                      <button onClick={() => excluir(item.id)} style={styles.btnIcon}><Icon name="trash" size={14} /></button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -141,6 +116,10 @@ function CronogramaContent() {
       </div>
     </>
   );
+}
+
+export async function getServerSideProps(context) {
+  return getPainelServerSideProps(context);
 }
 
 const styles = {
@@ -162,4 +141,6 @@ const styles = {
   titulo: { fontSize: '15px', fontWeight: 600, color: 'var(--color-text)' },
   cardMeta: { fontSize: '12px', color: 'var(--color-text-soft)', display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' },
   cardAcoes: { display: 'flex', gap: '8px', justifyContent: 'flex-end' },
+  readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },
+  readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
 };

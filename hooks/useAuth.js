@@ -1,6 +1,7 @@
-// hooks/useAuth.js — Autenticação com Supabase
+// hooks/useAuth.js — Autenticacao com Supabase
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { temAcessoPainel } from '../utils/acesso';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -57,8 +58,7 @@ export function useAuth() {
     setEvento(null);
   }, []);
 
-  // CORRECAO: Painel = EXCLUSIVO para assinantes. PDF nao da acesso ao painel.
-  const hasAccess = Boolean(evento && evento.assinatura_ativa === true);
+  const hasAccess = temAcessoPainel(evento);
 
   return { user, evento, loading, carregando: loading, hasAccess, login, signOut, supabase };
 }
