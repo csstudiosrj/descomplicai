@@ -3,7 +3,7 @@ import React from 'react';
 
 function parseMarkdown(text) {
   if (!text) return '';
-
+  
   let html = text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -26,19 +26,14 @@ function parseMarkdown(text) {
 
   // Listas
   html = html.replace(/^\- (.*$)/gim, '<li>$1</li>');
-  html = html.replace(/(<li>.*<\/li>
-?)+/g, '<ul>$&</ul>');
-  html = html.replace(/<\/ul>
-?<ul>/g, '');
+  html = html.replace(/(<li>.*<\/li>)+/g, '<ul>$&</ul>');
+  html = html.replace(/<\/ul><ul>/g, '');
 
   // Quebras de linha → parágrafos
-  const paragraphs = html.split(/
-
-+/);
+  const paragraphs = html.split(/\n\n+/);
   html = paragraphs.map(p => {
     if (p.trim().startsWith('<h') || p.trim().startsWith('<ul') || p.trim().startsWith('<li')) return p;
-    return p.trim() ? `<p>${p.replace(/
-/g, '<br/>')}</p>` : '';
+    return p.trim() ? `<p>${p.replace(/\n/g, '<br/>')}</p>` : '';
   }).join('');
 
   return html;
