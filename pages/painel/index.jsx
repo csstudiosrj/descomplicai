@@ -6,7 +6,6 @@ import ProgressBar from '../../components/painel/ProgressBar';
 import AlertCards from '../../components/painel/AlertCards';
 import NavCards from '../../components/painel/NavCards';
 import { useAuth } from '../../hooks/useAuth';
-import { temAcessoPainel } from '../../utils/acesso';
 import { supabase } from '../../lib/supabase';
 
 export default function PainelPage() {
@@ -18,50 +17,10 @@ export default function PainelPage() {
 }
 
 function PainelContent() {
-  const { user, evento: eventoClient, signOut } = useAuth();
-  const [eventoServer, setEventoServer] = useState(null);
-  const [readOnly, setReadOnly] = useState(true);
-  const [carregando, setCarregando] = useState(true);
+  const { user, evento, signOut, hasAccess } = useAuth();
   const [progresso, setProgresso] = useState(0);
   const [pagamentos, setPagamentos] = useState([]);
   const [tarefas, setTarefas] = useState([]);
-
-  const evento = eventoClient || eventoServer;
-
-  // Verifica acesso no cliente — onde o token do localStorage está disponível
-  useEffect(() => {
-    if (!user) return;
-
-    async function verificarAcesso() {
-      setCarregando(true);
-      try {
-        const { data: eventoData, error } = await supabase
-          .from('eventos')
-          .select('id, acesso_expira_em, acesso_iniciado_em, plano, nome_pessoa1, nome_pessoa2, nome_evento, data_evento, orcamento_total')
-          .eq('usuario_id', user.id)
-          .order('criado_em', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (error || !eventoData) {
-          console.error('Erro ao buscar evento:', error);
-          setReadOnly(true);
-          setEventoServer(null);
-        } else {
-          setEventoServer(eventoData);
-          const temAcesso = temAcessoPainel(eventoData);
-          setReadOnly(!temAcesso);
-        }
-      } catch (err) {
-        console.error('Erro na verificação de acesso:', err);
-        setReadOnly(true);
-      } finally {
-        setCarregando(false);
-      }
-    }
-
-    verificarAcesso();
-  }, [user]);
 
   useEffect(() => {
     if (!evento) return;
@@ -121,32 +80,23 @@ function PainelContent() {
         />
 
         <main style={styles.main}>
-          {carregando ? (
-            <div style={styles.loading}>Carregando...</div>
-          ) : (
-            <>
-              {readOnly && (
-                <div style={styles.readOnlyBanner}>
-                  <span style={styles.readOnlyText}>Acesso expirado. Modo somente leitura. Assine para editar.</span>
-                </div>
-              )}
-
-              <ProgressBar
-                percentual={progresso}
-                label="Progresso do planejamento"
-              />
-
-              <section style={styles.section}>
-                <h2 style={styles.sectionTitle}>Alertas</h2>
-                <AlertCards pagamentos={pagamentos} tarefas={tarefas} />
-              </section>
-
-              <section style={styles.section}>
-                <h2 style={styles.sectionTitle}>Navegação</h2>
-                <NavCards />
-              </section>
-            </>
+          {!hasAccess && (
+            <div style={styles.readOnlyBanner}>
+              <span style={styles.readOnlyText}>Acesso expirado. Modo somente leitura. Assine para editar.</span>
+            </div>
           )}
+
+          <ProgressBar percentual={progresso} label="Progresso do planejamento" />
+
+          <section style={styles.section}>
+            <h2 style={styles.sectionTitle}>Alertas</h2>
+            <AlertCards pagamentos={pagamentos} tarefas={tarefas} />
+          </section>
+
+          <section style={styles.section}>
+            <h2 style={styles.sectionTitle}>Navegação</h2>
+            <NavCards />
+          </section>
         </main>
       </div>
     </>
@@ -154,45 +104,10 @@ function PainelContent() {
 }
 
 const styles = {
-  page: {
-    minHeight: '100vh',
-    background: 'var(--color-fundo)',
-  },
-  main: {
-    maxWidth: '960px',
-    margin: '0 auto',
-    padding: '20px 16px 40px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px',
-  },
-  section: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  sectionTitle: {
-    fontFamily: 'var(--font-display)',
-    fontSize: '18px',
-    color: 'var(--color-primary)',
-    fontWeight: 600,
-  },
-  readOnlyBanner: {
-    background: '#FFF3E6',
-    border: '1px solid #F9A825',
-    borderRadius: '10px',
-    padding: '12px 16px',
-    textAlign: 'center',
-  },
-  readOnlyText: {
-    fontSize: '13px',
-    color: '#8B6F5E',
-    fontFamily: 'var(--font-body)',
-  },
-  loading: {
-    textAlign: 'center',
-    padding: '40px',
-    color: 'var(--color-primary)',
-    fontFamily: 'var(--font-body)',
-  },
+  page: { minHeight: '100vh', background: 'var(--color-fundo)' },
+  main: { maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px', display: 'flex', flexDirection: 'column', gap: '24px' },
+  section: { display: 'flex', flexDirection: 'column', gap: '12px' },
+  sectionTitle: { fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--color-primary)', fontWeight: 600 },
+  readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center' },
+  readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
 };

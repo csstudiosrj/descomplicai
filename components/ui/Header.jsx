@@ -1,28 +1,33 @@
-// components/ui/Header.jsx
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import Logo from './Logo';
 
 export default function Header() {
   const { user, carregando, signOut } = useAuth();
   const router = useRouter();
+  const [menuAberto, setMenuAberto] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
+    setMenuAberto(false);
     router.push('/');
   };
+
+  const toggleMenu = () => setMenuAberto(!menuAberto);
 
   return (
     <header className="header">
       <div className="header-container">
-        <Link href="/" className="header-logo-link">
+        <Link href="/" className="header-logo-link" onClick={() => setMenuAberto(false)}>
           <Logo />
         </Link>
-        <nav className="header-nav" aria-label="Navegação principal">
+        
+        <nav className={`header-nav ${menuAberto ? 'header-nav--open' : ''}`} aria-label="Navegação principal">
           <ul className="header-nav-list">
             <li>
-              <Link href="/planos" className="header-nav-link">
+              <Link href="/planos" className="header-nav-link" onClick={() => setMenuAberto(false)}>
                 Planos
               </Link>
             </li>
@@ -35,7 +40,7 @@ export default function Header() {
             ) : user ? (
               <>
                 <li>
-                  <Link href="/painel" className="header-nav-link">
+                  <Link href="/painel" className="header-nav-link" onClick={() => setMenuAberto(false)}>
                     Painel
                   </Link>
                 </li>
@@ -51,17 +56,23 @@ export default function Header() {
               </>
             ) : (
               <li>
-                <Link href="/login" className="header-nav-link header-nav-link--primary">
+                <Link href="/login" className="header-nav-link header-nav-link--primary" onClick={() => setMenuAberto(false)}>
                   Entrar
                 </Link>
               </li>
             )}
           </ul>
         </nav>
-        <button className="header-menu-toggle" aria-label="Abrir menu">
-          <span className="header-menu-bar" />
-          <span className="header-menu-bar" />
-          <span className="header-menu-bar" />
+
+        <button 
+          className="header-menu-toggle" 
+          aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
+          aria-expanded={menuAberto}
+          onClick={toggleMenu}
+        >
+          <span className={`header-menu-bar ${menuAberto ? 'header-menu-bar--active' : ''}`} />
+          <span className={`header-menu-bar ${menuAberto ? 'header-menu-bar--active' : ''}`} />
+          <span className={`header-menu-bar ${menuAberto ? 'header-menu-bar--active' : ''}`} />
         </button>
       </div>
     </header>
