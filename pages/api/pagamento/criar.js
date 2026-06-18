@@ -1,4 +1,3 @@
-// pages/api/pagamento/criar.js
 import { client, Preference } from '../../../lib/mercadopago';
 
 const PLANOS = {
@@ -53,6 +52,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ erro: 'Tipo de pagamento invalido' });
   }
 
+  const externalReference = JSON.stringify({ usuarioId, eventoId, tipo, duracao_meses: duracaoMeses });
+  console.log('Criar preference: external_reference =', externalReference);
+
   try {
     const preference = new Preference(client);
     const resultado = await preference.create({
@@ -66,7 +68,7 @@ export default async function handler(req, res) {
         },
         auto_return: 'approved',
         notification_url: `${process.env.NEXT_PUBLIC_URL}/api/pagamento/webhook`,
-        external_reference: JSON.stringify({ usuarioId, eventoId, tipo, duracao_meses: duracaoMeses }),
+        external_reference: externalReference,
       },
     });
 
