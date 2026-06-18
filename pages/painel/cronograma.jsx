@@ -4,7 +4,6 @@ import ProtectedRoute from '../../components/painel/ProtectedRoute';
 import HeaderPainel from '../../components/painel/HeaderPainel';
 import Icon from '../../components/ui/Icon';
 import { useAuth } from '../../hooks/useAuth';
-import { getPainelServerSideProps } from '../../utils/painelServer';
 
 export default function CronogramaPage({ readOnly }) {
   return (
@@ -112,9 +111,6 @@ function CronogramaContent({ readOnly }) {
   );
 }
 
-export async function getServerSideProps(context) {
-  return getPainelServerSideProps(context);
-}
 
 const styles = {
   page: { minHeight: '100vh', background: 'var(--color-fundo)' },

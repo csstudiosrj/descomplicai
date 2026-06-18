@@ -6,22 +6,62 @@ import ProgressBar from '../../components/painel/ProgressBar';
 import AlertCards from '../../components/painel/AlertCards';
 import NavCards from '../../components/painel/NavCards';
 import { useAuth } from '../../hooks/useAuth';
-import { getPainelServerSideProps } from '../../utils/painelServer';
+import { temAcessoPainel } from '../../utils/acesso';
+import { supabase } from '../../lib/supabase';
 
-export default function PainelPage({ readOnly, evento: eventoServer }) {
+export default function PainelPage() {
   return (
     <ProtectedRoute>
-      <PainelContent readOnly={readOnly} eventoServer={eventoServer} />
+      <PainelContent />
     </ProtectedRoute>
   );
 }
 
-function PainelContent({ readOnly, eventoServer }) {
-  const { user, evento: eventoClient, signOut, supabase } = useAuth();
-  const evento = eventoClient || eventoServer;
+function PainelContent() {
+  const { user, evento: eventoClient, signOut } = useAuth();
+  const [eventoServer, setEventoServer] = useState(null);
+  const [readOnly, setReadOnly] = useState(true);
+  const [carregando, setCarregando] = useState(true);
   const [progresso, setProgresso] = useState(0);
   const [pagamentos, setPagamentos] = useState([]);
   const [tarefas, setTarefas] = useState([]);
+
+  const evento = eventoClient || eventoServer;
+
+  // Verifica acesso no cliente — onde o token do localStorage está disponível
+  useEffect(() => {
+    if (!user) return;
+
+    async function verificarAcesso() {
+      setCarregando(true);
+      try {
+        const { data: eventoData, error } = await supabase
+          .from('eventos')
+          .select('id, acesso_expira_em, acesso_iniciado_em, plano, nome_pessoa1, nome_pessoa2, nome_evento, data_evento, orcamento_total')
+          .eq('usuario_id', user.id)
+          .order('criado_em', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error || !eventoData) {
+          console.error('Erro ao buscar evento:', error);
+          setReadOnly(true);
+          setEventoServer(null);
+        } else {
+          setEventoServer(eventoData);
+          const temAcesso = temAcessoPainel(eventoData);
+          setReadOnly(!temAcesso);
+        }
+      } catch (err) {
+        console.error('Erro na verificação de acesso:', err);
+        setReadOnly(true);
+      } finally {
+        setCarregando(false);
+      }
+    }
+
+    verificarAcesso();
+  }, [user]);
 
   useEffect(() => {
     if (!evento) return;
@@ -81,34 +121,36 @@ function PainelContent({ readOnly, eventoServer }) {
         />
 
         <main style={styles.main}>
-          {readOnly && (
-            <div style={styles.readOnlyBanner}>
-              <span style={styles.readOnlyText}>Acesso expirado. Modo somente leitura. Assine para editar.</span>
-            </div>
+          {carregando ? (
+            <div style={styles.loading}>Carregando...</div>
+          ) : (
+            <>
+              {readOnly && (
+                <div style={styles.readOnlyBanner}>
+                  <span style={styles.readOnlyText}>Acesso expirado. Modo somente leitura. Assine para editar.</span>
+                </div>
+              )}
+
+              <ProgressBar
+                percentual={progresso}
+                label="Progresso do planejamento"
+              />
+
+              <section style={styles.section}>
+                <h2 style={styles.sectionTitle}>Alertas</h2>
+                <AlertCards pagamentos={pagamentos} tarefas={tarefas} />
+              </section>
+
+              <section style={styles.section}>
+                <h2 style={styles.sectionTitle}>Navegação</h2>
+                <NavCards />
+              </section>
+            </>
           )}
-
-          <ProgressBar
-            percentual={progresso}
-            label="Progresso do planejamento"
-          />
-
-          <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Alertas</h2>
-            <AlertCards pagamentos={pagamentos} tarefas={tarefas} />
-          </section>
-
-          <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Navegação</h2>
-            <NavCards />
-          </section>
         </main>
       </div>
     </>
   );
-}
-
-export async function getServerSideProps(context) {
-  return getPainelServerSideProps(context);
 }
 
 const styles = {
@@ -145,6 +187,12 @@ const styles = {
   readOnlyText: {
     fontSize: '13px',
     color: '#8B6F5E',
+    fontFamily: 'var(--font-body)',
+  },
+  loading: {
+    textAlign: 'center',
+    padding: '40px',
+    color: 'var(--color-primary)',
     fontFamily: 'var(--font-body)',
   },
 };
