@@ -13,12 +13,17 @@ export function useAuth() {
 
   useEffect(() => {
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await buscarEvento(session.user.id);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await buscarEvento(session.user.id);
+        }
+      } catch (err) {
+        console.error('useAuth: erro ao buscar sessão:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     getSession();
 
@@ -35,14 +40,31 @@ export function useAuth() {
   }, []);
 
   const buscarEvento = useCallback(async (userId) => {
-    const { data } = await supabase
-      .from('eventos')
-      .select('*')
-      .eq('usuario_id', userId)
-      .order('criado_em', { ascending: false })
-      .limit(1)
-      .single();
-    setEvento(data);
+    try {
+      const { data, error } = await supabase
+        .from('eventos')
+        .select('*')
+        .eq('usuario_id', userId)
+        .order('criado_em', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error('useAuth: erro ao buscar evento:', error);
+        setEvento(null);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        console.log('useAuth: evento encontrado:', data[0].id, 'plano:', data[0].plano, 'expira:', data[0].acesso_expira_em);
+        setEvento(data[0]);
+      } else {
+        console.log('useAuth: nenhum evento encontrado para usuario_id:', userId);
+        setEvento(null);
+      }
+    } catch (err) {
+      console.error('useAuth: exceção ao buscar evento:', err);
+      setEvento(null);
+    }
   }, []);
 
   const login = useCallback(async (email, senha) => {
