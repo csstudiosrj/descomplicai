@@ -132,7 +132,7 @@ export default function ConclusaoPage() {
     if (!user?.id || !evento?.id) { alert('Faca login primeiro para continuar.'); return; }
     setIniciandoTrial(true);
     try {
-      const resposta = await fetch('/api/evento/trial', {
+      const resposta = await fetch('/api/trial', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ eventoId: evento.id }),
