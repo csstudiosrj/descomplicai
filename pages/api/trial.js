@@ -7,9 +7,10 @@ export default async function handler(req, res) {
   }
 
   const { eventoId } = req.body;
+  console.log('Trial API: eventoId recebido:', eventoId, 'tipo:', typeof eventoId);
 
   if (!eventoId) {
-    return res.status(400).json({ erro: 'eventoId obrigatorio' });
+    return res.status(400).json({ erro: 'eventoId obrigatorio', recebido: eventoId });
   }
 
   const supabaseAdmin = createClient(
@@ -22,10 +23,17 @@ export default async function handler(req, res) {
       .from('eventos')
       .select('acesso_iniciado_em')
       .eq('id', eventoId)
-      .single();
+      .maybeSingle();
 
-    if (fetchError || !evento) {
-      return res.status(404).json({ erro: 'Evento nao encontrado' });
+    console.log('Trial API: busca evento:', { evento, error: fetchError?.message });
+
+    if (fetchError) {
+      console.error('Trial API: erro na busca:', fetchError);
+      return res.status(500).json({ erro: 'Erro ao buscar evento', detalhe: fetchError.message });
+    }
+
+    if (!evento) {
+      return res.status(404).json({ erro: 'Evento nao encontrado', eventoId });
     }
 
     if (evento.acesso_iniciado_em) {
@@ -44,13 +52,13 @@ export default async function handler(req, res) {
       .eq('id', eventoId);
 
     if (updateError) {
-      console.error('Erro ao iniciar trial:', updateError);
-      return res.status(500).json({ erro: 'Erro ao iniciar trial' });
+      console.error('Trial API: erro ao atualizar:', updateError);
+      return res.status(500).json({ erro: 'Erro ao iniciar trial', detalhe: updateError.message });
     }
 
     res.status(200).json({ sucesso: true });
   } catch (err) {
     console.error('Trial API erro:', err);
-    res.status(500).json({ erro: 'Erro interno' });
+    res.status(500).json({ erro: 'Erro interno', detalhe: err.message });
   }
 }
