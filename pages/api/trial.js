@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { iniciarTrial } from '../../../utils/acesso';
+import { iniciarTrial } from '../../utils/acesso';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
