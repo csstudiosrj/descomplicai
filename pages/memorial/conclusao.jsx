@@ -32,7 +32,6 @@ export default function ConclusaoPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [pagando, setPagando] = useState(false);
   const [modalPlanos, setModalPlanos] = useState(false);
-  const [aceiteTermosTrial, setAceiteTermosTrial] = useState(false);
   const [aceiteTermosPDF, setAceiteTermosPDF] = useState(false);
   const [aceiteTermosAssinatura, setAceiteTermosAssinatura] = useState(false);
   const [planoSelecionado, setPlanoSelecionado] = useState('mensal');
@@ -131,7 +130,6 @@ export default function ConclusaoPage() {
 
   const handleIniciarTrial = async () => {
     if (!user?.id || !evento?.id) { alert('Faca login primeiro para continuar.'); return; }
-    if (!aceiteTermosTrial) { alert('Aceite os termos para continuar.'); return; }
     setIniciandoTrial(true);
     try {
       const resposta = await fetch('/api/evento/trial', {
@@ -290,36 +288,30 @@ export default function ConclusaoPage() {
                   <p style={{ fontSize: '14px', color: '#5c534a', marginBottom: '20px', lineHeight: '1.5', fontFamily: 'var(--font-body)' }}>Fornecedores, orçamento e prazos, tudo num só lugar, até o grande dia.</p>
 
                   {!trialJaIniciado ? (
-                    <>
-                      <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', color: '#5c534a', cursor: 'pointer', marginBottom: '16px' }}>
-                        <input type="checkbox" checked={aceiteTermosTrial} onChange={(e) => setAceiteTermosTrial(e.target.checked)} style={{ marginTop: '2px', flexShrink: 0 }} />
-                        <span>Ao iniciar o teste gratuito, você concorda em começar a usar o serviço de gestão do Descomplicaí agora. O prazo de reflexão de 7 dias previsto no artigo 49 do Código de Defesa do Consumidor passa a contar a partir deste momento — não a partir de uma eventual assinatura paga feita depois.</span>
-                      </label>
-                      <button
-                        onClick={handleIniciarTrial}
-                        disabled={iniciandoTrial}
-                        style={{
-                          width: '100%',
-                          padding: '14px 20px',
-                          borderRadius: '12px',
-                          border: '1.5px solid #10B981',
-                          backgroundColor: 'transparent',
-                          color: '#0b7a56',
-                          fontFamily: 'var(--font-body)',
-                          fontSize: '15px',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '8px',
-                          opacity: iniciandoTrial ? 0.7 : 1,
-                        }}
-                      >
-                        {iniciandoTrial ? 'Iniciando...' : 'Testar grátis por 7 dias'}
-                        {!iniciandoTrial && <span style={{ fontSize: '18px' }}>→</span>}
-                      </button>
-                    </>
+                    <button
+                      onClick={handleIniciarTrial}
+                      disabled={iniciandoTrial}
+                      style={{
+                        width: '100%',
+                        padding: '14px 20px',
+                        borderRadius: '12px',
+                        border: '1.5px solid #10B981',
+                        backgroundColor: 'transparent',
+                        color: '#0b7a56',
+                        fontFamily: 'var(--font-body)',
+                        fontSize: '15px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        opacity: iniciandoTrial ? 0.7 : 1,
+                      }}
+                    >
+                      {iniciandoTrial ? 'Iniciando...' : 'Testar grátis por 7 dias'}
+                      {!iniciandoTrial && <span style={{ fontSize: '18px' }}>→</span>}
+                    </button>
                   ) : (
                     <button
                       onClick={() => setModalPlanos(true)}
@@ -352,15 +344,9 @@ export default function ConclusaoPage() {
               {!pdfLiberado && (
                 <>
                   {!trialJaIniciado ? (
-                    <>
-                      <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', cursor: 'pointer' }}>
-                        <input type="checkbox" checked={aceiteTermosTrial} onChange={(e) => setAceiteTermosTrial(e.target.checked)} style={{ marginTop: '2px' }} />
-                        <span>Ao iniciar o teste gratuito, você concorda em começar a usar o serviço de gestão do Descomplicaí agora. O prazo de reflexão de 7 dias previsto no artigo 49 do Código de Defesa do Consumidor passa a contar a partir deste momento — não a partir de uma eventual assinatura paga feita depois.</span>
-                      </label>
-                      <Button variant="secondary" size="lg" fullWidth loading={iniciandoTrial} onClick={handleIniciarTrial}>
-                        {iniciandoTrial ? 'Iniciando...' : 'Gerenciar meu casamento — 7 dias gratis'}
-                      </Button>
-                    </>
+                    <Button variant="secondary" size="lg" fullWidth loading={iniciandoTrial} onClick={handleIniciarTrial}>
+                      {iniciandoTrial ? 'Iniciando...' : 'Gerenciar meu casamento — 7 dias gratis'}
+                    </Button>
                   ) : (
                     <div style={{ padding: '24px', backgroundColor: 'rgba(16,185,129,0.05)', borderRadius: '16px', border: '1px solid rgba(16,185,129,0.35)', marginTop: '16px' }}>
                       <p style={{ fontSize: '11px', color: '#0b7a56', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', fontFamily: 'var(--font-body)' }}>gestão completa</p>
