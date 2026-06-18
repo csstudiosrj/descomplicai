@@ -288,28 +288,63 @@ export default function ConclusaoPage() {
                   <p style={{ fontSize: '11px', color: '#0b7a56', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', fontFamily: 'var(--font-body)' }}>gestão completa</p>
                   <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '21px', color: '#1a1714', marginBottom: '12px', lineHeight: '1.3', fontWeight: 600 }}>Coloque seu casamento no painel</h3>
                   <p style={{ fontSize: '14px', color: '#5c534a', marginBottom: '20px', lineHeight: '1.5', fontFamily: 'var(--font-body)' }}>Fornecedores, orçamento e prazos, tudo num só lugar, até o grande dia.</p>
-                  <button
-                    onClick={() => setModalPlanos(true)}
-                    style={{
-                      width: '100%',
-                      padding: '14px 20px',
-                      borderRadius: '12px',
-                      border: '1.5px solid #10B981',
-                      backgroundColor: 'transparent',
-                      color: '#0b7a56',
-                      fontFamily: 'var(--font-body)',
-                      fontSize: '15px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                    }}
-                  >
-                    Testar grátis por 7 dias
-                    <span style={{ fontSize: '18px' }}>→</span>
-                  </button>
+
+                  {!trialJaIniciado ? (
+                    <>
+                      <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', color: '#5c534a', cursor: 'pointer', marginBottom: '16px' }}>
+                        <input type="checkbox" checked={aceiteTermosTrial} onChange={(e) => setAceiteTermosTrial(e.target.checked)} style={{ marginTop: '2px', flexShrink: 0 }} />
+                        <span>Ao iniciar o teste gratuito, você concorda em começar a usar o serviço de gestão do Descomplicaí agora. O prazo de reflexão de 7 dias previsto no artigo 49 do Código de Defesa do Consumidor passa a contar a partir deste momento — não a partir de uma eventual assinatura paga feita depois.</span>
+                      </label>
+                      <button
+                        onClick={handleIniciarTrial}
+                        disabled={iniciandoTrial}
+                        style={{
+                          width: '100%',
+                          padding: '14px 20px',
+                          borderRadius: '12px',
+                          border: '1.5px solid #10B981',
+                          backgroundColor: 'transparent',
+                          color: '#0b7a56',
+                          fontFamily: 'var(--font-body)',
+                          fontSize: '15px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          opacity: iniciandoTrial ? 0.7 : 1,
+                        }}
+                      >
+                        {iniciandoTrial ? 'Iniciando...' : 'Testar grátis por 7 dias'}
+                        {!iniciandoTrial && <span style={{ fontSize: '18px' }}>→</span>}
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setModalPlanos(true)}
+                      style={{
+                        width: '100%',
+                        padding: '14px 20px',
+                        borderRadius: '12px',
+                        border: '1.5px solid #10B981',
+                        backgroundColor: 'transparent',
+                        color: '#0b7a56',
+                        fontFamily: 'var(--font-body)',
+                        fontSize: '15px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                      }}
+                    >
+                      Assinar painel — escolha seu plano
+                      <span style={{ fontSize: '18px' }}>→</span>
+                    </button>
+                  )}
+
                   <p style={{ textAlign: 'center', fontSize: '12px', color: '#8b7e6e', marginTop: '12px', fontFamily: 'var(--font-body)' }}>sem cartão de crédito · sem compromisso</p>
                 </div>
               )}
@@ -350,7 +385,7 @@ export default function ConclusaoPage() {
                           gap: '8px',
                         }}
                       >
-                        Testar grátis por 7 dias
+                        Assinar painel — escolha seu plano
                         <span style={{ fontSize: '18px' }}>→</span>
                       </button>
                       <p style={{ textAlign: 'center', fontSize: '12px', color: '#8b7e6e', marginTop: '12px', fontFamily: 'var(--font-body)' }}>sem cartão de crédito · sem compromisso</p>
