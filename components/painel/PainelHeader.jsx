@@ -1,39 +1,107 @@
-// Header do painel principal — navegação e perfil do casal
-// Dependências diretas: React, PropTypes, useAuth
+import { useMemo } from 'react';
 
-import React from 'react';
-import PropTypes from 'prop-types';
-import Link from 'next/link';
-import { useAuth } from '../../hooks/useAuth';
-import Button from '../ui/Button';
+export default function HeaderPainel({ nomeCasal, dataEvento, onLogout }) {
+  const diasRestantes = useMemo(() => {
+    if (!dataEvento) return null;
+    const hoje = new Date();
+    const evento = new Date(dataEvento);
+    const diff = Math.ceil((evento - hoje) / (1000 * 60 * 60 * 24));
+    return diff > 0 ? diff : 0;
+  }, [dataEvento]);
 
-export default function PainelHeader({ titulo, subtitulo }) {
-  const { usuario, logout } = useAuth();
+  const dataFormatada = useMemo(() => {
+    if (!dataEvento) return '';
+    const [ano, mes, dia] = dataEvento.split('-');
+    return `${dia}/${mes}/${ano}`;
+  }, [dataEvento]);
 
   return (
-    <header style={{ backgroundColor: 'var(--color-white)', borderBottom: '1px solid var(--color-border)', padding: 'var(--space-4) var(--space-6)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-4)' }}>
-      <div>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)', margin: 0 }}>{titulo}</h1>
-        {subtitulo && <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', margin: 'var(--space-1) 0 0' }}>{subtitulo}</p>}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-        <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
-          {usuario?.email || 'Visitante'}
-        </span>
-        <Link href="/memorial" passHref legacyBehavior>
-          <a style={{ textDecoration: 'none' }}>
-            <Button variant="ghost" size="sm">Memorial</Button>
-          </a>
-        </Link>
-        <Button variant="secondary" size="sm" onClick={logout}>Sair</Button>
+    <header style={styles.header}>
+      <div style={styles.container}>
+        <div style={styles.brand}>
+          <h1 style={styles.title}>{nomeCasal || 'Seu Casamento'}</h1>
+          <div style={styles.meta}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-text-soft)', flexShrink: 0 }}>
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span style={styles.metaText}>{dataFormatada}</span>
+            {diasRestantes !== null && (
+              <span style={styles.badge}>
+                {diasRestantes} dia{diasRestantes !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+        </div>
+        <button onClick={onLogout} style={styles.logoutBtn} aria-label="Sair">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-text-soft)' }}>
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </button>
       </div>
     </header>
   );
 }
 
-PainelHeader.propTypes = {
-  titulo: PropTypes.string.isRequired,
-  subtitulo: PropTypes.string,
+const styles = {
+  header: {
+    background: 'var(--color-fundo)',
+    borderBottom: '1px solid var(--color-secondary)',
+    padding: '16px 0',
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
+  },
+  container: {
+    maxWidth: '960px',
+    margin: '0 auto',
+    padding: '0 16px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  brand: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+  },
+  title: {
+    fontFamily: 'var(--font-display)',
+    fontSize: '22px',
+    color: 'var(--color-primary)',
+    margin: 0,
+    lineHeight: 1.2,
+  },
+  meta: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '13px',
+    color: 'var(--color-text-soft)',
+  },
+  metaText: {
+    fontFamily: 'var(--font-body)',
+  },
+  badge: {
+    background: 'var(--color-primary)',
+    color: '#fff',
+    padding: '2px 10px',
+    borderRadius: '12px',
+    fontSize: '11px',
+    fontWeight: 600,
+  },
+  logoutBtn: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '8px',
+    borderRadius: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 };
-
-export { PainelHeader };
