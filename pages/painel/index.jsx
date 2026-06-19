@@ -104,10 +104,40 @@ function PainelContent() {
 }
 
 const styles = {
-  page: { minHeight: '100vh', background: 'var(--color-fundo)' },
-  main: { maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px', display: 'flex', flexDirection: 'column', gap: '24px' },
-  section: { display: 'flex', flexDirection: 'column', gap: '12px' },
-  sectionTitle: { fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--color-primary)', fontWeight: 600 },
-  readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center' },
-  readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
+  page: {
+    minHeight: '100vh',
+    background: 'var(--color-fundo)',
+    paddingTop: '52px',
+  },
+  main: {
+    maxWidth: '960px',
+    margin: '0 auto',
+    padding: '20px 16px 40px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '24px',
+  },
+  section: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+  sectionTitle: {
+    fontFamily: 'var(--font-display)',
+    fontSize: '18px',
+    color: 'var(--color-primary)',
+    fontWeight: 600,
+  },
+  readOnlyBanner: {
+    background: '#FFF3E6',
+    border: '1px solid #F9A825',
+    borderRadius: '10px',
+    padding: '12px 16px',
+    textAlign: 'center',
+  },
+  readOnlyText: {
+    fontSize: '13px',
+    color: '#8B6F5E',
+    fontFamily: 'var(--font-body)',
+  },
 };
