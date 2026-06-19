@@ -54,7 +54,18 @@ function FornecedoresContent({ readOnly }) {
 
   const salvar = async () => {
     if (readOnly) return;
-    const payload = { ...form, evento_id: evento.id };
+
+    // Calcula valor_saldo automaticamente
+    const valorTotal = Number(form.valor_total) || 0;
+    const valorEntrada = Number(form.valor_entrada) || 0;
+    const valorSaldo = valorTotal - valorEntrada;
+
+    const payload = { 
+      ...form, 
+      evento_id: evento.id,
+      valor_saldo: valorSaldo,
+    };
+
     if (form.id) {
       await supabase.from('fornecedores').update(payload).eq('id', form.id);
     } else {
@@ -126,7 +137,7 @@ function FornecedoresContent({ readOnly }) {
                   </span>
                 </div>
                 <h3 style={styles.nome}>{f.nome}</h3>
-                <p style={styles.empresa}>{f.nome_empresa}</p>
+                <p style={styles.empresa}>{f.empresa}</p>
 
                 <div style={styles.contatos}>
                   {f.telefone && <span><Icon name="phone" size={12} /> {f.telefone}</span>}
@@ -166,13 +177,13 @@ function FornecedoresContent({ readOnly }) {
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h2 style={styles.modalTitle}>{form.id ? 'Editar' : 'Novo'} Fornecedor</h2>
             <input style={styles.input} placeholder="Nome" value={form.nome || ''} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
-            <input style={styles.input} placeholder="Empresa" value={form.nome_empresa || ''} onChange={(e) => setForm({ ...form, nome_empresa: e.target.value })} />
+            <input style={styles.input} placeholder="Empresa" value={form.empresa || ''} onChange={(e) => setForm({ ...form, empresa: e.target.value })} />
             <input style={styles.input} placeholder="Categoria" value={form.categoria || ''} onChange={(e) => setForm({ ...form, categoria: e.target.value })} />
             <input style={styles.input} placeholder="Telefone" value={form.telefone || ''} onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
             <input style={styles.input} placeholder="Email" value={form.email || ''} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             <input style={styles.input} placeholder="Instagram" value={form.instagram || ''} onChange={(e) => setForm({ ...form, instagram: e.target.value })} />
             <input style={styles.input} placeholder="Site" value={form.site || ''} onChange={(e) => setForm({ ...form, site: e.target.value })} />
-            <input style={styles.input} placeholder="Serviço contratado" value={form.servico_contratado || ''} onChange={(e) => setForm({ ...form, servico_contratado: e.target.value })} />
+            <input style={styles.input} placeholder="Serviço contratado" value={form.servico || ''} onChange={(e) => setForm({ ...form, servico: e.target.value })} />
             <input style={styles.input} placeholder="Valor Total" type="number" value={form.valor_total || ''} onChange={(e) => setForm({ ...form, valor_total: Number(e.target.value) })} />
             <input style={styles.input} placeholder="Entrada" type="number" value={form.valor_entrada || ''} onChange={(e) => setForm({ ...form, valor_entrada: Number(e.target.value) })} />
             <select style={styles.input} value={form.status || 'a_contratar'} onChange={(e) => setForm({ ...form, status: e.target.value })}>
