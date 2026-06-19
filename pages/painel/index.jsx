@@ -76,7 +76,6 @@ function PainelContent() {
         <HeaderPainel
           nomeCasal={nomeCasal}
           dataEvento={evento?.data_evento}
-          onLogout={signOut}
         />
 
         <main style={styles.main}>

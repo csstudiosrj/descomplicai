@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import Icon from '../ui/Icon';
 
 function capitalizar(texto) {
   if (!texto) return '';
@@ -10,7 +9,7 @@ function capitalizar(texto) {
     .join(' ');
 }
 
-export default function HeaderPainel({ nomeCasal, dataEvento, onLogout }) {
+export default function HeaderPainel({ nomeCasal, dataEvento }) {
   const diasRestantes = useMemo(() => {
     if (!dataEvento) return null;
     const hoje = new Date();
@@ -47,9 +46,6 @@ export default function HeaderPainel({ nomeCasal, dataEvento, onLogout }) {
             )}
           </div>
         </div>
-        <button onClick={onLogout} style={styles.logoutBtn} aria-label="Sair">
-          <Icon name="logout" size={18} color="var(--color-text-soft)" />
-        </button>
       </div>
     </header>
   );
@@ -100,15 +96,5 @@ const styles = {
     fontFamily: 'var(--font-body)',
     fontSize: '13px',
     color: 'var(--color-text-soft)',
-  },
-  logoutBtn: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: '8px',
-    borderRadius: '8px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 };
