@@ -1,6 +1,14 @@
-// components/painel/HeaderPainel.jsx — Header do painel
 import { useMemo } from 'react';
 import Icon from '../ui/Icon';
+
+function capitalizar(texto) {
+  if (!texto) return '';
+  return texto
+    .toLowerCase()
+    .split(' ')
+    .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+    .join(' ');
+}
 
 export default function HeaderPainel({ nomeCasal, dataEvento, onLogout }) {
   const diasRestantes = useMemo(() => {
@@ -11,24 +19,31 @@ export default function HeaderPainel({ nomeCasal, dataEvento, onLogout }) {
     return diff > 0 ? diff : 0;
   }, [dataEvento]);
 
-  const dataFormatada = useMemo(() => {
+  const dataPorExtenso = useMemo(() => {
     if (!dataEvento) return '';
     const [ano, mes, dia] = dataEvento.split('-');
-    return `${dia}/${mes}/${ano}`;
+    const meses = [
+      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+    ];
+    return `${parseInt(dia)} de ${meses[parseInt(mes) - 1]} de ${ano}`;
   }, [dataEvento]);
+
+  const nomeExibido = capitalizar(nomeCasal) || 'Seu Casamento';
 
   return (
     <header style={styles.header}>
       <div style={styles.container}>
         <div style={styles.brand}>
-          <h1 style={styles.title}>{nomeCasal || 'Seu Casamento'}</h1>
+          <h1 style={styles.title}>{nomeExibido}</h1>
           <div style={styles.meta}>
-            <Icon name="calendar" size={14} color="var(--color-text-soft)" />
-            <span style={styles.metaText}>{dataFormatada}</span>
             {diasRestantes !== null && (
-              <span style={styles.badge}>
-                {diasRestantes} dia{diasRestantes !== 1 ? 's' : ''}
+              <span style={styles.countdown}>
+                Faltam {diasRestantes} dia{diasRestantes !== 1 ? 's' : ''}
               </span>
+            )}
+            {dataPorExtenso && (
+              <span style={styles.dataExtenso}>{dataPorExtenso}</span>
             )}
           </div>
         </div>
@@ -44,7 +59,7 @@ const styles = {
   header: {
     background: 'var(--color-fundo)',
     borderBottom: '1px solid var(--color-secondary)',
-    padding: '16px 0',
+    padding: '20px 0',
     position: 'sticky',
     top: 0,
     zIndex: 100,
@@ -60,32 +75,31 @@ const styles = {
   brand: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px',
+    gap: '6px',
   },
   title: {
     fontFamily: 'var(--font-display)',
-    fontSize: '22px',
+    fontSize: '24px',
     color: 'var(--color-primary)',
     margin: 0,
     lineHeight: 1.2,
+    fontWeight: 600,
   },
   meta: {
     display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
+    flexDirection: 'column',
+    gap: '2px',
+  },
+  countdown: {
+    fontFamily: 'var(--font-body)',
+    fontSize: '15px',
+    color: 'var(--color-brand)',
+    fontWeight: 500,
+  },
+  dataExtenso: {
+    fontFamily: 'var(--font-body)',
     fontSize: '13px',
     color: 'var(--color-text-soft)',
-  },
-  metaText: {
-    fontFamily: 'var(--font-body)',
-  },
-  badge: {
-    background: 'var(--color-primary)',
-    color: '#fff',
-    padding: '2px 10px',
-    borderRadius: '12px',
-    fontSize: '11px',
-    fontWeight: 600,
   },
   logoutBtn: {
     background: 'none',
