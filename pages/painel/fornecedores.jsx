@@ -32,10 +32,12 @@ export default function FornecedoresPage({ readOnly }) {
 }
 
 function FornecedoresContent({ readOnly }) {
-  const { evento, signOut, supabase } = useAuth();
+  const { evento, supabase } = useAuth();
   const [fornecedores, setFornecedores] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState({});
+  const [aceiteTermo, setAceiteTermo] = useState(false);
+  const [assinando, setAssinando] = useState(false);
 
   useEffect(() => {
     if (evento) buscar();
@@ -60,6 +62,7 @@ function FornecedoresContent({ readOnly }) {
     }
     setModalAberto(false);
     setForm({});
+    setAceiteTermo(false);
     buscar();
   };
 
@@ -69,13 +72,37 @@ function FornecedoresContent({ readOnly }) {
     buscar();
   };
 
+  const assinarContrato = async (fornecedorId) => {
+    if (!aceiteTermo) return;
+    setAssinando(true);
+    try {
+      const res = await fetch('/api/fornecedores/assinar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fornecedorId }),
+      });
+      const data = await res.json();
+      if (data.sucesso) {
+        alert('Contrato assinado digitalmente com sucesso!');
+        buscar();
+      } else {
+        alert('Erro: ' + data.erro);
+      }
+    } catch (err) {
+      alert('Erro ao assinar contrato');
+    } finally {
+      setAssinando(false);
+      setAceiteTermo(false);
+    }
+  };
+
   const nomeCasal = evento?.nome_evento || '';
 
   return (
     <>
       <Head><title>Fornecedores | descomplicaí</title></Head>
       <div style={styles.page}>
-        <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} onLogout={signOut} />
+        <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} />
         <main style={styles.main}>
           {readOnly && (
             <div style={styles.readOnlyBanner}><span style={styles.readOnlyText}>Modo somente leitura. Assine para editar.</span></div>
@@ -83,7 +110,7 @@ function FornecedoresContent({ readOnly }) {
           <div style={styles.header}>
             <h1 style={styles.title}>Fornecedores</h1>
             {!readOnly && (
-              <button onClick={() => { setForm({}); setModalAberto(true); }} style={styles.btnPrimary}>
+              <button onClick={() => { setForm({}); setAceiteTermo(false); setModalAberto(true); }} style={styles.btnPrimary}>
                 <Icon name="plus" size={16} color="#fff" /> Adicionar
               </button>
             )}
@@ -99,7 +126,7 @@ function FornecedoresContent({ readOnly }) {
                   </span>
                 </div>
                 <h3 style={styles.nome}>{f.nome}</h3>
-                <p style={styles.empresa}>{f.empresa}</p>
+                <p style={styles.empresa}>{f.nome_empresa}</p>
 
                 <div style={styles.contatos}>
                   {f.telefone && <span><Icon name="phone" size={12} /> {f.telefone}</span>}
@@ -112,9 +139,15 @@ function FornecedoresContent({ readOnly }) {
                   <span>Saldo: R$ {(f.valor_saldo || 0).toLocaleString('pt-BR')}</span>
                 </div>
 
+                {f.contrato_assinado_em && (
+                  <div style={styles.assinado}>
+                    <Icon name="check" size={12} color="#2E7D32" /> Assinado em {new Date(f.contrato_assinado_em).toLocaleDateString('pt-BR')}
+                  </div>
+                )}
+
                 {!readOnly && (
                   <div style={styles.acoes}>
-                    <button onClick={() => { setForm(f); setModalAberto(true); }} style={styles.btnIcon}>
+                    <button onClick={() => { setForm(f); setAceiteTermo(false); setModalAberto(true); }} style={styles.btnIcon}>
                       <Icon name="edit" size={16} />
                     </button>
                     <button onClick={() => excluir(f.id)} style={styles.btnIcon}>
@@ -133,19 +166,45 @@ function FornecedoresContent({ readOnly }) {
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h2 style={styles.modalTitle}>{form.id ? 'Editar' : 'Novo'} Fornecedor</h2>
             <input style={styles.input} placeholder="Nome" value={form.nome || ''} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
-            <input style={styles.input} placeholder="Empresa" value={form.empresa || ''} onChange={(e) => setForm({ ...form, empresa: e.target.value })} />
+            <input style={styles.input} placeholder="Empresa" value={form.nome_empresa || ''} onChange={(e) => setForm({ ...form, nome_empresa: e.target.value })} />
             <input style={styles.input} placeholder="Categoria" value={form.categoria || ''} onChange={(e) => setForm({ ...form, categoria: e.target.value })} />
             <input style={styles.input} placeholder="Telefone" value={form.telefone || ''} onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
             <input style={styles.input} placeholder="Email" value={form.email || ''} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             <input style={styles.input} placeholder="Instagram" value={form.instagram || ''} onChange={(e) => setForm({ ...form, instagram: e.target.value })} />
             <input style={styles.input} placeholder="Site" value={form.site || ''} onChange={(e) => setForm({ ...form, site: e.target.value })} />
-            <input style={styles.input} placeholder="Serviço" value={form.servico || ''} onChange={(e) => setForm({ ...form, servico: e.target.value })} />
+            <input style={styles.input} placeholder="Serviço contratado" value={form.servico_contratado || ''} onChange={(e) => setForm({ ...form, servico_contratado: e.target.value })} />
             <input style={styles.input} placeholder="Valor Total" type="number" value={form.valor_total || ''} onChange={(e) => setForm({ ...form, valor_total: Number(e.target.value) })} />
             <input style={styles.input} placeholder="Entrada" type="number" value={form.valor_entrada || ''} onChange={(e) => setForm({ ...form, valor_entrada: Number(e.target.value) })} />
             <select style={styles.input} value={form.status || 'a_contratar'} onChange={(e) => setForm({ ...form, status: e.target.value })}>
               {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
             <textarea style={styles.textarea} placeholder="Notas" value={form.notas || ''} onChange={(e) => setForm({ ...form, notas: e.target.value })} />
+
+            {form.id && (
+              <div style={styles.assinaturaBox}>
+                <label style={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={aceiteTermo}
+                    onChange={(e) => setAceiteTermo(e.target.checked)}
+                    style={styles.checkbox}
+                  />
+                  Li e aceito os termos do contrato com {form.nome || 'este fornecedor'}
+                </label>
+                <button
+                  onClick={() => assinarContrato(form.id)}
+                  disabled={!aceiteTermo || assinando}
+                  style={{
+                    ...styles.btnAssinar,
+                    opacity: !aceiteTermo || assinando ? 0.5 : 1,
+                    cursor: !aceiteTermo || assinando ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {assinando ? 'Assinando...' : 'Assinar digitalmente'}
+                </button>
+              </div>
+            )}
+
             <div style={styles.modalBotoes}>
               <button onClick={() => setModalAberto(false)} style={styles.btnSecondary}>Cancelar</button>
               <button onClick={salvar} style={styles.btnPrimary}>Salvar</button>
@@ -157,9 +216,8 @@ function FornecedoresContent({ readOnly }) {
   );
 }
 
-
 const styles = {
-  page: { minHeight: '100vh', background: 'var(--color-fundo)' },
+  page: { minHeight: '100vh', background: 'var(--color-fundo)', paddingTop: '52px' },
   main: { maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
   title: { fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--color-primary)' },
@@ -175,6 +233,7 @@ const styles = {
   empresa: { fontSize: '13px', color: 'var(--color-text-soft)', marginBottom: '10px' },
   contatos: { display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: 'var(--color-text-soft)', marginBottom: '10px' },
   valores: { display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--color-text-soft)', marginBottom: '10px', flexWrap: 'wrap' },
+  assinado: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#2E7D32', marginBottom: '10px' },
   acoes: { display: 'flex', gap: '8px', justifyContent: 'flex-end' },
   modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '16px' },
   modal: { background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflow: 'auto' },
@@ -184,4 +243,8 @@ const styles = {
   modalBotoes: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' },
   readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },
   readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
+  assinaturaBox: { border: '1px solid var(--color-secondary)', borderRadius: '8px', padding: '12px', marginBottom: '10px', background: '#fafafa' },
+  checkboxLabel: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--color-text)', marginBottom: '10px', cursor: 'pointer' },
+  checkbox: { width: '16px', height: '16px', cursor: 'pointer' },
+  btnAssinar: { width: '100%', padding: '10px', background: '#2E7D32', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 600 },
 };
