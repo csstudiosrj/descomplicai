@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import { useRouter } from 'next/router';
+import Icon from './Icon';
 
 function capitalizar(texto) {
   if (!texto) return '';
@@ -10,6 +12,9 @@ function capitalizar(texto) {
 }
 
 export default function HeaderPainel({ nomeCasal, dataEvento }) {
+  const router = useRouter();
+  const ehPaginaInicial = router.pathname === '/painel' || router.pathname === '/painel/index';
+
   const diasRestantes = useMemo(() => {
     if (!dataEvento) return null;
     const hoje = new Date();
@@ -34,6 +39,15 @@ export default function HeaderPainel({ nomeCasal, dataEvento }) {
     <header style={styles.header}>
       <div style={styles.container}>
         <div style={styles.brand}>
+          {!ehPaginaInicial && (
+            <button
+              onClick={() => router.push('/painel')}
+              style={styles.btnVoltar}
+            >
+              <Icon name="arrowLeft" size={14} color="var(--color-text-soft)" />
+              <span>Voltar ao painel</span>
+            </button>
+          )}
           <h1 style={styles.title}>{nomeExibido}</h1>
           <div style={styles.meta}>
             {diasRestantes !== null && (
@@ -72,6 +86,19 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '6px',
+  },
+  btnVoltar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    background: 'none',
+    border: 'none',
+    color: 'var(--color-text-soft)',
+    fontSize: '13px',
+    cursor: 'pointer',
+    padding: '0',
+    fontFamily: 'var(--font-body)',
+    marginBottom: '2px',
   },
   title: {
     fontFamily: 'var(--font-display)',

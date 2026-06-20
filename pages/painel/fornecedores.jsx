@@ -40,6 +40,11 @@ function FornecedoresContent() {
   const [assinando, setAssinando] = useState(false);
   const [tooltipVisivel, setTooltipVisivel] = useState(false);
 
+  // ─── Filtros e visualização ───
+  const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [visualizacao, setVisualizacao] = useState('lista'); // 'lista' | 'grade'
+  const [agrupar, setAgrupar] = useState(false);
+
   const readOnly = !hasAccess;
 
   useEffect(() => {
@@ -121,7 +126,72 @@ function FornecedoresContent() {
 
   const ehOutro = form.categoria === 'outro';
 
+  // ─── Filtros aplicados ───
+  const fornecedoresFiltrados = filtroStatus === 'todos'
+    ? fornecedores
+    : fornecedores.filter(f => f.status === filtroStatus);
+
+  // ─── Agrupamento ───
+  const grupos = {};
+  if (agrupar) {
+    fornecedoresFiltrados.forEach(f => {
+      const catPrincipal = getLabelCategoriaPrincipal(f.categoria) || 'Outro';
+      if (!grupos[catPrincipal]) grupos[catPrincipal] = [];
+      grupos[catPrincipal].push(f);
+    });
+  }
+
   const nomeCasal = evento?.nome_evento || '';
+
+  const renderCard = (f) => (
+    <div key={f.id} style={styles.card}>
+      <div style={styles.cardHeader}>
+        <span style={styles.categoria}>
+          {getLabelCategoriaPrincipal(f.categoria)}
+          {getLabelCategoriaPrincipal(f.categoria) && ' → '}
+          {getLabelSubcategoria(f.categoria)}
+        </span>
+        <span style={{ ...styles.badge, background: STATUS_FORNECEDOR.find(s => s.id === f.status)?.color || '#8B6F5E' }}>
+          {STATUS_FORNECEDOR.find(s => s.id === f.status)?.label || f.status}
+        </span>
+      </div>
+      <h3 style={styles.nome}>{f.nome}</h3>
+      <p style={styles.empresa}>{f.empresa}</p>
+
+      <div style={styles.contatos}>
+        {f.telefone && <span><Icon name="phone" size={12} /> {f.telefone}</span>}
+        {f.email && <span><Icon name="mail" size={12} /> {f.email}</span>}
+      </div>
+
+      <div style={styles.valores}>
+        <span>Total: <strong>R$ {(f.valor_total || 0).toLocaleString('pt-BR')}</strong></span>
+        <span>Entrada: R$ {(f.valor_entrada || 0).toLocaleString('pt-BR')}</span>
+        <span>Saldo: R$ {(f.valor_saldo || 0).toLocaleString('pt-BR')}</span>
+      </div>
+
+      {f.contrato_assinado_em && (
+        <div style={styles.assinado}>
+          <Icon name="check" size={12} color="#2E7D32" /> Assinado em {new Date(f.contrato_assinado_em).toLocaleDateString('pt-BR')}
+        </div>
+      )}
+
+      {!readOnly && (
+        <div style={styles.acoes}>
+          <button onClick={() => {
+            const catPrincipal = getCategoriaPrincipal(f.categoria)?.id || '';
+            setForm({ ...f, categoria_principal: catPrincipal });
+            setAceiteTermo(false);
+            setModalAberto(true);
+          }} style={styles.btnIcon}>
+            <Icon name="edit" size={16} />
+          </button>
+          <button onClick={() => excluir(f.id)} style={styles.btnIcon}>
+            <Icon name="trash" size={16} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <>
@@ -147,66 +217,81 @@ function FornecedoresContent() {
             )}
           </div>
 
-          <div style={styles.grid}>
-            {fornecedores.map((f) => (
-              <div key={f.id} style={styles.card}>
-                <div style={styles.cardHeader}>
-                  <span style={styles.categoria}>
-                    {getLabelCategoriaPrincipal(f.categoria)}
-                    {getLabelCategoriaPrincipal(f.categoria) && ' → '}
-                    {getLabelSubcategoria(f.categoria)}
-                  </span>
-                  <span style={{ ...styles.badge, background: STATUS_FORNECEDOR.find(s => s.id === f.status)?.color || '#8B6F5E' }}>
-                    {STATUS_FORNECEDOR.find(s => s.id === f.status)?.label || f.status}
-                  </span>
-                </div>
-                <h3 style={styles.nome}>{f.nome}</h3>
-                <p style={styles.empresa}>{f.empresa}</p>
+          {/* Barra de filtros */}
+          <div style={styles.filtrosBar}>
+            <div style={styles.filtroGrupo}>
+              <label style={styles.filtroLabel}>Status</label>
+              <select
+                style={styles.filtroSelect}
+                value={filtroStatus}
+                onChange={(e) => setFiltroStatus(e.target.value)}
+              >
+                <option value="todos">Todos</option>
+                {STATUS_FORNECEDOR.map((s) => (
+                  <option key={s.id} value={s.id}>{s.label}</option>
+                ))}
+              </select>
+            </div>
 
-                <div style={styles.contatos}>
-                  {f.telefone && <span><Icon name="phone" size={12} /> {f.telefone}</span>}
-                  {f.email && <span><Icon name="mail" size={12} /> {f.email}</span>}
-                </div>
-
-                <div style={styles.valores}>
-                  <span>Total: <strong>R$ {(f.valor_total || 0).toLocaleString('pt-BR')}</strong></span>
-                  <span>Entrada: R$ {(f.valor_entrada || 0).toLocaleString('pt-BR')}</span>
-                  <span>Saldo: R$ {(f.valor_saldo || 0).toLocaleString('pt-BR')}</span>
-                </div>
-
-                {f.contrato_assinado_em && (
-                  <div style={styles.assinado}>
-                    <Icon name="check" size={12} color="#2E7D32" /> Assinado em {new Date(f.contrato_assinado_em).toLocaleDateString('pt-BR')}
-                  </div>
-                )}
-
-                {!readOnly && (
-                  <div style={styles.acoes}>
-                    <button onClick={() => {
-                      const catPrincipal = getCategoriaPrincipal(f.categoria)?.id || '';
-                      setForm({ ...f, categoria_principal: catPrincipal });
-                      setAceiteTermo(false);
-                      setModalAberto(true);
-                    }} style={styles.btnIcon}>
-                      <Icon name="edit" size={16} />
-                    </button>
-                    <button onClick={() => excluir(f.id)} style={styles.btnIcon}>
-                      <Icon name="trash" size={16} />
-                    </button>
-                  </div>
-                )}
+            <div style={styles.filtroGrupo}>
+              <label style={styles.filtroLabel}>Visualização</label>
+              <div style={styles.toggleGroup}>
+                <button
+                  onClick={() => setVisualizacao('lista')}
+                  style={{ ...styles.toggleBtn, ...(visualizacao === 'lista' ? styles.toggleAtivo : {}) }}
+                  title="Lista"
+                >
+                  <Icon name="list" size={16} />
+                </button>
+                <button
+                  onClick={() => setVisualizacao('grade')}
+                  style={{ ...styles.toggleBtn, ...(visualizacao === 'grade' ? styles.toggleAtivo : {}) }}
+                  title="Grade"
+                >
+                  <Icon name="grid" size={16} />
+                </button>
               </div>
-            ))}
+            </div>
+
+            <div style={styles.filtroGrupo}>
+              <label style={styles.filtroLabel}>
+                <input
+                  type="checkbox"
+                  checked={agrupar}
+                  onChange={(e) => setAgrupar(e.target.checked)}
+                  style={styles.checkboxFiltro}
+                />
+                Agrupar por categoria
+              </label>
+            </div>
           </div>
+
+          {/* Lista de fornecedores */}
+          {agrupar ? (
+            <div style={styles.gruposContainer}>
+              {Object.entries(grupos).map(([categoriaPrincipal, itens]) => (
+                <div key={categoriaPrincipal} style={styles.grupo}>
+                  <h2 style={styles.grupoTitulo}>{categoriaPrincipal}</h2>
+                  <div style={visualizacao === 'grade' ? styles.gridGrade : styles.grid}>
+                    {itens.map(renderCard)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={visualizacao === 'grade' ? styles.gridGrade : styles.grid}>
+              {fornecedoresFiltrados.map(renderCard)}
+            </div>
+          )}
         </main>
       </div>
 
+      {/* Modal */}
       {modalAberto && (
         <div style={styles.modalOverlay} onClick={() => setModalAberto(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h2 style={styles.modalTitle}>{form.id ? 'Editar' : 'Novo'} Fornecedor</h2>
 
-            {/* Dropdown 1: Categoria Principal */}
             <div style={styles.formGroup}>
               <label style={styles.label}>Categoria <span style={styles.required}>*</span></label>
               <select
@@ -221,7 +306,6 @@ function FornecedoresContent() {
               </select>
             </div>
 
-            {/* Dropdown 2: Subcategoria */}
             {subcategoriasDisponiveis.length > 0 && (
               <div style={styles.formGroup}>
                 <label style={styles.label}>Tipo de serviço <span style={styles.required}>*</span></label>
@@ -238,7 +322,6 @@ function FornecedoresContent() {
               </div>
             )}
 
-            {/* Campo "Outro" — quando subcategoria é "outro" */}
             {ehOutro && (
               <div style={styles.formGroup}>
                 <label style={styles.label}>Especifique o serviço <span style={styles.required}>*</span></label>
@@ -251,7 +334,6 @@ function FornecedoresContent() {
               </div>
             )}
 
-            {/* Dropdown 3: Serviço (só aparece se NÃO for outro) */}
             {!ehOutro && servicosDisponiveis.length > 0 && (
               <div style={styles.formGroup}>
                 <label style={styles.label}>Serviço contratado</label>
@@ -427,12 +509,31 @@ function FornecedoresContent() {
 const styles = {
   page: { minHeight: '100vh', background: 'var(--color-fundo)', paddingTop: '52px' },
   main: { maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
-  title: { fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--color-primary)' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' },
+  title: { fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--color-primary)', margin: 0 },
   btnPrimary: { display: 'flex', alignItems: 'center', gap: '6px', background: '#8B6F5E', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, boxShadow: '0 2px 8px rgba(139,111,94,0.3)' },
   btnSecondary: { background: 'var(--color-secondary)', color: 'var(--color-text)', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 500 },
   btnIcon: { background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'var(--color-text-soft)' },
+
+  // ─── Filtros ───
+  filtrosBar: { display: 'flex', gap: '16px', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap', padding: '12px 16px', background: '#fff', borderRadius: '12px', border: '1px solid var(--color-secondary)' },
+  filtroGrupo: { display: 'flex', flexDirection: 'column', gap: '4px' },
+  filtroLabel: { fontSize: '12px', color: 'var(--color-text-soft)', fontFamily: 'var(--font-body)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' },
+  filtroSelect: { padding: '8px 12px', borderRadius: '8px', border: '1px solid #C4B5A5', fontSize: '14px', fontFamily: 'var(--font-body)', background: '#fff', outline: 'none', minWidth: '140px' },
+  toggleGroup: { display: 'flex', gap: '2px', border: '1px solid #C4B5A5', borderRadius: '8px', overflow: 'hidden' },
+  toggleBtn: { padding: '8px 12px', background: '#fff', border: 'none', cursor: 'pointer', color: 'var(--color-text-soft)' },
+  toggleAtivo: { background: '#8B6F5E', color: '#fff' },
+  checkboxFiltro: { width: '14px', height: '14px', cursor: 'pointer' },
+
+  // ─── Grupos ───
+  gruposContainer: { display: 'flex', flexDirection: 'column', gap: '24px' },
+  grupo: {},
+  grupoTitulo: { fontFamily: 'var(--font-display)', fontSize: '16px', color: 'var(--color-primary)', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid var(--color-secondary)' },
+
+  // ─── Grid / Grade ───
   grid: { display: 'grid', gridTemplateColumns: '1fr', gap: '12px' },
+  gridGrade: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' },
+
   card: { background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid var(--color-secondary)' },
   cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' },
   categoria: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--color-text-soft)' },
