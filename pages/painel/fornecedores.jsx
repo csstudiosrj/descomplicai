@@ -119,6 +119,8 @@ function FornecedoresContent() {
     ? getServicos(form.categoria)
     : [];
 
+  const ehOutro = form.categoria === 'outro';
+
   const nomeCasal = evento?.nome_evento || '';
 
   return (
@@ -236,8 +238,21 @@ function FornecedoresContent() {
               </div>
             )}
 
-            {/* Dropdown 3: Serviço */}
-            {servicosDisponiveis.length > 0 && (
+            {/* Campo "Outro" — quando subcategoria é "outro" */}
+            {ehOutro && (
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Especifique o serviço <span style={styles.required}>*</span></label>
+                <input
+                  style={styles.input}
+                  placeholder="Digite o tipo de serviço"
+                  value={form.servico || ''}
+                  onChange={(e) => setForm({ ...form, servico: e.target.value })}
+                />
+              </div>
+            )}
+
+            {/* Dropdown 3: Serviço (só aparece se NÃO for outro) */}
+            {!ehOutro && servicosDisponiveis.length > 0 && (
               <div style={styles.formGroup}>
                 <label style={styles.label}>Serviço contratado</label>
                 <select
@@ -326,12 +341,15 @@ function FornecedoresContent() {
                 <div style={{ position: 'relative' }}>
                   <InputMoeda
                     label={
-                      <span
-                        style={{ cursor: 'help', textDecoration: 'underline dotted' }}
-                        onMouseEnter={() => setTooltipVisivel(true)}
-                        onMouseLeave={() => setTooltipVisivel(false)}
-                      >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         Sinal / adiantamento
+                        <span
+                          style={styles.ajudaIcone}
+                          onMouseEnter={() => setTooltipVisivel(true)}
+                          onMouseLeave={() => setTooltipVisivel(false)}
+                        >
+                          í
+                        </span>
                       </span>
                     }
                     value={form.valor_entrada || 0}
@@ -431,9 +449,9 @@ const styles = {
   formGroup: { marginBottom: '14px' },
   label: { display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--color-text)', marginBottom: '6px', fontFamily: 'var(--font-body)' },
   required: { color: '#C62828' },
-  input: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-secondary)', fontSize: '14px', fontFamily: 'var(--font-body)', color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' },
-  select: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-secondary)', fontSize: '14px', fontFamily: 'var(--font-body)', color: 'var(--color-text)', background: '#fff', outline: 'none', boxSizing: 'border-box' },
-  textarea: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-secondary)', fontSize: '14px', fontFamily: 'var(--font-body)', color: 'var(--color-text)', minHeight: '80px', resize: 'vertical', outline: 'none', boxSizing: 'border-box' },
+  input: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #C4B5A5', fontSize: '14px', fontFamily: 'var(--font-body)', color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box', background: '#fff' },
+  select: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #C4B5A5', fontSize: '14px', fontFamily: 'var(--font-body)', color: 'var(--color-text)', background: '#fff', outline: 'none', boxSizing: 'border-box' },
+  textarea: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #C4B5A5', fontSize: '14px', fontFamily: 'var(--font-body)', color: 'var(--color-text)', minHeight: '80px', resize: 'vertical', outline: 'none', boxSizing: 'border-box', background: '#fff' },
   row: { display: 'flex', gap: '12px', flexWrap: 'wrap' },
   col: { flex: 1, minWidth: '180px' },
   tooltip: { position: 'absolute', bottom: '100%', left: 0, background: 'var(--color-text)', color: '#fff', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', marginBottom: '6px', whiteSpace: 'nowrap', zIndex: 10, fontFamily: 'var(--font-body)' },
@@ -444,4 +462,5 @@ const styles = {
   checkboxLabel: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--color-text)', marginBottom: '10px', cursor: 'pointer' },
   checkbox: { width: '16px', height: '16px', cursor: 'pointer' },
   btnAssinar: { width: '100%', padding: '10px', background: '#2E7D32', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 600 },
+  ajudaIcone: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', border: '1.5px solid #00A86B', color: '#00A86B', fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-display)', cursor: 'help', lineHeight: 1 },
 };
