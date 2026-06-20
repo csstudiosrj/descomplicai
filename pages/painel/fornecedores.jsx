@@ -32,7 +32,7 @@ export default function FornecedoresPage({ readOnly }) {
 }
 
 function FornecedoresContent({ readOnly }) {
-  const { evento, supabase } = useAuth();
+  const { user, evento, supabase } = useAuth();
   const [fornecedores, setFornecedores] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState({});
@@ -55,7 +55,6 @@ function FornecedoresContent({ readOnly }) {
   const salvar = async () => {
     if (readOnly) return;
 
-    // Calcula valor_saldo automaticamente
     const valorTotal = Number(form.valor_total) || 0;
     const valorEntrada = Number(form.valor_entrada) || 0;
     const valorSaldo = valorTotal - valorEntrada;
@@ -63,6 +62,7 @@ function FornecedoresContent({ readOnly }) {
     const payload = { 
       ...form, 
       evento_id: evento.id,
+      usuario_id: user.id,
       valor_saldo: valorSaldo,
     };
 
