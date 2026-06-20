@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   if (type !== 'payment') return res.status(200).end()
 
   try {
-    // Busca payment direto na API REST do Mercado Pago — SDK v3 não retorna external_reference confiável
+    // Busca payment direto na API REST do Mercado Pago
     const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${data.id}`, {
       headers: {
         'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
@@ -28,13 +28,35 @@ export default async function handler(req, res) {
       return res.status(200).end()
     }
 
-    const ref = JSON.parse(pagamento.external_reference || '{}')
+    // ─── Tratamento robusto do external_reference ───
+    let ref = {}
+    const extRef = pagamento.external_reference
+
+    if (extRef && typeof extRef === 'string' && extRef.trim() !== '') {
+      try {
+        ref = JSON.parse(extRef)
+      } catch (e) {
+        ref = { usuarioId: null, eventoId: null, tipo: null, raw: extRef }
+      }
+    } else if (extRef && typeof extRef === 'object') {
+      ref = extRef
+    }
+
     const { usuarioId, eventoId, tipo } = ref
     let duracaoMeses = pagamento.metadata?.duracao_meses ?? ref.duracao_meses ?? 0
 
     if (!usuarioId || !eventoId || !tipo) {
-      console.error('Webhook: external_reference invalido', pagamento.external_reference, 'ref:', ref, 'payment:', pagamento.id)
-      return res.status(400).end()
+      console.error('Webhook: external_reference invalido', {
+        external_reference: pagamento.external_reference,
+        ref,
+        payment_id: pagamento.id,
+        metadata: pagamento.metadata,
+      })
+      return res.status(400).json({
+        erro: 'external_reference invalido',
+        external_reference: pagamento.external_reference,
+        metadata: pagamento.metadata,
+      })
     }
 
     const supabaseAdmin = createClient(
@@ -58,7 +80,7 @@ export default async function handler(req, res) {
       novaExpiracao = calcularNovaExpiracao(eventoAtual?.acesso_expira_em, 7 / 30)
       novoPlano = 'pdf'
     } else {
-      return res.status(400).end()
+      return res.status(400).json({ erro: 'tipo desconhecido', tipo })
     }
 
     await supabaseAdmin
@@ -81,9 +103,9 @@ export default async function handler(req, res) {
       aceite_termo_em: null,
     })
 
-    res.status(200).end()
+    res.status(200).json({ sucesso: true, eventoId, tipo, plano: novoPlano })
   } catch (erro) {
     console.error('Webhook erro:', erro)
-    res.status(500).end()
+    res.status(500).json({ erro: erro.message })
   }
 }

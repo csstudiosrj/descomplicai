@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).end();
+  if (req.method !== 'POST') return res.status(405).json({ erro: 'Método não permitido' });
 
   const { fornecedorId } = req.body;
   if (!fornecedorId) {
-    return res.status(400).json({ erro: 'fornecedorId obrigatorio' });
+    return res.status(400).json({ erro: 'fornecedorId obrigatório' });
   }
 
   const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
@@ -16,6 +16,23 @@ export default async function handler(req, res) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
+  // Verifica se o fornecedor existe
+  const { data: fornecedor, error: findError } = await supabaseAdmin
+    .from('fornecedores')
+    .select('id, nome, contrato_assinado_em')
+    .eq('id', fornecedorId)
+    .single();
+
+  if (findError || !fornecedor) {
+    return res.status(404).json({ erro: 'Fornecedor não encontrado' });
+  }
+
+  // Verifica se já foi assinado
+  if (fornecedor.contrato_assinado_em) {
+    return res.status(400).json({ erro: 'Contrato já foi assinado anteriormente' });
+  }
+
+  // Grava a assinatura
   const { error } = await supabaseAdmin
     .from('fornecedores')
     .update({
@@ -30,5 +47,10 @@ export default async function handler(req, res) {
     return res.status(500).json({ erro: 'Erro ao gravar assinatura' });
   }
 
-  res.status(200).json({ sucesso: true, assinadoEm: new Date().toISOString(), ip });
+  res.status(200).json({
+    sucesso: true,
+    assinadoEm: new Date().toISOString(),
+    fornecedor: fornecedor.nome,
+    ip,
+  });
 }
