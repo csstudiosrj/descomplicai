@@ -5,7 +5,15 @@ import HeaderPainel from '../../components/painel/HeaderPainel';
 import Icon from '../../components/ui/Icon';
 import InputMoeda from '../../components/ui/InputMoeda';
 import { useAuth } from '../../hooks/useAuth';
-import { CATEGORIAS_FORNECEDORES, SERVICOS_POR_CATEGORIA, STATUS_FORNECEDOR } from '../../utils/catalogoFornecedores';
+import {
+  CATEGORIAS_PRINCIPAIS,
+  getSubcategoriasPorPrincipal,
+  getServicos,
+  getLabelSubcategoria,
+  getLabelCategoriaPrincipal,
+  getCategoriaPrincipal,
+  STATUS_FORNECEDOR,
+} from '../../utils/catalogoFornecedores';
 
 function formatarTelefone(valor) {
   const digits = valor.replace(/\D/g, '').slice(0, 11);
@@ -102,7 +110,14 @@ function FornecedoresContent() {
     }
   };
 
-  const servicosDisponiveis = form.categoria ? (SERVICOS_POR_CATEGORIA[form.categoria] || []) : [];
+  // ─── Dropdowns em cascata ───
+  const subcategoriasDisponiveis = form.categoria_principal
+    ? getSubcategoriasPorPrincipal(form.categoria_principal)
+    : [];
+
+  const servicosDisponiveis = form.categoria
+    ? getServicos(form.categoria)
+    : [];
 
   const nomeCasal = evento?.nome_evento || '';
 
@@ -134,7 +149,11 @@ function FornecedoresContent() {
             {fornecedores.map((f) => (
               <div key={f.id} style={styles.card}>
                 <div style={styles.cardHeader}>
-                  <span style={styles.categoria}>{f.categoria}</span>
+                  <span style={styles.categoria}>
+                    {getLabelCategoriaPrincipal(f.categoria)}
+                    {getLabelCategoriaPrincipal(f.categoria) && ' → '}
+                    {getLabelSubcategoria(f.categoria)}
+                  </span>
                   <span style={{ ...styles.badge, background: STATUS_FORNECEDOR.find(s => s.id === f.status)?.color || '#8B6F5E' }}>
                     {STATUS_FORNECEDOR.find(s => s.id === f.status)?.label || f.status}
                   </span>
@@ -161,7 +180,12 @@ function FornecedoresContent() {
 
                 {!readOnly && (
                   <div style={styles.acoes}>
-                    <button onClick={() => { setForm(f); setAceiteTermo(false); setModalAberto(true); }} style={styles.btnIcon}>
+                    <button onClick={() => {
+                      const catPrincipal = getCategoriaPrincipal(f.categoria)?.id || '';
+                      setForm({ ...f, categoria_principal: catPrincipal });
+                      setAceiteTermo(false);
+                      setModalAberto(true);
+                    }} style={styles.btnIcon}>
                       <Icon name="edit" size={16} />
                     </button>
                     <button onClick={() => excluir(f.id)} style={styles.btnIcon}>
@@ -180,20 +204,39 @@ function FornecedoresContent() {
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h2 style={styles.modalTitle}>{form.id ? 'Editar' : 'Novo'} Fornecedor</h2>
 
+            {/* Dropdown 1: Categoria Principal */}
             <div style={styles.formGroup}>
               <label style={styles.label}>Categoria <span style={styles.required}>*</span></label>
               <select
                 style={styles.select}
-                value={form.categoria || ''}
-                onChange={(e) => setForm({ ...form, categoria: e.target.value, servico: '' })}
+                value={form.categoria_principal || ''}
+                onChange={(e) => setForm({ ...form, categoria_principal: e.target.value, categoria: '', servico: '' })}
               >
                 <option value="">Selecione...</option>
-                {CATEGORIAS_FORNECEDORES.map((cat) => (
+                {CATEGORIAS_PRINCIPAIS.map((cat) => (
                   <option key={cat.id} value={cat.id}>{cat.label}</option>
                 ))}
               </select>
             </div>
 
+            {/* Dropdown 2: Subcategoria */}
+            {subcategoriasDisponiveis.length > 0 && (
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Tipo de serviço <span style={styles.required}>*</span></label>
+                <select
+                  style={styles.select}
+                  value={form.categoria || ''}
+                  onChange={(e) => setForm({ ...form, categoria: e.target.value, servico: '' })}
+                >
+                  <option value="">Selecione...</option>
+                  {subcategoriasDisponiveis.map((sub) => (
+                    <option key={sub.id} value={sub.id}>{sub.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Dropdown 3: Serviço */}
             {servicosDisponiveis.length > 0 && (
               <div style={styles.formGroup}>
                 <label style={styles.label}>Serviço contratado</label>
