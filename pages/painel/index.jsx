@@ -7,6 +7,7 @@ import Icon from '../../components/ui/Icon';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import { STATUS_FORNECEDOR } from '../../utils/catalogoFornecedores';
+import { importarPreFornecedores } from '../../utils/preFornecedores';
 
 export default function PainelPage() {
   return (
@@ -23,33 +24,37 @@ function PainelContent() {
 
   // ─── Dados do dashboard ───
   const [progresso, setProgresso] = useState(0);
-  const [fornecedores, setFornecedores] = useState({ total: 0, contratados: 0, pagos: 0 });
+  const [fornecedores, setFornecedores] = useState({ total: 0, contratados: 0, pagos: 0, preCriados: 0 });
   const [financeiro, setFinanceiro] = useState({ orcamento: 0, comprometido: 0, pago: 0 });
   const [convidados, setConvidados] = useState({ total: 0, confirmados: 0, pendentes: 0, recusados: 0 });
   const [tarefas, setTarefas] = useState({ total: 0, concluidas: 0, urgentes: [], proximas: [] });
   const [alertas, setAlertas] = useState([]);
 
   useEffect(() => {
-    if (!evento) return;
-    buscarDados();
-  }, [evento]);
+    if (!evento || !user) return;
+    carregarDashboard();
+  }, [evento, user]);
 
-  const buscarDados = async () => {
+  const carregarDashboard = async () => {
     setLoading(true);
     const eventoId = evento.id;
+
+    // ─── Importa pré-fornecedores do memorial se necessário ───
+    await importarPreFornecedores(evento, supabase, user.id);
 
     // ─── Fornecedores ───
     const { data: fornData } = await supabase
       .from('fornecedores')
-      .select('status, valor_total')
+      .select('status, valor_total, pre_criado')
       .eq('evento_id', eventoId);
 
     const fornTotal = fornData?.length || 0;
     const fornContratados = fornData?.filter(f => f.status === 'contratado' || f.status === 'pago').length || 0;
     const fornPagos = fornData?.filter(f => f.status === 'pago').length || 0;
+    const fornPreCriados = fornData?.filter(f => f.pre_criado === true).length || 0;
     const fornComprometido = fornData?.reduce((acc, f) => acc + (Number(f.valor_total) || 0), 0) || 0;
 
-    setFornecedores({ total: fornTotal, contratados: fornContratados, pagos: fornPagos });
+    setFornecedores({ total: fornTotal, contratados: fornContratados, pagos: fornPagos, preCriados: fornPreCriados });
 
     // ─── Financeiro ───
     const { data: finData } = await supabase
@@ -99,13 +104,29 @@ function PainelContent() {
 
     setTarefas({ total: tarTotal, concluidas: tarConcluidas, urgentes: tarUrgentes, proximas: tarProximas });
 
-    // ─── Progresso geral ───
-    const fornProgresso = fornTotal > 0 ? Math.round((fornContratados / fornTotal) * 100) : 0;
-    const tarProgresso = tarTotal > 0 ? Math.round((tarConcluidas / tarTotal) * 100) : 0;
-    const progressoGeral = Math.round((fornProgresso + tarProgresso) / 2);
+    // ─── Progresso geral (corrigido) ───
+    // Fórmula: média ponderada entre fornecedores e tarefas
+    // Se uma das metades for 0, a outra conta 100% do peso
+    let pesoForn = 0, pesoTar = 0;
+    if (fornTotal > 0) pesoForn = 1;
+    if (tarTotal > 0) pesoTar = 1;
+    const pesoTotal = pesoForn + pesoTar;
+
+    let progressoForn = 0, progressoTar = 0;
+    if (fornTotal > 0) {
+      progressoForn = Math.round((fornContratados / fornTotal) * 100);
+    }
+    if (tarTotal > 0) {
+      progressoTar = Math.round((tarConcluidas / tarTotal) * 100);
+    }
+
+    const progressoGeral = pesoTotal > 0
+      ? Math.round((progressoForn * pesoForn + progressoTar * pesoTar) / pesoTotal)
+      : 0;
+
     setProgresso(progressoGeral);
 
-    // ─── Alertas (max 3, mais urgentes) ───
+    // ─── Alertas (max 3) ───
     const alertasLista = [];
 
     // Alerta 1: tarefas atrasadas
@@ -121,7 +142,19 @@ function PainelContent() {
       });
     }
 
-    // Alerta 2: pagamentos vencendo em 7 dias
+    // Alerta 2: pré-fornecedores não preenchidos
+    if (fornPreCriados > 0) {
+      alertasLista.push({
+        tipo: 'aviso',
+        icone: 'store',
+        cor: '#8B6F5E',
+        titulo: `${fornPreCriados} fornecedor${fornPreCriados > 1 ? 'es' : ''} do memorial`,
+        descricao: 'Aguardando informações — clique para preencher',
+        link: '/painel/fornecedores',
+      });
+    }
+
+    // Alerta 3: pagamentos vencendo em 7 dias
     const vencendo = finData?.filter(f => {
       if (f.pago) return false;
       const venc = f.data_vencimento ? new Date(f.data_vencimento) : null;
@@ -141,7 +174,7 @@ function PainelContent() {
       });
     }
 
-    // Alerta 3: fornecedores críticos faltando (menos de 6 meses para o evento)
+    // Alerta 4: fornecedores críticos faltando (menos de 6 meses para o evento)
     if (evento?.data_evento) {
       const dataEvento = new Date(evento.data_evento);
       const mesesAteEvento = (dataEvento - hoje) / (1000 * 60 * 60 * 24 * 30);
@@ -166,9 +199,6 @@ function PainelContent() {
   };
 
   const nomeCasal = evento?.nome_evento || '';
-
-  const disponivel = financeiro.orcamento - financeiro.comprometido;
-  const disponivelPct = financeiro.orcamento > 0 ? Math.round((disponivel / financeiro.orcamento) * 100) : 0;
 
   return (
     <>

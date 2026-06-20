@@ -42,7 +42,7 @@ function FornecedoresContent() {
 
   // ─── Filtros e visualização ───
   const [filtroStatus, setFiltroStatus] = useState('todos');
-  const [visualizacao, setVisualizacao] = useState('lista'); // 'lista' | 'grade'
+  const [visualizacao, setVisualizacao] = useState('lista');
   const [agrupar, setAgrupar] = useState(false);
 
   const readOnly = !hasAccess;
@@ -73,6 +73,11 @@ function FornecedoresContent() {
       usuario_id: user.id,
       valor_saldo: valorSaldo,
     };
+
+    // Se está preenchendo um pré-criado, remove a flag
+    if (form.pre_criado && form.nome && form.nome.trim()) {
+      payload.pre_criado = false;
+    }
 
     if (form.id) {
       await supabase.from('fornecedores').update(payload).eq('id', form.id);
@@ -143,55 +148,75 @@ function FornecedoresContent() {
 
   const nomeCasal = evento?.nome_evento || '';
 
-  const renderCard = (f) => (
-    <div key={f.id} style={styles.card}>
-      <div style={styles.cardHeader}>
-        <span style={styles.categoria}>
-          {getLabelCategoriaPrincipal(f.categoria)}
-          {getLabelCategoriaPrincipal(f.categoria) && ' → '}
-          {getLabelSubcategoria(f.categoria)}
-        </span>
-        <span style={{ ...styles.badge, background: STATUS_FORNECEDOR.find(s => s.id === f.status)?.color || '#8B6F5E' }}>
-          {STATUS_FORNECEDOR.find(s => s.id === f.status)?.label || f.status}
-        </span>
-      </div>
-      <h3 style={styles.nome}>{f.nome}</h3>
-      <p style={styles.empresa}>{f.empresa}</p>
+  const renderCard = (f) => {
+    const ehPreCriado = f.pre_criado === true && (!f.nome || !f.nome.trim());
+    const statusInfo = STATUS_FORNECEDOR.find(s => s.id === f.status);
 
-      <div style={styles.contatos}>
-        {f.telefone && <span><Icon name="phone" size={12} /> {f.telefone}</span>}
-        {f.email && <span><Icon name="mail" size={12} /> {f.email}</span>}
-      </div>
-
-      <div style={styles.valores}>
-        <span>Total: <strong>R$ {(f.valor_total || 0).toLocaleString('pt-BR')}</strong></span>
-        <span>Entrada: R$ {(f.valor_entrada || 0).toLocaleString('pt-BR')}</span>
-        <span>Saldo: R$ {(f.valor_saldo || 0).toLocaleString('pt-BR')}</span>
-      </div>
-
-      {f.contrato_assinado_em && (
-        <div style={styles.assinado}>
-          <Icon name="check" size={12} color="#2E7D32" /> Assinado em {new Date(f.contrato_assinado_em).toLocaleDateString('pt-BR')}
+    return (
+      <div key={f.id} style={{ ...styles.card, ...(ehPreCriado ? styles.cardPreCriado : {}) }}>
+        <div style={styles.cardHeader}>
+          <span style={styles.categoria}>
+            {getLabelCategoriaPrincipal(f.categoria)}
+            {getLabelCategoriaPrincipal(f.categoria) && ' → '}
+            {getLabelSubcategoria(f.categoria)}
+          </span>
+          <span style={{ ...styles.badge, background: statusInfo?.color || '#8B6F5E' }}>
+            {statusInfo?.label || f.status}
+          </span>
         </div>
-      )}
 
-      {!readOnly && (
-        <div style={styles.acoes}>
-          <button onClick={() => {
-            const catPrincipal = getCategoriaPrincipal(f.categoria)?.id || '';
-            setForm({ ...f, categoria_principal: catPrincipal });
-            setAceiteTermo(false);
-            setModalAberto(true);
-          }} style={styles.btnIcon}>
-            <Icon name="edit" size={16} />
-          </button>
-          <button onClick={() => excluir(f.id)} style={styles.btnIcon}>
-            <Icon name="trash" size={16} />
-          </button>
-        </div>
-      )}
-    </div>
-  );
+        {ehPreCriado ? (
+          <div style={styles.preCriadoBox}>
+            <span style={styles.preCriadoIcon}>📋</span>
+            <div>
+              <h3 style={styles.preCriadoTitulo}>Aguardando informações</h3>
+              <p style={styles.preCriadoTexto}>Clique para preencher os dados deste fornecedor</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <h3 style={styles.nome}>{f.nome}</h3>
+            <p style={styles.empresa}>{f.empresa}</p>
+
+            <div style={styles.contatos}>
+              {f.telefone && <span><Icon name="phone" size={12} /> {f.telefone}</span>}
+              {f.email && <span><Icon name="mail" size={12} /> {f.email}</span>}
+            </div>
+
+            <div style={styles.valores}>
+              <span>Total: <strong>R$ {(f.valor_total || 0).toLocaleString('pt-BR')}</strong></span>
+              <span>Entrada: R$ {(f.valor_entrada || 0).toLocaleString('pt-BR')}</span>
+              <span>Saldo: R$ {(f.valor_saldo || 0).toLocaleString('pt-BR')}</span>
+            </div>
+
+            {f.contrato_assinado_em && (
+              <div style={styles.assinado}>
+                <Icon name="check" size={12} color="#2E7D32" /> Assinado em {new Date(f.contrato_assinado_em).toLocaleDateString('pt-BR')}
+              </div>
+            )}
+          </>
+        )}
+
+        {!readOnly && (
+          <div style={styles.acoes}>
+            <button onClick={() => {
+              const catPrincipal = getCategoriaPrincipal(f.categoria)?.id || '';
+              setForm({ ...f, categoria_principal: catPrincipal });
+              setAceiteTermo(false);
+              setModalAberto(true);
+            }} style={styles.btnIcon}>
+              <Icon name="edit" size={16} />
+            </button>
+            {!ehPreCriado && (
+              <button onClick={() => excluir(f.id)} style={styles.btnIcon}>
+                <Icon name="trash" size={16} />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -470,7 +495,7 @@ function FornecedoresContent() {
               />
             </div>
 
-            {form.id && (
+            {form.id && !form.pre_criado && (
               <div style={styles.assinaturaBox}>
                 <label style={styles.checkboxLabel}>
                   <input
@@ -534,6 +559,7 @@ const styles = {
   grid: { display: 'grid', gridTemplateColumns: '1fr', gap: '12px' },
   gridGrade: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' },
 
+  // ─── Card normal ───
   card: { background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid var(--color-secondary)' },
   cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' },
   categoria: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--color-text-soft)' },
@@ -544,6 +570,14 @@ const styles = {
   valores: { display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--color-text-soft)', marginBottom: '10px', flexWrap: 'wrap' },
   assinado: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#2E7D32', marginBottom: '10px' },
   acoes: { display: 'flex', gap: '8px', justifyContent: 'flex-end' },
+
+  // ─── Card pré-criado ───
+  cardPreCriado: { background: '#FAFAF8', border: '1px dashed #C4B5A5' },
+  preCriadoBox: { display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 0', marginBottom: '10px' },
+  preCriadoIcon: { fontSize: '24px' },
+  preCriadoTitulo: { fontFamily: 'var(--font-body)', fontSize: '15px', fontWeight: 600, color: 'var(--color-text)', marginBottom: '2px' },
+  preCriadoTexto: { fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--color-text-soft)' },
+
   modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '16px' },
   modal: { background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
   modalTitle: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-primary)', marginBottom: '20px' },
