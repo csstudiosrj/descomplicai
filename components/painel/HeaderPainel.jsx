@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useRouter } from 'next/router';
-import Icon from './Icon';
+import Icon from '../ui/Icon';
 
 function capitalizar(texto) {
   if (!texto) return '';
