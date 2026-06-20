@@ -3,41 +3,36 @@ import Head from 'next/head';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
 import HeaderPainel from '../../components/painel/HeaderPainel';
 import Icon from '../../components/ui/Icon';
+import InputMoeda from '../../components/ui/InputMoeda';
 import { useAuth } from '../../hooks/useAuth';
+import { CATEGORIAS_FORNECEDORES, SERVICOS_POR_CATEGORIA, STATUS_FORNECEDOR } from '../../utils/catalogoFornecedores';
 
-const STATUS_LABELS = {
-  a_contratar: 'A contratar',
-  negociando: 'Negociando',
-  contratado: 'Contratado',
-  pago: 'Pago',
-  pendente: 'Pendente',
-  cancelado: 'Cancelado',
-};
+function formatarTelefone(valor) {
+  const digits = valor.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
 
-const STATUS_COLORS = {
-  a_contratar: '#8B6F5E',
-  negociando: '#1565C0',
-  contratado: '#2E7D32',
-  pago: '#00838F',
-  pendente: '#F9A825',
-  cancelado: '#C62828',
-};
-
-export default function FornecedoresPage({ readOnly }) {
+export default function FornecedoresPage() {
   return (
     <ProtectedRoute>
-      <FornecedoresContent readOnly={readOnly} />
+      <FornecedoresContent />
     </ProtectedRoute>
   );
 }
 
-function FornecedoresContent({ readOnly }) {
-  const { user, evento, supabase } = useAuth();
+function FornecedoresContent() {
+  const { user, evento, hasAccess, supabase } = useAuth();
   const [fornecedores, setFornecedores] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState({});
   const [aceiteTermo, setAceiteTermo] = useState(false);
   const [assinando, setAssinando] = useState(false);
+  const [tooltipVisivel, setTooltipVisivel] = useState(false);
+
+  const readOnly = !hasAccess;
 
   useEffect(() => {
     if (evento) buscar();
@@ -59,8 +54,8 @@ function FornecedoresContent({ readOnly }) {
     const valorEntrada = Number(form.valor_entrada) || 0;
     const valorSaldo = valorTotal - valorEntrada;
 
-    const payload = { 
-      ...form, 
+    const payload = {
+      ...form,
       evento_id: evento.id,
       usuario_id: user.id,
       valor_saldo: valorSaldo,
@@ -107,6 +102,8 @@ function FornecedoresContent({ readOnly }) {
     }
   };
 
+  const servicosDisponiveis = form.categoria ? (SERVICOS_POR_CATEGORIA[form.categoria] || []) : [];
+
   const nomeCasal = evento?.nome_evento || '';
 
   return (
@@ -116,12 +113,18 @@ function FornecedoresContent({ readOnly }) {
         <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} />
         <main style={styles.main}>
           {readOnly && (
-            <div style={styles.readOnlyBanner}><span style={styles.readOnlyText}>Modo somente leitura. Assine para editar.</span></div>
+            <div style={styles.readOnlyBanner}>
+              <span style={styles.readOnlyText}>Acesso expirado. Modo somente leitura. Assine para editar.</span>
+            </div>
           )}
+
           <div style={styles.header}>
             <h1 style={styles.title}>Fornecedores</h1>
             {!readOnly && (
-              <button onClick={() => { setForm({}); setAceiteTermo(false); setModalAberto(true); }} style={styles.btnPrimary}>
+              <button
+                onClick={() => { setForm({ status: 'a_contratar' }); setAceiteTermo(false); setModalAberto(true); }}
+                style={styles.btnPrimary}
+              >
                 <Icon name="plus" size={16} color="#fff" /> Adicionar
               </button>
             )}
@@ -132,8 +135,8 @@ function FornecedoresContent({ readOnly }) {
               <div key={f.id} style={styles.card}>
                 <div style={styles.cardHeader}>
                   <span style={styles.categoria}>{f.categoria}</span>
-                  <span style={{ ...styles.badge, background: STATUS_COLORS[f.status] || '#8B6F5E' }}>
-                    {STATUS_LABELS[f.status] || f.status}
+                  <span style={{ ...styles.badge, background: STATUS_FORNECEDOR.find(s => s.id === f.status)?.color || '#8B6F5E' }}>
+                    {STATUS_FORNECEDOR.find(s => s.id === f.status)?.label || f.status}
                   </span>
                 </div>
                 <h3 style={styles.nome}>{f.nome}</h3>
@@ -172,24 +175,157 @@ function FornecedoresContent({ readOnly }) {
         </main>
       </div>
 
-      {modalAberto && !readOnly && (
+      {modalAberto && (
         <div style={styles.modalOverlay} onClick={() => setModalAberto(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h2 style={styles.modalTitle}>{form.id ? 'Editar' : 'Novo'} Fornecedor</h2>
-            <input style={styles.input} placeholder="Nome" value={form.nome || ''} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
-            <input style={styles.input} placeholder="Empresa" value={form.empresa || ''} onChange={(e) => setForm({ ...form, empresa: e.target.value })} />
-            <input style={styles.input} placeholder="Categoria" value={form.categoria || ''} onChange={(e) => setForm({ ...form, categoria: e.target.value })} />
-            <input style={styles.input} placeholder="Telefone" value={form.telefone || ''} onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
-            <input style={styles.input} placeholder="Email" value={form.email || ''} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            <input style={styles.input} placeholder="Instagram" value={form.instagram || ''} onChange={(e) => setForm({ ...form, instagram: e.target.value })} />
-            <input style={styles.input} placeholder="Site" value={form.site || ''} onChange={(e) => setForm({ ...form, site: e.target.value })} />
-            <input style={styles.input} placeholder="Serviço contratado" value={form.servico || ''} onChange={(e) => setForm({ ...form, servico: e.target.value })} />
-            <input style={styles.input} placeholder="Valor Total" type="number" value={form.valor_total || ''} onChange={(e) => setForm({ ...form, valor_total: Number(e.target.value) })} />
-            <input style={styles.input} placeholder="Entrada" type="number" value={form.valor_entrada || ''} onChange={(e) => setForm({ ...form, valor_entrada: Number(e.target.value) })} />
-            <select style={styles.input} value={form.status || 'a_contratar'} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-              {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
-            <textarea style={styles.textarea} placeholder="Notas" value={form.notas || ''} onChange={(e) => setForm({ ...form, notas: e.target.value })} />
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Categoria <span style={styles.required}>*</span></label>
+              <select
+                style={styles.select}
+                value={form.categoria || ''}
+                onChange={(e) => setForm({ ...form, categoria: e.target.value, servico: '' })}
+              >
+                <option value="">Selecione...</option>
+                {CATEGORIAS_FORNECEDORES.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {servicosDisponiveis.length > 0 && (
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Serviço contratado</label>
+                <select
+                  style={styles.select}
+                  value={form.servico || ''}
+                  onChange={(e) => setForm({ ...form, servico: e.target.value })}
+                >
+                  <option value="">Selecione...</option>
+                  {servicosDisponiveis.map((srv, i) => (
+                    <option key={i} value={srv}>{srv}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Nome <span style={styles.required}>*</span></label>
+              <input
+                style={styles.input}
+                placeholder="Nome do fornecedor"
+                value={form.nome || ''}
+                onChange={(e) => setForm({ ...form, nome: e.target.value })}
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Empresa</label>
+              <input
+                style={styles.input}
+                placeholder="Nome da empresa"
+                value={form.empresa || ''}
+                onChange={(e) => setForm({ ...form, empresa: e.target.value })}
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Telefone</label>
+              <input
+                style={styles.input}
+                placeholder="(00) 00000-0000"
+                value={form.telefone || ''}
+                onChange={(e) => setForm({ ...form, telefone: formatarTelefone(e.target.value) })}
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Email</label>
+              <input
+                style={styles.input}
+                placeholder="email@exemplo.com"
+                type="email"
+                value={form.email || ''}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Instagram</label>
+              <input
+                style={styles.input}
+                placeholder="@usuario"
+                value={form.instagram || ''}
+                onChange={(e) => setForm({ ...form, instagram: e.target.value })}
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Site</label>
+              <input
+                style={styles.input}
+                placeholder="https://..."
+                value={form.site || ''}
+                onChange={(e) => setForm({ ...form, site: e.target.value })}
+              />
+            </div>
+
+            <div style={styles.row}>
+              <div style={styles.col}>
+                <InputMoeda
+                  label="Valor Total"
+                  value={form.valor_total || 0}
+                  onChange={(v) => setForm({ ...form, valor_total: v })}
+                />
+              </div>
+              <div style={styles.col}>
+                <div style={{ position: 'relative' }}>
+                  <InputMoeda
+                    label={
+                      <span
+                        style={{ cursor: 'help', textDecoration: 'underline dotted' }}
+                        onMouseEnter={() => setTooltipVisivel(true)}
+                        onMouseLeave={() => setTooltipVisivel(false)}
+                      >
+                        Sinal / adiantamento
+                      </span>
+                    }
+                    value={form.valor_entrada || 0}
+                    onChange={(v) => setForm({ ...form, valor_entrada: v })}
+                  />
+                  {tooltipVisivel && (
+                    <div style={styles.tooltip}>
+                      Valor pago antecipadamente para confirmar a contratação.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Status <span style={styles.required}>*</span></label>
+              <select
+                style={styles.select}
+                value={form.status || 'a_contratar'}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+              >
+                {STATUS_FORNECEDOR.map((s) => (
+                  <option key={s.id} value={s.id}>{s.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Notas</label>
+              <textarea
+                style={styles.textarea}
+                placeholder="Observações..."
+                value={form.notas || ''}
+                onChange={(e) => setForm({ ...form, notas: e.target.value })}
+                rows={3}
+              />
+            </div>
 
             {form.id && (
               <div style={styles.assinaturaBox}>
@@ -233,7 +369,7 @@ const styles = {
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
   title: { fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--color-primary)' },
   btnPrimary: { display: 'flex', alignItems: 'center', gap: '6px', background: '#8B6F5E', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, boxShadow: '0 2px 8px rgba(139,111,94,0.3)' },
-  btnSecondary: { background: 'var(--color-secondary)', color: 'var(--color-text)', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
+  btnSecondary: { background: 'var(--color-secondary)', color: 'var(--color-text)', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 500 },
   btnIcon: { background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'var(--color-text-soft)' },
   grid: { display: 'grid', gridTemplateColumns: '1fr', gap: '12px' },
   card: { background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid var(--color-secondary)' },
@@ -247,11 +383,18 @@ const styles = {
   assinado: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#2E7D32', marginBottom: '10px' },
   acoes: { display: 'flex', gap: '8px', justifyContent: 'flex-end' },
   modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '16px' },
-  modal: { background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflow: 'auto' },
-  modalTitle: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-primary)', marginBottom: '16px' },
-  input: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-secondary)', marginBottom: '10px', fontSize: '14px', fontFamily: 'var(--font-body)' },
-  textarea: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-secondary)', marginBottom: '10px', fontSize: '14px', fontFamily: 'var(--font-body)', minHeight: '80px', resize: 'vertical' },
-  modalBotoes: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' },
+  modal: { background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
+  modalTitle: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-primary)', marginBottom: '20px' },
+  formGroup: { marginBottom: '14px' },
+  label: { display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--color-text)', marginBottom: '6px', fontFamily: 'var(--font-body)' },
+  required: { color: '#C62828' },
+  input: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-secondary)', fontSize: '14px', fontFamily: 'var(--font-body)', color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' },
+  select: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-secondary)', fontSize: '14px', fontFamily: 'var(--font-body)', color: 'var(--color-text)', background: '#fff', outline: 'none', boxSizing: 'border-box' },
+  textarea: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-secondary)', fontSize: '14px', fontFamily: 'var(--font-body)', color: 'var(--color-text)', minHeight: '80px', resize: 'vertical', outline: 'none', boxSizing: 'border-box' },
+  row: { display: 'flex', gap: '12px', flexWrap: 'wrap' },
+  col: { flex: 1, minWidth: '180px' },
+  tooltip: { position: 'absolute', bottom: '100%', left: 0, background: 'var(--color-text)', color: '#fff', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', marginBottom: '6px', whiteSpace: 'nowrap', zIndex: 10, fontFamily: 'var(--font-body)' },
+  modalBotoes: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' },
   readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },
   readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
   assinaturaBox: { border: '1px solid var(--color-secondary)', borderRadius: '8px', padding: '12px', marginBottom: '10px', background: '#fafafa' },
