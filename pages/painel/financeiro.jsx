@@ -20,8 +20,23 @@ function FinanceiroContent({ readOnly }) {
   const [form, setForm] = useState({});
 
   useEffect(() => {
-    if (evento) buscar();
+    if (evento) {
+      sincronizarTodos();
+    }
   }, [evento]);
+
+  const sincronizarTodos = async () => {
+    try {
+      await fetch('/api/financeiro/sincronizar-todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ evento_id: evento.id }),
+      });
+    } catch (err) {
+      console.error('Erro ao sincronizar lote:', err);
+    }
+    buscar();
+  };
 
   const buscar = async () => {
     const { data } = await supabase
