@@ -40,7 +40,6 @@ function FornecedoresContent() {
   const [assinando, setAssinando] = useState(false);
   const [tooltipVisivel, setTooltipVisivel] = useState(false);
 
-  // ─── Filtros e visualização ───
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [visualizacao, setVisualizacao] = useState('lista');
   const [agrupar, setAgrupar] = useState(false);
@@ -74,7 +73,6 @@ function FornecedoresContent() {
       valor_saldo: valorSaldo,
     };
 
-    // Se está preenchendo um pré-criado, remove a flag
     if (form.pre_criado && form.nome && form.nome.trim()) {
       payload.pre_criado = false;
     }
@@ -120,7 +118,6 @@ function FornecedoresContent() {
     }
   };
 
-  // ─── Dropdowns em cascata ───
   const subcategoriasDisponiveis = form.categoria_principal
     ? getSubcategoriasPorPrincipal(form.categoria_principal)
     : [];
@@ -131,12 +128,10 @@ function FornecedoresContent() {
 
   const ehOutro = form.categoria === 'outro';
 
-  // ─── Filtros aplicados ───
   const fornecedoresFiltrados = filtroStatus === 'todos'
     ? fornecedores
     : fornecedores.filter(f => f.status === filtroStatus);
 
-  // ─── Agrupamento ───
   const grupos = {};
   if (agrupar) {
     fornecedoresFiltrados.forEach(f => {
@@ -177,18 +172,15 @@ function FornecedoresContent() {
           <>
             <h3 style={styles.nome}>{f.nome}</h3>
             <p style={styles.empresa}>{f.empresa}</p>
-
             <div style={styles.contatos}>
               {f.telefone && <span><Icon name="phone" size={12} /> {f.telefone}</span>}
               {f.email && <span><Icon name="mail" size={12} /> {f.email}</span>}
             </div>
-
             <div style={styles.valores}>
               <span>Total: <strong>R$ {(f.valor_total || 0).toLocaleString('pt-BR')}</strong></span>
               <span>Entrada: R$ {(f.valor_entrada || 0).toLocaleString('pt-BR')}</span>
               <span>Saldo: R$ {(f.valor_saldo || 0).toLocaleString('pt-BR')}</span>
             </div>
-
             {f.contrato_assinado_em && (
               <div style={styles.assinado}>
                 <Icon name="check" size={12} color="#2E7D32" /> Assinado em {new Date(f.contrato_assinado_em).toLocaleDateString('pt-BR')}
@@ -242,56 +234,35 @@ function FornecedoresContent() {
             )}
           </div>
 
-          {/* Barra de filtros */}
           <div style={styles.filtrosBar}>
             <div style={styles.filtroGrupo}>
               <label style={styles.filtroLabel}>Status</label>
-              <select
-                style={styles.filtroSelect}
-                value={filtroStatus}
-                onChange={(e) => setFiltroStatus(e.target.value)}
-              >
+              <select style={styles.filtroSelect} value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
                 <option value="todos">Todos</option>
                 {STATUS_FORNECEDOR.map((s) => (
                   <option key={s.id} value={s.id}>{s.label}</option>
                 ))}
               </select>
             </div>
-
             <div style={styles.filtroGrupo}>
               <label style={styles.filtroLabel}>Visualização</label>
               <div style={styles.toggleGroup}>
-                <button
-                  onClick={() => setVisualizacao('lista')}
-                  style={{ ...styles.toggleBtn, ...(visualizacao === 'lista' ? styles.toggleAtivo : {}) }}
-                  title="Lista"
-                >
+                <button onClick={() => setVisualizacao('lista')} style={{ ...styles.toggleBtn, ...(visualizacao === 'lista' ? styles.toggleAtivo : {}) }} title="Lista">
                   <Icon name="list" size={16} />
                 </button>
-                <button
-                  onClick={() => setVisualizacao('grade')}
-                  style={{ ...styles.toggleBtn, ...(visualizacao === 'grade' ? styles.toggleAtivo : {}) }}
-                  title="Grade"
-                >
+                <button onClick={() => setVisualizacao('grade')} style={{ ...styles.toggleBtn, ...(visualizacao === 'grade' ? styles.toggleAtivo : {}) }} title="Grade">
                   <Icon name="grid" size={16} />
                 </button>
               </div>
             </div>
-
             <div style={styles.filtroGrupo}>
               <label style={styles.filtroLabel}>
-                <input
-                  type="checkbox"
-                  checked={agrupar}
-                  onChange={(e) => setAgrupar(e.target.checked)}
-                  style={styles.checkboxFiltro}
-                />
+                <input type="checkbox" checked={agrupar} onChange={(e) => setAgrupar(e.target.checked)} style={styles.checkboxFiltro} />
                 Agrupar por categoria
               </label>
             </div>
           </div>
 
-          {/* Lista de fornecedores */}
           {agrupar ? (
             <div style={styles.gruposContainer}>
               {Object.entries(grupos).map(([categoriaPrincipal, itens]) => (
@@ -311,19 +282,20 @@ function FornecedoresContent() {
         </main>
       </div>
 
-      {/* Modal */}
       {modalAberto && (
         <div style={styles.modalOverlay} onClick={() => setModalAberto(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h2 style={styles.modalTitle}>{form.id ? 'Editar' : 'Novo'} Fornecedor</h2>
+            {/* Header do modal com X */}
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>{form.id ? 'Editar' : 'Novo'} Fornecedor</h2>
+              <button onClick={() => setModalAberto(false)} style={styles.btnFechar}>
+                <Icon name="close" size={20} />
+              </button>
+            </div>
 
             <div style={styles.formGroup}>
               <label style={styles.label}>Categoria <span style={styles.required}>*</span></label>
-              <select
-                style={styles.select}
-                value={form.categoria_principal || ''}
-                onChange={(e) => setForm({ ...form, categoria_principal: e.target.value, categoria: '', servico: '' })}
-              >
+              <select style={styles.select} value={form.categoria_principal || ''} onChange={(e) => setForm({ ...form, categoria_principal: e.target.value, categoria: '', servico: '' })}>
                 <option value="">Selecione...</option>
                 {CATEGORIAS_PRINCIPAIS.map((cat) => (
                   <option key={cat.id} value={cat.id}>{cat.label}</option>
@@ -334,11 +306,7 @@ function FornecedoresContent() {
             {subcategoriasDisponiveis.length > 0 && (
               <div style={styles.formGroup}>
                 <label style={styles.label}>Tipo de serviço <span style={styles.required}>*</span></label>
-                <select
-                  style={styles.select}
-                  value={form.categoria || ''}
-                  onChange={(e) => setForm({ ...form, categoria: e.target.value, servico: '' })}
-                >
+                <select style={styles.select} value={form.categoria || ''} onChange={(e) => setForm({ ...form, categoria: e.target.value, servico: '' })}>
                   <option value="">Selecione...</option>
                   {subcategoriasDisponiveis.map((sub) => (
                     <option key={sub.id} value={sub.id}>{sub.label}</option>
@@ -350,23 +318,14 @@ function FornecedoresContent() {
             {ehOutro && (
               <div style={styles.formGroup}>
                 <label style={styles.label}>Especifique o serviço <span style={styles.required}>*</span></label>
-                <input
-                  style={styles.input}
-                  placeholder="Digite o tipo de serviço"
-                  value={form.servico || ''}
-                  onChange={(e) => setForm({ ...form, servico: e.target.value })}
-                />
+                <input style={styles.input} placeholder="Digite o tipo de serviço" value={form.servico || ''} onChange={(e) => setForm({ ...form, servico: e.target.value })} />
               </div>
             )}
 
             {!ehOutro && servicosDisponiveis.length > 0 && (
               <div style={styles.formGroup}>
                 <label style={styles.label}>Serviço contratado</label>
-                <select
-                  style={styles.select}
-                  value={form.servico || ''}
-                  onChange={(e) => setForm({ ...form, servico: e.target.value })}
-                >
+                <select style={styles.select} value={form.servico || ''} onChange={(e) => setForm({ ...form, servico: e.target.value })}>
                   <option value="">Selecione...</option>
                   {servicosDisponiveis.map((srv, i) => (
                     <option key={i} value={srv}>{srv}</option>
@@ -377,72 +336,32 @@ function FornecedoresContent() {
 
             <div style={styles.formGroup}>
               <label style={styles.label}>Nome <span style={styles.required}>*</span></label>
-              <input
-                style={styles.input}
-                placeholder="Nome do fornecedor"
-                value={form.nome || ''}
-                onChange={(e) => setForm({ ...form, nome: e.target.value })}
-              />
+              <input style={styles.input} placeholder="Nome do fornecedor" value={form.nome || ''} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
             </div>
-
             <div style={styles.formGroup}>
               <label style={styles.label}>Empresa</label>
-              <input
-                style={styles.input}
-                placeholder="Nome da empresa"
-                value={form.empresa || ''}
-                onChange={(e) => setForm({ ...form, empresa: e.target.value })}
-              />
+              <input style={styles.input} placeholder="Nome da empresa" value={form.empresa || ''} onChange={(e) => setForm({ ...form, empresa: e.target.value })} />
             </div>
-
             <div style={styles.formGroup}>
               <label style={styles.label}>Telefone</label>
-              <input
-                style={styles.input}
-                placeholder="(00) 00000-0000"
-                value={form.telefone || ''}
-                onChange={(e) => setForm({ ...form, telefone: formatarTelefone(e.target.value) })}
-              />
+              <input style={styles.input} placeholder="(00) 00000-0000" value={form.telefone || ''} onChange={(e) => setForm({ ...form, telefone: formatarTelefone(e.target.value) })} />
             </div>
-
             <div style={styles.formGroup}>
               <label style={styles.label}>Email</label>
-              <input
-                style={styles.input}
-                placeholder="email@exemplo.com"
-                type="email"
-                value={form.email || ''}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
+              <input style={styles.input} placeholder="email@exemplo.com" type="email" value={form.email || ''} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             </div>
-
             <div style={styles.formGroup}>
               <label style={styles.label}>Instagram</label>
-              <input
-                style={styles.input}
-                placeholder="@usuario"
-                value={form.instagram || ''}
-                onChange={(e) => setForm({ ...form, instagram: e.target.value })}
-              />
+              <input style={styles.input} placeholder="@usuario" value={form.instagram || ''} onChange={(e) => setForm({ ...form, instagram: e.target.value })} />
             </div>
-
             <div style={styles.formGroup}>
               <label style={styles.label}>Site</label>
-              <input
-                style={styles.input}
-                placeholder="https://..."
-                value={form.site || ''}
-                onChange={(e) => setForm({ ...form, site: e.target.value })}
-              />
+              <input style={styles.input} placeholder="https://..." value={form.site || ''} onChange={(e) => setForm({ ...form, site: e.target.value })} />
             </div>
 
             <div style={styles.row}>
               <div style={styles.col}>
-                <InputMoeda
-                  label="Valor Total"
-                  value={form.valor_total || 0}
-                  onChange={(v) => setForm({ ...form, valor_total: v })}
-                />
+                <InputMoeda label="Valor Total" value={form.valor_total || 0} onChange={(v) => setForm({ ...form, valor_total: v })} />
               </div>
               <div style={styles.col}>
                 <div style={{ position: 'relative' }}>
@@ -450,22 +369,14 @@ function FornecedoresContent() {
                     label={
                       <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         Sinal / adiantamento
-                        <span
-                          style={styles.ajudaIcone}
-                          onMouseEnter={() => setTooltipVisivel(true)}
-                          onMouseLeave={() => setTooltipVisivel(false)}
-                        >
-                          í
-                        </span>
+                        <span style={styles.ajudaIcone} onMouseEnter={() => setTooltipVisivel(true)} onMouseLeave={() => setTooltipVisivel(false)}>í</span>
                       </span>
                     }
                     value={form.valor_entrada || 0}
                     onChange={(v) => setForm({ ...form, valor_entrada: v })}
                   />
                   {tooltipVisivel && (
-                    <div style={styles.tooltip}>
-                      Valor pago antecipadamente para confirmar a contratação.
-                    </div>
+                    <div style={styles.tooltip}>Valor pago antecipadamente para confirmar a contratação.</div>
                   )}
                 </div>
               </div>
@@ -473,11 +384,7 @@ function FornecedoresContent() {
 
             <div style={styles.formGroup}>
               <label style={styles.label}>Status <span style={styles.required}>*</span></label>
-              <select
-                style={styles.select}
-                value={form.status || 'a_contratar'}
-                onChange={(e) => setForm({ ...form, status: e.target.value })}
-              >
+              <select style={styles.select} value={form.status || 'a_contratar'} onChange={(e) => setForm({ ...form, status: e.target.value })}>
                 {STATUS_FORNECEDOR.map((s) => (
                   <option key={s.id} value={s.id}>{s.label}</option>
                 ))}
@@ -486,34 +393,19 @@ function FornecedoresContent() {
 
             <div style={styles.formGroup}>
               <label style={styles.label}>Notas</label>
-              <textarea
-                style={styles.textarea}
-                placeholder="Observações..."
-                value={form.notas || ''}
-                onChange={(e) => setForm({ ...form, notas: e.target.value })}
-                rows={3}
-              />
+              <textarea style={styles.textarea} placeholder="Observações..." value={form.notas || ''} onChange={(e) => setForm({ ...form, notas: e.target.value })} rows={3} />
             </div>
 
             {form.id && !form.pre_criado && (
               <div style={styles.assinaturaBox}>
                 <label style={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={aceiteTermo}
-                    onChange={(e) => setAceiteTermo(e.target.checked)}
-                    style={styles.checkbox}
-                  />
+                  <input type="checkbox" checked={aceiteTermo} onChange={(e) => setAceiteTermo(e.target.checked)} style={styles.checkbox} />
                   Li e aceito os termos do contrato com {form.nome || 'este fornecedor'}
                 </label>
                 <button
                   onClick={() => assinarContrato(form.id)}
                   disabled={!aceiteTermo || assinando}
-                  style={{
-                    ...styles.btnAssinar,
-                    opacity: !aceiteTermo || assinando ? 0.5 : 1,
-                    cursor: !aceiteTermo || assinando ? 'not-allowed' : 'pointer',
-                  }}
+                  style={{ ...styles.btnAssinar, opacity: !aceiteTermo || assinando ? 0.5 : 1, cursor: !aceiteTermo || assinando ? 'not-allowed' : 'pointer' }}
                 >
                   {assinando ? 'Assinando...' : 'Assinar digitalmente'}
                 </button>
@@ -539,8 +431,6 @@ const styles = {
   btnPrimary: { display: 'flex', alignItems: 'center', gap: '6px', background: '#8B6F5E', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, boxShadow: '0 2px 8px rgba(139,111,94,0.3)' },
   btnSecondary: { background: 'var(--color-secondary)', color: 'var(--color-text)', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 500 },
   btnIcon: { background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'var(--color-text-soft)' },
-
-  // ─── Filtros ───
   filtrosBar: { display: 'flex', gap: '16px', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap', padding: '12px 16px', background: '#fff', borderRadius: '12px', border: '1px solid var(--color-secondary)' },
   filtroGrupo: { display: 'flex', flexDirection: 'column', gap: '4px' },
   filtroLabel: { fontSize: '12px', color: 'var(--color-text-soft)', fontFamily: 'var(--font-body)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' },
@@ -549,17 +439,11 @@ const styles = {
   toggleBtn: { padding: '8px 12px', background: '#fff', border: 'none', cursor: 'pointer', color: 'var(--color-text-soft)' },
   toggleAtivo: { background: '#8B6F5E', color: '#fff' },
   checkboxFiltro: { width: '14px', height: '14px', cursor: 'pointer' },
-
-  // ─── Grupos ───
   gruposContainer: { display: 'flex', flexDirection: 'column', gap: '24px' },
   grupo: {},
   grupoTitulo: { fontFamily: 'var(--font-display)', fontSize: '16px', color: 'var(--color-primary)', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid var(--color-secondary)' },
-
-  // ─── Grid / Grade ───
   grid: { display: 'grid', gridTemplateColumns: '1fr', gap: '12px' },
   gridGrade: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' },
-
-  // ─── Card normal ───
   card: { background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid var(--color-secondary)' },
   cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' },
   categoria: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--color-text-soft)' },
@@ -570,17 +454,16 @@ const styles = {
   valores: { display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--color-text-soft)', marginBottom: '10px', flexWrap: 'wrap' },
   assinado: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#2E7D32', marginBottom: '10px' },
   acoes: { display: 'flex', gap: '8px', justifyContent: 'flex-end' },
-
-  // ─── Card pré-criado ───
   cardPreCriado: { background: '#FAFAF8', border: '1px dashed #C4B5A5' },
   preCriadoBox: { display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 0', marginBottom: '10px' },
   preCriadoIcon: { fontSize: '24px' },
   preCriadoTitulo: { fontFamily: 'var(--font-body)', fontSize: '15px', fontWeight: 600, color: 'var(--color-text)', marginBottom: '2px' },
   preCriadoTexto: { fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--color-text-soft)' },
-
   modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '16px' },
   modal: { background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
-  modalTitle: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-primary)', marginBottom: '20px' },
+  modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
+  modalTitle: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-primary)', margin: 0 },
+  btnFechar: { background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--color-text-soft)' },
   formGroup: { marginBottom: '14px' },
   label: { display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--color-text)', marginBottom: '6px', fontFamily: 'var(--font-body)' },
   required: { color: '#C62828' },
