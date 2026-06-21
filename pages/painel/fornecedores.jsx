@@ -77,11 +77,29 @@ function FornecedoresContent() {
       payload.pre_criado = false;
     }
 
+    let fornecedorAtualizado = null;
+
     if (form.id) {
-      await supabase.from('fornecedores').update(payload).eq('id', form.id);
+      const { data } = await supabase.from('fornecedores').update(payload).eq('id', form.id).select().single();
+      fornecedorAtualizado = data || payload;
     } else {
-      await supabase.from('fornecedores').insert(payload);
+      const { data } = await supabase.from('fornecedores').insert(payload).select().single();
+      fornecedorAtualizado = data || payload;
     }
+
+    // Sincroniza com financeiro se status for contratado ou pago
+    if (fornecedorAtualizado && (fornecedorAtualizado.status === 'contratado' || fornecedorAtualizado.status === 'pago')) {
+      try {
+        await fetch('/api/fornecedores/sincronizar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fornecedor: fornecedorAtualizado }),
+        });
+      } catch (err) {
+        console.error('Erro ao sincronizar financeiro:', err);
+      }
+    }
+
     setModalAberto(false);
     setForm({});
     setAceiteTermo(false);
@@ -212,7 +230,7 @@ function FornecedoresContent() {
 
   return (
     <>
-      <Head><title>Fornecedores | descomplicaí</title></Head>
+      <Head><title>Fornecedores | descomplicai</title></Head>
       <div style={styles.page}>
         <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} />
         <main style={styles.main}>
@@ -285,7 +303,6 @@ function FornecedoresContent() {
       {modalAberto && (
         <div style={styles.modalOverlay} onClick={() => setModalAberto(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            {/* Header do modal com X */}
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>{form.id ? 'Editar' : 'Novo'} Fornecedor</h2>
               <button onClick={() => setModalAberto(false)} style={styles.btnFechar}>
@@ -369,14 +386,14 @@ function FornecedoresContent() {
                     label={
                       <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         Sinal / adiantamento
-                        <span style={styles.ajudaIcone} onMouseEnter={() => setTooltipVisivel(true)} onMouseLeave={() => setTooltipVisivel(false)}>í</span>
+                        <span style={styles.ajudaIcone} onMouseEnter={() => setTooltipVisivel(true)} onMouseLeave={() => setTooltipVisivel(false)}>i</span>
                       </span>
                     }
                     value={form.valor_entrada || 0}
                     onChange={(v) => setForm({ ...form, valor_entrada: v })}
                   />
                   {tooltipVisivel && (
-                    <div style={styles.tooltip}>Valor pago antecipadamente para confirmar a contratação.</div>
+                    <div style={styles.tooltip}>Valor pago antecipadamente para confirmar a contratacao.</div>
                   )}
                 </div>
               </div>
@@ -393,7 +410,7 @@ function FornecedoresContent() {
 
             <div style={styles.formGroup}>
               <label style={styles.label}>Notas</label>
-              <textarea style={styles.textarea} placeholder="Observações..." value={form.notas || ''} onChange={(e) => setForm({ ...form, notas: e.target.value })} rows={3} />
+              <textarea style={styles.textarea} placeholder="Observacoes..." value={form.notas || ''} onChange={(e) => setForm({ ...form, notas: e.target.value })} rows={3} />
             </div>
 
             {form.id && !form.pre_criado && (

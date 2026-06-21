@@ -28,6 +28,7 @@ function FinanceiroContent({ readOnly }) {
       .from('financeiro')
       .select('*')
       .eq('evento_id', evento.id)
+      .eq('fornecedor_excluido', false)
       .order('data_vencimento');
     setItens(data || []);
   };
@@ -63,9 +64,9 @@ function FinanceiroContent({ readOnly }) {
   };
 
   const resumo = useMemo(() => {
-    const totalOrcamento = evento?.orcamento_total || 0;
-    const comprometido = itens.reduce((s, p) => s + (p.valor_estimado || 0), 0);
-    const pago = itens.reduce((s, p) => s + (p.valor_real || 0), 0);
+    const totalOrcamento = Number(evento?.orcamento) || 0;
+    const comprometido = itens.reduce((s, p) => s + (Number(p.valor_estimado) || 0), 0);
+    const pago = itens.reduce((s, p) => s + (Number(p.valor_real) || 0), 0);
     const saldo = comprometido - pago;
     return { totalOrcamento, comprometido, pago, saldo };
   }, [evento, itens]);
@@ -74,7 +75,7 @@ function FinanceiroContent({ readOnly }) {
     const map = {};
     itens.forEach((p) => {
       const cat = p.categoria || 'Outros';
-      map[cat] = (map[cat] || 0) + (p.valor_estimado || 0);
+      map[cat] = (map[cat] || 0) + (Number(p.valor_estimado) || 0);
     });
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, [itens]);
@@ -83,7 +84,7 @@ function FinanceiroContent({ readOnly }) {
 
   return (
     <>
-      <Head><title>Financeiro | descomplicaí</title></Head>
+      <Head><title>Financeiro | descomplicai</title></Head>
       <div style={styles.page}>
         <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} />
         <main style={styles.main}>
@@ -93,7 +94,7 @@ function FinanceiroContent({ readOnly }) {
           <div style={styles.header}>
             <h1 style={styles.title}>Financeiro</h1>
             {!readOnly && (
-              <button onClick={() => { setForm({}); setModalAberto(true); }} style={styles.btnPrimary}>
+              <button onClick={() => { setForm({}); setModalAberto(true); }} style={styles.btnAdd}>
                 <Icon name="plus" size={16} color="#fff" /> Adicionar
               </button>
             )}
@@ -101,7 +102,7 @@ function FinanceiroContent({ readOnly }) {
 
           <div style={styles.cards}>
             <div style={styles.card}>
-              <span style={styles.cardLabel}>Orçamento Total</span>
+              <span style={styles.cardLabel}>Orcamento Total</span>
               <span style={styles.cardValue}>R$ {resumo.totalOrcamento.toLocaleString('pt-BR')}</span>
             </div>
             <div style={styles.card}>
@@ -119,7 +120,7 @@ function FinanceiroContent({ readOnly }) {
           </div>
 
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Distribuição por Categoria</h2>
+            <h2 style={styles.sectionTitle}>Distribuicao por Categoria</h2>
             <div style={styles.chart}>
               {porCategoria.map(([cat, val]) => {
                 const pct = resumo.comprometido > 0 ? (val / resumo.comprometido) * 100 : 0;
@@ -137,10 +138,10 @@ function FinanceiroContent({ readOnly }) {
           </section>
 
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Itens do Orçamento</h2>
+            <h2 style={styles.sectionTitle}>Itens do Orcamento</h2>
             <div style={styles.list}>
               {itens.map((p) => {
-                const saldo = (p.valor_estimado || 0) - (p.valor_real || 0);
+                const saldo = (Number(p.valor_estimado) || 0) - (Number(p.valor_real) || 0);
                 return (
                   <div key={p.id} style={{ ...styles.listItem, opacity: p.pago ? 0.7 : 1 }}>
                     <div style={styles.listInfo}>
@@ -183,18 +184,18 @@ function FinanceiroContent({ readOnly }) {
         <div style={styles.modalOverlay} onClick={() => setModalAberto(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h2 style={styles.modalTitle}>{form.id ? 'Editar' : 'Novo'} Item</h2>
-            <input style={styles.input} placeholder="Descrição" value={form.descricao || ''} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
+            <input style={styles.input} placeholder="Descricao" value={form.descricao || ''} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
             <input style={styles.input} placeholder="Categoria" value={form.categoria || ''} onChange={(e) => setForm({ ...form, categoria: e.target.value })} />
             <input style={styles.input} placeholder="Valor Estimado" type="number" value={form.valor_estimado || ''} onChange={(e) => setForm({ ...form, valor_estimado: Number(e.target.value) })} />
             <input style={styles.input} placeholder="Valor Real (pago)" type="number" value={form.valor_real || ''} onChange={(e) => setForm({ ...form, valor_real: Number(e.target.value) })} />
             <input style={styles.input} placeholder="Data de Vencimento" type="date" value={form.data_vencimento || ''} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value })} />
             <label style={styles.checkboxLabel}>
               <input type="checkbox" checked={form.pago || false} onChange={(e) => setForm({ ...form, pago: e.target.checked })} style={styles.checkbox} />
-              Já foi pago
+              Ja foi pago
             </label>
             <div style={styles.modalBotoes}>
-              <button onClick={() => setModalAberto(false)} style={styles.btnSecondary}>Cancelar</button>
-              <button onClick={salvar} style={styles.btnPrimary}>Salvar</button>
+              <button onClick={() => setModalAberto(false)} style={styles.btnCancel}>Cancelar</button>
+              <button onClick={salvar} style={styles.btnSave}>Salvar</button>
             </div>
           </div>
         </div>
@@ -230,15 +231,16 @@ const styles = {
   listValue: { fontSize: '14px', fontWeight: 600, color: 'var(--color-primary)' },
   listAcoes: { display: 'flex', gap: '6px', alignItems: 'center' },
   btnPago: { padding: '4px 10px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: '#fff' },
-  btnPrimary: { display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--color-primary)', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 },
-  btnSecondary: { background: 'var(--color-secondary)', color: 'var(--color-text)', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
+  btnAdd: { display: 'flex', alignItems: 'center', gap: '6px', background: '#8B6F5E', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' },
+  btnCancel: { background: 'var(--color-secondary)', color: 'var(--color-text)', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
+  btnSave: { display: 'flex', alignItems: 'center', gap: '6px', background: '#8B6F5E', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 },
   btnIcon: { background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'var(--color-text-soft)' },
   readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },
   readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
   modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '16px' },
   modal: { background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflow: 'auto' },
   modalTitle: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-primary)', marginBottom: '16px' },
-  input: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-secondary)', marginBottom: '10px', fontSize: '14px', fontFamily: 'var(--font-body)' },
+  input: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1.5px solid var(--color-text-soft)', marginBottom: '10px', fontSize: '14px', fontFamily: 'var(--font-body)', background: '#fff', color: 'var(--color-text)', outline: 'none' },
   modalBotoes: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' },
   checkboxLabel: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--color-text)', marginBottom: '10px', cursor: 'pointer' },
   checkbox: { width: '16px', height: '16px', cursor: 'pointer' },
