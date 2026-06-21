@@ -43,26 +43,58 @@ function getCategoriaPrincipalId(subcategoriaId) {
  * Busca o memorial do evento na tabela memoriais e extrai a lista de fornecedores.
  */
 async function extrairFornecedoresDoMemorial(eventoId, supabase) {
-  if (!eventoId || !supabase) return [];
+  if (!eventoId || !supabase) {
+    console.log('[preFornecedores] eventoId ou supabase ausente');
+    return [];
+  }
 
-  const { data: memorial } = await supabase
+  console.log('[preFornecedores] Buscando memorial para evento:', eventoId);
+
+  // Tenta tabela 'memoriais' (plural)
+  const { data: memorial, error: err1 } = await supabase
     .from('memoriais')
     .select('estado')
     .eq('evento_id', eventoId)
     .order('criado_em', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
-  if (!memorial || !memorial.estado) return [];
+  if (err1) {
+    console.error('[preFornecedores] Erro na tabela memoriais:', err1);
+  }
 
-  const estado = typeof memorial.estado === 'string' ? JSON.parse(memorial.estado) : memorial.estado;
+  if (memorial && memorial.estado) {
+    console.log('[preFornecedores] Memorial encontrado em memoriais');
+    const estado = typeof memorial.estado === 'string' ? JSON.parse(memorial.estado) : memorial.estado;
+    if (Array.isArray(estado.fornecedoresNecessarios)) return estado.fornecedoresNecessarios;
+    if (Array.isArray(estado.fornecedores)) return estado.fornecedores;
+    return gerarFornecedoresDoEstado(estado);
+  }
 
-  // Se o estado ja tem a lista pronta
-  if (Array.isArray(estado.fornecedoresNecessarios)) return estado.fornecedoresNecessarios;
-  if (Array.isArray(estado.fornecedores)) return estado.fornecedores;
+  // Tenta tabela 'memorial' (singular) como fallback
+  console.log('[preFornecedores] Tentando tabela memorial (singular)...');
+  const { data: memorial2, error: err2 } = await supabase
+    .from('memorial')
+    .select('estado')
+    .eq('evento_id', eventoId)
+    .order('criado_em', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  // Senao, gera a partir dos campos do estado
-  return gerarFornecedoresDoEstado(estado);
+  if (err2) {
+    console.error('[preFornecedores] Erro na tabela memorial:', err2);
+  }
+
+  if (memorial2 && memorial2.estado) {
+    console.log('[preFornecedores] Memorial encontrado em memorial');
+    const estado = typeof memorial2.estado === 'string' ? JSON.parse(memorial2.estado) : memorial2.estado;
+    if (Array.isArray(estado.fornecedoresNecessarios)) return estado.fornecedoresNecessarios;
+    if (Array.isArray(estado.fornecedores)) return estado.fornecedores;
+    return gerarFornecedoresDoEstado(estado);
+  }
+
+  console.log('[preFornecedores] Nenhum memorial encontrado em nenhuma tabela');
+  return [];
 }
 
 function gerarFornecedoresDoEstado(estado) {
@@ -88,18 +120,31 @@ function gerarFornecedoresDoEstado(estado) {
 }
 
 export async function importarPreFornecedores(eventoId, supabase, usuarioId) {
-  if (!eventoId || !supabase || !usuarioId) return 0;
+  if (!eventoId || !supabase || !usuarioId) {
+    console.log('[preFornecedores] Parametros ausentes:', { eventoId, usuarioId });
+    return 0;
+  }
+
+  console.log('[preFornecedores] Iniciando importacao para evento:', eventoId);
 
   // Extrai lista do memorial
   const listaMemorial = await extrairFornecedoresDoMemorial(eventoId, supabase);
 
+  console.log('[preFornecedores] Lista extraida do memorial:', listaMemorial.length, 'itens');
+
   if (listaMemorial.length === 0) return 0;
 
   // Busca fornecedores ja existentes para este evento
-  const { data: existentes } = await supabase
+  const { data: existentes, error: errExistentes } = await supabase
     .from('fornecedores')
     .select('categoria, categoria_principal, servico')
     .eq('evento_id', eventoId);
+
+  if (errExistentes) {
+    console.error('[preFornecedores] Erro ao buscar existentes:', errExistentes);
+  }
+
+  console.log('[preFornecedores] Fornecedores existentes:', existentes?.length || 0);
 
   const existentesSet = new Set(
     (existentes || []).map(f => `${f.categoria || ''}|${f.categoria_principal || ''}|${f.servico || ''}`)
@@ -123,10 +168,13 @@ export async function importarPreFornecedores(eventoId, supabase, usuarioId) {
       servico: item.nome || '',
     };
   }).filter((f) => {
-    // Evita duplicidade: so insere se nao existe fornecedor com mesma categoria + categoria_principal + servico
     const chave = `${f.categoria}|${f.categoria_principal}|${f.servico}`;
-    return !existentesSet.has(chave);
+    const duplicado = existentesSet.has(chave);
+    if (duplicado) console.log('[preFornecedores] Ignorando duplicado:', f.servico);
+    return !duplicado;
   });
+
+  console.log('[preFornecedores] Pre-fornecedores a inserir:', preFornecedores.length);
 
   if (preFornecedores.length === 0) return 0;
 
@@ -135,10 +183,11 @@ export async function importarPreFornecedores(eventoId, supabase, usuarioId) {
     .insert(preFornecedores);
 
   if (error) {
-    console.error('Erro ao importar pre-fornecedores:', error);
+    console.error('[preFornecedores] Erro ao inserir:', error);
     return 0;
   }
 
+  console.log('[preFornecedores] Sucesso:', preFornecedores.length, 'inseridos');
   return preFornecedores.length;
 }
 
