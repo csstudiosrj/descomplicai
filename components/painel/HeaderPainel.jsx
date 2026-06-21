@@ -27,7 +27,7 @@ export default function HeaderPainel({ nomeCasal, dataEvento }) {
     if (!dataEvento) return '';
     const [ano, mes, dia] = dataEvento.split('-');
     const meses = [
-      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+      'janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho',
       'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
     ];
     return `${parseInt(dia)} de ${meses[parseInt(mes) - 1]} de ${ano}`;
@@ -72,7 +72,10 @@ const styles = {
     padding: '20px 0',
     position: 'sticky',
     top: 0,
-    zIndex: 100,
+    zIndex: 200,
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    boxShadow: '0 1px 0 var(--color-secondary)',
   },
   container: {
     maxWidth: '960px',
