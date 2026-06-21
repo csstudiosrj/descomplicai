@@ -38,6 +38,15 @@ function PainelContent() {
     carregarDashboard();
   }, [evento, user]);
 
+  // Sincroniza valor do orcamento quando o modal abre
+  useEffect(() => {
+    if (modalOrcamentoAberto && evento) {
+      const valor = Number(evento.orcamento) || Number(evento.orcamento_total) || 0;
+      console.log('[Dashboard] Orcamento atual:', valor, 'evento:', evento);
+      setValorOrcamento(valor);
+    }
+  }, [modalOrcamentoAberto, evento]);
+
   const carregarDashboard = async () => {
     setLoading(true);
     const eventoId = evento.id;
@@ -64,7 +73,7 @@ function PainelContent() {
 
     const finPago = finData?.filter(f => f.pago).reduce((acc, f) => acc + (Number(f.valor_real) || 0), 0) || 0;
     const finComprometido = finData?.reduce((acc, f) => acc + (Number(f.valor_estimado) || 0), 0) || 0;
-    const orcamento = Number(evento?.orcamento) || 0;
+    const orcamento = Number(evento?.orcamento) || Number(evento?.orcamento_total) || 0;
 
     setFinanceiro({ orcamento, comprometido: finComprometido, pago: finPago });
 
@@ -170,7 +179,6 @@ function PainelContent() {
 
   const abrirModalOrcamento = () => {
     if (!hasAccess) return;
-    setValorOrcamento(Number(evento?.orcamento) || 0);
     setModalOrcamentoAberto(true);
   };
 
