@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
 import HeaderPainel from '../../components/painel/HeaderPainel';
 import Icon from '../../components/ui/Icon';
+import InputMoeda from '../../components/ui/InputMoeda';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import { importarPreFornecedores } from '../../utils/preFornecedores';
@@ -28,9 +29,8 @@ function PainelContent() {
   const [tarefas, setTarefas] = useState({ total: 0, concluidas: 0, urgentes: [] });
   const [alertas, setAlertas] = useState([]);
 
-  // Modal de orcamento
   const [modalOrcamentoAberto, setModalOrcamentoAberto] = useState(false);
-  const [valorOrcamento, setValorOrcamento] = useState('');
+  const [valorOrcamento, setValorOrcamento] = useState(0);
   const [salvandoOrcamento, setSalvandoOrcamento] = useState(false);
 
   useEffect(() => {
@@ -42,10 +42,8 @@ function PainelContent() {
     setLoading(true);
     const eventoId = evento.id;
 
-    // Importa pre-fornecedores do memorial (tabela memoriais)
     await importarPreFornecedores(eventoId, supabase, user.id);
 
-    // Fornecedores
     const { data: fornData } = await supabase
       .from('fornecedores')
       .select('status, valor_total, pre_criado, nome')
@@ -55,11 +53,9 @@ function PainelContent() {
     const fornContratados = fornData?.filter(f => f.status === 'contratado' || f.status === 'pago').length || 0;
     const fornPagos = fornData?.filter(f => f.status === 'pago').length || 0;
     const fornPreCriados = fornData?.filter(f => f.pre_criado === true).length || 0;
-    const fornComprometido = fornData?.reduce((acc, f) => acc + (Number(f.valor_total) || 0), 0) || 0;
 
     setFornecedores({ total: fornTotal, contratados: fornContratados, pagos: fornPagos, preCriados: fornPreCriados });
 
-    // Financeiro
     const { data: finData } = await supabase
       .from('financeiro')
       .select('valor_estimado, valor_real, pago, data_vencimento')
@@ -72,7 +68,6 @@ function PainelContent() {
 
     setFinanceiro({ orcamento, comprometido: finComprometido, pago: finPago });
 
-    // Convidados
     const { data: convData } = await supabase
       .from('convidados')
       .select('confirmado')
@@ -83,7 +78,6 @@ function PainelContent() {
 
     setConvidados({ total: convTotal, confirmados: convConfirmados });
 
-    // Tarefas
     const { data: tarData } = await supabase
       .from('tarefas')
       .select('*')
@@ -104,7 +98,6 @@ function PainelContent() {
 
     setTarefas({ total: tarTotal, concluidas: tarConcluidas, urgentes: tarUrgentes });
 
-    // Progresso: denominador = max(pre-criados, contratados) — nao piora com adicoes
     const denomForn = Math.max(fornPreCriados, fornContratados) || 1;
     const progressoForn = Math.min(100, Math.round((fornContratados / denomForn) * 100));
     const progressoTar = tarTotal > 0 ? Math.round((tarConcluidas / tarTotal) * 100) : 0;
@@ -119,7 +112,6 @@ function PainelContent() {
 
     setProgresso(progressoGeral);
 
-    // Alertas
     const alertasLista = [];
 
     const atrasadas = tarUrgentes.filter(t => t.atrasada);
@@ -178,7 +170,7 @@ function PainelContent() {
 
   const abrirModalOrcamento = () => {
     if (!hasAccess) return;
-    setValorOrcamento(String(evento?.orcamento || ''));
+    setValorOrcamento(Number(evento?.orcamento) || 0);
     setModalOrcamentoAberto(true);
   };
 
@@ -305,15 +297,12 @@ function PainelContent() {
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h2 style={styles.modalTitle}>Definir orcamento</h2>
             <p style={styles.modalDesc}>Informe o valor total planejado para o casamento.</p>
-            <input
-              style={styles.input}
-              type="number"
-              placeholder="Ex: 100000"
-              value={valorOrcamento}
-              onChange={(e) => setValorOrcamento(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && salvarOrcamento()}
-              autoFocus
-            />
+            <div style={styles.inputWrapper}>
+              <InputMoeda
+                value={valorOrcamento}
+                onChange={(v) => setValorOrcamento(v)}
+              />
+            </div>
             <div style={styles.modalBotoes}>
               <button onClick={() => setModalOrcamentoAberto(false)} style={styles.btnCancel}>Cancelar</button>
               <button onClick={salvarOrcamento} disabled={salvandoOrcamento} style={{ ...styles.btnSave, opacity: salvandoOrcamento ? 0.6 : 1 }}>
@@ -365,7 +354,7 @@ const styles = {
   modal: { background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
   modalTitle: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-primary)', marginBottom: '6px' },
   modalDesc: { fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--color-text-soft)', marginBottom: '16px' },
-  input: { width: '100%', padding: '12px 14px', borderRadius: '10px', border: '1.5px solid var(--color-text-soft)', fontSize: '16px', fontFamily: 'var(--font-body)', color: 'var(--color-text)', outline: 'none', marginBottom: '16px', boxSizing: 'border-box' },
+  inputWrapper: { marginBottom: '16px' },
   modalBotoes: { display: 'flex', gap: '10px', justifyContent: 'flex-end' },
   btnCancel: { background: 'var(--color-secondary)', color: 'var(--color-text)', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
   btnSave: { background: '#8B6F5E', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 },
