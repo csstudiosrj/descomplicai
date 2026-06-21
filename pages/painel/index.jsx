@@ -38,11 +38,9 @@ function PainelContent() {
     carregarDashboard();
   }, [evento, user]);
 
-  // Sincroniza valor do orcamento quando o modal abre
   useEffect(() => {
     if (modalOrcamentoAberto && evento) {
       const valor = Number(evento.orcamento) || Number(evento.orcamento_total) || 0;
-      console.log('[Dashboard] Orcamento atual:', valor, 'evento:', evento);
       setValorOrcamento(valor);
     }
   }, [modalOrcamentoAberto, evento]);
@@ -177,7 +175,8 @@ function PainelContent() {
     setLoading(false);
   };
 
-  const abrirModalOrcamento = () => {
+  const abrirModalOrcamento = (e) => {
+    e.stopPropagation();
     if (!hasAccess) return;
     setModalOrcamentoAberto(true);
   };
@@ -254,13 +253,21 @@ function PainelContent() {
                   <span style={styles.cardRapidoLabel}>Fornecedores contratados</span>
                 </div>
               </button>
-              <button onClick={abrirModalOrcamento} style={styles.cardRapido}>
+
+              {/* Card financeiro: clique vai para a pagina, icone de editar abre modal */}
+              <button onClick={() => router.push('/painel/financeiro')} style={{ ...styles.cardRapido, position: 'relative' }}>
+                {hasAccess && (
+                  <div onClick={abrirModalOrcamento} style={styles.btnEditar} title="Ajustar orcamento">
+                    <Icon name="edit" size={14} color="var(--color-text-soft)" />
+                  </div>
+                )}
                 <div style={styles.cardRapidoIcone}><Icon name="dollar" size={24} color="#2E7D32" /></div>
                 <div style={styles.cardRapidoInfo}>
                   <span style={styles.cardRapidoNumero}>R$ {financeiro.comprometido.toLocaleString('pt-BR')}<span style={styles.cardRapidoDe}> de </span>R$ {financeiro.orcamento.toLocaleString('pt-BR')}</span>
                   <span style={styles.cardRapidoLabel}>Orcamento comprometido</span>
                 </div>
               </button>
+
               <button onClick={() => router.push('/painel/convidados')} style={styles.cardRapido}>
                 <div style={styles.cardRapidoIcone}><Icon name="users" size={24} color="#00838F" /></div>
                 <div style={styles.cardRapidoInfo}>
@@ -344,6 +351,7 @@ const styles = {
   cardsSection: {},
   cardsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' },
   cardRapido: { display: 'flex', flexDirection: 'column', gap: '10px', background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid var(--color-secondary)', cursor: 'pointer', textAlign: 'left', alignItems: 'flex-start' },
+  btnEditar: { position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', borderRadius: '6px', zIndex: 2 },
   cardRapidoIcone: { width: '40px', height: '40px', borderRadius: '10px', background: 'var(--color-fundo)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   cardRapidoInfo: { display: 'flex', flexDirection: 'column', gap: '2px' },
   cardRapidoNumero: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-text)', fontWeight: 700 },
