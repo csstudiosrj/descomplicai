@@ -82,8 +82,12 @@ async function extrairFornecedoresDoMemorial(eventoId, usuarioId, supabase) {
 
   const estado = typeof memorial.estado === 'string' ? JSON.parse(memorial.estado) : memorial.estado;
 
-  if (Array.isArray(estado.fornecedoresNecessarios)) return estado.fornecedoresNecessarios;
-  if (Array.isArray(estado.fornecedores)) return estado.fornecedores;
+  if (Array.isArray(estado.fornecedoresNecessarios) && estado.fornecedoresNecessarios.length > 0) {
+    return estado.fornecedoresNecessarios;
+  }
+  if (Array.isArray(estado.fornecedores) && estado.fornecedores.length > 0) {
+    return estado.fornecedores;
+  }
 
   return gerarFornecedoresDoEstado(estado);
 }
@@ -100,8 +104,12 @@ function gerarFornecedoresDoEstado(estado) {
   if (['catolica', 'evangelica', 'judaica'].includes(estado.tipoCerimonia)) add('Oficializante', 'Oficializante');
   if (estado.tipoCerimonia === 'simbolica') add('Celebrante laico', 'Celebrante laico');
   if (estado.flores) add('Floricultura / Decoracao', 'Floricultura / Decoracao');
-  if (estado.musicaFesta === 'dj') add('DJ', 'DJ');
-  else if (estado.musicaFesta === 'banda') add('Banda', 'Banda');
+
+  // Correcao: "Banda + DJ" deve adicionar ambos
+  const musica = estado.musicaFesta || '';
+  if (musica.toLowerCase().includes('dj')) add('DJ', 'DJ');
+  if (musica.toLowerCase().includes('banda')) add('Banda', 'Banda');
+
   if (['praia', 'sitio', 'jardim', 'rooftop', 'haras'].includes(estado.tipoLocal)) {
     add('Iluminacao cenica', 'Iluminacao cenica');
     add('Som profissional', 'Som profissional');
@@ -118,15 +126,14 @@ export async function importarPreFornecedores(eventoId, supabase, usuarioId) {
 
   if (listaMemorial.length === 0) return 0;
 
-  // Busca fornecedores ja existentes para este evento
-  const { data: existentes } = await supabase
+  // Busca APENAS pre-fornecedores ja existentes para este evento
+  const { data: preExistentes } = await supabase
     .from('fornecedores')
-    .select('categoria, categoria_principal, servico')
-    .eq('evento_id', eventoId);
+    .select('categoria')
+    .eq('evento_id', eventoId)
+    .eq('pre_criado', true);
 
-  const existentesSet = new Set(
-    (existentes || []).map(f => `${f.categoria || ''}|${f.categoria_principal || ''}|${f.servico || ''}`)
-  );
+  const categoriasPreExistentes = new Set((preExistentes || []).map(f => f.categoria));
 
   const preFornecedores = listaMemorial.map((item) => {
     const subcategoriaId = MAPEAMENTO_CATEGORIAS[item.nome] || MAPEAMENTO_CATEGORIAS[item.categoria] || 'outro';
@@ -146,8 +153,9 @@ export async function importarPreFornecedores(eventoId, supabase, usuarioId) {
       servico: item.nome || '',
     };
   }).filter((f) => {
-    const chave = `${f.categoria}|${f.categoria_principal}|${f.servico}`;
-    return !existentesSet.has(chave);
+    // So ignora se ja existe um PRE-CRIADO com a mesma categoria
+    // Manuais nao bloqueiam a importacao
+    return !categoriasPreExistentes.has(f.categoria);
   });
 
   if (preFornecedores.length === 0) return 0;
