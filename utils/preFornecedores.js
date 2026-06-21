@@ -1,16 +1,16 @@
 // utils/preFornecedores.js
-// Importa pré-lista de fornecedores do memorial (tabela memoriais) automaticamente
+// Importa pre-lista de fornecedores do memorial (tabela memoriais) automaticamente
 
 const MAPEAMENTO_CATEGORIAS = {
   'Fotografia': 'fotografia',
   'Buffet': 'buffet',
-  'Espaço / Venue': 'espaco_recepcao',
+  'Espaco / Venue': 'espaco_recepcao',
   'Oficializante': 'oficializante_religioso',
   'Celebrante laico': 'celebrante',
-  'Floricultura / Decoração': 'floricultura',
+  'Floricultura / Decoracao': 'floricultura',
   'DJ': 'dj',
   'Banda': 'banda',
-  'Iluminação cênica': 'iluminacao_cenica',
+  'Iluminacao cenica': 'iluminacao_cenica',
   'Som profissional': 'som_profissional',
 };
 
@@ -57,11 +57,11 @@ async function extrairFornecedoresDoMemorial(eventoId, supabase) {
 
   const estado = typeof memorial.estado === 'string' ? JSON.parse(memorial.estado) : memorial.estado;
 
-  // Se o estado já tem a lista pronta
+  // Se o estado ja tem a lista pronta
   if (Array.isArray(estado.fornecedoresNecessarios)) return estado.fornecedoresNecessarios;
   if (Array.isArray(estado.fornecedores)) return estado.fornecedores;
 
-  // Senão, gera a partir dos campos do estado
+  // Senao, gera a partir dos campos do estado
   return gerarFornecedoresDoEstado(estado);
 }
 
@@ -70,17 +70,17 @@ function gerarFornecedoresDoEstado(estado) {
   const lista = [];
   const add = (cat, nome) => lista.push({ categoria: cat, nome });
 
-  add('Fotografia', 'Fotógrafo');
+  add('Fotografia', 'Fotografo');
   add('Buffet', 'Buffet');
-  add('Espaço / Venue', 'Espaço / Venue');
+  add('Espaco / Venue', 'Espaco / Venue');
 
   if (['catolica', 'evangelica', 'judaica'].includes(estado.tipoCerimonia)) add('Oficializante', 'Oficializante');
   if (estado.tipoCerimonia === 'simbolica') add('Celebrante laico', 'Celebrante laico');
-  if (estado.flores) add('Floricultura / Decoração', 'Floricultura / Decoração');
+  if (estado.flores) add('Floricultura / Decoracao', 'Floricultura / Decoracao');
   if (estado.musicaFesta === 'dj') add('DJ', 'DJ');
   else if (estado.musicaFesta === 'banda') add('Banda', 'Banda');
   if (['praia', 'sitio', 'jardim', 'rooftop', 'haras'].includes(estado.tipoLocal)) {
-    add('Iluminação cênica', 'Iluminação cênica');
+    add('Iluminacao cenica', 'Iluminacao cenica');
     add('Som profissional', 'Som profissional');
   }
 
@@ -90,19 +90,20 @@ function gerarFornecedoresDoEstado(estado) {
 export async function importarPreFornecedores(eventoId, supabase, usuarioId) {
   if (!eventoId || !supabase || !usuarioId) return 0;
 
-  // Verifica se já existem fornecedores para este evento
-  const { data: existentes } = await supabase
-    .from('fornecedores')
-    .select('id')
-    .eq('evento_id', eventoId)
-    .limit(1);
-
-  if (existentes && existentes.length > 0) return 0;
-
   // Extrai lista do memorial
   const listaMemorial = await extrairFornecedoresDoMemorial(eventoId, supabase);
 
   if (listaMemorial.length === 0) return 0;
+
+  // Busca fornecedores ja existentes para este evento
+  const { data: existentes } = await supabase
+    .from('fornecedores')
+    .select('categoria, categoria_principal, servico')
+    .eq('evento_id', eventoId);
+
+  const existentesSet = new Set(
+    (existentes || []).map(f => `${f.categoria || ''}|${f.categoria_principal || ''}|${f.servico || ''}`)
+  );
 
   const preFornecedores = listaMemorial.map((item) => {
     const subcategoriaId = MAPEAMENTO_CATEGORIAS[item.nome] || MAPEAMENTO_CATEGORIAS[item.categoria] || 'outro';
@@ -119,16 +120,22 @@ export async function importarPreFornecedores(eventoId, supabase, usuarioId) {
       valor_entrada: 0,
       valor_saldo: 0,
       pre_criado: true,
-      servico: '',
+      servico: item.nome || '',
     };
+  }).filter((f) => {
+    // Evita duplicidade: so insere se nao existe fornecedor com mesma categoria + categoria_principal + servico
+    const chave = `${f.categoria}|${f.categoria_principal}|${f.servico}`;
+    return !existentesSet.has(chave);
   });
+
+  if (preFornecedores.length === 0) return 0;
 
   const { error } = await supabase
     .from('fornecedores')
     .insert(preFornecedores);
 
   if (error) {
-    console.error('Erro ao importar pré-fornecedores:', error);
+    console.error('Erro ao importar pre-fornecedores:', error);
     return 0;
   }
 
