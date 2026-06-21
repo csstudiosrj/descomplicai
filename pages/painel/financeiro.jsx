@@ -4,6 +4,13 @@ import ProtectedRoute from '../../components/painel/ProtectedRoute';
 import HeaderPainel from '../../components/painel/HeaderPainel';
 import Icon from '../../components/ui/Icon';
 import { useAuth } from '../../hooks/useAuth';
+import {
+  CATEGORIAS_PRINCIPAIS,
+  getSubcategoriasPorPrincipal,
+  getLabelSubcategoria,
+  getLabelCategoriaPrincipal,
+  getCategoriaPrincipal,
+} from '../../utils/catalogoFornecedores';
 
 export default function FinanceiroPage({ readOnly }) {
   return (
@@ -18,6 +25,11 @@ function FinanceiroContent({ readOnly }) {
   const [itens, setItens] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState({});
+
+  // Filtros e visualizacao
+  const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [filtroCategoria, setFiltroCategoria] = useState('todos');
+  const [agrupar, setAgrupar] = useState(false);
 
   useEffect(() => {
     if (evento) {
@@ -86,16 +98,77 @@ function FinanceiroContent({ readOnly }) {
     return { totalOrcamento, comprometido, pago, saldo };
   }, [evento, itens]);
 
-  const porCategoria = useMemo(() => {
+  // Filtros
+  const itensFiltrados = useMemo(() => {
+    let filtrados = [...itens];
+    if (filtroStatus !== 'todos') {
+      filtrados = filtrados.filter(f => (filtroStatus === 'pago' ? f.pago : !f.pago));
+    }
+    if (filtroCategoria !== 'todos') {
+      filtrados = filtrados.filter(f => f.categoria === filtroCategoria || f.categoria_principal === filtroCategoria);
+    }
+    return filtrados;
+  }, [itens, filtroStatus, filtroCategoria]);
+
+  // Agrupamento por categoria principal
+  const grupos = useMemo(() => {
+    if (!agrupar) return null;
     const map = {};
-    itens.forEach((p) => {
-      const cat = p.categoria || 'Outros';
-      map[cat] = (map[cat] || 0) + (Number(p.valor_estimado) || 0);
+    itensFiltrados.forEach((item) => {
+      const catPrincipal = item.categoria_principal || getCategoriaPrincipal(item.categoria)?.label || 'Outro';
+      if (!map[catPrincipal]) map[catPrincipal] = [];
+      map[catPrincipal].push(item);
     });
-    return Object.entries(map).sort((a, b) => b[1] - a[1]);
-  }, [itens]);
+    return map;
+  }, [itensFiltrados, agrupar]);
+
+  const subcategoriasDisponiveis = form.categoria_principal
+    ? getSubcategoriasPorPrincipal(form.categoria_principal)
+    : [];
 
   const nomeCasal = evento?.nome_evento || '';
+
+  const renderItem = (p) => {
+    const saldo = (Number(p.valor_estimado) || 0) - (Number(p.valor_real) || 0);
+    const catPrincipal = getLabelCategoriaPrincipal(p.categoria) || p.categoria_principal || 'Outro';
+    const subcategoria = getLabelSubcategoria(p.categoria) || p.categoria || '';
+
+    return (
+      <div key={p.id} style={{ ...styles.listItem, opacity: p.pago ? 0.7 : 1 }}>
+        <div style={styles.listInfo}>
+          <span style={styles.listName}>{p.descricao || subcategoria || 'Item'}</span>
+          <span style={styles.listCategoria}>
+            {catPrincipal}{subcategoria && catPrincipal !== subcategoria ? ` → ${subcategoria}` : ''}
+          </span>
+          <span style={styles.listDate}>
+            <Icon name="calendar" size={12} /> {p.data_vencimento || 'Sem data'}
+            {p.pago && <span style={styles.tagPago}> · Pago</span>}
+          </span>
+        </div>
+        <div style={styles.listValores}>
+          <span style={styles.listValue}>R$ {saldo.toLocaleString('pt-BR')}</span>
+          <div style={styles.listAcoes}>
+            <button
+              onClick={() => togglePago(p.id, p.pago)}
+              style={{ ...styles.btnPago, background: p.pago ? '#2E7D32' : 'var(--color-secondary)' }}
+            >
+              {p.pago ? 'Pago' : 'Pagar'}
+            </button>
+            {!readOnly && (
+              <>
+                <button onClick={() => { setForm(p); setModalAberto(true); }} style={styles.btnIcon}>
+                  <Icon name="edit" size={14} />
+                </button>
+                <button onClick={() => excluir(p.id)} style={styles.btnIcon}>
+                  <Icon name="trash" size={14} />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -134,10 +207,43 @@ function FinanceiroContent({ readOnly }) {
             </div>
           </div>
 
+          {/* Filtros */}
+          <div style={styles.filtrosBar}>
+            <div style={styles.filtroGrupo}>
+              <label style={styles.filtroLabel}>Status</label>
+              <select style={styles.filtroSelect} value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
+                <option value="todos">Todos</option>
+                <option value="pendente">Pendente</option>
+                <option value="pago">Pago</option>
+              </select>
+            </div>
+            <div style={styles.filtroGrupo}>
+              <label style={styles.filtroLabel}>Categoria</label>
+              <select style={styles.filtroSelect} value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
+                <option value="todos">Todas</option>
+                {CATEGORIAS_PRINCIPAIS.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
+            <div style={styles.filtroGrupo}>
+              <label style={styles.filtroLabel}>
+                <input type="checkbox" checked={agrupar} onChange={(e) => setAgrupar(e.target.checked)} style={styles.checkboxFiltro} />
+                Agrupar por categoria
+              </label>
+            </div>
+          </div>
+
           <section style={styles.section}>
             <h2 style={styles.sectionTitle}>Distribuicao por Categoria</h2>
             <div style={styles.chart}>
-              {porCategoria.map(([cat, val]) => {
+              {Object.entries(
+                itens.reduce((map, p) => {
+                  const cat = getLabelCategoriaPrincipal(p.categoria) || p.categoria || 'Outros';
+                  map[cat] = (map[cat] || 0) + (Number(p.valor_estimado) || 0);
+                  return map;
+                }, {})
+              ).sort((a, b) => b[1] - a[1]).map(([cat, val]) => {
                 const pct = resumo.comprometido > 0 ? (val / resumo.comprometido) * 100 : 0;
                 return (
                   <div key={cat} style={styles.chartRow}>
@@ -154,43 +260,22 @@ function FinanceiroContent({ readOnly }) {
 
           <section style={styles.section}>
             <h2 style={styles.sectionTitle}>Itens do Orcamento</h2>
-            <div style={styles.list}>
-              {itens.map((p) => {
-                const saldo = (Number(p.valor_estimado) || 0) - (Number(p.valor_real) || 0);
-                return (
-                  <div key={p.id} style={{ ...styles.listItem, opacity: p.pago ? 0.7 : 1 }}>
-                    <div style={styles.listInfo}>
-                      <span style={styles.listName}>{p.descricao || p.categoria || 'Item'}</span>
-                      <span style={styles.listDate}>
-                        <Icon name="calendar" size={12} /> {p.data_vencimento || 'Sem data'}
-                        {p.categoria && <span style={styles.tag}> · {p.categoria}</span>}
-                      </span>
-                    </div>
-                    <div style={styles.listValores}>
-                      <span style={styles.listValue}>R$ {saldo.toLocaleString('pt-BR')}</span>
-                      <div style={styles.listAcoes}>
-                        <button
-                          onClick={() => togglePago(p.id, p.pago)}
-                          style={{ ...styles.btnPago, background: p.pago ? '#2E7D32' : 'var(--color-secondary)' }}
-                        >
-                          {p.pago ? 'Pago' : 'Pagar'}
-                        </button>
-                        {!readOnly && (
-                          <>
-                            <button onClick={() => { setForm(p); setModalAberto(true); }} style={styles.btnIcon}>
-                              <Icon name="edit" size={14} />
-                            </button>
-                            <button onClick={() => excluir(p.id)} style={styles.btnIcon}>
-                              <Icon name="trash" size={14} />
-                            </button>
-                          </>
-                        )}
-                      </div>
+            {agrupar && grupos ? (
+              <div style={styles.gruposContainer}>
+                {Object.entries(grupos).map(([categoriaPrincipal, itensGrupo]) => (
+                  <div key={categoriaPrincipal} style={styles.grupo}>
+                    <h3 style={styles.grupoTitulo}>{categoriaPrincipal}</h3>
+                    <div style={styles.list}>
+                      {itensGrupo.map(renderItem)}
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div style={styles.list}>
+                {itensFiltrados.map(renderItem)}
+              </div>
+            )}
           </section>
         </main>
       </div>
@@ -199,15 +284,59 @@ function FinanceiroContent({ readOnly }) {
         <div style={styles.modalOverlay} onClick={() => setModalAberto(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h2 style={styles.modalTitle}>{form.id ? 'Editar' : 'Novo'} Item</h2>
-            <input style={styles.input} placeholder="Descricao" value={form.descricao || ''} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
-            <input style={styles.input} placeholder="Categoria" value={form.categoria || ''} onChange={(e) => setForm({ ...form, categoria: e.target.value })} />
-            <input style={styles.input} placeholder="Valor Estimado" type="number" value={form.valor_estimado || ''} onChange={(e) => setForm({ ...form, valor_estimado: Number(e.target.value) })} />
-            <input style={styles.input} placeholder="Valor Real (pago)" type="number" value={form.valor_real || ''} onChange={(e) => setForm({ ...form, valor_real: Number(e.target.value) })} />
-            <input style={styles.input} placeholder="Data de Vencimento" type="date" value={form.data_vencimento || ''} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value })} />
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Descricao</label>
+              <input style={styles.input} placeholder="Ex: Buffet, Fotografia..." value={form.descricao || ''} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Categoria Principal</label>
+              <select style={styles.select} value={form.categoria_principal || ''} onChange={(e) => setForm({ ...form, categoria_principal: e.target.value, categoria: '' })}>
+                <option value="">Selecione...</option>
+                {CATEGORIAS_PRINCIPAIS.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {subcategoriasDisponiveis.length > 0 && (
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Subcategoria</label>
+                <select style={styles.select} value={form.categoria || ''} onChange={(e) => setForm({ ...form, categoria: e.target.value })}>
+                  <option value="">Selecione...</option>
+                  {subcategoriasDisponiveis.map((sub) => (
+                    <option key={sub.id} value={sub.id}>{sub.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div style={styles.row}>
+              <div style={styles.col}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Valor Estimado</label>
+                  <input style={styles.input} placeholder="0" type="number" value={form.valor_estimado || ''} onChange={(e) => setForm({ ...form, valor_estimado: Number(e.target.value) })} />
+                </div>
+              </div>
+              <div style={styles.col}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Valor Real (pago)</label>
+                  <input style={styles.input} placeholder="0" type="number" value={form.valor_real || ''} onChange={(e) => setForm({ ...form, valor_real: Number(e.target.value) })} />
+                </div>
+              </div>
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Data de Vencimento</label>
+              <input style={styles.input} type="date" value={form.data_vencimento || ''} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value })} />
+            </div>
+
             <label style={styles.checkboxLabel}>
               <input type="checkbox" checked={form.pago || false} onChange={(e) => setForm({ ...form, pago: e.target.checked })} style={styles.checkbox} />
               Ja foi pago
             </label>
+
             <div style={styles.modalBotoes}>
               <button onClick={() => setModalAberto(false)} style={styles.btnCancel}>Cancelar</button>
               <button onClick={salvar} style={styles.btnSave}>Salvar</button>
@@ -232,16 +361,17 @@ const styles = {
   sectionTitle: { fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--color-primary)', marginBottom: '12px' },
   chart: { background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid var(--color-secondary)', display: 'flex', flexDirection: 'column', gap: '10px' },
   chartRow: { display: 'flex', alignItems: 'center', gap: '10px' },
-  chartLabel: { width: '100px', fontSize: '12px', color: 'var(--color-text)', flexShrink: 0 },
+  chartLabel: { width: '120px', fontSize: '12px', color: 'var(--color-text)', flexShrink: 0 },
   chartTrack: { flex: 1, height: '8px', background: 'var(--color-secondary)', borderRadius: '4px', overflow: 'hidden' },
   chartFill: { height: '100%', background: 'var(--color-primary)', borderRadius: '4px' },
-  chartValue: { width: '80px', fontSize: '12px', color: 'var(--color-text-soft)', textAlign: 'right', flexShrink: 0 },
+  chartValue: { width: '90px', fontSize: '12px', color: 'var(--color-text-soft)', textAlign: 'right', flexShrink: 0 },
   list: { background: '#fff', borderRadius: '12px', border: '1px solid var(--color-secondary)', overflow: 'hidden' },
   listItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--color-secondary)' },
   listInfo: { display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 },
   listName: { fontSize: '14px', fontWeight: 500, color: 'var(--color-text)' },
+  listCategoria: { fontSize: '11px', color: 'var(--color-text-soft)', textTransform: 'uppercase', letterSpacing: '0.5px' },
   listDate: { fontSize: '12px', color: 'var(--color-text-soft)', display: 'flex', alignItems: 'center', gap: '4px' },
-  tag: { fontSize: '11px', color: 'var(--color-text-soft)' },
+  tagPago: { fontSize: '11px', color: '#2E7D32', fontWeight: 600 },
   listValores: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' },
   listValue: { fontSize: '14px', fontWeight: 600, color: 'var(--color-primary)' },
   listAcoes: { display: 'flex', gap: '6px', alignItems: 'center' },
@@ -255,8 +385,21 @@ const styles = {
   modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '16px' },
   modal: { background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflow: 'auto' },
   modalTitle: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-primary)', marginBottom: '16px' },
-  input: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1.5px solid var(--color-text-soft)', marginBottom: '10px', fontSize: '14px', fontFamily: 'var(--font-body)', background: '#fff', color: 'var(--color-text)', outline: 'none' },
+  formGroup: { marginBottom: '14px' },
+  label: { display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--color-text)', marginBottom: '6px', fontFamily: 'var(--font-body)' },
+  input: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1.5px solid var(--color-text-soft)', fontSize: '14px', fontFamily: 'var(--font-body)', background: '#fff', color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' },
+  select: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1.5px solid var(--color-text-soft)', fontSize: '14px', fontFamily: 'var(--font-body)', color: 'var(--color-text)', background: '#fff', outline: 'none', boxSizing: 'border-box' },
+  row: { display: 'flex', gap: '12px', flexWrap: 'wrap' },
+  col: { flex: 1, minWidth: '180px' },
   modalBotoes: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' },
   checkboxLabel: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--color-text)', marginBottom: '10px', cursor: 'pointer' },
   checkbox: { width: '16px', height: '16px', cursor: 'pointer' },
+  filtrosBar: { display: 'flex', gap: '16px', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap', padding: '12px 16px', background: '#fff', borderRadius: '12px', border: '1px solid var(--color-secondary)' },
+  filtroGrupo: { display: 'flex', flexDirection: 'column', gap: '4px' },
+  filtroLabel: { fontSize: '12px', color: 'var(--color-text-soft)', fontFamily: 'var(--font-body)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' },
+  filtroSelect: { padding: '8px 12px', borderRadius: '8px', border: '1px solid #C4B5A5', fontSize: '14px', fontFamily: 'var(--font-body)', background: '#fff', outline: 'none', minWidth: '140px' },
+  checkboxFiltro: { width: '14px', height: '14px', cursor: 'pointer' },
+  gruposContainer: { display: 'flex', flexDirection: 'column', gap: '24px' },
+  grupo: {},
+  grupoTitulo: { fontFamily: 'var(--font-display)', fontSize: '16px', color: 'var(--color-primary)', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid var(--color-secondary)' },
 };

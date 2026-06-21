@@ -28,6 +28,11 @@ function PainelContent() {
   const [tarefas, setTarefas] = useState({ total: 0, concluidas: 0, urgentes: [] });
   const [alertas, setAlertas] = useState([]);
 
+  // Modal de orcamento
+  const [modalOrcamentoAberto, setModalOrcamentoAberto] = useState(false);
+  const [valorOrcamento, setValorOrcamento] = useState('');
+  const [salvandoOrcamento, setSalvandoOrcamento] = useState(false);
+
   useEffect(() => {
     if (!evento || !user) return;
     carregarDashboard();
@@ -171,6 +176,34 @@ function PainelContent() {
     setLoading(false);
   };
 
+  const abrirModalOrcamento = () => {
+    if (!hasAccess) return;
+    setValorOrcamento(String(evento?.orcamento || ''));
+    setModalOrcamentoAberto(true);
+  };
+
+  const salvarOrcamento = async () => {
+    if (!hasAccess || !evento) return;
+    const valor = Number(valorOrcamento);
+    if (isNaN(valor) || valor < 0) {
+      alert('Informe um valor valido');
+      return;
+    }
+    setSalvandoOrcamento(true);
+    const { error } = await supabase
+      .from('eventos')
+      .update({ orcamento: valor })
+      .eq('id', evento.id);
+    setSalvandoOrcamento(false);
+    if (error) {
+      console.error('Erro ao salvar orcamento:', error);
+      alert('Erro ao salvar orcamento');
+      return;
+    }
+    setFinanceiro(prev => ({ ...prev, orcamento: valor }));
+    setModalOrcamentoAberto(false);
+  };
+
   const nomeCasal = evento?.nome_evento || '';
 
   return (
@@ -221,7 +254,7 @@ function PainelContent() {
                   <span style={styles.cardRapidoLabel}>Fornecedores contratados</span>
                 </div>
               </button>
-              <button onClick={() => router.push('/painel/financeiro')} style={styles.cardRapido}>
+              <button onClick={abrirModalOrcamento} style={styles.cardRapido}>
                 <div style={styles.cardRapidoIcone}><Icon name="dollar" size={24} color="#2E7D32" /></div>
                 <div style={styles.cardRapidoInfo}>
                   <span style={styles.cardRapidoNumero}>R$ {financeiro.comprometido.toLocaleString('pt-BR')}<span style={styles.cardRapidoDe}> de </span>R$ {financeiro.orcamento.toLocaleString('pt-BR')}</span>
@@ -266,6 +299,30 @@ function PainelContent() {
           )}
         </main>
       </div>
+
+      {modalOrcamentoAberto && (
+        <div style={styles.modalOverlay} onClick={() => setModalOrcamentoAberto(false)}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h2 style={styles.modalTitle}>Definir orcamento</h2>
+            <p style={styles.modalDesc}>Informe o valor total planejado para o casamento.</p>
+            <input
+              style={styles.input}
+              type="number"
+              placeholder="Ex: 100000"
+              value={valorOrcamento}
+              onChange={(e) => setValorOrcamento(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && salvarOrcamento()}
+              autoFocus
+            />
+            <div style={styles.modalBotoes}>
+              <button onClick={() => setModalOrcamentoAberto(false)} style={styles.btnCancel}>Cancelar</button>
+              <button onClick={salvarOrcamento} disabled={salvandoOrcamento} style={{ ...styles.btnSave, opacity: salvandoOrcamento ? 0.6 : 1 }}>
+                {salvandoOrcamento ? 'Salvando...' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -304,4 +361,12 @@ const styles = {
   proximaPrazo: { fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500 },
   proximaCategoria: { fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--color-text-soft)' },
   verTodas: { marginTop: '12px', background: 'none', border: 'none', color: '#8B6F5E', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', padding: '0', textAlign: 'left' },
+  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '16px' },
+  modal: { background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
+  modalTitle: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-primary)', marginBottom: '6px' },
+  modalDesc: { fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--color-text-soft)', marginBottom: '16px' },
+  input: { width: '100%', padding: '12px 14px', borderRadius: '10px', border: '1.5px solid var(--color-text-soft)', fontSize: '16px', fontFamily: 'var(--font-body)', color: 'var(--color-text)', outline: 'none', marginBottom: '16px', boxSizing: 'border-box' },
+  modalBotoes: { display: 'flex', gap: '10px', justifyContent: 'flex-end' },
+  btnCancel: { background: 'var(--color-secondary)', color: 'var(--color-text)', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
+  btnSave: { background: '#8B6F5E', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 },
 };
