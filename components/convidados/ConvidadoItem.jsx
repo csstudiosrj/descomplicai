@@ -1,5 +1,5 @@
-// Item de convidado — card com status de confirmação, mesa e contato
-// Dependências diretas: React, PropTypes, Card, Badge
+// Item de convidado — card com status de confirmacao, mesa e contato
+// Dependencias diretas: React, PropTypes, Card, Badge
 
 import React from 'react';
 import PropTypes from 'prop-types';
@@ -13,7 +13,7 @@ const STATUS_VARIANTS = {
 };
 
 export default function ConvidadoItem({ convidado, onToggleStatus, onClick }) {
-  const { nome, email, telefone, status, mesa, acompanhantes } = convidado;
+  const { nome, email, telefone, confirmado, mesa, acompanhantes } = convidado;
 
   return (
     <Card variant="default" padding="md" interactive={!!onClick} onClick={onClick}>
@@ -32,7 +32,7 @@ export default function ConvidadoItem({ convidado, onToggleStatus, onClick }) {
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-          <Badge variant={STATUS_VARIANTS[status] || 'default'} size="sm" pill>{status}</Badge>
+          <Badge variant={STATUS_VARIANTS[confirmado] || 'default'} size="sm" pill>{confirmado}</Badge>
           {onToggleStatus && (
             <button
               onClick={(e) => { e.stopPropagation(); onToggleStatus(convidado.id); }}
@@ -67,7 +67,7 @@ ConvidadoItem.propTypes = {
     nome: PropTypes.string.isRequired,
     email: PropTypes.string,
     telefone: PropTypes.string,
-    status: PropTypes.oneOf(['confirmado', 'pendente', 'recusado']),
+    confirmado: PropTypes.oneOf(['confirmado', 'pendente', 'recusado']),
     mesa: PropTypes.string,
     acompanhantes: PropTypes.number,
   }).isRequired,

@@ -37,7 +37,7 @@ function PainelContent() {
     setLoading(true);
     const eventoId = evento.id;
 
-    // Importa pré-fornecedores do memorial (tabela memoriais)
+    // Importa pre-fornecedores do memorial (tabela memoriais)
     await importarPreFornecedores(eventoId, supabase, user.id);
 
     // Fornecedores
@@ -70,11 +70,11 @@ function PainelContent() {
     // Convidados
     const { data: convData } = await supabase
       .from('convidados')
-      .select('status')
+      .select('confirmado')
       .eq('evento_id', eventoId);
 
     const convTotal = convData?.length || 0;
-    const convConfirmados = convData?.filter(c => c.status === 'confirmado').length || 0;
+    const convConfirmados = convData?.filter(c => c.confirmado === 'confirmado').length || 0;
 
     setConvidados({ total: convTotal, confirmados: convConfirmados });
 
@@ -99,7 +99,7 @@ function PainelContent() {
 
     setTarefas({ total: tarTotal, concluidas: tarConcluidas, urgentes: tarUrgentes });
 
-    // Progresso: denominador = max(pré-criados, contratados) — não piora com adições
+    // Progresso: denominador = max(pre-criados, contratados) — nao piora com adicoes
     const denomForn = Math.max(fornPreCriados, fornContratados) || 1;
     const progressoForn = Math.min(100, Math.round((fornContratados / denomForn) * 100));
     const progressoTar = tarTotal > 0 ? Math.round((tarConcluidas / tarTotal) * 100) : 0;
@@ -122,7 +122,7 @@ function PainelContent() {
       alertasLista.push({
         tipo: 'urgente', icone: 'alert', cor: '#C62828',
         titulo: `${atrasadas.length} tarefa${atrasadas.length > 1 ? 's' : ''} atrasada${atrasadas.length > 1 ? 's' : ''}`,
-        descricao: 'Precisa de atenção imediata', link: '/painel/checklist',
+        descricao: 'Precisa de atencao imediata', link: '/painel/checklist',
       });
     }
 
@@ -131,7 +131,7 @@ function PainelContent() {
       alertasLista.push({
         tipo: 'aviso', icone: 'store', cor: '#8B6F5E',
         titulo: `${prePendentes} fornecedor${prePendentes > 1 ? 'es' : ''} do memorial`,
-        descricao: 'Aguardando informações — clique para preencher', link: '/painel/fornecedores',
+        descricao: 'Aguardando informacoes — clique para preencher', link: '/painel/fornecedores',
       });
     }
 
@@ -147,7 +147,7 @@ function PainelContent() {
       alertasLista.push({
         tipo: 'aviso', icone: 'dollar', cor: '#F9A825',
         titulo: `${vencendo.length} pagamento${vencendo.length > 1 ? 's' : ''} vencendo`,
-        descricao: 'Próximos 7 dias', link: '/painel/financeiro',
+        descricao: 'Proximos 7 dias', link: '/painel/financeiro',
       });
     }
 
@@ -160,7 +160,7 @@ function PainelContent() {
         if (faltando.length > 0) {
           alertasLista.push({
             tipo: 'aviso', icone: 'store', cor: '#8B6F5E',
-            titulo: `${faltando.length} fornecedor${faltando.length > 1 ? 'es' : ''} crítico${faltando.length > 1 ? 's' : ''} faltando`,
+            titulo: `${faltando.length} fornecedor${faltando.length > 1 ? 'es' : ''} critico${faltando.length > 1 ? 's' : ''} faltando`,
             descricao: 'Menos de 6 meses para o casamento', link: '/painel/fornecedores',
           });
         }
@@ -175,7 +175,7 @@ function PainelContent() {
 
   return (
     <>
-      <Head><title>Painel | descomplicaí</title></Head>
+      <Head><title>Painel | descomplicai</title></Head>
       <div style={styles.page}>
         <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} />
         <main style={styles.main}>
@@ -225,7 +225,7 @@ function PainelContent() {
                 <div style={styles.cardRapidoIcone}><Icon name="dollar" size={24} color="#2E7D32" /></div>
                 <div style={styles.cardRapidoInfo}>
                   <span style={styles.cardRapidoNumero}>R$ {financeiro.comprometido.toLocaleString('pt-BR')}<span style={styles.cardRapidoDe}> de </span>R$ {financeiro.orcamento.toLocaleString('pt-BR')}</span>
-                  <span style={styles.cardRapidoLabel}>Orçamento comprometido</span>
+                  <span style={styles.cardRapidoLabel}>Orcamento comprometido</span>
                 </div>
               </button>
               <button onClick={() => router.push('/painel/convidados')} style={styles.cardRapido}>
@@ -239,7 +239,7 @@ function PainelContent() {
                 <div style={styles.cardRapidoIcone}><Icon name="checklist" size={24} color="#F9A825" /></div>
                 <div style={styles.cardRapidoInfo}>
                   <span style={styles.cardRapidoNumero}>{tarefas.concluidas}<span style={styles.cardRapidoDe}> de </span>{tarefas.total}</span>
-                  <span style={styles.cardRapidoLabel}>Tarefas concluídas</span>
+                  <span style={styles.cardRapidoLabel}>Tarefas concluidas</span>
                 </div>
               </button>
             </div>
@@ -247,7 +247,7 @@ function PainelContent() {
 
           {(tarefas.urgentes.length > 0) && (
             <section style={styles.proximasSection}>
-              <h2 style={styles.sectionTitle}>Próximas ações</h2>
+              <h2 style={styles.sectionTitle}>Proximas acoes</h2>
               <div style={styles.proximasLista}>
                 {tarefas.urgentes.slice(0, 3).map((t) => (
                   <div key={t.id} style={{ ...styles.proximaItem, borderLeftColor: t.atrasada ? '#C62828' : '#F9A825' }}>
