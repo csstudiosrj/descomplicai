@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+
+function getIconeDimensoes(formato) {
+  if (formato === 'redonda') return { width: 40, height: 40, borderRadius: '50%' };
+  if (formato === 'quadrada') return { width: 40, height: 40, borderRadius: '8px' };
+  return { width: 56, height: 32, borderRadius: '4px' };
+}
 
 export default function MesasLista({ mesas, mesasTipos, onReconfigurar, readOnly }) {
-  const [ocupacao, setOcupacao] = useState({});
-
-  useEffect(() => {
-    // Busca ocupacao de cada mesa (convidados atribuidos)
-    // Isso sera implementado no LOTE 3 quando houver atribuicao de convidados
-    // Por enquanto, mostra apenas a estrutura
-  }, [mesas]);
+  const [modalMesa, setModalMesa] = useState(null);
 
   const tipoPorId = {};
   mesasTipos.forEach(t => { tipoPorId[t.id] = t; });
@@ -65,9 +65,11 @@ export default function MesasLista({ mesas, mesasTipos, onReconfigurar, readOnly
       }}>
         {mesas.map((mesa) => {
           const tipo = tipoPorId[mesa.tipo_id];
+          const dim = getIconeDimensoes(tipo?.formato);
           return (
             <div
               key={mesa.id}
+              onClick={() => setModalMesa({ ...mesa, tipo })}
               style={{
                 background: 'var(--color-white)',
                 borderRadius: '12px',
@@ -76,6 +78,16 @@ export default function MesasLista({ mesas, mesasTipos, onReconfigurar, readOnly
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '8px',
+                cursor: 'pointer',
+                transition: 'box-shadow 150ms ease, border-color 150ms ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+                e.currentTarget.style.borderColor = 'var(--color-brand)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.borderColor = 'var(--color-border)';
               }}
             >
               <div style={{
@@ -84,9 +96,9 @@ export default function MesasLista({ mesas, mesasTipos, onReconfigurar, readOnly
                 alignItems: 'center',
               }}>
                 <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: tipo?.formato === 'redonda' ? '50%' : tipo?.formato === 'quadrada' ? '8px' : '4px',
+                  width: `${dim.width}px`,
+                  height: `${dim.height}px`,
+                  borderRadius: dim.borderRadius,
                   border: '2px solid var(--color-brand)',
                   display: 'flex',
                   alignItems: 'center',
@@ -139,6 +151,90 @@ export default function MesasLista({ mesas, mesasTipos, onReconfigurar, readOnly
           );
         })}
       </div>
+
+      {/* Modal de detalhe da mesa */}
+      {modalMesa && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 200,
+          padding: '16px',
+        }} onClick={() => setModalMesa(null)}>
+          <div style={{
+            background: 'var(--color-white)',
+            borderRadius: '16px',
+            padding: '24px',
+            width: '100%',
+            maxWidth: '420px',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '20px',
+                color: 'var(--color-text-primary)',
+                margin: 0,
+              }}>
+                Mesa {modalMesa.numero}
+              </h3>
+              <button
+                onClick={() => setModalMesa(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  color: 'var(--color-text-secondary)',
+                  fontSize: '18px',
+                  fontWeight: 700,
+                }}
+              >
+                x
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '14px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}>Tipo</span>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)' }}>{modalMesa.tipo?.nome}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '14px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}>Formato</span>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)' }}>{modalMesa.tipo?.formato}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '14px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}>Capacidade</span>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)' }}>{modalMesa.tipo?.capacidade} lugares</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '14px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}>Rotulo</span>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)' }}>{modalMesa.rotulo || 'Nao definido'}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setModalMesa(null)}
+              style={{
+                marginTop: '20px',
+                width: '100%',
+                padding: '10px',
+                borderRadius: '8px',
+                border: 'none',
+                background: 'var(--color-brand)',
+                color: '#fff',
+                fontSize: '14px',
+                fontWeight: 600,
+                fontFamily: 'var(--font-body)',
+                cursor: 'pointer',
+              }}
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
