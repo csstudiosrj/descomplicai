@@ -62,51 +62,44 @@ function ConvidadosContent({ readOnly }) {
 
   const [resumo, setResumo] = useState({ total: 0, confirmados: 0, pendentes: 0, recusados: 0, pessoasConfirmadas: 0 });
 
+  // FIX: so carrega quando user E evento estao prontos
   useEffect(() => {
-    if (evento) carregarTudo();
-  }, [evento]);
+    if (evento && user) carregarTudo();
+  }, [evento, user]);
 
   const carregarTudo = async () => {
     setCarregando(true);
 
-    // Grupos — com fallback silencioso
+    // Grupos
     let listaGrupos = [];
     try {
-      const { data: gruposData, error: gruposErr } = await supabase
+      const { data: gruposData } = await supabase
         .from('grupos_convidados')
         .select('*')
         .eq('evento_id', evento.id)
         .order('ordem');
-
-      if (!gruposErr && gruposData && gruposData.length > 0) {
+      if (gruposData && gruposData.length > 0) {
         listaGrupos = gruposData;
       } else {
-        // Fallback: cria grupos padrao localmente se tabela falhar
-        listaGrupos = GRUPOS_PADRAO.map((nome, idx) => ({
-          id: `local-${idx}`,
-          evento_id: evento.id,
-          nome,
-          ordem: idx,
-        }));
-        // Tenta inserir no banco silenciosamente (ignora erro)
         const inserts = GRUPOS_PADRAO.map((nome, idx) => ({
           evento_id: evento.id,
           nome,
           ordem: idx,
         }));
-        await supabase.from('grupos_convidados').insert(inserts);
+        const { data: inseridos } = await supabase
+          .from('grupos_convidados')
+          .insert(inserts)
+          .select();
+        listaGrupos = inseridos || inserts;
       }
     } catch {
       listaGrupos = GRUPOS_PADRAO.map((nome, idx) => ({
-        id: `local-${idx}`,
-        evento_id: evento.id,
-        nome,
-        ordem: idx,
+        id: `local-${idx}`, evento_id: evento.id, nome, ordem: idx,
       }));
     }
     setGrupos(listaGrupos);
 
-    // Mesas — com fallback silencioso (tabela pode nao existir ainda)
+    // Mesas
     try {
       const { data: mesasData } = await supabase
         .from('mesas')
@@ -142,7 +135,6 @@ function ConvidadosContent({ readOnly }) {
     const pessoasConfirmadas = lista
       .filter(c => c.confirmado === 'confirmado')
       .reduce((acc, c) => acc + 1 + (Number(c.acompanhantes) || 0), 0);
-
     setResumo({ total, confirmados, pendentes, recusados, pessoasConfirmadas });
   };
 
@@ -153,15 +145,9 @@ function ConvidadosContent({ readOnly }) {
     let grupoFinal = novoGrupo;
     if (novoGrupo === 'Outro') {
       grupoFinal = novoGrupoOutro.trim();
-      if (!grupoFinal) {
-        setErro('Informe o nome do novo grupo');
-        return;
-      }
-      // Tenta salvar no banco, ignora erro
+      if (!grupoFinal) { setErro('Informe o nome do novo grupo'); return; }
       await supabase.from('grupos_convidados').insert({
-        evento_id: evento.id,
-        nome: grupoFinal,
-        ordem: grupos.length,
+        evento_id: evento.id, nome: grupoFinal, ordem: grupos.length,
       });
       await carregarTudo();
     }
@@ -178,71 +164,39 @@ function ConvidadosContent({ readOnly }) {
     };
 
     const { error } = await supabase.from('convidados').insert(payload);
+    if (error) { setErro('Erro ao adicionar: ' + error.message); return; }
 
-    if (error) {
-      setErro('Erro ao adicionar: ' + error.message);
-      return;
-    }
-
-    setNovoNome('');
-    setNovoGrupo('');
-    setNovoGrupoOutro('');
-    setNovoTelefone('');
-    setNovoAcompanhantes('');
+    setNovoNome(''); setNovoGrupo(''); setNovoGrupoOutro('');
+    setNovoTelefone(''); setNovoAcompanhantes('');
     carregarTudo();
   };
 
   const atualizarStatus = async (id, confirmado) => {
     if (readOnly) return;
-
     const conv = convidados.find(c => c.id === id);
     if (!conv || conv.confirmado === confirmado) return;
-
     setUltimoStatus({ id, anterior: conv.confirmado });
 
-    const { error } = await supabase
-      .from('convidados')
-      .update({ confirmado })
-      .eq('id', id);
-
+    const { error } = await supabase.from('convidados').update({ confirmado }).eq('id', id);
     if (error) return;
 
-    setToast({
-      id,
-      nome: conv.nome,
-      novoStatus: confirmado,
-      anterior: conv.confirmado,
-    });
-
+    setToast({ id, nome: conv.nome, novoStatus: confirmado, anterior: conv.confirmado });
     carregarTudo();
   };
 
   const desfazerStatus = async () => {
     if (!ultimoStatus) return;
-    await supabase
-      .from('convidados')
-      .update({ confirmado: ultimoStatus.anterior })
-      .eq('id', ultimoStatus.id);
-    setUltimoStatus(null);
-    setToast(null);
-    carregarTudo();
+    await supabase.from('convidados').update({ confirmado: ultimoStatus.anterior }).eq('id', ultimoStatus.id);
+    setUltimoStatus(null); setToast(null); carregarTudo();
   };
 
   const salvarEdicao = async () => {
     if (readOnly || !editForm.id) return;
-
     let grupoFinal = editForm.grupo;
     if (editForm.grupo === 'Outro') {
       grupoFinal = editGrupoOutro.trim();
-      if (!grupoFinal) {
-        setErro('Informe o nome do novo grupo');
-        return;
-      }
-      await supabase.from('grupos_convidados').insert({
-        evento_id: evento.id,
-        nome: grupoFinal,
-        ordem: grupos.length,
-      });
+      if (!grupoFinal) { setErro('Informe o nome do novo grupo'); return; }
+      await supabase.from('grupos_convidados').insert({ evento_id: evento.id, nome: grupoFinal, ordem: grupos.length });
       await carregarTudo();
     }
 
@@ -253,20 +207,10 @@ function ConvidadosContent({ readOnly }) {
       mesa: editForm.mesa?.trim() || null,
       acompanhantes: Number(editForm.acompanhantes) || 0,
     };
+    const { error } = await supabase.from('convidados').update(payload).eq('id', editForm.id);
+    if (error) { setErro('Erro ao editar: ' + error.message); return; }
 
-    const { error } = await supabase
-      .from('convidados')
-      .update(payload)
-      .eq('id', editForm.id);
-
-    if (error) {
-      setErro('Erro ao editar: ' + error.message);
-      return;
-    }
-
-    setModalEditar(false);
-    setEditForm({});
-    setEditGrupoOutro('');
+    setModalEditar(false); setEditForm({}); setEditGrupoOutro('');
     carregarTudo();
   };
 
@@ -278,22 +222,13 @@ function ConvidadosContent({ readOnly }) {
 
   const exportarCSV = () => {
     const headers = ['Nome', 'Grupo', 'Telefone', 'Confirmado', 'Acompanhantes', 'Mesa'];
-    const rows = convidados.map(c => [
-      c.nome,
-      c.grupo || '',
-      c.telefone || '',
-      c.confirmado,
-      c.acompanhantes || 0,
-      c.mesa || ''
-    ]);
+    const rows = convidados.map(c => [c.nome, c.grupo || '', c.telefone || '', c.confirmado, c.acompanhantes || 0, c.mesa || '']);
     const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
+    const a = document.createElement('a'); a.href = url;
     a.download = `convidados-${evento?.nome_evento || 'casamento'}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    a.click(); URL.revokeObjectURL(url);
   };
 
   const abrirEditar = (c) => {
@@ -303,9 +238,7 @@ function ConvidadosContent({ readOnly }) {
     if (c.grupo && !grupoExiste && c.grupo !== 'Geral') {
       setEditForm(prev => ({ ...prev, grupo: 'Outro' }));
       setEditGrupoOutro(c.grupo);
-    } else {
-      setEditGrupoOutro('');
-    }
+    } else { setEditGrupoOutro(''); }
     setModalEditar(true);
   };
 
@@ -330,93 +263,57 @@ function ConvidadosContent({ readOnly }) {
               <span style={styles.readOnlyText}>Modo somente leitura. Assine para editar.</span>
             </div>
           )}
-
           {erro && (
             <div style={styles.erroBanner} onClick={() => setErro('')}>
               <span style={styles.erroText}>{erro}</span>
               <button style={styles.btnFecharErro}><Icon name="close" size={12} /></button>
             </div>
           )}
-
           <h1 style={styles.title}>Convidados</h1>
-
           <ConvidadoFiltros
-            busca={busca}
-            setBusca={setBusca}
-            filtroStatus={filtroStatus}
-            setFiltroStatus={setFiltroStatus}
-            filtroGrupo={filtroGrupo}
-            setFiltroGrupo={setFiltroGrupo}
+            busca={busca} setBusca={setBusca}
+            filtroStatus={filtroStatus} setFiltroStatus={setFiltroStatus}
+            filtroGrupo={filtroGrupo} setFiltroGrupo={setFiltroGrupo}
             grupos={grupos}
-            total={resumo.total}
-            confirmados={resumo.confirmados}
-            pendentes={resumo.pendentes}
-            recusados={resumo.recusados}
+            total={resumo.total} confirmados={resumo.confirmados}
+            pendentes={resumo.pendentes} recusados={resumo.recusados}
             pessoasConfirmadas={resumo.pessoasConfirmadas}
           />
-
           {!readOnly && (
             <div style={styles.addBox}>
               <div style={styles.addRow}>
-                <input
-                  style={{ ...styles.input, flex: 2 }}
-                  placeholder="Nome do convidado"
-                  value={novoNome}
-                  onChange={(e) => setNovoNome(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && adicionar()}
-                />
-                <select
-                  style={{ ...styles.input, flex: '0 0 150px', cursor: 'pointer' }}
-                  value={novoGrupo}
-                  onChange={(e) => setNovoGrupo(e.target.value)}
-                >
+                <input style={{ ...styles.input, flex: 2 }} placeholder="Nome do convidado"
+                  value={novoNome} onChange={(e) => setNovoNome(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && adicionar()} />
+                <select style={{ ...styles.input, flex: '0 0 150px', cursor: 'pointer' }}
+                  value={novoGrupo} onChange={(e) => setNovoGrupo(e.target.value)}>
                   <option value="">Grupo...</option>
-                  {todosGrupos.map(g => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
+                  {todosGrupos.map(g => <option key={g} value={g}>{g}</option>)}
                   <option value="Outro">Outro...</option>
                 </select>
                 {novoGrupo === 'Outro' && (
-                  <input
-                    style={{ ...styles.input, flex: '0 0 140px' }}
-                    placeholder="Qual grupo?"
-                    value={novoGrupoOutro}
-                    onChange={(e) => setNovoGrupoOutro(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && adicionar()}
-                  />
+                  <input style={{ ...styles.input, flex: '0 0 140px' }} placeholder="Qual grupo?"
+                    value={novoGrupoOutro} onChange={(e) => setNovoGrupoOutro(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && adicionar()} />
                 )}
-                <input
-                  style={{ ...styles.input, flex: '0 0 130px' }}
-                  placeholder="Telefone"
-                  value={novoTelefone}
-                  onChange={(e) => setNovoTelefone(formatarTelefone(e.target.value))}
-                  onKeyDown={(e) => e.key === 'Enter' && adicionar()}
-                />
-                <input
-                  style={{ ...styles.input, flex: '0 0 90px' }}
-                  placeholder="Acomp."
-                  type="number"
-                  min="0"
-                  value={novoAcompanhantes}
-                  onChange={(e) => setNovoAcompanhantes(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && adicionar()}
-                />
+                <input style={{ ...styles.input, flex: '0 0 130px' }} placeholder="Telefone"
+                  value={novoTelefone} onChange={(e) => setNovoTelefone(formatarTelefone(e.target.value))}
+                  onKeyDown={(e) => e.key === 'Enter' && adicionar()} />
+                <input style={{ ...styles.input, flex: '0 0 90px' }} placeholder="Acomp." type="number" min="0"
+                  value={novoAcompanhantes} onChange={(e) => setNovoAcompanhantes(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && adicionar()} />
                 <button onClick={adicionar} style={styles.btnPrimary}>
                   <Icon name="plus" size={16} color="#fff" />
                 </button>
               </div>
             </div>
           )}
-
           <button onClick={exportarCSV} style={styles.btnSecondary}>
             <Icon name="download" size={16} /> Exportar CSV
           </button>
-
           <div style={styles.list}>
             {carregando ? (
-              <div style={styles.emptyState}>
-                <span style={styles.emptyText}>Carregando...</span>
-              </div>
+              <div style={styles.emptyState}><span style={styles.emptyText}>Carregando...</span></div>
             ) : filtrados.length === 0 ? (
               <div style={styles.emptyState}>
                 <span style={styles.emptyText}>
@@ -425,28 +322,15 @@ function ConvidadosContent({ readOnly }) {
               </div>
             ) : (
               filtrados.map((c) => (
-                <ConvidadoItem
-                  key={c.id}
-                  convidado={c}
-                  grupos={grupos}
-                  mesas={mesas}
-                  readOnly={readOnly}
-                  onStatusChange={atualizarStatus}
-                  onEdit={abrirEditar}
-                  onExcluir={excluir}
-                />
+                <ConvidadoItem key={c.id} convidado={c} grupos={grupos} mesas={mesas}
+                  readOnly={readOnly} onStatusChange={atualizarStatus}
+                  onEdit={abrirEditar} onExcluir={excluir} />
               ))
             )}
           </div>
         </main>
       </div>
-
-      <ToastStatus
-        toast={toast}
-        onUndo={desfazerStatus}
-        onClose={() => setToast(null)}
-      />
-
+      <ToastStatus toast={toast} onUndo={desfazerStatus} onClose={() => setToast(null)} />
       {modalEditar && !readOnly && (
         <div style={styles.modalOverlay} onClick={() => setModalEditar(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -456,70 +340,42 @@ function ConvidadosContent({ readOnly }) {
                 <Icon name="close" size={20} />
               </button>
             </div>
-
             <div style={styles.formGroup}>
               <label style={styles.label}>Nome</label>
-              <input
-                style={styles.input}
-                value={editForm.nome || ''}
-                onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })}
-              />
+              <input style={styles.input} value={editForm.nome || ''}
+                onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} />
             </div>
-
             <div style={styles.formGroup}>
               <label style={styles.label}>Grupo</label>
-              <select
-                style={styles.select}
-                value={editForm.grupo || ''}
-                onChange={(e) => setEditForm({ ...editForm, grupo: e.target.value })}
-              >
+              <select style={styles.select} value={editForm.grupo || ''}
+                onChange={(e) => setEditForm({ ...editForm, grupo: e.target.value })}>
                 <option value="">Selecione...</option>
-                {todosGrupos.map(g => (
-                  <option key={g} value={g}>{g}</option>
-                ))}
+                {todosGrupos.map(g => <option key={g} value={g}>{g}</option>)}
                 <option value="Outro">Outro...</option>
               </select>
               {editForm.grupo === 'Outro' && (
-                <input
-                  style={{ ...styles.input, marginTop: '8px' }}
-                  placeholder="Qual grupo?"
-                  value={editGrupoOutro}
-                  onChange={(e) => setEditGrupoOutro(e.target.value)}
-                />
+                <input style={{ ...styles.input, marginTop: '8px' }} placeholder="Qual grupo?"
+                  value={editGrupoOutro} onChange={(e) => setEditGrupoOutro(e.target.value)} />
               )}
             </div>
-
             <div style={styles.formGroup}>
               <label style={styles.label}>Telefone</label>
-              <input
-                style={styles.input}
-                placeholder="(00) 00000-0000"
+              <input style={styles.input} placeholder="(00) 00000-0000"
                 value={editForm.telefone || ''}
-                onChange={(e) => setEditForm({ ...editForm, telefone: formatarTelefone(e.target.value) })}
-              />
+                onChange={(e) => setEditForm({ ...editForm, telefone: formatarTelefone(e.target.value) })} />
             </div>
-
             <div style={styles.formGroup}>
               <label style={styles.label}>Acompanhantes</label>
-              <input
-                style={styles.input}
-                type="number"
-                min="0"
+              <input style={styles.input} type="number" min="0"
                 value={editForm.acompanhantes || 0}
-                onChange={(e) => setEditForm({ ...editForm, acompanhantes: e.target.value })}
-              />
+                onChange={(e) => setEditForm({ ...editForm, acompanhantes: e.target.value })} />
             </div>
-
             <div style={styles.formGroup}>
               <label style={styles.label}>Mesa</label>
-              <input
-                style={styles.input}
-                placeholder="Numero ou nome da mesa"
+              <input style={styles.input} placeholder="Numero ou nome da mesa"
                 value={editForm.mesa || ''}
-                onChange={(e) => setEditForm({ ...editForm, mesa: e.target.value })}
-              />
+                onChange={(e) => setEditForm({ ...editForm, mesa: e.target.value })} />
             </div>
-
             <div style={styles.modalBotoes}>
               <button onClick={() => setModalEditar(false)} style={styles.btnCancel}>Cancelar</button>
               <button onClick={salvarEdicao} style={styles.btnSave}>Salvar</button>
