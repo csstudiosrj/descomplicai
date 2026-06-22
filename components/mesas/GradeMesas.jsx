@@ -1,319 +1,389 @@
-import { useState, useEffect } from 'react';
-import Head from 'next/head';
-import ProtectedRoute from '../../components/painel/ProtectedRoute';
-import HeaderPainel from '../../components/painel/HeaderPainel';
-import { useAuth } from '../../hooks/useAuth';
-import WizardPasso1 from '../../components/mesas/WizardPasso1';
-import WizardPasso2 from '../../components/mesas/WizardPasso2';
-import WizardPasso3 from '../../components/mesas/WizardPasso3';
-import MesasLista from '../../components/mesas/MesasLista';
-import GradeMesas from '../../components/mesas/GradeMesas';
+import { useState } from 'react';
 
-export default function MesasPage() {
-  return (
-    <ProtectedRoute>
-      <MesasContent />
-    </ProtectedRoute>
-  );
+function getIconeDimensoes(formato) {
+  if (formato === 'redonda') return { width: 40, height: 40, borderRadius: '50%' };
+  if (formato === 'quadrada') return { width: 40, height: 40, borderRadius: '8px' };
+  return { width: 56, height: 32, borderRadius: '4px' };
 }
 
-function MesasContent() {
-  const { user, evento, hasAccess, supabase } = useAuth();
-  const readOnly = !hasAccess;
+export default function GradeMesas({ mesas, mesasTipos, convidadosPorMesa, convidadosSemMesa, onAtribuir, onRemover, readOnly }) {
+  const [mesaExpandida, setMesaExpandida] = useState(null);
+  const [modalConvidado, setModalConvidado] = useState(null);
+  const [slotSelecionado, setSlotSelecionado] = useState(null);
 
-  const [carregando, setCarregando] = useState(true);
-  const [configurado, setConfigurado] = useState(false);
-  const [mesas, setMesas] = useState([]);
-  const [mesasTipos, setMesasTipos] = useState([]);
-  const [grupos, setGrupos] = useState([]);
-  const [convidados, setConvidados] = useState([]);
-  const [visualizacao, setVisualizacao] = useState('lista');
+  const tipoPorId = {};
+  mesasTipos.forEach(t => { tipoPorId[t.id] = t; });
 
-  // Wizard state
-  const [passo, setPasso] = useState(1);
-  const [totalConvidados, setTotalConvidados] = useState(0);
-  const [tiposSelecionados, setTiposSelecionados] = useState([]);
-  const [mesasGeradas, setMesasGeradas] = useState([]);
-
-  useEffect(() => {
-    if (evento) carregarTudo();
-  }, [evento]);
-
-  const carregarTudo = async () => {
-    setCarregando(true);
-
-    // Grupos
-    const { data: gruposData } = await supabase
-      .from('grupos_convidados')
-      .select('*')
-      .eq('evento_id', evento.id)
-      .order('ordem');
-    setGrupos(gruposData || []);
-
-    // Convidados
-    const { data: convData } = await supabase
-      .from('convidados')
-      .select('*')
-      .eq('evento_id', evento.id)
-      .order('nome');
-    setConvidados(convData || []);
-
-    // Mesas tipos
-    const { data: tipos } = await supabase
-      .from('mesas_tipos')
-      .select('*')
-      .eq('evento_id', evento.id);
-
-    if (tipos && tipos.length > 0) {
-      setMesasTipos(tipos);
-
-      // Mesas
-      const { data: mesasData } = await supabase
-        .from('mesas')
-        .select('*')
-        .eq('evento_id', evento.id)
-        .order('numero');
-      setMesas(mesasData || []);
-      setConfigurado(true);
-    } else {
-      setTotalConvidados(convData?.length || 0);
-      setConfigurado(false);
-    }
-
-    setCarregando(false);
+  const toggleMesa = (mesaId) => {
+    setMesaExpandida(prev => prev === mesaId ? null : mesaId);
   };
 
-  const salvarConfiguracao = async () => {
+  const handleAtribuir = (convidadoId, mesaId) => {
     if (readOnly) return;
-
-    // 1. Insere tipos
-    const tiposPayload = tiposSelecionados.map(t => ({
-      evento_id: evento.id,
-      nome: t.nome,
-      formato: t.formato,
-      capacidade: t.capacidade,
-      quantidade: t.quantidade,
-    }));
-
-    await supabase.from('mesas_tipos').insert(tiposPayload);
-
-    // 2. Busca tipos salvos
-    const { data: tiposSalvos } = await supabase
-      .from('mesas_tipos')
-      .select('id, nome')
-      .eq('evento_id', evento.id);
-
-    const nomeToUuid = {};
-    tiposSalvos.forEach(t => { nomeToUuid[t.nome] = t.id; });
-
-    // 3. Insere mesas
-    const mesasPayload = mesasGeradas.map(m => ({
-      evento_id: evento.id,
-      numero: m.numero,
-      tipo_id: nomeToUuid[m.nomeTipo],
-      rotulo: m.rotulo,
-      posicao_x: null,
-      posicao_y: null,
-      rotacao: 0,
-    }));
-
-    await supabase.from('mesas').insert(mesasPayload);
-
-    setPasso(1);
-    setTiposSelecionados([]);
-    setMesasGeradas([]);
-    await carregarTudo();
+    onAtribuir(convidadoId, mesaId);
+    setSlotSelecionado(null);
   };
 
-  const reconfigurar = async () => {
+  const handleRemover = (convidadoId) => {
     if (readOnly) return;
-    if (!confirm('Isso apagara todas as mesas, configuracoes e atribuicoes de convidados. Continuar?')) return;
-
-    // Remove mesa_id de todos os convidados
-    await supabase
-      .from('convidados')
-      .update({ mesa_id: null })
-      .eq('evento_id', evento.id);
-
-    await supabase.from('mesas').delete().eq('evento_id', evento.id);
-    await supabase.from('mesas_tipos').delete().eq('evento_id', evento.id);
-
-    setConfigurado(false);
-    setPasso(1);
-    setTiposSelecionados([]);
-    setMesasGeradas([]);
-    setTotalConvidados(0);
-    setVisualizacao('lista');
+    onRemover(convidadoId);
+    setModalConvidado(null);
   };
-
-  const atribuirConvidado = async (convidadoId, mesaId) => {
-    if (readOnly) return;
-    await supabase
-      .from('convidados')
-      .update({ mesa_id: mesaId })
-      .eq('id', convidadoId);
-    await carregarTudo();
-  };
-
-  const removerConvidado = async (convidadoId) => {
-    if (readOnly) return;
-    await supabase
-      .from('convidados')
-      .update({ mesa_id: null })
-      .eq('id', convidadoId);
-    await carregarTudo();
-  };
-
-  // Organiza convidados por mesa
-  const convidadosPorMesa = {};
-  convidados.forEach(c => {
-    if (c.mesa_id) {
-      if (!convidadosPorMesa[c.mesa_id]) convidadosPorMesa[c.mesa_id] = [];
-      convidadosPorMesa[c.mesa_id].push(c);
-    }
-  });
-
-  const convidadosSemMesa = convidados.filter(c => !c.mesa_id);
-
-  const nomeCasal = evento?.nome_evento || '';
 
   return (
-    <>
-      <Head><title>Mesas | descomplicai</title></Head>
-      <div style={styles.page}>
-        <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} />
-        <main style={styles.main}>
-          {readOnly && (
-            <div style={styles.readOnlyBanner}>
-              <span style={styles.readOnlyText}>Modo somente leitura. Assine para editar.</span>
-            </div>
-          )}
-
-          <div style={styles.header}>
-            <h1 style={styles.title}>Mesas</h1>
-            {configurado && (
-              <div style={styles.toggleGroup}>
-                <button
-                  onClick={() => setVisualizacao('lista')}
-                  style={{
-                    ...styles.toggleBtn,
-                    ...(visualizacao === 'lista' ? styles.toggleAtivo : {}),
-                  }}
-                >
-                  Lista
-                </button>
-                <button
-                  onClick={() => setVisualizacao('grade')}
-                  style={{
-                    ...styles.toggleBtn,
-                    ...(visualizacao === 'grade' ? styles.toggleAtivo : {}),
-                  }}
-                >
-                  Grade
-                </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Convidados sem mesa */}
+      {convidadosSemMesa.length > 0 && (
+        <div style={{
+          background: 'var(--color-white)',
+          borderRadius: '12px',
+          padding: '16px',
+          border: '1px solid var(--color-border)',
+        }}>
+          <h3 style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '16px',
+            color: 'var(--color-text-primary)',
+            marginBottom: '12px',
+          }}>
+            Convidados sem mesa ({convidadosSemMesa.length})
+          </h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {convidadosSemMesa.map(c => (
+              <div
+                key={c.id}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '20px',
+                  background: '#FFF8E1',
+                  border: '1px solid #F9A825',
+                  fontSize: '12px',
+                  fontFamily: 'var(--font-body)',
+                  color: 'var(--color-text-primary)',
+                  fontWeight: 500,
+                }}
+              >
+                {c.nome}
+                {c.acompanhantes > 0 && <span style={{ color: 'var(--color-brand)', marginLeft: '4px' }}>+{c.acompanhantes}</span>}
               </div>
-            )}
+            ))}
           </div>
+        </div>
+      )}
 
-          {carregando ? (
-            <div style={styles.emptyState}>
-              <span style={styles.emptyText}>Carregando...</span>
-            </div>
-          ) : configurado ? (
-            visualizacao === 'lista' ? (
-              <MesasLista
-                mesas={mesas}
-                mesasTipos={mesasTipos}
-                onReconfigurar={reconfigurar}
-                readOnly={readOnly}
-              />
-            ) : (
-              <GradeMesas
-                mesas={mesas}
-                mesasTipos={mesasTipos}
-                convidadosPorMesa={convidadosPorMesa}
-                convidadosSemMesa={convidadosSemMesa}
-                onAtribuir={atribuirConvidado}
-                onRemover={removerConvidado}
-                readOnly={readOnly}
-              />
-            )
-          ) : (
-            <div style={styles.wizardBox}>
-              <div style={styles.progressoBar}>
-                <div style={styles.progressoTrack}>
+      {/* Grade de mesas */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+        gap: '12px',
+      }}>
+        {mesas.map((mesa) => {
+          const tipo = tipoPorId[mesa.tipo_id];
+          const ocupantes = convidadosPorMesa[mesa.id] || [];
+          const capacidade = tipo?.capacidade || 8;
+          const expandida = mesaExpandida === mesa.id;
+          const dim = getIconeDimensoes(tipo?.formato);
+
+          return (
+            <div
+              key={mesa.id}
+              style={{
+                background: 'var(--color-white)',
+                borderRadius: '12px',
+                border: '1px solid var(--color-border)',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Header da mesa */}
+              <div
+                onClick={() => toggleMesa(mesa.id)}
+                style={{
+                  padding: '14px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  cursor: 'pointer',
+                  background: expandida ? 'var(--color-off-white)' : 'var(--color-white)',
+                  transition: 'background 150ms ease',
+                }}
+              >
+                <div style={{
+                  width: `${dim.width}px`,
+                  height: `${dim.height}px`,
+                  borderRadius: dim.borderRadius,
+                  border: '2px solid var(--color-brand)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: 'var(--color-brand)',
+                  flexShrink: 0,
+                }}>
+                  {mesa.numero}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    ...styles.progressoFill,
-                    width: passo === 1 ? '33%' : passo === 2 ? '66%' : '100%',
-                  }} />
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: 'var(--color-text-primary)',
+                    fontFamily: 'var(--font-body)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}>
+                    {mesa.rotulo || `Mesa ${mesa.numero}`}
+                  </div>
+                  <div style={{
+                    fontSize: '12px',
+                    color: 'var(--color-text-secondary)',
+                    fontFamily: 'var(--font-body)',
+                  }}>
+                    {tipo?.nome} · {ocupantes.length}/{capacidade} ocupados
+                  </div>
                 </div>
-                <div style={styles.progressoSteps}>
-                  <span style={{ ...styles.stepLabel, color: passo >= 1 ? 'var(--color-brand)' : 'var(--color-text-secondary)' }}>Quantidade</span>
-                  <span style={{ ...styles.stepLabel, color: passo >= 2 ? 'var(--color-brand)' : 'var(--color-text-secondary)' }}>Tipos</span>
-                  <span style={{ ...styles.stepLabel, color: passo >= 3 ? 'var(--color-brand)' : 'var(--color-text-secondary)' }}>Distribuicao</span>
-                </div>
+                <span style={{
+                  fontSize: '12px',
+                  color: 'var(--color-text-secondary)',
+                  fontFamily: 'var(--font-body)',
+                  transform: expandida ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 200ms ease',
+                }}>
+                  v
+                </span>
               </div>
 
-              {passo === 1 && (
-                <WizardPasso1
-                  totalConvidados={totalConvidados}
-                  setTotalConvidados={setTotalConvidados}
-                  onAvancar={() => setPasso(2)}
-                />
-              )}
-
-              {passo === 2 && (
-                <WizardPasso2
-                  totalConvidados={totalConvidados}
-                  tiposSelecionados={tiposSelecionados}
-                  setTiposSelecionados={setTiposSelecionados}
-                  onAvancar={() => setPasso(3)}
-                  onVoltar={() => setPasso(1)}
-                />
-              )}
-
-              {passo === 3 && (
-                <WizardPasso3
-                  tiposSelecionados={tiposSelecionados}
-                  grupos={grupos}
-                  mesasGeradas={mesasGeradas}
-                  setMesasGeradas={setMesasGeradas}
-                  onSalvar={salvarConfiguracao}
-                  onVoltar={() => setPasso(2)}
-                />
+              {/* Slots expandidos */}
+              {expandida && (
+                <div style={{
+                  padding: '12px 16px 16px',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                  gap: '8px',
+                  borderTop: '1px solid var(--color-border)',
+                }}>
+                  {Array.from({ length: capacidade }).map((_, idx) => {
+                    const conv = ocupantes[idx];
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          if (conv) {
+                            setModalConvidado(conv);
+                          } else if (!readOnly && convidadosSemMesa.length > 0) {
+                            setSlotSelecionado({ mesaId: mesa.id, slotIdx: idx });
+                          }
+                        }}
+                        style={{
+                          padding: '8px 10px',
+                          borderRadius: '8px',
+                          border: '1px solid var(--color-border)',
+                          background: conv ? '#E8F5E9' : 'var(--color-off-white)',
+                          cursor: conv || (!readOnly && convidadosSemMesa.length > 0) ? 'pointer' : 'default',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          minHeight: '36px',
+                        }}
+                      >
+                        <span style={{
+                          fontSize: '10px',
+                          color: 'var(--color-text-secondary)',
+                          fontFamily: 'var(--font-body)',
+                          fontWeight: 700,
+                          minWidth: '16px',
+                        }}>
+                          {idx + 1}
+                        </span>
+                        <span style={{
+                          fontSize: '12px',
+                          color: conv ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                          fontFamily: 'var(--font-body)',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          flex: 1,
+                        }}>
+                          {conv ? conv.nome : 'Vazio'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
-          )}
-        </main>
+          );
+        })}
       </div>
-    </>
+
+      {/* Modal: atribuir convidado ao slot */}
+      {slotSelecionado && !readOnly && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 200,
+          padding: '16px',
+        }} onClick={() => setSlotSelecionado(null)}>
+          <div style={{
+            background: 'var(--color-white)',
+            borderRadius: '16px',
+            padding: '24px',
+            width: '100%',
+            maxWidth: '420px',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '18px',
+              color: 'var(--color-text-primary)',
+              margin: '0 0 16px',
+            }}>
+              Atribuir convidado a mesa {mesas.find(m => m.id === slotSelecionado.mesaId)?.numero}
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '300px', overflow: 'auto' }}>
+              {convidadosSemMesa.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => handleAtribuir(c.id, slotSelecionado.mesaId)}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--color-border)',
+                    background: 'var(--color-off-white)',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontFamily: 'var(--font-body)',
+                    color: 'var(--color-text-primary)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <span>{c.nome}</span>
+                  {c.acompanhantes > 0 && (
+                    <span style={{ fontSize: '11px', color: 'var(--color-brand)' }}>+{c.acompanhantes} acomp.</span>
+                  )}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setSlotSelecionado(null)}
+              style={{
+                marginTop: '16px',
+                width: '100%',
+                padding: '10px',
+                borderRadius: '8px',
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-off-white)',
+                color: 'var(--color-text-primary)',
+                fontSize: '14px',
+                fontWeight: 600,
+                fontFamily: 'var(--font-body)',
+                cursor: 'pointer',
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: ver convidado ocupando slot */}
+      {modalConvidado && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 200,
+          padding: '16px',
+        }} onClick={() => setModalConvidado(null)}>
+          <div style={{
+            background: 'var(--color-white)',
+            borderRadius: '16px',
+            padding: '24px',
+            width: '100%',
+            maxWidth: '360px',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '18px',
+              color: 'var(--color-text-primary)',
+              margin: '0 0 12px',
+            }}>
+              {modalConvidado.nome}
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}>Grupo</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)' }}>{modalConvidado.grupo || 'Geral'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}>Status</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)' }}>{modalConvidado.confirmado}</span>
+              </div>
+              {modalConvidado.telefone && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}>Telefone</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)' }}>{modalConvidado.telefone}</span>
+                </div>
+              )}
+              {modalConvidado.acompanhantes > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}>Acompanhantes</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)' }}>{modalConvidado.acompanhantes}</span>
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              {!readOnly && (
+                <button
+                  onClick={() => handleRemover(modalConvidado.id)}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: '1px solid #C62828',
+                    background: '#FFEBEE',
+                    color: '#C62828',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    fontFamily: 'var(--font-body)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Remover da mesa
+                </button>
+              )}
+              <button
+                onClick={() => setModalConvidado(null)}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--color-border)',
+                  background: 'var(--color-off-white)',
+                  color: 'var(--color-text-primary)',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-body)',
+                  cursor: 'pointer',
+                }}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
-
-const styles = {
-  page: { minHeight: '100vh', background: 'var(--color-off-white)', paddingTop: '52px' },
-  main: { maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' },
-  title: { fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--color-text-primary)', margin: 0 },
-  toggleGroup: { display: 'flex', gap: '2px', border: '1px solid var(--color-border)', borderRadius: '8px', overflow: 'hidden' },
-  toggleBtn: { padding: '8px 16px', background: 'var(--color-white)', border: 'none', cursor: 'pointer', color: 'var(--color-text-secondary)', fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font-body)' },
-  toggleAtivo: { background: 'var(--color-brand)', color: '#fff' },
-  wizardBox: {
-    background: 'var(--color-white)',
-    borderRadius: '16px',
-    padding: '24px',
-    border: '1px solid var(--color-border)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px',
-  },
-  progressoBar: { display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' },
-  progressoTrack: { width: '100%', height: '6px', background: 'var(--color-off-white)', borderRadius: '3px', overflow: 'hidden' },
-  progressoFill: { height: '100%', background: 'var(--color-brand)', borderRadius: '3px', transition: 'width 400ms ease' },
-  progressoSteps: { display: 'flex', justifyContent: 'space-between' },
-  stepLabel: { fontSize: '11px', fontWeight: 600, fontFamily: 'var(--font-body)', textTransform: 'uppercase' },
-  emptyState: { padding: '40px 16px', textAlign: 'center' },
-  emptyText: { fontSize: '14px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' },
-  readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },
-  readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
-};

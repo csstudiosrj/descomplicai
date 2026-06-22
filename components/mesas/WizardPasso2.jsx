@@ -13,8 +13,8 @@ const CATALOGO_MESAS = [
 ];
 
 const FORMATOS = [
-  { id: 'redonda', label: 'Redonda', desc: 'Classica, melhor circulacao' },
-  { id: 'quadrada', label: 'Quadrada', desc: 'Moderna, aproveita espaco' },
+  { id: 'redonda', label: 'Redonda', desc: 'Clássica, melhor circulação' },
+  { id: 'quadrada', label: 'Quadrada', desc: 'Moderna, aproveita espaço' },
   { id: 'retangular', label: 'Retangular', desc: 'Elegante, para grupos maiores' },
   { id: 'misto', label: 'Misto', desc: 'Combine formatos' },
 ];
@@ -30,7 +30,6 @@ function sugerirQuantidades(formato, totalConvidados) {
   const sugerido = {};
   let restante = totalConvidados;
 
-  // Ordena por capacidade decrescente para usar mesas maiores primeiro
   const ordenado = [...opcoes].sort((a, b) => b.capacidade - a.capacidade);
 
   for (const tipo of ordenado) {
@@ -42,7 +41,6 @@ function sugerirQuantidades(formato, totalConvidados) {
     }
   }
 
-  // Se sobrou gente, adiciona uma mesa do menor tipo disponivel
   if (restante > 0 && opcoes.length > 0) {
     const menor = [...opcoes].sort((a, b) => a.capacidade - b.capacidade)[0];
     sugerido[menor.id] = (sugerido[menor.id] || 0) + 1;
@@ -142,7 +140,7 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, onCha
           color: 'var(--color-text-primary)',
           marginBottom: '8px',
         }}>
-          Quais tipos de mesas voce vai usar?
+          Quais tipos de mesas você vai usar?
         </h2>
         <p style={{
           fontSize: '14px',
@@ -153,7 +151,6 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, onCha
         </p>
       </div>
 
-      {/* Seletor de formato */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
@@ -194,7 +191,6 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, onCha
         ))}
       </div>
 
-      {/* Sugestao automatica */}
       {formatoFiltro && (
         <div style={{
           display: 'flex',
@@ -212,7 +208,7 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, onCha
               color: 'var(--color-text-primary)',
               fontFamily: 'var(--font-body)',
             }}>
-              Sugestao automatica
+              Sugestão automática
             </span>
             <p style={{
               fontSize: '12px',
@@ -237,12 +233,11 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, onCha
               cursor: 'pointer',
             }}
           >
-            Aplicar sugestao
+            Aplicar sugestão
           </button>
         </div>
       )}
 
-      {/* Lista de tipos */}
       {formatoFiltro ? (
         <div style={{
           display: 'grid',
@@ -365,12 +360,11 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, onCha
             color: 'var(--color-text-secondary)',
             fontFamily: 'var(--font-body)',
           }}>
-            Selecione um formato acima para ver as opcoes
+            Selecione um formato acima para ver as opções
           </span>
         </div>
       )}
 
-      {/* Resumo */}
       <div style={{
         background: 'var(--color-white)',
         borderRadius: '12px',
@@ -426,7 +420,7 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, onCha
             fontWeight: 600,
             fontFamily: 'var(--font-body)',
           }}>
-            {sobra} lugares de sobra (margem de seguranca)
+            {sobra} lugares de sobra (margem de segurança)
           </span>
         )}
         {atingiuLimite && (
@@ -436,7 +430,7 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, onCha
             fontWeight: 600,
             fontFamily: 'var(--font-body)',
           }}>
-            Limite atingido (110% dos convidados). Nao e possivel adicionar mais mesas.
+            Limite atingido (110% dos convidados). Não é possível adicionar mais mesas.
           </span>
         )}
       </div>
@@ -473,11 +467,10 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, onCha
             cursor: totalLugares >= totalConvidados && totalMesas > 0 ? 'pointer' : 'not-allowed',
           }}
         >
-          Proximo
+          Próximo
         </button>
       </div>
 
-      {/* Modal de excesso */}
       {modalExcesso && (
         <div style={{
           position: 'fixed',
@@ -512,7 +505,7 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, onCha
               lineHeight: 1.5,
               margin: '0 0 20px',
             }}>
-              Voce ja tem lugares suficientes para {totalConvidados} convidados com uma margem de 10%. Adicionar mais mesas pode desperdicar espaco no salao.
+              Você já tem lugares suficientes para {totalConvidados} convidados com uma margem de 10%. Adicionar mais mesas pode desperdiçar espaço no salão.
             </p>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button
