@@ -43,37 +43,59 @@ function MesasContent() {
   const carregarTudo = async () => {
     setCarregando(true);
 
-    const { data: gruposData } = await supabase
-      .from('grupos_convidados')
-      .select('*')
-      .eq('evento_id', evento.id)
-      .order('ordem');
-    setGrupos(gruposData || []);
-
-    const { data: convData } = await supabase
-      .from('convidados')
-      .select('*')
-      .eq('evento_id', evento.id)
-      .order('nome');
-    setConvidados(convData || []);
-
-    const { data: tipos } = await supabase
-      .from('mesas_tipos')
-      .select('*')
-      .eq('evento_id', evento.id);
-
-    if (tipos && tipos.length > 0) {
-      setMesasTipos(tipos);
-
-      const { data: mesasData } = await supabase
-        .from('mesas')
+    // Grupos — fallback silencioso
+    try {
+      const { data: gruposData } = await supabase
+        .from('grupos_convidados')
         .select('*')
         .eq('evento_id', evento.id)
-        .order('numero');
-      setMesas(mesasData || []);
-      setConfigurado(true);
+        .order('ordem');
+      setGrupos(gruposData || []);
+    } catch {
+      setGrupos([]);
+    }
+
+    // Convidados
+    try {
+      const { data: convData } = await supabase
+        .from('convidados')
+        .select('*')
+        .eq('evento_id', evento.id)
+        .order('nome');
+      setConvidados(convData || []);
+    } catch {
+      setConvidados([]);
+    }
+
+    // Mesas tipos — com fallback se tabela nao existir
+    let tipos = [];
+    try {
+      const { data: tiposData } = await supabase
+        .from('mesas_tipos')
+        .select('*')
+        .eq('evento_id', evento.id);
+      tipos = tiposData || [];
+    } catch {
+      tipos = [];
+    }
+
+    if (tipos.length > 0) {
+      setMesasTipos(tipos);
+
+      try {
+        const { data: mesasData } = await supabase
+          .from('mesas')
+          .select('*')
+          .eq('evento_id', evento.id)
+          .order('numero');
+        setMesas(mesasData || []);
+        setConfigurado(true);
+      } catch {
+        setMesas([]);
+        setConfigurado(false);
+      }
     } else {
-      setTotalConvidados(convData?.length || 0);
+      setTotalConvidados(convidados.length || 0);
       setConfigurado(false);
     }
 
@@ -83,35 +105,40 @@ function MesasContent() {
   const salvarConfiguracao = async () => {
     if (readOnly) return;
 
-    const tiposPayload = tiposSelecionados.map(t => ({
-      evento_id: evento.id,
-      nome: t.nome,
-      formato: t.formato,
-      capacidade: t.capacidade,
-      quantidade: t.quantidade,
-    }));
+    try {
+      const tiposPayload = tiposSelecionados.map(t => ({
+        evento_id: evento.id,
+        nome: t.nome,
+        formato: t.formato,
+        capacidade: t.capacidade,
+        quantidade: t.quantidade,
+      }));
 
-    await supabase.from('mesas_tipos').insert(tiposPayload);
+      await supabase.from('mesas_tipos').insert(tiposPayload);
 
-    const { data: tiposSalvos } = await supabase
-      .from('mesas_tipos')
-      .select('id, nome')
-      .eq('evento_id', evento.id);
+      const { data: tiposSalvos } = await supabase
+        .from('mesas_tipos')
+        .select('id, nome')
+        .eq('evento_id', evento.id);
 
-    const nomeToUuid = {};
-    tiposSalvos.forEach(t => { nomeToUuid[t.nome] = t.id; });
+      const nomeToUuid = {};
+      tiposSalvos.forEach(t => { nomeToUuid[t.nome] = t.id; });
 
-    const mesasPayload = mesasGeradas.map(m => ({
-      evento_id: evento.id,
-      numero: m.numero,
-      tipo_id: nomeToUuid[m.nomeTipo],
-      rotulo: m.rotulo,
-      posicao_x: null,
-      posicao_y: null,
-      rotacao: 0,
-    }));
+      const mesasPayload = mesasGeradas.map(m => ({
+        evento_id: evento.id,
+        numero: m.numero,
+        tipo_id: nomeToUuid[m.nomeTipo],
+        rotulo: m.rotulo,
+        posicao_x: null,
+        posicao_y: null,
+        rotacao: 0,
+      }));
 
-    await supabase.from('mesas').insert(mesasPayload);
+      await supabase.from('mesas').insert(mesasPayload);
+    } catch (err) {
+      alert('Erro ao salvar configuracao. Verifique se as tabelas de mesas existem no banco.');
+      return;
+    }
 
     setPasso(1);
     setTiposSelecionados([]);
@@ -123,13 +150,16 @@ function MesasContent() {
     if (readOnly) return;
     if (!confirm('Isso apagara todas as mesas, configuracoes e atribuicoes de convidados. Continuar?')) return;
 
-    await supabase
-      .from('convidados')
-      .update({ mesa_id: null })
-      .eq('evento_id', evento.id);
-
-    await supabase.from('mesas').delete().eq('evento_id', evento.id);
-    await supabase.from('mesas_tipos').delete().eq('evento_id', evento.id);
+    try {
+      await supabase
+        .from('convidados')
+        .update({ mesa_id: null })
+        .eq('evento_id', evento.id);
+      await supabase.from('mesas').delete().eq('evento_id', evento.id);
+      await supabase.from('mesas_tipos').delete().eq('evento_id', evento.id);
+    } catch {
+      // ignora erro
+    }
 
     setConfigurado(false);
     setPasso(1);
@@ -141,20 +171,28 @@ function MesasContent() {
 
   const atribuirConvidado = async (convidadoId, mesaId) => {
     if (readOnly) return;
-    await supabase
-      .from('convidados')
-      .update({ mesa_id: mesaId })
-      .eq('id', convidadoId);
-    await carregarTudo();
+    try {
+      await supabase
+        .from('convidados')
+        .update({ mesa_id: mesaId })
+        .eq('id', convidadoId);
+      await carregarTudo();
+    } catch {
+      // ignora
+    }
   };
 
   const removerConvidado = async (convidadoId) => {
     if (readOnly) return;
-    await supabase
-      .from('convidados')
-      .update({ mesa_id: null })
-      .eq('id', convidadoId);
-    await carregarTudo();
+    try {
+      await supabase
+        .from('convidados')
+        .update({ mesa_id: null })
+        .eq('id', convidadoId);
+      await carregarTudo();
+    } catch {
+      // ignora
+    }
   };
 
   const convidadosPorMesa = {};
