@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
@@ -41,12 +41,7 @@ function MesasContent() {
 
   const salvarWizardState = useCallback(() => {
     if (!wizardKey || configurado) return;
-    const dados = {
-      passo,
-      totalConvidados,
-      tiposSelecionados,
-      mesasGeradas,
-    };
+    const dados = { passo, totalConvidados, tiposSelecionados, mesasGeradas };
     localStorage.setItem(wizardKey, JSON.stringify(dados));
   }, [wizardKey, passo, totalConvidados, tiposSelecionados, mesasGeradas, configurado]);
 
@@ -213,53 +208,193 @@ function MesasContent() {
   });
   const convidadosSemMesa = convidados.filter(c => !c.mesa_id);
 
+  // Resumo
+  const resumo = useMemo(() => {
+    const totalMesas = mesas.length;
+    const totalLugares = mesas.reduce((acc, m) => {
+      const tipo = mesasTipos.find(t => t.id === m.tipo_id);
+      return acc + (tipo?.capacidade || 0);
+    }, 0);
+    const totalOcupados = convidados.reduce((acc, c) => {
+      if (c.mesa_id) return acc + 1 + (c.acompanhantes || 0);
+      return acc;
+    }, 0);
+    const semMesa = convidadosSemMesa.length;
+    const pct = totalLugares > 0 ? Math.round((totalOcupados / totalLugares) * 100) : 0;
+    return { totalMesas, totalLugares, totalOcupados, semMesa, pct };
+  }, [mesas, mesasTipos, convidados, convidadosSemMesa]);
+
   const nomeCasal = evento?.nome_evento || '';
 
   return (
     <>
       <Head><title>Mesas | descomplicai</title></Head>
-      <div style={styles.page}>
+      <div style={{ minHeight: '100vh', background: '#F9F7F4', paddingTop: '52px' }}>
         <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} />
-        <main style={styles.main}>
+        <main style={{ maxWidth: '960px', margin: '0 auto', padding: '24px 16px 60px' }}>
+
           {readOnly && (
-            <div style={styles.readOnlyBanner}>
-              <span style={styles.readOnlyText}>Modo somente leitura. Assine para editar.</span>
+            <div style={{
+              background: '#FFF8F0', border: '1px solid #EDD9BE',
+              borderRadius: 10, padding: '12px 16px', marginBottom: 20,
+              textAlign: 'center', fontSize: 13, color: '#8B6F5E',
+            }}>
+              Modo somente leitura. Assine para editar.
             </div>
           )}
-          <div style={styles.header}>
-            <h1 style={styles.title}>Mesas</h1>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              <h1 style={{
+                fontFamily: 'var(--font-display, Georgia, serif)',
+                fontSize: 26, fontWeight: 400,
+                color: '#8B6F5E', margin: 0,
+              }}>
+                Mesas
+              </h1>
+              {configurado && (
+                <p style={{ fontSize: 13, color: '#A89B91', margin: '4px 0 0' }}>
+                  {mesas.length} {mesas.length === 1 ? 'mesa configurada' : 'mesas configuradas'}
+                </p>
+              )}
+            </div>
             {configurado && (
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <div style={styles.toggleGroup}>
-                  <button onClick={() => setVisualizacao('lista')}
-                    style={{ ...styles.toggleBtn, ...(visualizacao === 'lista' ? styles.toggleAtivo : {}) }}>Lista</button>
-                  <button onClick={() => setVisualizacao('grade')}
-                    style={{ ...styles.toggleBtn, ...(visualizacao === 'grade' ? styles.toggleAtivo : {}) }}>Grade</button>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {['lista', 'grade'].map((v) => (
+                    <button
+                      key={v}
+                      onClick={() => setVisualizacao(v)}
+                      style={{
+                        padding: '8px 16px', borderRadius: 20, cursor: 'pointer',
+                        fontSize: 13, fontWeight: 500, transition: 'all 0.1s',
+                        border: visualizacao === v ? '1px solid #8B6F5E' : '1px solid #D4C8C0',
+                        background: visualizacao === v ? '#8B6F5E' : 'white',
+                        color: visualizacao === v ? 'white' : '#8B6F5E',
+                        textTransform: 'capitalize',
+                      }}
+                    >
+                      {v}
+                    </button>
+                  ))}
                 </div>
-                <button onClick={() => router.push('/painel/mapa-mesas')} style={styles.btnMapa}>Mapa visual</button>
+                <button onClick={() => router.push('/painel/mapa-mesas')} style={{
+                  padding: '8px 16px', borderRadius: 8,
+                  border: '1px solid #8B6F5E', background: 'white',
+                  color: '#8B6F5E', fontSize: 13, fontWeight: 600,
+                  fontFamily: 'var(--font-body)', cursor: 'pointer',
+                }}>
+                  Mapa visual
+                </button>
               </div>
             )}
           </div>
+
           {carregando ? (
-            <div style={styles.emptyState}><span style={styles.emptyText}>Carregando...</span></div>
+            <div style={{ padding: 40, textAlign: 'center', fontSize: 14, color: '#A89B91' }}>
+              Carregando...
+            </div>
           ) : configurado ? (
-            visualizacao === 'lista' ? (
-              <MesasLista key="lista" mesas={mesas} mesasTipos={mesasTipos} onReconfigurar={() => setModalReconfigurar(true)} readOnly={readOnly} />
-            ) : (
-              <GradeMesas key="grade" mesas={mesas} mesasTipos={mesasTipos}
-                convidadosPorMesa={convidadosPorMesa} convidadosSemMesa={convidadosSemMesa}
-                onAtribuir={atribuirConvidado} onRemover={removerConvidado} readOnly={readOnly} />
-            )
-          ) : (
-            <div style={styles.wizardBox}>
-              <div style={styles.progressoBar}>
-                <div style={styles.progressoTrack}>
-                  <div style={{ ...styles.progressoFill, width: passo === 1 ? '33%' : passo === 2 ? '66%' : '100%' }} />
+            <>
+              {/* Cards de resumo */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: 12, marginBottom: 24,
+              }}>
+                {[
+                  { label: 'Mesas', valor: resumo.totalMesas, cor: '#8B6F5E' },
+                  { label: 'Lugares totais', valor: resumo.totalLugares, cor: '#C4956A' },
+                  { label: 'Sem mesa', valor: resumo.semMesa, cor: '#F9A825' },
+                  { label: 'Ocupação', valor: `${resumo.pct}%`, cor: '#10B981' },
+                ].map(({ label, valor, cor }) => (
+                  <div key={label} style={{
+                    background: 'white', borderRadius: 12,
+                    border: '1px solid #F0EDE9', padding: '16px 20px',
+                    display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', gap: 4,
+                  }}>
+                    <span style={{ fontSize: 22, fontWeight: 700, color: cor }}>{valor}</span>
+                    <span style={{ fontSize: 11, color: '#A89B91', textTransform: 'uppercase', fontFamily: 'var(--font-body)' }}>{label}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Dock de convidados sem mesa */}
+              {convidadosSemMesa.length > 0 && (
+                <div style={{
+                  background: 'white', borderRadius: 12,
+                  border: '1px solid #F0EDE9', padding: '16px',
+                  marginBottom: 24,
+                }}>
+                  <h3 style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: 14, color: '#1A1714', marginBottom: 12,
+                  }}>
+                    Convidados sem mesa ({convidadosSemMesa.length})
+                  </h3>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {convidadosSemMesa.map(c => (
+                      <div
+                        key={c.id}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: 20,
+                          background: '#FFF8E1',
+                          border: '1px solid #F9A825',
+                          fontSize: 12,
+                          fontFamily: 'var(--font-body)',
+                          color: '#1A1714',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {c.nome}
+                        {c.acompanhantes > 0 && (
+                          <span style={{ color: '#F9A825', marginLeft: 4 }}>+{c.acompanhantes}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div style={styles.progressoSteps}>
-                  <span style={{ ...styles.stepLabel, color: passo >= 1 ? 'var(--color-brand)' : 'var(--color-text-secondary)' }}>Quantidade</span>
-                  <span style={{ ...styles.stepLabel, color: passo >= 2 ? 'var(--color-brand)' : 'var(--color-text-secondary)' }}>Tipos</span>
-                  <span style={{ ...styles.stepLabel, color: passo >= 3 ? 'var(--color-brand)' : 'var(--color-text-secondary)' }}>Distribuicao</span>
+              )}
+
+              {visualizacao === 'lista' ? (
+                <MesasLista
+                  mesas={mesas}
+                  mesasTipos={mesasTipos}
+                  convidadosPorMesa={convidadosPorMesa}
+                  convidadosSemMesa={convidadosSemMesa}
+                  onAtribuir={atribuirConvidado}
+                  onRemover={removerConvidado}
+                  onReconfigurar={() => setModalReconfigurar(true)}
+                  readOnly={readOnly}
+                />
+              ) : (
+                <GradeMesas
+                  mesas={mesas}
+                  mesasTipos={mesasTipos}
+                  convidadosPorMesa={convidadosPorMesa}
+                  convidadosSemMesa={convidadosSemMesa}
+                  onAtribuir={atribuirConvidado}
+                  onRemover={removerConvidado}
+                  readOnly={readOnly}
+                />
+              )}
+            </>
+          ) : (
+            <div style={{
+              background: 'white', borderRadius: 16,
+              padding: 24, border: '1px solid #F0EDE9',
+              display: 'flex', flexDirection: 'column', gap: 24,
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+                <div style={{ width: '100%', height: 6, background: '#F0EDE9', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', background: '#8B6F5E', borderRadius: 3, transition: 'width 400ms ease', width: passo === 1 ? '33%' : passo === 2 ? '66%' : '100%' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: passo >= 1 ? '#8B6F5E' : '#A89B91', textTransform: 'uppercase' }}>Quantidade</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: passo >= 2 ? '#8B6F5E' : '#A89B91', textTransform: 'uppercase' }}>Tipos</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: passo >= 3 ? '#8B6F5E' : '#A89B91', textTransform: 'uppercase' }}>Distribuicao</span>
                 </div>
               </div>
               {passo === 1 && (
@@ -292,15 +427,42 @@ function MesasContent() {
           )}
 
           {modalReconfigurar && (
-            <div style={styles.modalOverlay} onClick={() => setModalReconfigurar(false)}>
-              <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-                <h3 style={styles.modalTitle}>Reconfigurar mesas?</h3>
-                <p style={styles.modalText}>
+            <div style={{
+              position: 'fixed', inset: 0,
+              background: 'rgba(26,23,20,0.5)',
+              display: 'flex', alignItems: 'center',
+              justifyContent: 'center', zIndex: 300, padding: 16,
+            }} onClick={() => setModalReconfigurar(false)}>
+              <div style={{
+                background: 'white', borderRadius: 16,
+                padding: 24, width: '100%', maxWidth: 420,
+                boxShadow: '0 24px 64px rgba(0,0,0,0.18)',
+              }} onClick={(e) => e.stopPropagation()}>
+                <h3 style={{
+                  fontFamily: 'var(--font-display, Georgia, serif)',
+                  fontSize: 20, color: '#1A1714', margin: '0 0 12px',
+                }}>
+                  Reconfigurar mesas?
+                </h3>
+                <p style={{ fontSize: 14, color: '#A89B91', lineHeight: 1.5, margin: '0 0 20px' }}>
                   Isso apagara todas as mesas, configuracoes e atribuicoes de convidados. Esta acao nao pode ser desfeita.
                 </p>
-                <div style={styles.modalBotoes}>
-                  <button onClick={() => setModalReconfigurar(false)} style={styles.btnCancel}>Cancelar</button>
-                  <button onClick={reconfigurar} style={styles.btnDanger}>Apagar e reconfigurar</button>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                  <button onClick={() => setModalReconfigurar(false)} style={{
+                    padding: '10px 20px', borderRadius: 8,
+                    border: '1px solid #D4C8C0', background: 'white',
+                    color: '#8B6F5E', fontSize: 14, cursor: 'pointer',
+                  }}>
+                    Cancelar
+                  </button>
+                  <button onClick={reconfigurar} style={{
+                    padding: '10px 20px', borderRadius: 8,
+                    border: 'none', background: '#C62828',
+                    color: 'white', fontSize: 14, fontWeight: 600,
+                    cursor: 'pointer',
+                  }}>
+                    Apagar e reconfigurar
+                  </button>
                 </div>
               </div>
             </div>
@@ -310,31 +472,3 @@ function MesasContent() {
     </>
   );
 }
-
-const styles = {
-  page: { minHeight: '100vh', background: 'var(--color-off-white)', paddingTop: '52px' },
-  main: { maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' },
-  title: { fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--color-text-primary)', margin: 0 },
-  toggleGroup: { display: 'flex', gap: '2px', border: '1px solid var(--color-border)', borderRadius: '8px', overflow: 'hidden' },
-  toggleBtn: { padding: '8px 16px', background: 'var(--color-white)', border: 'none', cursor: 'pointer', color: 'var(--color-text-secondary)', fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font-body)' },
-  toggleAtivo: { background: 'var(--color-brand)', color: '#fff' },
-  btnMapa: { padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--color-brand)', background: 'var(--color-white)', color: 'var(--color-brand)', fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font-body)', cursor: 'pointer' },
-  wizardBox: { background: 'var(--color-white)', borderRadius: '16px', padding: '24px', border: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: '24px' },
-  progressoBar: { display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' },
-  progressoTrack: { width: '100%', height: '6px', background: 'var(--color-off-white)', borderRadius: '3px', overflow: 'hidden' },
-  progressoFill: { height: '100%', background: 'var(--color-brand)', borderRadius: '3px', transition: 'width 400ms ease' },
-  progressoSteps: { display: 'flex', justifyContent: 'space-between' },
-  stepLabel: { fontSize: '11px', fontWeight: 600, fontFamily: 'var(--font-body)', textTransform: 'uppercase' },
-  emptyState: { padding: '40px 16px', textAlign: 'center' },
-  emptyText: { fontSize: '14px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' },
-  readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },
-  readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
-  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '16px' },
-  modal: { background: 'var(--color-white)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
-  modalTitle: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-text-primary)', margin: '0 0 12px' },
-  modalText: { fontSize: '14px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)', lineHeight: 1.5, margin: '0 0 20px' },
-  modalBotoes: { display: 'flex', gap: '10px', justifyContent: 'flex-end' },
-  btnCancel: { background: 'var(--color-off-white)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 },
-  btnDanger: { background: '#C62828', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 },
-};
