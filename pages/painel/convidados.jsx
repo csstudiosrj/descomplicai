@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
 import HeaderPainel from '../../components/painel/HeaderPainel';
 import Icon from '../../components/ui/Icon';
@@ -35,6 +36,7 @@ export default function ConvidadosPage({ readOnly }) {
 }
 
 function ConvidadosContent({ readOnly }) {
+  const router = useRouter();
   const { user, evento, supabase } = useAuth();
 
   const [convidados, setConvidados] = useState([]);
@@ -62,7 +64,6 @@ function ConvidadosContent({ readOnly }) {
 
   const [resumo, setResumo] = useState({ total: 0, confirmados: 0, pendentes: 0, recusados: 0, pessoasConfirmadas: 0 });
 
-  // FIX: so carrega quando user E evento estao prontos
   useEffect(() => {
     if (evento && user) carregarTudo();
   }, [evento, user]);
@@ -70,7 +71,6 @@ function ConvidadosContent({ readOnly }) {
   const carregarTudo = async () => {
     setCarregando(true);
 
-    // Grupos
     let listaGrupos = [];
     try {
       const { data: gruposData } = await supabase
@@ -99,7 +99,6 @@ function ConvidadosContent({ readOnly }) {
     }
     setGrupos(listaGrupos);
 
-    // Mesas
     try {
       const { data: mesasData } = await supabase
         .from('mesas')
@@ -111,7 +110,6 @@ function ConvidadosContent({ readOnly }) {
       setMesas([]);
     }
 
-    // Convidados
     const { data, error } = await supabase
       .from('convidados')
       .select('*')
@@ -269,7 +267,12 @@ function ConvidadosContent({ readOnly }) {
               <button style={styles.btnFecharErro}><Icon name="close" size={12} /></button>
             </div>
           )}
-          <h1 style={styles.title}>Convidados</h1>
+          <div style={styles.headerRow}>
+            <h1 style={styles.title}>Convidados</h1>
+            <button onClick={() => router.push('/painel/mesas')} style={styles.btnMesas}>
+              <Icon name="layout" size={16} /> Ver mesas
+            </button>
+          </div>
           <ConvidadoFiltros
             busca={busca} setBusca={setBusca}
             filtroStatus={filtroStatus} setFiltroStatus={setFiltroStatus}
@@ -390,14 +393,16 @@ function ConvidadosContent({ readOnly }) {
 const styles = {
   page: { minHeight: '100vh', background: 'var(--color-off-white)', paddingTop: '52px' },
   main: { maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px' },
-  title: { fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--color-text-primary)', marginBottom: '20px' },
+  headerRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' },
+  title: { fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--color-text-primary)', margin: 0 },
+  btnMesas: { display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--color-brand)', background: 'var(--color-white)', color: 'var(--color-brand)', fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font-body)', cursor: 'pointer' },
   addBox: { marginBottom: '16px' },
   addRow: { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' },
   input: { flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '14px', fontFamily: 'var(--font-body)', background: 'var(--color-white)', color: 'var(--color-text-primary)', minWidth: '100px', outline: 'none', boxSizing: 'border-box' },
   select: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '14px', fontFamily: 'var(--font-body)', background: 'var(--color-white)', color: 'var(--color-text-primary)', outline: 'none', boxSizing: 'border-box' },
   btnPrimary: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: 'var(--color-brand)', color: '#fff', border: 'none', padding: '10px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, minWidth: '44px', height: '42px' },
   btnSecondary: { display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--color-off-white)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)', padding: '10px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', marginBottom: '16px' },
-  list: { background: 'var(--color-white)', borderRadius: '12px', border: '1px solid var(--color-border)', overflow: 'hidden' },
+  list: { background: 'var(--color-white)', borderRadius: '12px', border: '1px solid var(--color-border)' },
   emptyState: { padding: '40px 16px', textAlign: 'center' },
   emptyText: { fontSize: '14px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' },
   readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },

@@ -12,6 +12,13 @@ const CATALOGO_MESAS = [
   { id: 'retangular_12', nome: 'Retangular 12 lugares', formato: 'retangular', capacidade: 12 },
 ];
 
+function getIconeDimensoes(formato) {
+  if (formato === 'redonda') return { width: 48, height: 48, borderRadius: '50%' };
+  if (formato === 'quadrada') return { width: 48, height: 48, borderRadius: '8px' };
+  // retangular: proporcao 1.6:1, nunca quadrado
+  return { width: 64, height: 40, borderRadius: '6px' };
+}
+
 export default function WizardPasso2({ totalConvidados, tiposSelecionados, setTiposSelecionados, onAvancar, onVoltar }) {
   const [quantidades, setQuantidades] = useState({});
 
@@ -54,6 +61,7 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, setTi
   const totalMesas = Object.values(quantidades).reduce((a, b) => a + b, 0);
   const sobra = totalLugares - totalConvidados;
   const insuficiente = totalLugares > 0 && totalLugares < totalConvidados;
+  const excesso = totalConvidados > 0 && totalLugares > totalConvidados * 1.3;
 
   const avancar = () => {
     const selecionados = Object.entries(quantidades)
@@ -94,6 +102,7 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, setTi
         {CATALOGO_MESAS.map((tipo) => {
           const selecionado = !!quantidades[tipo.id];
           const qtd = quantidades[tipo.id] || 0;
+          const dim = getIconeDimensoes(tipo.formato);
           return (
             <div
               key={tipo.id}
@@ -111,9 +120,9 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, setTi
               }}
             >
               <div style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: tipo.formato === 'redonda' ? '50%' : tipo.formato === 'quadrada' ? '8px' : '4px',
+                width: `${dim.width}px`,
+                height: `${dim.height}px`,
+                borderRadius: dim.borderRadius,
                 border: `2px solid ${selecionado ? 'var(--color-brand)' : '#C4B5A5'}`,
                 background: selecionado ? 'var(--color-brand)' : 'transparent',
                 alignSelf: 'center',
@@ -193,7 +202,6 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, setTi
         })}
       </div>
 
-      {/* Resumo */}
       <div style={{
         background: 'var(--color-white)',
         borderRadius: '12px',
@@ -242,7 +250,17 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, setTi
             Faltam {totalConvidados - totalLugares} lugares. Adicione mais mesas.
           </span>
         )}
-        {sobra > 0 && (
+        {excesso && (
+          <span style={{
+            fontSize: '13px',
+            color: '#E65100',
+            fontWeight: 600,
+            fontFamily: 'var(--font-body)',
+          }}>
+            Atencao: voce tem {sobra} lugares de sobra (mais de 30% do necessario). Revise se realmente precisa de tantas mesas.
+          </span>
+        )}
+        {!insuficiente && !excesso && sobra >= 0 && (
           <span style={{
             fontSize: '13px',
             color: '#2E7D32',

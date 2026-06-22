@@ -36,10 +36,20 @@ function MesasContent() {
   const [tiposSelecionados, setTiposSelecionados] = useState([]);
   const [mesasGeradas, setMesasGeradas] = useState([]);
 
-  // FIX: so carrega quando user E evento estao prontos
+  const [modalReconfigurar, setModalReconfigurar] = useState(false);
+
+  const wizardKey = evento ? `descomplicai_mesas_wizard_${evento.id}` : null;
+
   useEffect(() => {
     if (evento && user) carregarTudo();
   }, [evento, user]);
+
+  // Autosave: salva wizard no localStorage a cada mudanca
+  useEffect(() => {
+    if (!wizardKey || configurado) return;
+    const dados = { passo, totalConvidados, tiposSelecionados, mesasGeradas };
+    localStorage.setItem(wizardKey, JSON.stringify(dados));
+  }, [wizardKey, passo, totalConvidados, tiposSelecionados, mesasGeradas, configurado]);
 
   const carregarTudo = async () => {
     setCarregando(true);
@@ -87,6 +97,18 @@ function MesasContent() {
     } else {
       setTotalConvidados(convidados.length || 0);
       setConfigurado(false);
+      if (wizardKey) {
+        try {
+          const salvo = localStorage.getItem(wizardKey);
+          if (salvo) {
+            const dados = JSON.parse(salvo);
+            if (dados.passo) setPasso(dados.passo);
+            if (dados.totalConvidados) setTotalConvidados(dados.totalConvidados);
+            if (dados.tiposSelecionados) setTiposSelecionados(dados.tiposSelecionados);
+            if (dados.mesasGeradas) setMesasGeradas(dados.mesasGeradas);
+          }
+        } catch {}
+      }
     }
 
     setCarregando(false);
@@ -119,18 +141,21 @@ function MesasContent() {
       alert('Erro ao salvar configuracao.'); return;
     }
 
+    if (wizardKey) localStorage.removeItem(wizardKey);
+
     setPasso(1); setTiposSelecionados([]); setMesasGeradas([]);
     await carregarTudo();
   };
 
   const reconfigurar = async () => {
     if (readOnly) return;
-    if (!confirm('Isso apagara todas as mesas, configuracoes e atribuicoes de convidados. Continuar?')) return;
+    setModalReconfigurar(false);
     try {
       await supabase.from('convidados').update({ mesa_id: null }).eq('evento_id', evento.id);
       await supabase.from('mesas').delete().eq('evento_id', evento.id);
       await supabase.from('mesas_tipos').delete().eq('evento_id', evento.id);
     } catch {}
+    if (wizardKey) localStorage.removeItem(wizardKey);
     setConfigurado(false); setPasso(1); setTiposSelecionados([]);
     setMesasGeradas([]); setTotalConvidados(0); setVisualizacao('lista');
   };
@@ -191,9 +216,9 @@ function MesasContent() {
             <div style={styles.emptyState}><span style={styles.emptyText}>Carregando...</span></div>
           ) : configurado ? (
             visualizacao === 'lista' ? (
-              <MesasLista mesas={mesas} mesasTipos={mesasTipos} onReconfigurar={reconfigurar} readOnly={readOnly} />
+              <MesasLista key="lista" mesas={mesas} mesasTipos={mesasTipos} onReconfigurar={() => setModalReconfigurar(true)} readOnly={readOnly} />
             ) : (
-              <GradeMesas mesas={mesas} mesasTipos={mesasTipos}
+              <GradeMesas key="grade" mesas={mesas} mesasTipos={mesasTipos}
                 convidadosPorMesa={convidadosPorMesa} convidadosSemMesa={convidadosSemMesa}
                 onAtribuir={atribuirConvidado} onRemover={removerConvidado} readOnly={readOnly} />
             )
@@ -223,6 +248,21 @@ function MesasContent() {
               )}
             </div>
           )}
+
+          {modalReconfigurar && (
+            <div style={styles.modalOverlay} onClick={() => setModalReconfigurar(false)}>
+              <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+                <h3 style={styles.modalTitle}>Reconfigurar mesas?</h3>
+                <p style={styles.modalText}>
+                  Isso apagara todas as mesas, configuracoes e atribuicoes de convidados. Esta acao nao pode ser desfeita.
+                </p>
+                <div style={styles.modalBotoes}>
+                  <button onClick={() => setModalReconfigurar(false)} style={styles.btnCancel}>Cancelar</button>
+                  <button onClick={reconfigurar} style={styles.btnDanger}>Apagar e reconfigurar</button>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </>
@@ -248,4 +288,11 @@ const styles = {
   emptyText: { fontSize: '14px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' },
   readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },
   readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
+  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '16px' },
+  modal: { background: 'var(--color-white)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
+  modalTitle: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-text-primary)', margin: '0 0 12px' },
+  modalText: { fontSize: '14px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)', lineHeight: 1.5, margin: '0 0 20px' },
+  modalBotoes: { display: 'flex', gap: '10px', justifyContent: 'flex-end' },
+  btnCancel: { background: 'var(--color-off-white)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 },
+  btnDanger: { background: '#C62828', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 },
 };

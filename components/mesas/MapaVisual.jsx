@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 
 const SALAO_W = 1200;
 const SALAO_H = 800;
@@ -29,7 +29,6 @@ function calcularPosicoesCadeiras(formato, capacidade, raio) {
       posicoes.push({ x: -raio, y: raio - (2 * raio * i) / (lado - 1 || 1) });
     }
   } else {
-    // retangular
     const proporcao = 1.6;
     const rw = raio * proporcao;
     const rh = raio;
@@ -45,6 +44,19 @@ function calcularPosicoesCadeiras(formato, capacidade, raio) {
   return posicoes;
 }
 
+function calcularGridPosicao(index, total) {
+  const cols = Math.ceil(Math.sqrt(total * (SALAO_W / SALAO_H)));
+  const rows = Math.ceil(total / cols);
+  const cellW = SALAO_W / cols;
+  const cellH = SALAO_H / rows;
+  const col = index % cols;
+  const row = Math.floor(index / cols);
+  return {
+    x: cellW * col + cellW / 2,
+    y: cellH * row + cellH / 2,
+  };
+}
+
 export default function MapaVisual({ mesas, mesasTipos, convidadosPorMesa, onAtribuir, onRemover, onReposicionar, readOnly }) {
   const containerRef = useRef(null);
   const [zoom, setZoom] = useState(1);
@@ -58,7 +70,6 @@ export default function MapaVisual({ mesas, mesasTipos, convidadosPorMesa, onAtr
   const tipoPorId = {};
   mesasTipos.forEach(t => { tipoPorId[t.id] = t; });
 
-  // Pan com mouse
   const [isPanning, setIsPanning] = useState(false);
   const panStart = useRef({ x: 0, y: 0 });
   const panStartPos = useRef({ x: 0, y: 0 });
@@ -145,9 +156,16 @@ export default function MapaVisual({ mesas, mesasTipos, convidadosPorMesa, onAtr
   const zoomOut = () => setZoom(z => Math.max(z - 0.2, 0.4));
   const resetView = () => { setZoom(1); setPan({ x: 0, y: 0 }); };
 
+  const mesasComPosicao = useMemo(() => {
+    return mesas.map((mesa, idx) => {
+      if (mesa.posicao_x != null && mesa.posicao_y != null) return mesa;
+      const auto = calcularGridPosicao(idx, mesas.length);
+      return { ...mesa, posicao_x: auto.x, posicao_y: auto.y };
+    });
+  }, [mesas]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {/* Controles */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -186,7 +204,6 @@ export default function MapaVisual({ mesas, mesasTipos, convidadosPorMesa, onAtr
         </label>
       </div>
 
-      {/* Area do mapa */}
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
@@ -213,7 +230,6 @@ export default function MapaVisual({ mesas, mesasTipos, convidadosPorMesa, onAtr
           border: '1px dashed #C4B5A5',
           borderRadius: '4px',
         }}>
-          {/* Grid de fundo */}
           <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, opacity: 0.3 }}>
             <defs>
               <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -223,8 +239,7 @@ export default function MapaVisual({ mesas, mesasTipos, convidadosPorMesa, onAtr
             <rect width="100%" height="100%" fill="url(#grid)" />
           </svg>
 
-          {/* Mesas */}
-          {mesas.map((mesa) => {
+          {mesasComPosicao.map((mesa) => {
             const tipo = tipoPorId[mesa.tipo_id];
             const ocupantes = convidadosPorMesa[mesa.id] || [];
             const capacidade = tipo?.capacidade || 8;
@@ -251,11 +266,10 @@ export default function MapaVisual({ mesas, mesasTipos, convidadosPorMesa, onAtr
                   zIndex: isHover ? 20 : 10,
                 }}
               >
-                {/* Mesa */}
                 <div style={{
                   width: tipo?.formato === 'retangular' ? `${raio * 3.2}px` : `${raio * 2}px`,
                   height: tipo?.formato === 'retangular' ? `${raio * 2}px` : `${raio * 2}px`,
-                  borderRadius: tipo?.formato === 'redonda' ? '50%' : tipo?.formato === 'quadrada' ? '12px' : '8px',
+                  borderRadius: tipo?.formato === 'redonda' ? '50%' : tipo?.formato === 'quadrada' ? '12px' : '6px',
                   background: isHover ? '#E8D5C4' : 'var(--color-white)',
                   border: `2px solid ${isHover ? 'var(--color-brand)' : '#C4B5A5'}`,
                   display: 'flex',
@@ -304,7 +318,6 @@ export default function MapaVisual({ mesas, mesasTipos, convidadosPorMesa, onAtr
                   </div>
                 </div>
 
-                {/* Cadeiras */}
                 {posicoes.map((pos, idx) => {
                   const conv = ocupantes[idx];
                   return (
@@ -358,7 +371,6 @@ export default function MapaVisual({ mesas, mesasTipos, convidadosPorMesa, onAtr
         </div>
       </div>
 
-      {/* Legenda */}
       <div style={{
         display: 'flex',
         gap: '16px',

@@ -1,12 +1,12 @@
-// components/painel/NavCards.jsx — Navegação para subpáginas
 import Link from 'next/link';
 import Icon from '../ui/Icon';
 
 const PAGES = [
-  { href: '/painel/fornecedores', icon: 'store', label: 'Fornecedores', desc: 'Gestão de contratos' },
-  { href: '/painel/financeiro', icon: 'dollar', label: 'Financeiro', desc: 'Orçamento e pagamentos' },
+  { href: '/painel/fornecedores', icon: 'store', label: 'Fornecedores', desc: 'Gestao de contratos' },
+  { href: '/painel/financeiro', icon: 'dollar', label: 'Financeiro', desc: 'Orcamento e pagamentos' },
   { href: '/painel/checklist', icon: 'checklist', label: 'Checklist', desc: 'Tarefas e prazos' },
-  { href: '/painel/convidados', icon: 'users', label: 'Convidados', desc: 'Lista e confirmações' },
+  { href: '/painel/convidados', icon: 'users', label: 'Convidados', desc: 'Lista e confirmacoes' },
+  { href: '/painel/mesas', icon: 'layout', label: 'Mesas', desc: 'Distribuicao e mapa visual' },
   { href: '/painel/cronograma', icon: 'clock', label: 'Cronograma', desc: 'Dia do casamento' },
 ];
 

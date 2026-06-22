@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const STATUS_CONFIG = {
   pendente: { label: 'Pendente', cor: '#F9A825', bg: '#FFF8E1' },
@@ -9,6 +9,8 @@ const STATUS_CONFIG = {
 export default function ConvidadoItem({ convidado, grupos, mesas, readOnly, onStatusChange, onEdit, onExcluir }) {
   const [menuAberto, setMenuAberto] = useState(false);
   const [animarBadge, setAnimarBadge] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const badgeRef = useRef(null);
 
   const cfg = STATUS_CONFIG[convidado.confirmado] || STATUS_CONFIG.pendente;
 
@@ -18,6 +20,32 @@ export default function ConvidadoItem({ convidado, grupos, mesas, readOnly, onSt
     setMenuAberto(false);
     setTimeout(() => setAnimarBadge(false), 400);
   };
+
+  const abrirMenu = () => {
+    if (readOnly) return;
+    if (badgeRef.current) {
+      const rect = badgeRef.current.getBoundingClientRect();
+      const menuHeight = 140;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const top = spaceBelow < menuHeight ? rect.top - menuHeight - 4 : rect.bottom + 4;
+      setMenuPos({
+        top,
+        left: rect.left,
+      });
+    }
+    setMenuAberto(true);
+  };
+
+  useEffect(() => {
+    if (!menuAberto) return;
+    const handleClose = () => setMenuAberto(false);
+    window.addEventListener('scroll', handleClose, { once: true });
+    window.addEventListener('resize', handleClose, { once: true });
+    return () => {
+      window.removeEventListener('scroll', handleClose);
+      window.removeEventListener('resize', handleClose);
+    };
+  }, [menuAberto]);
 
   const grupoLabel = grupos.find(g => g.nome === convidado.grupo)?.nome || convidado.grupo || 'Geral';
   const mesa = mesas?.find(m => m.id === convidado.mesa_id);
@@ -92,10 +120,10 @@ export default function ConvidadoItem({ convidado, grupos, mesas, readOnly, onSt
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-        {/* Badge de status com menu */}
         <div style={{ position: 'relative' }}>
           <button
-            onClick={() => !readOnly && setMenuAberto(!menuAberto)}
+            ref={badgeRef}
+            onClick={abrirMenu}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -130,9 +158,9 @@ export default function ConvidadoItem({ convidado, grupos, mesas, readOnly, onSt
                 onClick={() => setMenuAberto(false)}
               />
               <div style={{
-                position: 'absolute',
-                top: 'calc(100% + 4px)',
-                right: 0,
+                position: 'fixed',
+                top: `${menuPos.top}px`,
+                left: `${menuPos.left}px`,
                 background: 'var(--color-white)',
                 borderRadius: '10px',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
