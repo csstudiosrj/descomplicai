@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
 import HeaderPainel from '../../components/painel/HeaderPainel';
 import { useAuth } from '../../hooks/useAuth';
@@ -18,6 +19,7 @@ export default function MesasPage() {
 }
 
 function MesasContent() {
+  const router = useRouter();
   const { user, evento, hasAccess, supabase } = useAuth();
   const readOnly = !hasAccess;
 
@@ -29,7 +31,6 @@ function MesasContent() {
   const [convidados, setConvidados] = useState([]);
   const [visualizacao, setVisualizacao] = useState('lista');
 
-  // Wizard state
   const [passo, setPasso] = useState(1);
   const [totalConvidados, setTotalConvidados] = useState(0);
   const [tiposSelecionados, setTiposSelecionados] = useState([]);
@@ -42,7 +43,6 @@ function MesasContent() {
   const carregarTudo = async () => {
     setCarregando(true);
 
-    // Grupos
     const { data: gruposData } = await supabase
       .from('grupos_convidados')
       .select('*')
@@ -50,7 +50,6 @@ function MesasContent() {
       .order('ordem');
     setGrupos(gruposData || []);
 
-    // Convidados
     const { data: convData } = await supabase
       .from('convidados')
       .select('*')
@@ -58,7 +57,6 @@ function MesasContent() {
       .order('nome');
     setConvidados(convData || []);
 
-    // Mesas tipos
     const { data: tipos } = await supabase
       .from('mesas_tipos')
       .select('*')
@@ -67,7 +65,6 @@ function MesasContent() {
     if (tipos && tipos.length > 0) {
       setMesasTipos(tipos);
 
-      // Mesas
       const { data: mesasData } = await supabase
         .from('mesas')
         .select('*')
@@ -86,7 +83,6 @@ function MesasContent() {
   const salvarConfiguracao = async () => {
     if (readOnly) return;
 
-    // 1. Insere tipos
     const tiposPayload = tiposSelecionados.map(t => ({
       evento_id: evento.id,
       nome: t.nome,
@@ -97,7 +93,6 @@ function MesasContent() {
 
     await supabase.from('mesas_tipos').insert(tiposPayload);
 
-    // 2. Busca tipos salvos
     const { data: tiposSalvos } = await supabase
       .from('mesas_tipos')
       .select('id, nome')
@@ -106,7 +101,6 @@ function MesasContent() {
     const nomeToUuid = {};
     tiposSalvos.forEach(t => { nomeToUuid[t.nome] = t.id; });
 
-    // 3. Insere mesas
     const mesasPayload = mesasGeradas.map(m => ({
       evento_id: evento.id,
       numero: m.numero,
@@ -129,7 +123,6 @@ function MesasContent() {
     if (readOnly) return;
     if (!confirm('Isso apagara todas as mesas, configuracoes e atribuicoes de convidados. Continuar?')) return;
 
-    // Remove mesa_id de todos os convidados
     await supabase
       .from('convidados')
       .update({ mesa_id: null })
@@ -164,7 +157,6 @@ function MesasContent() {
     await carregarTudo();
   };
 
-  // Organiza convidados por mesa
   const convidadosPorMesa = {};
   convidados.forEach(c => {
     if (c.mesa_id) {
@@ -192,24 +184,32 @@ function MesasContent() {
           <div style={styles.header}>
             <h1 style={styles.title}>Mesas</h1>
             {configurado && (
-              <div style={styles.toggleGroup}>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <div style={styles.toggleGroup}>
+                  <button
+                    onClick={() => setVisualizacao('lista')}
+                    style={{
+                      ...styles.toggleBtn,
+                      ...(visualizacao === 'lista' ? styles.toggleAtivo : {}),
+                    }}
+                  >
+                    Lista
+                  </button>
+                  <button
+                    onClick={() => setVisualizacao('grade')}
+                    style={{
+                      ...styles.toggleBtn,
+                      ...(visualizacao === 'grade' ? styles.toggleAtivo : {}),
+                    }}
+                  >
+                    Grade
+                  </button>
+                </div>
                 <button
-                  onClick={() => setVisualizacao('lista')}
-                  style={{
-                    ...styles.toggleBtn,
-                    ...(visualizacao === 'lista' ? styles.toggleAtivo : {}),
-                  }}
+                  onClick={() => router.push('/painel/mapa-mesas')}
+                  style={styles.btnMapa}
                 >
-                  Lista
-                </button>
-                <button
-                  onClick={() => setVisualizacao('grade')}
-                  style={{
-                    ...styles.toggleBtn,
-                    ...(visualizacao === 'grade' ? styles.toggleAtivo : {}),
-                  }}
-                >
-                  Grade
+                  Mapa visual
                 </button>
               </div>
             )}
@@ -298,6 +298,17 @@ const styles = {
   toggleGroup: { display: 'flex', gap: '2px', border: '1px solid var(--color-border)', borderRadius: '8px', overflow: 'hidden' },
   toggleBtn: { padding: '8px 16px', background: 'var(--color-white)', border: 'none', cursor: 'pointer', color: 'var(--color-text-secondary)', fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font-body)' },
   toggleAtivo: { background: 'var(--color-brand)', color: '#fff' },
+  btnMapa: {
+    padding: '8px 16px',
+    borderRadius: '8px',
+    border: '1px solid var(--color-brand)',
+    background: 'var(--color-white)',
+    color: 'var(--color-brand)',
+    fontSize: '13px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-body)',
+    cursor: 'pointer',
+  },
   wizardBox: {
     background: 'var(--color-white)',
     borderRadius: '16px',
