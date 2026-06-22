@@ -47,13 +47,16 @@ function calcularPosicoesCadeiras(formato, capacidade, raio) {
 function calcularGridPosicao(index, total) {
   const cols = Math.ceil(Math.sqrt(total * (SALAO_W / SALAO_H)));
   const rows = Math.ceil(total / cols);
-  const cellW = SALAO_W / cols;
-  const cellH = SALAO_H / rows;
+  const padding = 100;
+  const availableW = SALAO_W - padding * 2;
+  const availableH = SALAO_H - padding * 2;
+  const cellW = availableW / cols;
+  const cellH = availableH / rows;
   const col = index % cols;
   const row = Math.floor(index / cols);
   return {
-    x: cellW * col + cellW / 2,
-    y: cellH * row + cellH / 2,
+    x: padding + cellW * col + cellW / 2,
+    y: padding + cellH * row + cellH / 2,
   };
 }
 
