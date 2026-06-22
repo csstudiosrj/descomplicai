@@ -1,9 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
 import HeaderPainel from '../../components/painel/HeaderPainel';
 import Icon from '../../components/ui/Icon';
 import { useAuth } from '../../hooks/useAuth';
+import ConvidadoItem from '../../components/convidados/ConvidadoItem';
+import ConvidadoFiltros from '../../components/convidados/ConvidadoFiltros';
+import ToastStatus from '../../components/convidados/ToastStatus';
+
+const GRUPOS_PADRAO = [
+  'Familia Noivo',
+  'Familia Noiva',
+  'Amigos Noivo',
+  'Amigos Noiva',
+  'Colegas de trabalho',
+  'Padrinhos',
+  'Daminhas/Pajens',
+];
+
+function formatarTelefone(valor) {
+  const digits = valor.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
 
 export default function ConvidadosPage({ readOnly }) {
   return (
@@ -14,46 +35,125 @@ export default function ConvidadosPage({ readOnly }) {
 }
 
 function ConvidadosContent({ readOnly }) {
-  const { user, evento, signOut, supabase } = useAuth();
+  const { user, evento, supabase } = useAuth();
+
   const [convidados, setConvidados] = useState([]);
+  const [grupos, setGrupos] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+
+  const [busca, setBusca] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [filtroGrupo, setFiltroGrupo] = useState('todos');
+
   const [novoNome, setNovoNome] = useState('');
   const [novoGrupo, setNovoGrupo] = useState('');
+  const [novoGrupoOutro, setNovoGrupoOutro] = useState('');
   const [novoTelefone, setNovoTelefone] = useState('');
   const [novoAcompanhantes, setNovoAcompanhantes] = useState('');
-  const [filtro, setFiltro] = useState('todos');
-  const [erro, setErro] = useState('');
+
   const [modalEditar, setModalEditar] = useState(false);
   const [editForm, setEditForm] = useState({});
+  const [editGrupoOutro, setEditGrupoOutro] = useState('');
 
+  const [erro, setErro] = useState('');
+  const [toast, setToast] = useState(null);
+  const [ultimoStatus, setUltimoStatus] = useState(null);
+
+  const [resumo, setResumo] = useState({ total: 0, confirmados: 0, pendentes: 0, recusados: 0, pessoasConfirmadas: 0 });
+
+  // Carrega grupos e convidados
   useEffect(() => {
-    if (evento) buscar();
+    if (evento) {
+      carregarGrupos();
+      buscarConvidados();
+    }
   }, [evento]);
 
-  const buscar = async () => {
+  const carregarGrupos = async () => {
+    const { data } = await supabase
+      .from('grupos_convidados')
+      .select('*')
+      .eq('evento_id', evento.id)
+      .order('ordem', { ascending: true });
+
+    let lista = data || [];
+
+    // Se nao tem grupos, insere os padroes
+    if (lista.length === 0) {
+      const inserts = GRUPOS_PADRAO.map((nome, idx) => ({
+        evento_id: evento.id,
+        nome,
+        ordem: idx,
+      }));
+      const { data: inseridos } = await supabase
+        .from('grupos_convidados')
+        .insert(inserts)
+        .select();
+      lista = inseridos || inserts;
+    }
+
+    setGrupos(lista);
+  };
+
+  const buscarConvidados = async () => {
+    setCarregando(true);
     const { data, error } = await supabase
       .from('convidados')
       .select('*')
       .eq('evento_id', evento.id)
       .order('nome');
+
     if (error) {
       console.error('Erro ao buscar convidados:', error);
       setErro('Erro ao carregar convidados');
+    } else {
+      setConvidados(data || []);
+      calcularResumo(data || []);
     }
-    setConvidados(data || []);
+    setCarregando(false);
+  };
+
+  const calcularResumo = (lista) => {
+    const total = lista.length;
+    const confirmados = lista.filter(c => c.confirmado === 'confirmado').length;
+    const pendentes = lista.filter(c => c.confirmado === 'pendente').length;
+    const recusados = lista.filter(c => c.confirmado === 'recusado').length;
+    const pessoasConfirmadas = lista
+      .filter(c => c.confirmado === 'confirmado')
+      .reduce((acc, c) => acc + 1 + (Number(c.acompanhantes) || 0), 0);
+
+    setResumo({ total, confirmados, pendentes, recusados, pessoasConfirmadas });
   };
 
   const adicionar = async () => {
     if (readOnly || !novoNome.trim()) return;
     setErro('');
 
+    let grupoFinal = novoGrupo;
+    if (novoGrupo === 'Outro') {
+      grupoFinal = novoGrupoOutro.trim();
+      if (!grupoFinal) {
+        setErro('Informe o nome do novo grupo');
+        return;
+      }
+      // Salva novo grupo no catalogo
+      await supabase.from('grupos_convidados').insert({
+        evento_id: evento.id,
+        nome: grupoFinal,
+        ordem: grupos.length,
+      }).select();
+      await carregarGrupos();
+    }
+
     const payload = {
       usuario_id: user.id,
       evento_id: evento.id,
       nome: novoNome.trim(),
-      grupo: novoGrupo.trim() || 'Geral',
+      grupo: grupoFinal || 'Geral',
       telefone: novoTelefone.trim() || null,
       confirmado: 'pendente',
-      mesa: novoAcompanhantes ? novoAcompanhantes.trim() : null,
+      mesa: null,
+      acompanhantes: Number(novoAcompanhantes) || 0,
     };
 
     const { error } = await supabase.from('convidados').insert(payload);
@@ -66,55 +166,113 @@ function ConvidadosContent({ readOnly }) {
 
     setNovoNome('');
     setNovoGrupo('');
+    setNovoGrupoOutro('');
     setNovoTelefone('');
     setNovoAcompanhantes('');
-    buscar();
+    buscarConvidados();
   };
 
   const atualizarStatus = async (id, confirmado) => {
     if (readOnly) return;
-    const { error } = await supabase.from('convidados').update({ confirmado }).eq('id', id);
-    if (error) console.error('Erro ao atualizar status:', error);
-    buscar();
+
+    const conv = convidados.find(c => c.id === id);
+    if (!conv || conv.confirmado === confirmado) return;
+
+    setUltimoStatus({ id, anterior: conv.confirmado });
+
+    const { error } = await supabase
+      .from('convidados')
+      .update({ confirmado })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Erro ao atualizar status:', error);
+      return;
+    }
+
+    setToast({
+      id,
+      nome: conv.nome,
+      novoStatus: confirmado,
+      anterior: conv.confirmado,
+    });
+
+    buscarConvidados();
+  };
+
+  const desfazerStatus = async () => {
+    if (!ultimoStatus) return;
+    await supabase
+      .from('convidados')
+      .update({ confirmado: ultimoStatus.anterior })
+      .eq('id', ultimoStatus.id);
+    setUltimoStatus(null);
+    setToast(null);
+    buscarConvidados();
   };
 
   const salvarEdicao = async () => {
     if (readOnly || !editForm.id) return;
+
+    let grupoFinal = editForm.grupo;
+    if (editForm.grupo === 'Outro') {
+      grupoFinal = editGrupoOutro.trim();
+      if (!grupoFinal) {
+        setErro('Informe o nome do novo grupo');
+        return;
+      }
+      await supabase.from('grupos_convidados').insert({
+        evento_id: evento.id,
+        nome: grupoFinal,
+        ordem: grupos.length,
+      }).select();
+      await carregarGrupos();
+    }
+
     const payload = {
       nome: editForm.nome?.trim(),
-      grupo: editForm.grupo?.trim() || 'Geral',
+      grupo: grupoFinal || 'Geral',
       telefone: editForm.telefone?.trim() || null,
       mesa: editForm.mesa?.trim() || null,
+      acompanhantes: Number(editForm.acompanhantes) || 0,
     };
-    const { error } = await supabase.from('convidados').update(payload).eq('id', editForm.id);
+
+    const { error } = await supabase
+      .from('convidados')
+      .update(payload)
+      .eq('id', editForm.id);
+
     if (error) {
       console.error('Erro ao editar convidado:', error);
       setErro('Erro ao editar: ' + error.message);
       return;
     }
+
     setModalEditar(false);
     setEditForm({});
-    buscar();
+    setEditGrupoOutro('');
+    buscarConvidados();
   };
 
   const excluir = async (id) => {
     if (readOnly || !confirm('Excluir convidado?')) return;
     const { error } = await supabase.from('convidados').delete().eq('id', id);
     if (error) console.error('Erro ao excluir:', error);
-    buscar();
+    buscarConvidados();
   };
 
   const exportarCSV = () => {
-    const headers = ['Nome', 'Grupo', 'Telefone', 'Confirmado', 'Mesa'];
+    const headers = ['Nome', 'Grupo', 'Telefone', 'Confirmado', 'Acompanhantes', 'Mesa'];
     const rows = convidados.map(c => [
       c.nome,
       c.grupo || '',
       c.telefone || '',
       c.confirmado,
+      c.acompanhantes || 0,
       c.mesa || ''
     ]);
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -123,18 +281,32 @@ function ConvidadosContent({ readOnly }) {
     URL.revokeObjectURL(url);
   };
 
-  const resumo = {
-    total: convidados.length,
-    confirmados: convidados.filter(c => c.confirmado === 'confirmado').length,
-    pendentes: convidados.filter(c => c.confirmado === 'pendente').length,
-    recusados: convidados.filter(c => c.confirmado === 'recusado').length,
+  const abrirEditar = (c) => {
+    setEditForm({ ...c });
+    const grupoExiste = [...GRUPOS_PADRAO, ...grupos.map(g => g.nome)].includes(c.grupo);
+    if (c.grupo && !grupoExiste && c.grupo !== 'Geral') {
+      setEditForm(prev => ({ ...prev, grupo: 'Outro' }));
+      setEditGrupoOutro(c.grupo);
+    } else {
+      setEditGrupoOutro('');
+    }
+    setModalEditar(true);
   };
 
-  const filtrados = filtro === 'todos'
-    ? convidados
-    : convidados.filter(c => c.confirmado === filtro);
+  // Filtragem
+  const filtrados = convidados.filter((c) => {
+    const matchBusca = !busca || c.nome.toLowerCase().includes(busca.toLowerCase());
+    const matchStatus = filtroStatus === 'todos' || c.confirmado === filtroStatus;
+    const matchGrupo = filtroGrupo === 'todos' || c.grupo === filtroGrupo;
+    return matchBusca && matchStatus && matchGrupo;
+  });
 
   const nomeCasal = evento?.nome_evento || '';
+
+  const todosGrupos = Array.from(new Set([
+    ...GRUPOS_PADRAO,
+    ...grupos.map(g => g.nome),
+  ]));
 
   return (
     <>
@@ -157,52 +329,63 @@ function ConvidadosContent({ readOnly }) {
 
           <h1 style={styles.title}>Convidados</h1>
 
-          <div style={styles.resumo}>
-            <div style={styles.resumoCard}>
-              <span style={styles.resumoValue}>{resumo.total}</span>
-              <span style={styles.resumoLabel}>Total</span>
-            </div>
-            <div style={styles.resumoCard}>
-              <span style={{ ...styles.resumoValue, color: '#2E7D32' }}>{resumo.confirmados}</span>
-              <span style={styles.resumoLabel}>Confirmados</span>
-            </div>
-            <div style={styles.resumoCard}>
-              <span style={{ ...styles.resumoValue, color: '#F9A825' }}>{resumo.pendentes}</span>
-              <span style={styles.resumoLabel}>Pendentes</span>
-            </div>
-            <div style={styles.resumoCard}>
-              <span style={{ ...styles.resumoValue, color: '#C62828' }}>{resumo.recusados}</span>
-              <span style={styles.resumoLabel}>Recusados</span>
-            </div>
-          </div>
+          <ConvidadoFiltros
+            busca={busca}
+            setBusca={setBusca}
+            filtroStatus={filtroStatus}
+            setFiltroStatus={setFiltroStatus}
+            filtroGrupo={filtroGrupo}
+            setFiltroGrupo={setFiltroGrupo}
+            grupos={grupos}
+            total={resumo.total}
+            confirmados={resumo.confirmados}
+            pendentes={resumo.pendentes}
+            recusados={resumo.recusados}
+            pessoasConfirmadas={resumo.pessoasConfirmadas}
+          />
 
           {!readOnly && (
             <div style={styles.addBox}>
               <div style={styles.addRow}>
                 <input
-                  style={styles.input}
+                  style={{ ...styles.input, flex: 2 }}
                   placeholder="Nome do convidado"
                   value={novoNome}
                   onChange={(e) => setNovoNome(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && adicionar()}
                 />
-                <input
-                  style={{ ...styles.input, flex: '0 0 140px' }}
-                  placeholder="Grupo (ex: Familia noiva)"
+                <select
+                  style={{ ...styles.input, flex: '0 0 150px', cursor: 'pointer' }}
                   value={novoGrupo}
                   onChange={(e) => setNovoGrupo(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && adicionar()}
-                />
+                >
+                  <option value="">Grupo...</option>
+                  {todosGrupos.map(g => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                  <option value="Outro">Outro...</option>
+                </select>
+                {novoGrupo === 'Outro' && (
+                  <input
+                    style={{ ...styles.input, flex: '0 0 140px' }}
+                    placeholder="Qual grupo?"
+                    value={novoGrupoOutro}
+                    onChange={(e) => setNovoGrupoOutro(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && adicionar()}
+                  />
+                )}
                 <input
-                  style={{ ...styles.input, flex: '0 0 120px' }}
+                  style={{ ...styles.input, flex: '0 0 130px' }}
                   placeholder="Telefone"
                   value={novoTelefone}
-                  onChange={(e) => setNovoTelefone(e.target.value)}
+                  onChange={(e) => setNovoTelefone(formatarTelefone(e.target.value))}
                   onKeyDown={(e) => e.key === 'Enter' && adicionar()}
                 />
                 <input
-                  style={{ ...styles.input, flex: '0 0 100px' }}
-                  placeholder="Mesa"
+                  style={{ ...styles.input, flex: '0 0 90px' }}
+                  placeholder="Acomp."
+                  type="number"
+                  min="0"
                   value={novoAcompanhantes}
                   onChange={(e) => setNovoAcompanhantes(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && adicionar()}
@@ -215,75 +398,42 @@ function ConvidadosContent({ readOnly }) {
           )}
 
           <button onClick={exportarCSV} style={styles.btnSecondary}>
-            <Icon name="download" size={16} /> CSV
+            <Icon name="download" size={16} /> Exportar CSV
           </button>
 
-          <div style={styles.filtros}>
-            {['todos', 'confirmado', 'pendente', 'recusado'].map((f) => (
-              <button
-                key={f}
-                onClick={() => setFiltro(f)}
-                style={{
-                  ...styles.filtroBtn,
-                  background: filtro === f ? 'var(--color-brand)' : 'var(--color-off-white)',
-                  color: filtro === f ? '#fff' : 'var(--color-text-primary)',
-                }}
-              >
-                {f === 'todos' ? 'Todos' : f.charAt(0).toUpperCase() + f.slice(1)}
-              </button>
-            ))}
-          </div>
-
           <div style={styles.list}>
-            {filtrados.length === 0 && (
+            {carregando ? (
               <div style={styles.emptyState}>
-                <span style={styles.emptyText}>Nenhum convidado cadastrado</span>
+                <span style={styles.emptyText}>Carregando...</span>
               </div>
+            ) : filtrados.length === 0 ? (
+              <div style={styles.emptyState}>
+                <span style={styles.emptyText}>
+                  {convidados.length === 0 ? 'Nenhum convidado cadastrado' : 'Nenhum resultado para os filtros'}
+                </span>
+              </div>
+            ) : (
+              filtrados.map((c) => (
+                <ConvidadoItem
+                  key={c.id}
+                  convidado={c}
+                  grupos={grupos}
+                  readOnly={readOnly}
+                  onStatusChange={atualizarStatus}
+                  onEdit={abrirEditar}
+                  onExcluir={excluir}
+                />
+              ))
             )}
-            {filtrados.map((c) => (
-              <div key={c.id} style={styles.item}>
-                <div style={styles.itemInfo}>
-                  <span style={styles.itemNome}>{c.nome}</span>
-                  <span style={styles.itemMeta}>
-                    {c.grupo && <span style={styles.itemGrupo}>{c.grupo}</span>}
-                    {c.telefone && <span style={styles.itemTelefone}> · {c.telefone}</span>}
-                    {c.mesa && <span style={styles.itemMesa}> · Mesa {c.mesa}</span>}
-                  </span>
-                </div>
-                <div style={styles.itemAcoes}>
-                  <select
-                    value={c.confirmado}
-                    onChange={(e) => atualizarStatus(c.id, e.target.value)}
-                    style={styles.select}
-                  >
-                    <option value="pendente">Pendente</option>
-                    <option value="confirmado">Confirmado</option>
-                    <option value="recusado">Recusado</option>
-                  </select>
-                  {!readOnly && (
-                    <>
-                      <button
-                        onClick={() => { setEditForm(c); setModalEditar(true); }}
-                        style={styles.btnIcon}
-                        title="Editar"
-                      >
-                        <Icon name="edit" size={14} />
-                      </button>
-                      <button
-                        onClick={() => excluir(c.id)}
-                        style={styles.btnIcon}
-                        title="Excluir"
-                      >
-                        <Icon name="trash" size={14} />
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
           </div>
         </main>
       </div>
+
+      <ToastStatus
+        toast={toast}
+        onUndo={desfazerStatus}
+        onClose={() => setToast(null)}
+      />
 
       {modalEditar && !readOnly && (
         <div style={styles.modalOverlay} onClick={() => setModalEditar(false)}>
@@ -306,19 +456,45 @@ function ConvidadosContent({ readOnly }) {
 
             <div style={styles.formGroup}>
               <label style={styles.label}>Grupo</label>
-              <input
-                style={styles.input}
+              <select
+                style={styles.select}
                 value={editForm.grupo || ''}
                 onChange={(e) => setEditForm({ ...editForm, grupo: e.target.value })}
-              />
+              >
+                <option value="">Selecione...</option>
+                {todosGrupos.map(g => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+                <option value="Outro">Outro...</option>
+              </select>
+              {editForm.grupo === 'Outro' && (
+                <input
+                  style={{ ...styles.input, marginTop: '8px' }}
+                  placeholder="Qual grupo?"
+                  value={editGrupoOutro}
+                  onChange={(e) => setEditGrupoOutro(e.target.value)}
+                />
+              )}
             </div>
 
             <div style={styles.formGroup}>
               <label style={styles.label}>Telefone</label>
               <input
                 style={styles.input}
+                placeholder="(00) 00000-0000"
                 value={editForm.telefone || ''}
-                onChange={(e) => setEditForm({ ...editForm, telefone: e.target.value })}
+                onChange={(e) => setEditForm({ ...editForm, telefone: formatarTelefone(e.target.value) })}
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Acompanhantes</label>
+              <input
+                style={styles.input}
+                type="number"
+                min="0"
+                value={editForm.acompanhantes || 0}
+                onChange={(e) => setEditForm({ ...editForm, acompanhantes: e.target.value })}
               />
             </div>
 
@@ -326,6 +502,7 @@ function ConvidadosContent({ readOnly }) {
               <label style={styles.label}>Mesa</label>
               <input
                 style={styles.input}
+                placeholder="Numero ou nome da mesa"
                 value={editForm.mesa || ''}
                 onChange={(e) => setEditForm({ ...editForm, mesa: e.target.value })}
               />
@@ -346,30 +523,15 @@ const styles = {
   page: { minHeight: '100vh', background: 'var(--color-off-white)', paddingTop: '52px' },
   main: { maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px' },
   title: { fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--color-text-primary)', marginBottom: '20px' },
-  resumo: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '20px' },
-  resumoCard: { background: 'var(--color-white)', borderRadius: '10px', padding: '12px', border: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' },
-  resumoValue: { fontSize: '22px', fontWeight: 700, color: 'var(--color-text-primary)' },
-  resumoLabel: { fontSize: '11px', color: 'var(--color-text-secondary)', textTransform: 'uppercase' },
   addBox: { marginBottom: '16px' },
   addRow: { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' },
-  input: { flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '14px', fontFamily: 'var(--font-body)', background: 'var(--color-white)', color: 'var(--color-text-primary)', minWidth: '120px', outline: 'none' },
+  input: { flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '14px', fontFamily: 'var(--font-body)', background: 'var(--color-white)', color: 'var(--color-text-primary)', minWidth: '100px', outline: 'none', boxSizing: 'border-box' },
+  select: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '14px', fontFamily: 'var(--font-body)', background: 'var(--color-white)', color: 'var(--color-text-primary)', outline: 'none', boxSizing: 'border-box' },
   btnPrimary: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: 'var(--color-brand)', color: '#fff', border: 'none', padding: '10px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, minWidth: '44px', height: '42px' },
   btnSecondary: { display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--color-off-white)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)', padding: '10px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', marginBottom: '16px' },
-  btnIcon: { background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'var(--color-text-secondary)' },
-  filtros: { display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' },
-  filtroBtn: { padding: '6px 14px', borderRadius: '20px', border: '1px solid var(--color-border)', cursor: 'pointer', fontSize: '13px', fontWeight: 500 },
   list: { background: 'var(--color-white)', borderRadius: '12px', border: '1px solid var(--color-border)', overflow: 'hidden' },
   emptyState: { padding: '40px 16px', textAlign: 'center' },
   emptyText: { fontSize: '14px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' },
-  item: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--color-border)' },
-  itemInfo: { display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 },
-  itemNome: { fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)' },
-  itemMeta: { display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' },
-  itemGrupo: { fontSize: '12px', color: 'var(--color-text-secondary)' },
-  itemTelefone: { fontSize: '12px', color: 'var(--color-text-secondary)' },
-  itemMesa: { fontSize: '12px', color: 'var(--color-brand)', fontWeight: 500 },
-  itemAcoes: { display: 'flex', alignItems: 'center', gap: '8px' },
-  select: { padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--color-border)', fontSize: '13px', background: 'var(--color-white)', color: 'var(--color-text-primary)', outline: 'none' },
   readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },
   readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
   erroBanner: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#FDE8E8', border: '1px solid #C62828', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', cursor: 'pointer' },

@@ -1,78 +1,219 @@
-// Item de convidado — card com status de confirmacao, mesa e contato
-// Dependencias diretas: React, PropTypes, Card, Badge
+import { useState } from 'react';
 
-import React from 'react';
-import PropTypes from 'prop-types';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-
-const STATUS_VARIANTS = {
-  confirmado: 'success',
-  pendente: 'warning',
-  recusado: 'danger',
+const STATUS_CONFIG = {
+  pendente: { label: 'Pendente', cor: '#F9A825', bg: '#FFF8E1' },
+  confirmado: { label: 'Confirmado', cor: '#2E7D32', bg: '#E8F5E9' },
+  recusado: { label: 'Recusado', cor: '#C62828', bg: '#FFEBEE' },
 };
 
-export default function ConvidadoItem({ convidado, onToggleStatus, onClick }) {
-  const { nome, email, telefone, confirmado, mesa, acompanhantes } = convidado;
+export default function ConvidadoItem({ convidado, grupos, readOnly, onStatusChange, onEdit, onExcluir }) {
+  const [menuAberto, setMenuAberto] = useState(false);
+  const [animarBadge, setAnimarBadge] = useState(false);
+
+  const cfg = STATUS_CONFIG[convidado.confirmado] || STATUS_CONFIG.pendente;
+
+  const handleStatusChange = (novo) => {
+    setAnimarBadge(true);
+    onStatusChange(convidado.id, novo);
+    setMenuAberto(false);
+    setTimeout(() => setAnimarBadge(false), 400);
+  };
+
+  const grupoLabel = grupos.find(g => g.nome === convidado.grupo)?.nome || convidado.grupo || 'Geral';
 
   return (
-    <Card variant="default" padding="md" interactive={!!onClick} onClick={onClick}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <div style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>{nome}</div>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-            {email && <span>{email}</span>}
-            {telefone && <span>{email ? ' · ' : ''}{telefone}</span>}
-          </div>
-          {(mesa || (acompanhantes && acompanhantes > 0)) && (
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)' }}>
-              {mesa && `Mesa ${mesa}`}
-              {acompanhantes > 0 && `${mesa ? ' · ' : ''}+${acompanhantes} acompanhante${acompanhantes > 1 ? 's' : ''}`}
-            </div>
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: '12px 16px',
+      borderBottom: '1px solid var(--color-border)',
+      background: 'var(--color-white)',
+      transition: 'background 150ms ease',
+    }}
+    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-off-white)'; }}
+    onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-white)'; }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
+        <span style={{
+          fontSize: '14px',
+          fontWeight: 500,
+          color: 'var(--color-text-primary)',
+          fontFamily: 'var(--font-body)',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}>
+          {convidado.nome}
+        </span>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+          {grupoLabel && (
+            <span style={{
+              fontSize: '11px',
+              color: 'var(--color-text-secondary)',
+              fontFamily: 'var(--font-body)',
+              background: 'var(--color-off-white)',
+              padding: '2px 8px',
+              borderRadius: '10px',
+            }}>
+              {grupoLabel}
+            </span>
           )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-          <Badge variant={STATUS_VARIANTS[confirmado] || 'default'} size="sm" pill>{confirmado}</Badge>
-          {onToggleStatus && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onToggleStatus(convidado.id); }}
-              aria-label={`Alterar status de ${nome}`}
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: 'var(--radius-md)',
-                border: '1.5px solid var(--color-border)',
-                background: 'var(--color-white)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--color-text-muted)',
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M23 4v6h-6M1 20v-6h6M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
-              </svg>
-            </button>
+          {convidado.telefone && (
+            <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}>
+              {convidado.telefone}
+            </span>
+          )}
+          {convidado.acompanhantes > 0 && (
+            <span style={{
+              fontSize: '11px',
+              color: 'var(--color-brand)',
+              fontFamily: 'var(--font-body)',
+              fontWeight: 500,
+            }}>
+              +{convidado.acompanhantes} acomp.
+            </span>
+          )}
+          {convidado.mesa && (
+            <span style={{
+              fontSize: '11px',
+              color: 'var(--color-brand)',
+              fontWeight: 500,
+              fontFamily: 'var(--font-body)',
+            }}>
+              Mesa {convidado.mesa}
+            </span>
           )}
         </div>
       </div>
-    </Card>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        {/* Badge de status com menu */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => !readOnly && setMenuAberto(!menuAberto)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: '20px',
+              border: 'none',
+              background: cfg.bg,
+              color: cfg.cor,
+              fontSize: '12px',
+              fontWeight: 600,
+              fontFamily: 'var(--font-body)',
+              cursor: readOnly ? 'default' : 'pointer',
+              animation: animarBadge ? 'badgePop 0.4s ease' : 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {cfg.label}
+            {!readOnly && (
+              <span style={{ fontSize: '10px', marginLeft: '2px' }}>v</span>
+            )}
+          </button>
+
+          {menuAberto && !readOnly && (
+            <>
+              <div
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  zIndex: 50,
+                }}
+                onClick={() => setMenuAberto(false)}
+              />
+              <div style={{
+                position: 'absolute',
+                top: 'calc(100% + 4px)',
+                right: 0,
+                background: 'var(--color-white)',
+                borderRadius: '10px',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                border: '1px solid var(--color-border)',
+                padding: '6px',
+                zIndex: 60,
+                minWidth: '140px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '2px',
+              }}>
+                {Object.entries(STATUS_CONFIG).map(([key, val]) => (
+                  <button
+                    key={key}
+                    onClick={() => handleStatusChange(key)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: convidado.confirmado === key ? val.bg : 'transparent',
+                      color: val.cor,
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      fontFamily: 'var(--font-body)',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {val.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {!readOnly && (
+          <>
+            <button
+              onClick={() => onEdit(convidado)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '6px',
+                color: 'var(--color-text-secondary)',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 600,
+              }}
+              title="Editar"
+            >
+              Editar
+            </button>
+            <button
+              onClick={() => onExcluir(convidado.id)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '6px',
+                color: '#C62828',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 600,
+              }}
+              title="Excluir"
+            >
+              Excluir
+            </button>
+          </>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes badgePop {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.15); }
+          100% { transform: scale(1); }
+        }
+      `}</style>
+    </div>
   );
 }
-
-ConvidadoItem.propTypes = {
-  convidado: PropTypes.shape({
-    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-    nome: PropTypes.string.isRequired,
-    email: PropTypes.string,
-    telefone: PropTypes.string,
-    confirmado: PropTypes.oneOf(['confirmado', 'pendente', 'recusado']),
-    mesa: PropTypes.string,
-    acompanhantes: PropTypes.number,
-  }).isRequired,
-  onToggleStatus: PropTypes.func,
-  onClick: PropTypes.func,
-};
-
-export { ConvidadoItem };
