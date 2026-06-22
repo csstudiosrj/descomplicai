@@ -62,29 +62,6 @@ export default function GradeMesas({ mesas, mesasTipos, convidadosPorMesa, convi
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Instrucao */}
-      <div style={{
-        background: '#E8F5E9', borderRadius: 10,
-        padding: '12px 16px', border: '1px solid #10B981',
-        display: 'flex', alignItems: 'flex-start', gap: 10,
-      }}>
-        <span style={{ fontSize: 16, lineHeight: 1, color: '#10B981' }}>ℹ</span>
-        <div>
-          <p style={{
-            fontSize: 13, color: '#065F46',
-            fontFamily: 'var(--font-body)', margin: '0 0 4px', fontWeight: 600,
-          }}>
-            Como distribuir convidados
-          </p>
-          <p style={{
-            fontSize: 12, color: '#065F46',
-            fontFamily: 'var(--font-body)', margin: 0, lineHeight: 1.4,
-          }}>
-            Clique na mesa para expandir. Clique em um slot vazio para atribuir um convidado. Clique em um slot ocupado para ver detalhes ou remover.
-          </p>
-        </div>
-      </div>
-
       {/* Grade de mesas */}
       <div style={{
         display: 'grid',
