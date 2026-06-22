@@ -152,6 +152,7 @@ function MesasContent() {
     }
 
     if (wizardKey) localStorage.removeItem(wizardKey);
+
     setPasso(1); setTiposSelecionados([]); setMesasGeradas([]);
     await carregarTudo();
   };
@@ -172,17 +173,35 @@ function MesasContent() {
   const atribuirConvidado = async (convidadoId, mesaId) => {
     if (readOnly) return;
     try {
-      await supabase.from('convidados').update({ mesa_id: mesaId }).eq('id', convidadoId);
+      const { error } = await supabase
+        .from('convidados')
+        .update({ mesa_id: mesaId })
+        .eq('id', convidadoId);
+      if (error) {
+        alert('Erro ao atribuir convidado: ' + error.message);
+        return;
+      }
       await carregarTudo();
-    } catch {}
+    } catch (err) {
+      alert('Erro inesperado ao atribuir convidado.');
+    }
   };
 
   const removerConvidado = async (convidadoId) => {
     if (readOnly) return;
     try {
-      await supabase.from('convidados').update({ mesa_id: null }).eq('id', convidadoId);
+      const { error } = await supabase
+        .from('convidados')
+        .update({ mesa_id: null })
+        .eq('id', convidadoId);
+      if (error) {
+        alert('Erro ao remover convidado: ' + error.message);
+        return;
+      }
       await carregarTudo();
-    } catch {}
+    } catch (err) {
+      alert('Erro inesperado ao remover convidado.');
+    }
   };
 
   const convidadosPorMesa = {};

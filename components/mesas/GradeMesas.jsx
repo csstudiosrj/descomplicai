@@ -32,6 +32,42 @@ export default function GradeMesas({ mesas, mesasTipos, convidadosPorMesa, convi
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Instrucoes */}
+      <div style={{
+        background: '#E3F2FD',
+        borderRadius: '10px',
+        padding: '12px 16px',
+        border: '1px solid #90CAF9',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '10px',
+      }}>
+        <span style={{
+          fontSize: '18px',
+          lineHeight: 1,
+        }}>i</span>
+        <div>
+          <p style={{
+            fontSize: '13px',
+            color: '#1565C0',
+            fontFamily: 'var(--font-body)',
+            margin: '0 0 4px',
+            fontWeight: 600,
+          }}>
+            Como distribuir convidados
+          </p>
+          <p style={{
+            fontSize: '12px',
+            color: '#1565C0',
+            fontFamily: 'var(--font-body)',
+            margin: 0,
+            lineHeight: 1.4,
+          }}>
+            Clique na mesa para expandir. Clique em um slot vazio para atribuir um convidado. Clique em um slot ocupado para ver detalhes ou remover.
+          </p>
+        </div>
+      </div>
+
       {/* Convidados sem mesa */}
       {convidadosSemMesa.length > 0 && (
         <div style={{
@@ -172,6 +208,8 @@ export default function GradeMesas({ mesas, mesasTipos, convidadosPorMesa, convi
                             setModalConvidado(conv);
                           } else if (!readOnly && convidadosSemMesa.length > 0) {
                             setSlotSelecionado({ mesaId: mesa.id, slotIdx: idx });
+                          } else if (!readOnly && convidadosSemMesa.length === 0) {
+                            alert('Nao ha convidados sem mesa para atribuir.');
                           }
                         }}
                         style={{
@@ -179,7 +217,7 @@ export default function GradeMesas({ mesas, mesasTipos, convidadosPorMesa, convi
                           borderRadius: '8px',
                           border: '1px solid var(--color-border)',
                           background: conv ? '#E8F5E9' : 'var(--color-off-white)',
-                          cursor: conv || (!readOnly && convidadosSemMesa.length > 0) ? 'pointer' : 'default',
+                          cursor: conv || !readOnly ? 'pointer' : 'default',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '6px',
@@ -244,33 +282,43 @@ export default function GradeMesas({ mesas, mesasTipos, convidadosPorMesa, convi
             }}>
               Atribuir convidado a mesa {mesas.find(m => m.id === slotSelecionado.mesaId)?.numero}
             </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '300px', overflow: 'auto' }}>
-              {convidadosSemMesa.map(c => (
-                <button
-                  key={c.id}
-                  onClick={() => handleAtribuir(c.id, slotSelecionado.mesaId)}
-                  style={{
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--color-border)',
-                    background: 'var(--color-off-white)',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontFamily: 'var(--font-body)',
-                    color: 'var(--color-text-primary)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <span>{c.nome}</span>
-                  {c.acompanhantes > 0 && (
-                    <span style={{ fontSize: '11px', color: 'var(--color-brand)' }}>+{c.acompanhantes} acomp.</span>
-                  )}
-                </button>
-              ))}
-            </div>
+            {convidadosSemMesa.length === 0 ? (
+              <p style={{
+                fontSize: '14px',
+                color: 'var(--color-text-secondary)',
+                fontFamily: 'var(--font-body)',
+              }}>
+                Nao ha convidados sem mesa disponiveis.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '300px', overflow: 'auto' }}>
+                {convidadosSemMesa.map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => handleAtribuir(c.id, slotSelecionado.mesaId)}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--color-border)',
+                      background: 'var(--color-off-white)',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      fontFamily: 'var(--font-body)',
+                      color: 'var(--color-text-primary)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span>{c.nome}</span>
+                    {c.acompanhantes > 0 && (
+                      <span style={{ fontSize: '11px', color: 'var(--color-brand)' }}>+{c.acompanhantes} acomp.</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
             <button
               onClick={() => setSlotSelecionado(null)}
               style={{
