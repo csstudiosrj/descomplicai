@@ -10,6 +10,7 @@ import {
   getLabelSubcategoria,
   getLabelCategoriaPrincipal,
   getCategoriaPrincipal,
+  STATUS_FORNECEDOR,
 } from '../../utils/catalogoFornecedores';
 
 export default function FinanceiroPage({ readOnly }) {
@@ -29,6 +30,7 @@ function FinanceiroContent({ readOnly }) {
   // Filtros e visualizacao
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [filtroCategoria, setFiltroCategoria] = useState('todos');
+  const [visualizacao, setVisualizacao] = useState('lista');
   const [agrupar, setAgrupar] = useState(false);
 
   useEffect(() => {
@@ -84,10 +86,17 @@ function FinanceiroContent({ readOnly }) {
     buscar();
   };
 
-  const togglePago = async (id, pago) => {
+  const togglePago = async (e, id, pago) => {
+    e.stopPropagation();
     if (readOnly) return;
     await supabase.from('financeiro').update({ pago: !pago }).eq('id', id);
     buscar();
+  };
+
+  const abrirEditar = (p) => {
+    if (readOnly) return;
+    setForm(p);
+    setModalAberto(true);
   };
 
   const resumo = useMemo(() => {
@@ -98,11 +107,47 @@ function FinanceiroContent({ readOnly }) {
     return { totalOrcamento, comprometido, pago, saldo };
   }, [evento, itens]);
 
-  // Filtros
+  // Dados para grafico de pizza
+  const dadosPizza = useMemo(() => {
+    const map = {};
+    itens.forEach((p) => {
+      const cat = getLabelCategoriaPrincipal(p.categoria) || p.categoria || 'Outros';
+      map[cat] = (map[cat] || 0) + (Number(p.valor_estimado) || 0);
+    });
+    const total = Object.values(map).reduce((a, b) => a + b, 0) || 1;
+    return Object.entries(map)
+      .sort((a, b) => b[1] - a[1])
+      .map(([cat, val]) => ({
+        label: cat,
+        valor: val,
+        pct: (val / total) * 100,
+        color: getColorForCategory(cat),
+      }));
+  }, [itens]);
+
+  function getColorForCategory(cat) {
+    const colors = ['#8B6F5E', '#2E7D32', '#00838F', '#F9A825', '#C62828', '#7B1FA2', '#1565C0', '#E65100'];
+    const map = {};
+    let idx = 0;
+    return (c) => {
+      if (!map[c]) map[c] = colors[idx++ % colors.length];
+      return map[c];
+    };
+  }
+
+  // Filtros com status do fornecedor
   const itensFiltrados = useMemo(() => {
     let filtrados = [...itens];
     if (filtroStatus !== 'todos') {
-      filtrados = filtrados.filter(f => (filtroStatus === 'pago' ? f.pago : !f.pago));
+      filtrados = filtrados.filter((p) => {
+        if (filtroStatus === 'pago') return p.pago;
+        if (filtroStatus === 'cancelado') return p.fornecedor_excluido;
+        if (filtroStatus === 'a_contratar') return !p.sincronizado && !p.pago;
+        if (filtroStatus === 'em_negociacao' || filtroStatus === 'contratado') {
+          return p.sincronizado && !p.pago && !p.fornecedor_excluido;
+        }
+        return true;
+      });
     }
     if (filtroCategoria !== 'todos') {
       filtrados = filtrados.filter(f => f.categoria === filtroCategoria || f.categoria_principal === filtroCategoria);
@@ -115,7 +160,7 @@ function FinanceiroContent({ readOnly }) {
     if (!agrupar) return null;
     const map = {};
     itensFiltrados.forEach((item) => {
-      const catPrincipal = item.categoria_principal || getCategoriaPrincipal(item.categoria)?.label || 'Outro';
+      const catPrincipal = item.categoria_principal || getLabelCategoriaPrincipal(item.categoria) || 'Outro';
       if (!map[catPrincipal]) map[catPrincipal] = [];
       map[catPrincipal].push(item);
     });
@@ -128,13 +173,68 @@ function FinanceiroContent({ readOnly }) {
 
   const nomeCasal = evento?.nome_evento || '';
 
-  const renderItem = (p) => {
+  const renderCard = (p) => {
     const saldo = (Number(p.valor_estimado) || 0) - (Number(p.valor_real) || 0);
     const catPrincipal = getLabelCategoriaPrincipal(p.categoria) || p.categoria_principal || 'Outro';
     const subcategoria = getLabelSubcategoria(p.categoria) || p.categoria || '';
+    const statusInfo = STATUS_FORNECEDOR.find(s => {
+      if (p.pago) return s.id === 'pago';
+      if (p.fornecedor_excluido) return s.id === 'cancelado';
+      if (p.sincronizado) return s.id === 'contratado';
+      return s.id === 'a_contratar';
+    });
 
     return (
-      <div key={p.id} style={{ ...styles.listItem, opacity: p.pago ? 0.7 : 1 }}>
+      <div key={p.id} style={{ ...styles.cardItem, opacity: p.pago ? 0.7 : 1 }} onClick={() => abrirEditar(p)}>
+        <div style={styles.cardItemHeader}>
+          <span style={{ ...styles.cardItemBadge, background: statusInfo?.color || '#8B6F5E' }}>
+            {statusInfo?.label || 'Pendente'}
+          </span>
+          <div style={styles.cardItemAcoes} onClick={(e) => e.stopPropagation()}>
+            <button onClick={(e) => togglePago(e, p.id, p.pago)} style={styles.btnIcon}>
+              <Icon name={p.pago ? 'check' : 'circle'} size={14} />
+            </button>
+            {!readOnly && (
+              <>
+                <button onClick={() => { setForm(p); setModalAberto(true); }} style={styles.btnIcon}>
+                  <Icon name="edit" size={14} />
+                </button>
+                <button onClick={() => excluir(p.id)} style={styles.btnIcon}>
+                  <Icon name="trash" size={14} />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+        <div style={styles.cardItemBody}>
+          <span style={styles.cardItemName}>{p.descricao || subcategoria || 'Item'}</span>
+          <span style={styles.cardItemCategoria}>
+            {catPrincipal}{subcategoria && catPrincipal !== subcategoria ? ` → ${subcategoria}` : ''}
+          </span>
+          <span style={styles.cardItemDate}>
+            <Icon name="calendar" size={12} /> {p.data_vencimento || 'Sem data'}
+          </span>
+        </div>
+        <div style={styles.cardItemFooter}>
+          <span style={styles.cardItemValue}>R$ {saldo.toLocaleString('pt-BR')}</span>
+        </div>
+      </div>
+    );
+  };
+
+  const renderListItem = (p) => {
+    const saldo = (Number(p.valor_estimado) || 0) - (Number(p.valor_real) || 0);
+    const catPrincipal = getLabelCategoriaPrincipal(p.categoria) || p.categoria_principal || 'Outro';
+    const subcategoria = getLabelSubcategoria(p.categoria) || p.categoria || '';
+    const statusInfo = STATUS_FORNECEDOR.find(s => {
+      if (p.pago) return s.id === 'pago';
+      if (p.fornecedor_excluido) return s.id === 'cancelado';
+      if (p.sincronizado) return s.id === 'contratado';
+      return s.id === 'a_contratar';
+    });
+
+    return (
+      <div key={p.id} style={{ ...styles.listItem, opacity: p.pago ? 0.7 : 1 }} onClick={() => abrirEditar(p)}>
         <div style={styles.listInfo}>
           <span style={styles.listName}>{p.descricao || subcategoria || 'Item'}</span>
           <span style={styles.listCategoria}>
@@ -147,9 +247,9 @@ function FinanceiroContent({ readOnly }) {
         </div>
         <div style={styles.listValores}>
           <span style={styles.listValue}>R$ {saldo.toLocaleString('pt-BR')}</span>
-          <div style={styles.listAcoes}>
+          <div style={styles.listAcoes} onClick={(e) => e.stopPropagation()}>
             <button
-              onClick={() => togglePago(p.id, p.pago)}
+              onClick={(e) => togglePago(e, p.id, p.pago)}
               style={{ ...styles.btnPago, background: p.pago ? '#2E7D32' : 'var(--color-secondary)' }}
             >
               {p.pago ? 'Pago' : 'Pagar'}
@@ -168,6 +268,17 @@ function FinanceiroContent({ readOnly }) {
         </div>
       </div>
     );
+  };
+
+  // Constroi conic-gradient para pizza
+  const getPizzaStyle = () => {
+    let grad = [];
+    let acc = 0;
+    dadosPizza.forEach((slice) => {
+      grad.push(`${slice.color} ${acc}% ${acc + slice.pct}%`);
+      acc += slice.pct;
+    });
+    return { background: `conic-gradient(${grad.join(', ')})` };
   };
 
   return (
@@ -213,8 +324,9 @@ function FinanceiroContent({ readOnly }) {
               <label style={styles.filtroLabel}>Status</label>
               <select style={styles.filtroSelect} value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
                 <option value="todos">Todos</option>
-                <option value="pendente">Pendente</option>
-                <option value="pago">Pago</option>
+                {STATUS_FORNECEDOR.map((s) => (
+                  <option key={s.id} value={s.id}>{s.label}</option>
+                ))}
               </select>
             </div>
             <div style={styles.filtroGrupo}>
@@ -227,6 +339,17 @@ function FinanceiroContent({ readOnly }) {
               </select>
             </div>
             <div style={styles.filtroGrupo}>
+              <label style={styles.filtroLabel}>Visualizacao</label>
+              <div style={styles.toggleGroup}>
+                <button onClick={() => setVisualizacao('lista')} style={{ ...styles.toggleBtn, ...(visualizacao === 'lista' ? styles.toggleAtivo : {}) }} title="Lista">
+                  <Icon name="list" size={16} />
+                </button>
+                <button onClick={() => setVisualizacao('grade')} style={{ ...styles.toggleBtn, ...(visualizacao === 'grade' ? styles.toggleAtivo : {}) }} title="Grade">
+                  <Icon name="grid" size={16} />
+                </button>
+              </div>
+            </div>
+            <div style={styles.filtroGrupo}>
               <label style={styles.filtroLabel}>
                 <input type="checkbox" checked={agrupar} onChange={(e) => setAgrupar(e.target.checked)} style={styles.checkboxFiltro} />
                 Agrupar por categoria
@@ -234,27 +357,22 @@ function FinanceiroContent({ readOnly }) {
             </div>
           </div>
 
+          {/* Grafico de pizza */}
           <section style={styles.section}>
             <h2 style={styles.sectionTitle}>Distribuicao por Categoria</h2>
-            <div style={styles.chart}>
-              {Object.entries(
-                itens.reduce((map, p) => {
-                  const cat = getLabelCategoriaPrincipal(p.categoria) || p.categoria || 'Outros';
-                  map[cat] = (map[cat] || 0) + (Number(p.valor_estimado) || 0);
-                  return map;
-                }, {})
-              ).sort((a, b) => b[1] - a[1]).map(([cat, val]) => {
-                const pct = resumo.comprometido > 0 ? (val / resumo.comprometido) * 100 : 0;
-                return (
-                  <div key={cat} style={styles.chartRow}>
-                    <span style={styles.chartLabel}>{cat}</span>
-                    <div style={styles.chartTrack}>
-                      <div style={{ ...styles.chartFill, width: `${pct}%` }} />
-                    </div>
-                    <span style={styles.chartValue}>R$ {val.toLocaleString('pt-BR')}</span>
+            <div style={styles.pizzaContainer}>
+              <div style={styles.pizzaChart}>
+                <div style={{ ...styles.pizza, ...getPizzaStyle() }} />
+              </div>
+              <div style={styles.pizzaLegend}>
+                {dadosPizza.map((slice) => (
+                  <div key={slice.label} style={styles.pizzaLegendItem}>
+                    <span style={{ ...styles.pizzaLegendDot, background: slice.color }} />
+                    <span style={styles.pizzaLegendLabel}>{slice.label}</span>
+                    <span style={styles.pizzaLegendValue}>{slice.pct.toFixed(1)}% · R$ {slice.valor.toLocaleString('pt-BR')}</span>
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
           </section>
 
@@ -265,15 +383,15 @@ function FinanceiroContent({ readOnly }) {
                 {Object.entries(grupos).map(([categoriaPrincipal, itensGrupo]) => (
                   <div key={categoriaPrincipal} style={styles.grupo}>
                     <h3 style={styles.grupoTitulo}>{categoriaPrincipal}</h3>
-                    <div style={styles.list}>
-                      {itensGrupo.map(renderItem)}
+                    <div style={visualizacao === 'grade' ? styles.gridGrade : styles.list}>
+                      {itensGrupo.map(visualizacao === 'grade' ? renderCard : renderListItem)}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div style={styles.list}>
-                {itensFiltrados.map(renderItem)}
+              <div style={visualizacao === 'grade' ? styles.gridGrade : styles.list}>
+                {itensFiltrados.map(visualizacao === 'grade' ? renderCard : renderListItem)}
               </div>
             )}
           </section>
@@ -283,7 +401,12 @@ function FinanceiroContent({ readOnly }) {
       {modalAberto && !readOnly && (
         <div style={styles.modalOverlay} onClick={() => setModalAberto(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h2 style={styles.modalTitle}>{form.id ? 'Editar' : 'Novo'} Item</h2>
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>{form.id ? 'Editar' : 'Novo'} Item</h2>
+              <button onClick={() => setModalAberto(false)} style={styles.btnFechar}>
+                <Icon name="close" size={20} />
+              </button>
+            </div>
 
             <div style={styles.formGroup}>
               <label style={styles.label}>Descricao</label>
@@ -359,14 +482,16 @@ const styles = {
   cardValue: { fontSize: '18px', fontWeight: 700, color: 'var(--color-text)' },
   section: { marginBottom: '24px' },
   sectionTitle: { fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--color-primary)', marginBottom: '12px' },
-  chart: { background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid var(--color-secondary)', display: 'flex', flexDirection: 'column', gap: '10px' },
-  chartRow: { display: 'flex', alignItems: 'center', gap: '10px' },
-  chartLabel: { width: '120px', fontSize: '12px', color: 'var(--color-text)', flexShrink: 0 },
-  chartTrack: { flex: 1, height: '8px', background: 'var(--color-secondary)', borderRadius: '4px', overflow: 'hidden' },
-  chartFill: { height: '100%', background: 'var(--color-primary)', borderRadius: '4px' },
-  chartValue: { width: '90px', fontSize: '12px', color: 'var(--color-text-soft)', textAlign: 'right', flexShrink: 0 },
+  pizzaContainer: { background: '#fff', borderRadius: '12px', padding: '24px', border: '1px solid var(--color-secondary)', display: 'flex', alignItems: 'center', gap: '32px', flexWrap: 'wrap' },
+  pizzaChart: { width: '200px', height: '200px', flexShrink: 0 },
+  pizza: { width: '100%', height: '100%', borderRadius: '50%' },
+  pizzaLegend: { display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, minWidth: '200px' },
+  pizzaLegendItem: { display: 'flex', alignItems: 'center', gap: '10px' },
+  pizzaLegendDot: { width: '12px', height: '12px', borderRadius: '3px', flexShrink: 0 },
+  pizzaLegendLabel: { fontSize: '13px', color: 'var(--color-text)', fontFamily: 'var(--font-body)', flex: 1 },
+  pizzaLegendValue: { fontSize: '12px', color: 'var(--color-text-soft)', fontFamily: 'var(--font-body)' },
   list: { background: '#fff', borderRadius: '12px', border: '1px solid var(--color-secondary)', overflow: 'hidden' },
-  listItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--color-secondary)' },
+  listItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--color-secondary)', cursor: 'pointer' },
   listInfo: { display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 },
   listName: { fontSize: '14px', fontWeight: 500, color: 'var(--color-text)' },
   listCategoria: { fontSize: '11px', color: 'var(--color-text-soft)', textTransform: 'uppercase', letterSpacing: '0.5px' },
@@ -383,8 +508,10 @@ const styles = {
   readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },
   readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
   modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '16px' },
-  modal: { background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflow: 'auto' },
-  modalTitle: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-primary)', marginBottom: '16px' },
+  modal: { background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
+  modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
+  modalTitle: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-primary)', margin: 0 },
+  btnFechar: { background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--color-text-soft)' },
   formGroup: { marginBottom: '14px' },
   label: { display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--color-text)', marginBottom: '6px', fontFamily: 'var(--font-body)' },
   input: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1.5px solid var(--color-text-soft)', fontSize: '14px', fontFamily: 'var(--font-body)', background: '#fff', color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' },
@@ -398,8 +525,22 @@ const styles = {
   filtroGrupo: { display: 'flex', flexDirection: 'column', gap: '4px' },
   filtroLabel: { fontSize: '12px', color: 'var(--color-text-soft)', fontFamily: 'var(--font-body)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' },
   filtroSelect: { padding: '8px 12px', borderRadius: '8px', border: '1px solid #C4B5A5', fontSize: '14px', fontFamily: 'var(--font-body)', background: '#fff', outline: 'none', minWidth: '140px' },
+  toggleGroup: { display: 'flex', gap: '2px', border: '1px solid #C4B5A5', borderRadius: '8px', overflow: 'hidden' },
+  toggleBtn: { padding: '8px 12px', background: '#fff', border: 'none', cursor: 'pointer', color: 'var(--color-text-soft)' },
+  toggleAtivo: { background: '#8B6F5E', color: '#fff' },
   checkboxFiltro: { width: '14px', height: '14px', cursor: 'pointer' },
   gruposContainer: { display: 'flex', flexDirection: 'column', gap: '24px' },
   grupo: {},
   grupoTitulo: { fontFamily: 'var(--font-display)', fontSize: '16px', color: 'var(--color-primary)', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid var(--color-secondary)' },
+  gridGrade: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' },
+  cardItem: { background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid var(--color-secondary)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '10px' },
+  cardItemHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  cardItemBadge: { color: '#fff', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600 },
+  cardItemAcoes: { display: 'flex', gap: '4px' },
+  cardItemBody: { display: 'flex', flexDirection: 'column', gap: '4px' },
+  cardItemName: { fontSize: '15px', fontWeight: 600, color: 'var(--color-text)' },
+  cardItemCategoria: { fontSize: '11px', color: 'var(--color-text-soft)', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  cardItemDate: { fontSize: '12px', color: 'var(--color-text-soft)', display: 'flex', alignItems: 'center', gap: '4px' },
+  cardItemFooter: { display: 'flex', justifyContent: 'flex-end', marginTop: '4px' },
+  cardItemValue: { fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)' },
 };
