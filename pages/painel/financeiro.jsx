@@ -13,6 +13,18 @@ import {
   STATUS_FORNECEDOR,
 } from '../../utils/catalogoFornecedores';
 
+const BRAND_PALETTE = [
+  '#8B6F5E', '#10B981', '#B89A8A', '#0D9668',
+  '#D4B8AC', '#6B4F41', '#34D399', '#C4956A',
+];
+
+const formatarMoeda = (v) =>
+  Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+function getCorCategoria(idx) {
+  return BRAND_PALETTE[idx % BRAND_PALETTE.length];
+}
+
 export default function FinanceiroPage({ readOnly }) {
   return (
     <ProtectedRoute>
@@ -21,32 +33,18 @@ export default function FinanceiroPage({ readOnly }) {
   );
 }
 
-const PIZZA_COLORS = ['#8B6F5E', '#2E7D32', '#00838F', '#F9A825', '#C62828', '#7B1FA2', '#1565C0', '#E65100'];
-
-function getColorForCategory(cat, colorMap) {
-  if (!colorMap[cat]) {
-    const idx = Object.keys(colorMap).length % PIZZA_COLORS.length;
-    colorMap[cat] = PIZZA_COLORS[idx];
-  }
-  return colorMap[cat];
-}
-
 function FinanceiroContent({ readOnly }) {
   const { evento, supabase } = useAuth();
   const [itens, setItens] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState({});
-
-  // Filtros e visualizacao
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [filtroCategoria, setFiltroCategoria] = useState('todos');
-  const [visualizacao, setVisualizacao] = useState('lista');
   const [agrupar, setAgrupar] = useState(false);
+  const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
-    if (evento) {
-      sincronizarTodos();
-    }
+    if (evento) sincronizarTodos();
   }, [evento]);
 
   const sincronizarTodos = async () => {
@@ -57,19 +55,23 @@ function FinanceiroContent({ readOnly }) {
         body: JSON.stringify({ evento_id: evento.id }),
       });
     } catch (err) {
-      console.error('Erro ao sincronizar lote:', err);
+      console.error('Erro ao sincronizar:', err);
     }
     buscar();
   };
 
   const buscar = async () => {
+    setCarregando(true);
+    // CORRECAO: buscar sem filtro de fornecedor_excluido no Supabase
+    // null !== false — filtrar no cliente para nao perder linhas com null
     const { data } = await supabase
       .from('financeiro')
       .select('*')
       .eq('evento_id', evento.id)
-      .eq('fornecedor_excluido', false)
       .order('data_vencimento');
-    setItens(data || []);
+    const ativos = (data || []).filter(item => item.fornecedor_excluido !== true);
+    setItens(ativos);
+    setCarregando(false);
   };
 
   const salvar = async () => {
@@ -91,7 +93,7 @@ function FinanceiroContent({ readOnly }) {
   };
 
   const excluir = async (id) => {
-    if (readOnly || !confirm('Excluir item?')) return;
+    if (readOnly || !confirm('Excluir item financeiro?')) return;
     await supabase.from('financeiro').delete().eq('id', id);
     buscar();
   };
@@ -103,75 +105,75 @@ function FinanceiroContent({ readOnly }) {
     buscar();
   };
 
-  const abrirEditar = (p) => {
-    if (readOnly) return;
-    setForm(p);
-    setModalAberto(true);
-  };
-
   const resumo = useMemo(() => {
     const totalOrcamento = Number(evento?.orcamento) || 0;
     const comprometido = itens.reduce((s, p) => s + (Number(p.valor_estimado) || 0), 0);
     const pago = itens.reduce((s, p) => s + (Number(p.valor_real) || 0), 0);
     const saldo = comprometido - pago;
-    return { totalOrcamento, comprometido, pago, saldo };
+    const pctUsado = totalOrcamento > 0
+      ? Math.min(100, Math.round((comprometido / totalOrcamento) * 100))
+      : 0;
+    return { totalOrcamento, comprometido, pago, saldo, pctUsado };
   }, [evento, itens]);
 
-  // Dados para grafico de pizza
   const dadosPizza = useMemo(() => {
     const map = {};
     itens.forEach((p) => {
-      const cat = getLabelCategoriaPrincipal(p.categoria)
-        || getLabelCategoriaPrincipalPorId(p.categoria_principal)
-        || getLabelSubcategoria(p.categoria)
-        || p.categoria
-        || 'Outros';
+      const cat =
+        getLabelCategoriaPrincipal(p.categoria) ||
+        getLabelCategoriaPrincipalPorId(p.categoria_principal) ||
+        getLabelSubcategoria(p.categoria) ||
+        p.categoria ||
+        'Outros';
       map[cat] = (map[cat] || 0) + (Number(p.valor_estimado) || 0);
     });
     const total = Object.values(map).reduce((a, b) => a + b, 0) || 1;
-    const colorMap = {};
     return Object.entries(map)
       .sort((a, b) => b[1] - a[1])
-      .map(([cat, val]) => ({
+      .map(([cat, val], idx) => ({
         label: cat,
         valor: val,
         pct: (val / total) * 100,
-        color: getColorForCategory(cat, colorMap),
+        cor: getCorCategoria(idx),
       }));
   }, [itens]);
 
-  // Filtros com status do fornecedor
+  const pizzaGradient = useMemo(() => {
+    let acc = 0;
+    const stops = dadosPizza.map((s) => {
+      const inicio = acc;
+      acc += s.pct;
+      return `${s.cor} ${inicio.toFixed(1)}% ${acc.toFixed(1)}%`;
+    });
+    return stops.length > 0
+      ? `conic-gradient(${stops.join(', ')})`
+      : `conic-gradient(#F0EDE9 0% 100%)`;
+  }, [dadosPizza]);
+
   const itensFiltrados = useMemo(() => {
-    let filtrados = [...itens];
-    if (filtroStatus !== 'todos') {
-      filtrados = filtrados.filter((p) => {
-        if (filtroStatus === 'pago') return p.pago;
-        if (filtroStatus === 'cancelado') return p.fornecedor_excluido;
-        if (filtroStatus === 'a_contratar') return !p.sincronizado && !p.pago;
-        if (filtroStatus === 'em_negociacao' || filtroStatus === 'contratado') {
-          return p.sincronizado && !p.pago && !p.fornecedor_excluido;
-        }
-        return true;
-      });
-    }
-    if (filtroCategoria !== 'todos') {
-      filtrados = filtrados.filter(f => f.categoria === filtroCategoria || f.categoria_principal === filtroCategoria);
-    }
-    return filtrados;
+    return itens.filter((p) => {
+      if (filtroStatus === 'pago' && !p.pago) return false;
+      if (filtroStatus === 'a_contratar' && (p.sincronizado || p.pago)) return false;
+      if (filtroStatus === 'contratado' && (!p.sincronizado || p.pago)) return false;
+      if (filtroStatus === 'pendente' && p.pago) return false;
+      if (filtroCategoria !== 'todos') {
+        if (p.categoria !== filtroCategoria && p.categoria_principal !== filtroCategoria) return false;
+      }
+      return true;
+    });
   }, [itens, filtroStatus, filtroCategoria]);
 
-  // Agrupamento por categoria principal
   const grupos = useMemo(() => {
     if (!agrupar) return null;
     const map = {};
     itensFiltrados.forEach((item) => {
-      const catPrincipal = getLabelCategoriaPrincipal(item.categoria)
-        || getLabelCategoriaPrincipalPorId(item.categoria_principal)
-        || getLabelSubcategoria(item.categoria)
-        || item.categoria
-        || 'Outro';
-      if (!map[catPrincipal]) map[catPrincipal] = [];
-      map[catPrincipal].push(item);
+      const cat =
+        getLabelCategoriaPrincipal(item.categoria) ||
+        getLabelCategoriaPrincipalPorId(item.categoria_principal) ||
+        item.categoria ||
+        'Outro';
+      if (!map[cat]) map[cat] = [];
+      map[cat].push(item);
     });
     return map;
   }, [itensFiltrados, agrupar]);
@@ -182,304 +184,620 @@ function FinanceiroContent({ readOnly }) {
 
   const nomeCasal = evento?.nome_evento || '';
 
-  const renderCard = (p) => {
+  const resolverStatus = (p) => {
+    if (p.pago) return { label: 'Pago', cor: '#10B981', bg: '#F0FDF9', texto: '#065F46' };
+    if (p.sincronizado) return { label: 'Contratado', cor: '#8B6F5E', bg: '#FAF8F7', texto: '#5C4A41' };
+    return { label: 'A contratar', cor: '#C4B5A5', bg: '#F9F7F4', texto: '#8B6F5E' };
+  };
+
+  const renderItem = (p) => {
+    const status = resolverStatus(p);
     const saldo = (Number(p.valor_estimado) || 0) - (Number(p.valor_real) || 0);
-    const catPrincipal = getLabelCategoriaPrincipal(p.categoria)
-      || getLabelCategoriaPrincipalPorId(p.categoria_principal)
-      || getLabelSubcategoria(p.categoria)
-      || p.categoria
-      || 'Outro';
-    const subcategoria = getLabelSubcategoria(p.categoria) || p.categoria || '';
-    const statusInfo = STATUS_FORNECEDOR.find(s => {
-      if (p.pago) return s.id === 'pago';
-      if (p.fornecedor_excluido) return s.id === 'cancelado';
-      if (p.sincronizado) return s.id === 'contratado';
-      return s.id === 'a_contratar';
-    });
+    const catLabel =
+      getLabelCategoriaPrincipal(p.categoria) ||
+      getLabelCategoriaPrincipalPorId(p.categoria_principal) ||
+      p.categoria ||
+      'Outro';
+    const vencimento = p.data_vencimento
+      ? new Date(p.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR')
+      : null;
+    const vencido = p.data_vencimento && !p.pago && new Date(p.data_vencimento) < new Date();
 
     return (
-      <div key={p.id} style={{ ...styles.cardItem, opacity: p.pago ? 0.7 : 1 }} onClick={() => abrirEditar(p)}>
-        <div style={styles.cardItemHeader}>
-          <span style={{ ...styles.cardItemBadge, background: statusInfo?.color || '#8B6F5E' }}>
-            {statusInfo?.label || 'Pendente'}
-          </span>
-          <div style={styles.cardItemAcoes} onClick={(e) => e.stopPropagation()}>
-            <button onClick={(e) => togglePago(e, p.id, p.pago)} style={styles.btnIcon}>
-              <Icon name={p.pago ? 'check' : 'circle'} size={14} />
-            </button>
-            {!readOnly && (
+      <div
+        key={p.id}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '14px 20px',
+          borderBottom: '1px solid #F0EDE9',
+          cursor: readOnly ? 'default' : 'pointer',
+          background: 'white',
+          opacity: p.pago ? 0.75 : 1,
+          transition: 'background 0.1s',
+        }}
+        onClick={() => !readOnly && (setForm(p), setModalAberto(true))}
+        onMouseEnter={e => { if (!readOnly) e.currentTarget.style.background = '#FAF8F7'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'white'; }}
+      >
+        <div style={{
+          width: 3, height: 40, borderRadius: 2,
+          background: status.cor, marginRight: 16, flexShrink: 0,
+        }} />
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 500, color: '#1A1714', marginBottom: 3 }}>
+            {p.descricao || catLabel}
+          </div>
+          <div style={{
+            fontSize: 12, color: '#A89B91',
+            display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap',
+          }}>
+            <span>{catLabel}</span>
+            {vencimento && (
               <>
-                <button onClick={() => { setForm(p); setModalAberto(true); }} style={styles.btnIcon}>
-                  <Icon name="edit" size={14} />
-                </button>
-                <button onClick={() => excluir(p.id)} style={styles.btnIcon}>
-                  <Icon name="trash" size={14} />
-                </button>
+                <span style={{ color: '#D4C8C0' }}>·</span>
+                <span style={{ color: vencido ? '#E53E3E' : '#A89B91' }}>
+                  {vencido ? 'venceu ' : 'vence '}{vencimento}
+                </span>
               </>
             )}
           </div>
         </div>
-        <div style={styles.cardItemBody}>
-          <span style={styles.cardItemName}>{p.descricao || subcategoria || 'Item'}</span>
-          <span style={styles.cardItemCategoria}>
-            {catPrincipal}{subcategoria && catPrincipal !== subcategoria ? ` -> ${subcategoria}` : ''}
-          </span>
-          <span style={styles.cardItemDate}>
-            <Icon name="calendar" size={12} /> {p.data_vencimento || 'Sem data'}
-          </span>
-        </div>
-        <div style={styles.cardItemFooter}>
-          <span style={styles.cardItemValue}>R$ {saldo.toLocaleString('pt-BR')}</span>
-        </div>
-      </div>
-    );
-  };
 
-  const renderListItem = (p) => {
-    const saldo = (Number(p.valor_estimado) || 0) - (Number(p.valor_real) || 0);
-    const catPrincipal = getLabelCategoriaPrincipal(p.categoria)
-      || getLabelCategoriaPrincipalPorId(p.categoria_principal)
-      || getLabelSubcategoria(p.categoria)
-      || p.categoria
-      || 'Outro';
-    const subcategoria = getLabelSubcategoria(p.categoria) || p.categoria || '';
-    const statusInfo = STATUS_FORNECEDOR.find(s => {
-      if (p.pago) return s.id === 'pago';
-      if (p.fornecedor_excluido) return s.id === 'cancelado';
-      if (p.sincronizado) return s.id === 'contratado';
-      return s.id === 'a_contratar';
-    });
+        <span style={{
+          fontSize: 11, fontWeight: 500,
+          padding: '4px 10px', borderRadius: 20,
+          background: status.bg, color: status.texto,
+          border: `1px solid ${status.cor}40`,
+          marginRight: 16, flexShrink: 0, whiteSpace: 'nowrap',
+        }}>
+          {status.label}
+        </span>
 
-    return (
-      <div key={p.id} style={{ ...styles.listItem, opacity: p.pago ? 0.7 : 1 }} onClick={() => abrirEditar(p)}>
-        <div style={styles.listInfo}>
-          <span style={styles.listName}>{p.descricao || subcategoria || 'Item'}</span>
-          <span style={styles.listCategoria}>
-            {catPrincipal}{subcategoria && catPrincipal !== subcategoria ? ` -> ${subcategoria}` : ''}
-          </span>
-          <span style={styles.listDate}>
-            <Icon name="calendar" size={12} /> {p.data_vencimento || 'Sem data'}
-            {p.pago && <span style={styles.tagPago}> · Pago</span>}
-          </span>
+        <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 100 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: '#8B6F5E' }}>
+            {formatarMoeda(p.valor_estimado)}
+          </div>
+          {p.pago && (
+            <div style={{ fontSize: 11, color: '#10B981', marginTop: 1 }}>
+              pago {formatarMoeda(p.valor_real)}
+            </div>
+          )}
+          {!p.pago && saldo > 0 && (
+            <div style={{ fontSize: 11, color: '#A89B91', marginTop: 1 }}>
+              saldo {formatarMoeda(saldo)}
+            </div>
+          )}
         </div>
-        <div style={styles.listValores}>
-          <span style={styles.listValue}>R$ {saldo.toLocaleString('pt-BR')}</span>
-          <div style={styles.listAcoes} onClick={(e) => e.stopPropagation()}>
+
+        <div
+          style={{ display: 'flex', gap: 4, marginLeft: 12, flexShrink: 0 }}
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            onClick={(e) => togglePago(e, p.id, p.pago)}
+            title={p.pago ? 'Desfazer pagamento' : 'Marcar como pago'}
+            style={{
+              width: 30, height: 30, borderRadius: 6, cursor: 'pointer',
+              border: p.pago ? '1px solid #10B981' : '1px solid #D4C8C0',
+              background: p.pago ? '#F0FDF9' : 'white',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: p.pago ? '#10B981' : '#C4B5A5',
+            }}
+          >
+            <Icon name="check" size={13} />
+          </button>
+          {!readOnly && (
             <button
-              onClick={(e) => togglePago(e, p.id, p.pago)}
-              style={{ ...styles.btnPago, background: p.pago ? '#2E7D32' : 'var(--color-secondary)' }}
+              onClick={() => excluir(p.id)}
+              title="Excluir"
+              style={{
+                width: 30, height: 30, borderRadius: 6, cursor: 'pointer',
+                border: '1px solid #D4C8C0', background: 'white',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#C4B5A5',
+              }}
             >
-              {p.pago ? 'Pago' : 'Pagar'}
+              <Icon name="trash" size={13} />
             </button>
-            {!readOnly && (
-              <>
-                <button onClick={() => { setForm(p); setModalAberto(true); }} style={styles.btnIcon}>
-                  <Icon name="edit" size={14} />
-                </button>
-                <button onClick={() => excluir(p.id)} style={styles.btnIcon}>
-                  <Icon name="trash" size={14} />
-                </button>
-              </>
-            )}
-          </div>
+          )}
         </div>
       </div>
     );
-  };
-
-  // Constroi conic-gradient para pizza
-  const getPizzaStyle = () => {
-    let grad = [];
-    let acc = 0;
-    dadosPizza.forEach((slice) => {
-      grad.push(`${slice.color} ${acc}% ${acc + slice.pct}%`);
-      acc += slice.pct;
-    });
-    return { background: `conic-gradient(${grad.join(', ')})` };
   };
 
   return (
     <>
-      <Head><title>Financeiro | descomplicai</title></Head>
-      <div style={styles.page}>
+      <Head><title>Financeiro | descomplicaí</title></Head>
+      <div style={{ minHeight: '100vh', background: '#F9F7F4', paddingTop: 52 }}>
         <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} />
-        <main style={styles.main}>
+        <main style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px 60px' }}>
+
           {readOnly && (
-            <div style={styles.readOnlyBanner}><span style={styles.readOnlyText}>Modo somente leitura. Assine para editar.</span></div>
+            <div style={{
+              background: '#FFF8F0', border: '1px solid #EDD9BE',
+              borderRadius: 10, padding: '12px 16px', marginBottom: 20,
+              textAlign: 'center', fontSize: 13, color: '#8B6F5E',
+            }}>
+              Modo somente leitura. Assine para editar.
+            </div>
           )}
-          <div style={styles.header}>
-            <h1 style={styles.title}>Financeiro</h1>
+
+          {/* Cabecalho */}
+          <div style={{
+            display: 'flex', justifyContent: 'space-between',
+            alignItems: 'center', marginBottom: 24,
+          }}>
+            <div>
+              <h1 style={{
+                fontFamily: 'var(--font-display, Georgia, serif)',
+                fontSize: 26, fontWeight: 400,
+                color: '#8B6F5E', margin: 0,
+              }}>
+                Financeiro
+              </h1>
+              {carregando ? null : (
+                <p style={{ fontSize: 13, color: '#A89B91', margin: '4px 0 0' }}>
+                  {itens.length} {itens.length === 1 ? 'item' : 'itens'} no orçamento
+                </p>
+              )}
+            </div>
             {!readOnly && (
-              <button onClick={() => { setForm({}); setModalAberto(true); }} style={styles.btnAdd}>
-                <Icon name="plus" size={16} color="#fff" /> Adicionar
+              <button
+                onClick={() => { setForm({}); setModalAberto(true); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: '#8B6F5E', color: 'white', border: 'none',
+                  padding: '10px 18px', borderRadius: 8, cursor: 'pointer',
+                  fontSize: 14, fontWeight: 500,
+                }}
+              >
+                <Icon name="plus" size={16} color="white" />
+                Adicionar
               </button>
             )}
           </div>
 
-          <div style={styles.cards}>
-            <div style={styles.card}>
-              <span style={styles.cardLabel}>Orcamento Total</span>
-              <span style={styles.cardValue}>R$ {resumo.totalOrcamento.toLocaleString('pt-BR')}</span>
-            </div>
-            <div style={styles.card}>
-              <span style={styles.cardLabel}>Comprometido</span>
-              <span style={styles.cardValue}>R$ {resumo.comprometido.toLocaleString('pt-BR')}</span>
-            </div>
-            <div style={styles.card}>
-              <span style={styles.cardLabel}>Pago</span>
-              <span style={styles.cardValue}>R$ {resumo.pago.toLocaleString('pt-BR')}</span>
-            </div>
-            <div style={styles.card}>
-              <span style={styles.cardLabel}>Saldo a Pagar</span>
-              <span style={styles.cardValue}>R$ {resumo.saldo.toLocaleString('pt-BR')}</span>
-            </div>
+          {/* Cards de resumo */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: 12, marginBottom: 24,
+          }}>
+            {[
+              { label: 'Orçamento total', valor: resumo.totalOrcamento, cor: '#8B6F5E' },
+              { label: 'Comprometido', valor: resumo.comprometido, cor: '#C4956A' },
+              { label: 'Pago', valor: resumo.pago, cor: '#10B981' },
+              { label: 'Saldo a pagar', valor: resumo.saldo, cor: '#6B4F41' },
+            ].map(({ label, valor, cor }) => (
+              <div key={label} style={{
+                background: 'white', borderRadius: 12,
+                border: '1px solid #F0EDE9', padding: '16px 20px',
+              }}>
+                <div style={{ fontSize: 12, color: '#A89B91', marginBottom: 6, fontWeight: 500 }}>
+                  {label}
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 600, color: cor }}>
+                  {formatarMoeda(valor)}
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* Filtros */}
-          <div style={styles.filtrosBar}>
-            <div style={styles.filtroGrupo}>
-              <label style={styles.filtroLabel}>Status</label>
-              <select style={styles.filtroSelect} value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
-                <option value="todos">Todos</option>
-                {STATUS_FORNECEDOR.map((s) => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
-                ))}
-              </select>
+          {/* Barra de comprometimento */}
+          {resumo.totalOrcamento > 0 && (
+            <div style={{
+              background: 'white', borderRadius: 12,
+              border: '1px solid #F0EDE9', padding: '16px 20px', marginBottom: 24,
+            }}>
+              <div style={{
+                display: 'flex', justifyContent: 'space-between',
+                fontSize: 13, color: '#A89B91', marginBottom: 10,
+              }}>
+                <span>Orçamento utilizado</span>
+                <span style={{ fontWeight: 600, color: resumo.pctUsado > 90 ? '#E53E3E' : '#8B6F5E' }}>
+                  {resumo.pctUsado}%
+                </span>
+              </div>
+              <div style={{
+                height: 6, background: '#F0EDE9', borderRadius: 3, overflow: 'hidden',
+              }}>
+                <div style={{
+                  height: '100%', borderRadius: 3,
+                  width: `${resumo.pctUsado}%`,
+                  background: resumo.pctUsado > 90 ? '#E53E3E' : resumo.pctUsado > 70 ? '#C4956A' : '#10B981',
+                  transition: 'width 0.5s ease',
+                }} />
+              </div>
             </div>
-            <div style={styles.filtroGrupo}>
-              <label style={styles.filtroLabel}>Categoria</label>
-              <select style={styles.filtroSelect} value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
-                <option value="todos">Todas</option>
+          )}
+
+          {/* Pizza + legenda */}
+          {dadosPizza.length > 0 && (
+            <div style={{
+              background: 'white', borderRadius: 12,
+              border: '1px solid #F0EDE9', padding: '20px 24px',
+              marginBottom: 24, display: 'flex',
+              gap: 32, alignItems: 'center', flexWrap: 'wrap',
+            }}>
+              <div style={{ position: 'relative', width: 160, height: 160, flexShrink: 0 }}>
+                <div style={{
+                  width: 160, height: 160, borderRadius: '50%',
+                  background: pizzaGradient,
+                }} />
+                {/* Buraco central */}
+                <div style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: 80, height: 80, borderRadius: '50%',
+                  background: 'white',
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <span style={{ fontSize: 10, color: '#A89B91' }}>total</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#8B6F5E' }}>
+                    {formatarMoeda(resumo.comprometido).replace('R$', '').trim()}
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minWidth: 200 }}>
+                <div style={{
+                  fontSize: 12, fontWeight: 500, color: '#A89B91',
+                  textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4,
+                }}>
+                  por categoria
+                </div>
+                {dadosPizza.map((s) => (
+                  <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      width: 10, height: 10, borderRadius: 2,
+                      background: s.cor, flexShrink: 0,
+                    }} />
+                    <span style={{ fontSize: 13, color: '#1A1714', flex: 1 }}>{s.label}</span>
+                    <span style={{ fontSize: 12, color: '#A89B91' }}>
+                      {s.pct.toFixed(0)}%
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: '#8B6F5E', minWidth: 80, textAlign: 'right' }}>
+                      {formatarMoeda(s.valor)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Filtros */}
+          <div style={{
+            background: 'white', borderRadius: 12,
+            border: '1px solid #F0EDE9', padding: '14px 20px',
+            marginBottom: 16, display: 'flex',
+            gap: 16, alignItems: 'center', flexWrap: 'wrap',
+          }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {[
+                { id: 'todos', label: 'Todos' },
+                { id: 'a_contratar', label: 'A contratar' },
+                { id: 'contratado', label: 'Contratados' },
+                { id: 'pendente', label: 'Pendentes' },
+                { id: 'pago', label: 'Pagos' },
+              ].map(({ id, label }) => (
+                <button
+                  key={id}
+                  onClick={() => setFiltroStatus(id)}
+                  style={{
+                    padding: '6px 12px', borderRadius: 20, cursor: 'pointer',
+                    fontSize: 12, fontWeight: 500, transition: 'all 0.1s',
+                    border: filtroStatus === id ? '1px solid #8B6F5E' : '1px solid #D4C8C0',
+                    background: filtroStatus === id ? '#8B6F5E' : 'white',
+                    color: filtroStatus === id ? 'white' : '#8B6F5E',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, alignItems: 'center' }}>
+              <select
+                value={filtroCategoria}
+                onChange={e => setFiltroCategoria(e.target.value)}
+                style={{
+                  padding: '6px 12px', borderRadius: 8,
+                  border: '1px solid #D4C8C0', fontSize: 12,
+                  color: '#1A1714', background: 'white', cursor: 'pointer',
+                }}
+              >
+                <option value="todos">Todas as categorias</option>
                 {CATEGORIAS_PRINCIPAIS.map((cat) => (
                   <option key={cat.id} value={cat.id}>{cat.label}</option>
                 ))}
               </select>
-            </div>
-            <div style={styles.filtroGrupo}>
-              <label style={styles.filtroLabel}>Visualizacao</label>
-              <div style={styles.toggleGroup}>
-                <button onClick={() => setVisualizacao('lista')} style={{ ...styles.toggleBtn, ...(visualizacao === 'lista' ? styles.toggleAtivo : {}) }} title="Lista">
-                  <Icon name="list" size={16} />
-                </button>
-                <button onClick={() => setVisualizacao('grade')} style={{ ...styles.toggleBtn, ...(visualizacao === 'grade' ? styles.toggleAtivo : {}) }} title="Grade">
-                  <Icon name="grid" size={16} />
-                </button>
-              </div>
-            </div>
-            <div style={styles.filtroGrupo}>
-              <label style={styles.filtroLabel}>
-                <input type="checkbox" checked={agrupar} onChange={(e) => setAgrupar(e.target.checked)} style={styles.checkboxFiltro} />
-                Agrupar por categoria
+
+              <label style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                fontSize: 12, color: '#8B6F5E', cursor: 'pointer',
+              }}>
+                <input
+                  type="checkbox"
+                  checked={agrupar}
+                  onChange={e => setAgrupar(e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                />
+                Agrupar
               </label>
             </div>
           </div>
 
-          {/* Grafico de pizza */}
-          <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Distribuicao por Categoria</h2>
-            <div style={styles.pizzaContainer}>
-              <div style={styles.pizzaChart}>
-                <div style={{ ...styles.pizza, ...getPizzaStyle() }} />
+          {/* Lista de itens */}
+          <div style={{
+            background: 'white', borderRadius: 12,
+            border: '1px solid #F0EDE9', overflow: 'hidden',
+          }}>
+            {carregando ? (
+              <div style={{
+                padding: 40, textAlign: 'center',
+                fontSize: 14, color: '#A89B91',
+              }}>
+                Carregando...
               </div>
-              <div style={styles.pizzaLegend}>
-                {dadosPizza.map((slice) => (
-                  <div key={slice.label} style={styles.pizzaLegendItem}>
-                    <span style={{ ...styles.pizzaLegendDot, background: slice.color }} />
-                    <span style={styles.pizzaLegendLabel}>{slice.label}</span>
-                    <span style={styles.pizzaLegendValue}>{slice.pct.toFixed(1)}% · R$ {slice.valor.toLocaleString('pt-BR')}</span>
+            ) : itensFiltrados.length === 0 ? (
+              <div style={{
+                padding: '40px 20px', textAlign: 'center',
+              }}>
+                <div style={{ fontSize: 14, color: '#A89B91', marginBottom: 8 }}>
+                  Nenhum item encontrado
+                </div>
+                {!readOnly && (
+                  <button
+                    onClick={() => { setForm({}); setModalAberto(true); }}
+                    style={{
+                      fontSize: 13, color: '#8B6F5E', background: 'none',
+                      border: 'none', cursor: 'pointer', textDecoration: 'underline',
+                    }}
+                  >
+                    Adicionar item
+                  </button>
+                )}
+              </div>
+            ) : agrupar && grupos ? (
+              Object.entries(grupos).map(([cat, itensGrupo]) => (
+                <div key={cat}>
+                  <div style={{
+                    padding: '10px 20px', background: '#FAF8F7',
+                    borderBottom: '1px solid #F0EDE9',
+                    fontSize: 12, fontWeight: 600, color: '#8B6F5E',
+                    textTransform: 'uppercase', letterSpacing: '0.5px',
+                  }}>
+                    {cat}
+                    <span style={{ fontWeight: 400, color: '#A89B91', marginLeft: 8 }}>
+                      {itensGrupo.length} {itensGrupo.length === 1 ? 'item' : 'itens'}
+                    </span>
                   </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Itens do Orcamento</h2>
-            {agrupar && grupos ? (
-              <div style={styles.gruposContainer}>
-                {Object.entries(grupos).map(([categoriaPrincipal, itensGrupo]) => (
-                  <div key={categoriaPrincipal} style={styles.grupo}>
-                    <h3 style={styles.grupoTitulo}>{categoriaPrincipal}</h3>
-                    <div style={visualizacao === 'grade' ? styles.gridGrade : styles.list}>
-                      {itensGrupo.map(visualizacao === 'grade' ? renderCard : renderListItem)}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  {itensGrupo.map(renderItem)}
+                </div>
+              ))
             ) : (
-              <div style={visualizacao === 'grade' ? styles.gridGrade : styles.list}>
-                {itensFiltrados.map(visualizacao === 'grade' ? renderCard : renderListItem)}
-              </div>
+              itensFiltrados.map(renderItem)
             )}
-          </section>
+          </div>
+
         </main>
       </div>
 
+      {/* Modal */}
       {modalAberto && !readOnly && (
-        <div style={styles.modalOverlay} onClick={() => setModalAberto(false)}>
-          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>{form.id ? 'Editar' : 'Novo'} Item</h2>
-              <button onClick={() => setModalAberto(false)} style={styles.btnFechar}>
-                <Icon name="close" size={20} />
+        <div
+          style={{
+            position: 'fixed', inset: 0,
+            background: 'rgba(26,23,20,0.5)',
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'center', zIndex: 300, padding: 16,
+          }}
+          onClick={() => setModalAberto(false)}
+        >
+          <div
+            style={{
+              background: 'white', borderRadius: 16,
+              padding: 24, width: '100%', maxWidth: 480,
+              maxHeight: '90vh', overflow: 'auto',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.18)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header modal */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between',
+              alignItems: 'center', marginBottom: 24,
+            }}>
+              <h2 style={{
+                fontFamily: 'var(--font-display, Georgia, serif)',
+                fontSize: 20, fontWeight: 400, color: '#8B6F5E', margin: 0,
+              }}>
+                {form.id ? 'Editar item' : 'Novo item'}
+              </h2>
+              <button
+                onClick={() => setModalAberto(false)}
+                aria-label="Fechar"
+                style={{
+                  width: 32, height: 32, borderRadius: 8,
+                  border: '1px solid #D4C8C0', background: 'white',
+                  cursor: 'pointer', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                  color: '#A89B91',
+                }}
+              >
+                <Icon name="close" size={16} />
               </button>
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Descricao</label>
-              <input style={styles.input} placeholder="Ex: Buffet, Fotografia..." value={form.descricao || ''} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
-            </div>
+            {/* Campos */}
+            {[
+              {
+                label: 'Descrição',
+                campo: 'descricao',
+                tipo: 'text',
+                placeholder: 'Ex: Fotógrafo, Buffet, Decoração...',
+              },
+            ].map(({ label, campo, tipo, placeholder }) => (
+              <div key={campo} style={{ marginBottom: 16 }}>
+                <label style={{
+                  display: 'block', fontSize: 13, fontWeight: 500,
+                  color: '#1A1714', marginBottom: 6,
+                }}>
+                  {label}
+                </label>
+                <input
+                  type={tipo}
+                  placeholder={placeholder}
+                  value={form[campo] || ''}
+                  onChange={e => setForm({ ...form, [campo]: e.target.value })}
+                  style={{
+                    width: '100%', padding: '10px 12px',
+                    borderRadius: 8, border: '1.5px solid #D4C8C0',
+                    fontSize: 14, color: '#1A1714', background: 'white',
+                    outline: 'none', boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+            ))}
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Categoria Principal</label>
-              <select style={styles.select} value={form.categoria_principal || ''} onChange={(e) => setForm({ ...form, categoria_principal: e.target.value, categoria: '' })}>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{
+                display: 'block', fontSize: 13, fontWeight: 500,
+                color: '#1A1714', marginBottom: 6,
+              }}>
+                Categoria principal
+              </label>
+              <select
+                value={form.categoria_principal || ''}
+                onChange={e => setForm({ ...form, categoria_principal: e.target.value, categoria: '' })}
+                style={{
+                  width: '100%', padding: '10px 12px',
+                  borderRadius: 8, border: '1.5px solid #D4C8C0',
+                  fontSize: 14, color: '#1A1714', background: 'white',
+                  outline: 'none', boxSizing: 'border-box',
+                }}
+              >
                 <option value="">Selecione...</option>
-                {CATEGORIAS_PRINCIPAIS.map((cat) => (
+                {CATEGORIAS_PRINCIPAIS.map(cat => (
                   <option key={cat.id} value={cat.id}>{cat.label}</option>
                 ))}
               </select>
             </div>
 
             {subcategoriasDisponiveis.length > 0 && (
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Subcategoria</label>
-                <select style={styles.select} value={form.categoria || ''} onChange={(e) => setForm({ ...form, categoria: e.target.value })}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{
+                  display: 'block', fontSize: 13, fontWeight: 500,
+                  color: '#1A1714', marginBottom: 6,
+                }}>
+                  Subcategoria
+                </label>
+                <select
+                  value={form.categoria || ''}
+                  onChange={e => setForm({ ...form, categoria: e.target.value })}
+                  style={{
+                    width: '100%', padding: '10px 12px',
+                    borderRadius: 8, border: '1.5px solid #D4C8C0',
+                    fontSize: 14, color: '#1A1714', background: 'white',
+                    outline: 'none', boxSizing: 'border-box',
+                  }}
+                >
                   <option value="">Selecione...</option>
-                  {subcategoriasDisponiveis.map((sub) => (
+                  {subcategoriasDisponiveis.map(sub => (
                     <option key={sub.id} value={sub.id}>{sub.label}</option>
                   ))}
                 </select>
               </div>
             )}
 
-            <div style={styles.row}>
-              <div style={styles.col}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Valor Estimado</label>
-                  <input style={styles.input} placeholder="0" type="number" value={form.valor_estimado || ''} onChange={(e) => setForm({ ...form, valor_estimado: Number(e.target.value) })} />
+            <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+              {[
+                { label: 'Valor estimado (R$)', campo: 'valor_estimado', placeholder: '0,00' },
+                { label: 'Valor pago (R$)', campo: 'valor_real', placeholder: '0,00' },
+              ].map(({ label, campo, placeholder }) => (
+                <div key={campo} style={{ flex: 1 }}>
+                  <label style={{
+                    display: 'block', fontSize: 13, fontWeight: 500,
+                    color: '#1A1714', marginBottom: 6,
+                  }}>
+                    {label}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder={placeholder}
+                    value={form[campo] || ''}
+                    onChange={e => setForm({ ...form, [campo]: e.target.value })}
+                    style={{
+                      width: '100%', padding: '10px 12px',
+                      borderRadius: 8, border: '1.5px solid #D4C8C0',
+                      fontSize: 14, color: '#1A1714', background: 'white',
+                      outline: 'none', boxSizing: 'border-box',
+                    }}
+                  />
                 </div>
-              </div>
-              <div style={styles.col}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Valor Real (pago)</label>
-                  <input style={styles.input} placeholder="0" type="number" value={form.valor_real || ''} onChange={(e) => setForm({ ...form, valor_real: Number(e.target.value) })} />
-                </div>
-              </div>
+              ))}
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Data de Vencimento</label>
-              <input style={styles.input} type="date" value={form.data_vencimento || ''} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value })} />
+            <div style={{ marginBottom: 16 }}>
+              <label style={{
+                display: 'block', fontSize: 13, fontWeight: 500,
+                color: '#1A1714', marginBottom: 6,
+              }}>
+                Data de vencimento
+              </label>
+              <input
+                type="date"
+                value={form.data_vencimento || ''}
+                onChange={e => setForm({ ...form, data_vencimento: e.target.value })}
+                style={{
+                  width: '100%', padding: '10px 12px',
+                  borderRadius: 8, border: '1.5px solid #D4C8C0',
+                  fontSize: 14, color: '#1A1714', background: 'white',
+                  outline: 'none', boxSizing: 'border-box',
+                }}
+              />
             </div>
 
-            <label style={styles.checkboxLabel}>
-              <input type="checkbox" checked={form.pago || false} onChange={(e) => setForm({ ...form, pago: e.target.checked })} style={styles.checkbox} />
-              Ja foi pago
+            <label style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              fontSize: 13, color: '#1A1714', cursor: 'pointer', marginBottom: 24,
+            }}>
+              <input
+                type="checkbox"
+                checked={form.pago || false}
+                onChange={e => setForm({ ...form, pago: e.target.checked })}
+                style={{ width: 16, height: 16, cursor: 'pointer' }}
+              />
+              Já foi pago
             </label>
 
-            <div style={styles.modalBotoes}>
-              <button onClick={() => setModalAberto(false)} style={styles.btnCancel}>Cancelar</button>
-              <button onClick={salvar} style={styles.btnSave}>Salvar</button>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setModalAberto(false)}
+                style={{
+                  padding: '10px 20px', borderRadius: 8,
+                  border: '1px solid #D4C8C0', background: 'white',
+                  color: '#8B6F5E', fontSize: 14, cursor: 'pointer',
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={salvar}
+                style={{
+                  padding: '10px 20px', borderRadius: 8,
+                  border: 'none', background: '#8B6F5E',
+                  color: 'white', fontSize: 14, fontWeight: 500,
+                  cursor: 'pointer',
+                }}
+              >
+                Salvar
+              </button>
             </div>
           </div>
         </div>
@@ -487,77 +805,3 @@ function FinanceiroContent({ readOnly }) {
     </>
   );
 }
-
-const styles = {
-  page: { minHeight: '100vh', background: 'var(--color-fundo)', paddingTop: '52px' },
-  main: { maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
-  title: { fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--color-primary)' },
-  cards: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' },
-  card: { background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid var(--color-secondary)', display: 'flex', flexDirection: 'column', gap: '4px' },
-  cardLabel: { fontSize: '12px', color: 'var(--color-text-soft)', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  cardValue: { fontSize: '18px', fontWeight: 700, color: 'var(--color-text)' },
-  section: { marginBottom: '24px' },
-  sectionTitle: { fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--color-primary)', marginBottom: '12px' },
-  pizzaContainer: { background: '#fff', borderRadius: '12px', padding: '24px', border: '1px solid var(--color-secondary)', display: 'flex', alignItems: 'center', gap: '32px', flexWrap: 'wrap' },
-  pizzaChart: { width: '200px', height: '200px', flexShrink: 0 },
-  pizza: { width: '100%', height: '100%', borderRadius: '50%' },
-  pizzaLegend: { display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, minWidth: '200px' },
-  pizzaLegendItem: { display: 'flex', alignItems: 'center', gap: '10px' },
-  pizzaLegendDot: { width: '12px', height: '12px', borderRadius: '3px', flexShrink: 0 },
-  pizzaLegendLabel: { fontSize: '13px', color: 'var(--color-text)', fontFamily: 'var(--font-body)', flex: 1 },
-  pizzaLegendValue: { fontSize: '12px', color: 'var(--color-text-soft)', fontFamily: 'var(--font-body)' },
-  list: { background: '#fff', borderRadius: '12px', border: '1px solid var(--color-secondary)', overflow: 'hidden' },
-  listItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--color-secondary)', cursor: 'pointer' },
-  listInfo: { display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 },
-  listName: { fontSize: '14px', fontWeight: 500, color: 'var(--color-text)' },
-  listCategoria: { fontSize: '11px', color: 'var(--color-text-soft)', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  listDate: { fontSize: '12px', color: 'var(--color-text-soft)', display: 'flex', alignItems: 'center', gap: '4px' },
-  tagPago: { fontSize: '11px', color: '#2E7D32', fontWeight: 600 },
-  listValores: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' },
-  listValue: { fontSize: '14px', fontWeight: 600, color: 'var(--color-primary)' },
-  listAcoes: { display: 'flex', gap: '6px', alignItems: 'center' },
-  btnPago: { padding: '4px 10px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: '#fff' },
-  btnAdd: { display: 'flex', alignItems: 'center', gap: '6px', background: '#8B6F5E', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' },
-  btnCancel: { background: 'var(--color-secondary)', color: 'var(--color-text)', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
-  btnSave: { display: 'flex', alignItems: 'center', gap: '6px', background: '#8B6F5E', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 },
-  btnIcon: { background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'var(--color-text-soft)' },
-  readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },
-  readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
-  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '16px' },
-  modal: { background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
-  modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
-  modalTitle: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-primary)', margin: 0 },
-  btnFechar: { background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--color-text-soft)' },
-  formGroup: { marginBottom: '14px' },
-  label: { display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--color-text)', marginBottom: '6px', fontFamily: 'var(--font-body)' },
-  input: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1.5px solid var(--color-text-soft)', fontSize: '14px', fontFamily: 'var(--font-body)', background: '#fff', color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' },
-  select: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1.5px solid var(--color-text-soft)', fontSize: '14px', fontFamily: 'var(--font-body)', color: 'var(--color-text)', background: '#fff', outline: 'none', boxSizing: 'border-box' },
-  row: { display: 'flex', gap: '12px', flexWrap: 'wrap' },
-  col: { flex: 1, minWidth: '180px' },
-  modalBotoes: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' },
-  checkboxLabel: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--color-text)', marginBottom: '10px', cursor: 'pointer' },
-  checkbox: { width: '16px', height: '16px', cursor: 'pointer' },
-  filtrosBar: { display: 'flex', gap: '16px', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap', padding: '12px 16px', background: '#fff', borderRadius: '12px', border: '1px solid var(--color-secondary)' },
-  filtroGrupo: { display: 'flex', flexDirection: 'column', gap: '4px' },
-  filtroLabel: { fontSize: '12px', color: 'var(--color-text-soft)', fontFamily: 'var(--font-body)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' },
-  filtroSelect: { padding: '8px 12px', borderRadius: '8px', border: '1px solid #C4B5A5', fontSize: '14px', fontFamily: 'var(--font-body)', background: '#fff', outline: 'none', minWidth: '140px' },
-  toggleGroup: { display: 'flex', gap: '2px', border: '1px solid #C4B5A5', borderRadius: '8px', overflow: 'hidden' },
-  toggleBtn: { padding: '8px 12px', background: '#fff', border: 'none', cursor: 'pointer', color: 'var(--color-text-soft)' },
-  toggleAtivo: { background: '#8B6F5E', color: '#fff' },
-  checkboxFiltro: { width: '14px', height: '14px', cursor: 'pointer' },
-  gruposContainer: { display: 'flex', flexDirection: 'column', gap: '24px' },
-  grupo: {},
-  grupoTitulo: { fontFamily: 'var(--font-display)', fontSize: '16px', color: 'var(--color-primary)', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid var(--color-secondary)' },
-  gridGrade: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' },
-  cardItem: { background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid var(--color-secondary)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '10px' },
-  cardItemHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  cardItemBadge: { color: '#fff', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600 },
-  cardItemAcoes: { display: 'flex', gap: '4px' },
-  cardItemBody: { display: 'flex', flexDirection: 'column', gap: '4px' },
-  cardItemName: { fontSize: '15px', fontWeight: 600, color: 'var(--color-text)' },
-  cardItemCategoria: { fontSize: '11px', color: 'var(--color-text-soft)', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  cardItemDate: { fontSize: '12px', color: 'var(--color-text-soft)', display: 'flex', alignItems: 'center', gap: '4px' },
-  cardItemFooter: { display: 'flex', justifyContent: 'flex-end', marginTop: '4px' },
-  cardItemValue: { fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)' },
-};
