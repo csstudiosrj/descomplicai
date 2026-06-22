@@ -15,11 +15,10 @@ const CATALOGO_MESAS = [
 function getIconeDimensoes(formato) {
   if (formato === 'redonda') return { width: 48, height: 48, borderRadius: '50%' };
   if (formato === 'quadrada') return { width: 48, height: 48, borderRadius: '8px' };
-  // retangular: proporcao 1.6:1, nunca quadrado
   return { width: 64, height: 40, borderRadius: '6px' };
 }
 
-export default function WizardPasso2({ totalConvidados, tiposSelecionados, setTiposSelecionados, onAvancar, onVoltar }) {
+export default function WizardPasso2({ totalConvidados, tiposSelecionados, onChange, onAvancar, onVoltar }) {
   const [quantidades, setQuantidades] = useState({});
 
   useEffect(() => {
@@ -36,6 +35,13 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, setTi
       } else {
         novo[catalogoId] = 1;
       }
+      const selecionados = Object.entries(novo)
+        .filter(([, qtd]) => qtd > 0)
+        .map(([id, qtd]) => {
+          const tipo = CATALOGO_MESAS.find(t => t.id === id);
+          return { catalogoId: id, nome: tipo.nome, formato: tipo.formato, capacidade: tipo.capacidade, quantidade: qtd };
+        });
+      onChange(selecionados);
       return novo;
     });
   };
@@ -49,6 +55,13 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, setTi
       } else {
         novo[catalogoId] = num;
       }
+      const selecionados = Object.entries(novo)
+        .filter(([, qtd]) => qtd > 0)
+        .map(([id, qtd]) => {
+          const tipo = CATALOGO_MESAS.find(t => t.id === id);
+          return { catalogoId: id, nome: tipo.nome, formato: tipo.formato, capacidade: tipo.capacidade, quantidade: qtd };
+        });
+      onChange(selecionados);
       return novo;
     });
   };
@@ -70,7 +83,7 @@ export default function WizardPasso2({ totalConvidados, tiposSelecionados, setTi
         const tipo = CATALOGO_MESAS.find(t => t.id === id);
         return { catalogoId: id, nome: tipo.nome, formato: tipo.formato, capacidade: tipo.capacidade, quantidade: qtd };
       });
-    setTiposSelecionados(selecionados);
+    onChange(selecionados);
     onAvancar();
   };
 

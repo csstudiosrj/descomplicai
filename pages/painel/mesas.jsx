@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
@@ -35,21 +35,42 @@ function MesasContent() {
   const [totalConvidados, setTotalConvidados] = useState(0);
   const [tiposSelecionados, setTiposSelecionados] = useState([]);
   const [mesasGeradas, setMesasGeradas] = useState([]);
-
   const [modalReconfigurar, setModalReconfigurar] = useState(false);
 
   const wizardKey = evento ? `descomplicai_mesas_wizard_${evento.id}` : null;
+
+  const salvarWizardState = useCallback(() => {
+    if (!wizardKey || configurado) return;
+    const dados = {
+      passo,
+      totalConvidados,
+      tiposSelecionados,
+      mesasGeradas,
+    };
+    localStorage.setItem(wizardKey, JSON.stringify(dados));
+  }, [wizardKey, passo, totalConvidados, tiposSelecionados, mesasGeradas, configurado]);
+
+  const restaurarWizardState = useCallback(() => {
+    if (!wizardKey || configurado) return;
+    try {
+      const salvo = localStorage.getItem(wizardKey);
+      if (salvo) {
+        const dados = JSON.parse(salvo);
+        if (dados.passo && dados.passo >= 1 && dados.passo <= 3) setPasso(dados.passo);
+        if (typeof dados.totalConvidados === 'number') setTotalConvidados(dados.totalConvidados);
+        if (Array.isArray(dados.tiposSelecionados)) setTiposSelecionados(dados.tiposSelecionados);
+        if (Array.isArray(dados.mesasGeradas)) setMesasGeradas(dados.mesasGeradas);
+      }
+    } catch {}
+  }, [wizardKey, configurado]);
 
   useEffect(() => {
     if (evento && user) carregarTudo();
   }, [evento, user]);
 
-  // Autosave: salva wizard no localStorage a cada mudanca
   useEffect(() => {
-    if (!wizardKey || configurado) return;
-    const dados = { passo, totalConvidados, tiposSelecionados, mesasGeradas };
-    localStorage.setItem(wizardKey, JSON.stringify(dados));
-  }, [wizardKey, passo, totalConvidados, tiposSelecionados, mesasGeradas, configurado]);
+    salvarWizardState();
+  }, [salvarWizardState]);
 
   const carregarTudo = async () => {
     setCarregando(true);
@@ -97,18 +118,7 @@ function MesasContent() {
     } else {
       setTotalConvidados(convidados.length || 0);
       setConfigurado(false);
-      if (wizardKey) {
-        try {
-          const salvo = localStorage.getItem(wizardKey);
-          if (salvo) {
-            const dados = JSON.parse(salvo);
-            if (dados.passo) setPasso(dados.passo);
-            if (dados.totalConvidados) setTotalConvidados(dados.totalConvidados);
-            if (dados.tiposSelecionados) setTiposSelecionados(dados.tiposSelecionados);
-            if (dados.mesasGeradas) setMesasGeradas(dados.mesasGeradas);
-          }
-        } catch {}
-      }
+      restaurarWizardState();
     }
 
     setCarregando(false);
@@ -142,7 +152,6 @@ function MesasContent() {
     }
 
     if (wizardKey) localStorage.removeItem(wizardKey);
-
     setPasso(1); setTiposSelecionados([]); setMesasGeradas([]);
     await carregarTudo();
   };
@@ -235,16 +244,30 @@ function MesasContent() {
                 </div>
               </div>
               {passo === 1 && (
-                <WizardPasso1 totalConvidados={totalConvidados} setTotalConvidados={setTotalConvidados} onAvancar={() => setPasso(2)} />
+                <WizardPasso1
+                  totalConvidados={totalConvidados}
+                  onChange={setTotalConvidados}
+                  onAvancar={() => setPasso(2)}
+                />
               )}
               {passo === 2 && (
-                <WizardPasso2 totalConvidados={totalConvidados} tiposSelecionados={tiposSelecionados}
-                  setTiposSelecionados={setTiposSelecionados} onAvancar={() => setPasso(3)} onVoltar={() => setPasso(1)} />
+                <WizardPasso2
+                  totalConvidados={totalConvidados}
+                  tiposSelecionados={tiposSelecionados}
+                  onChange={setTiposSelecionados}
+                  onAvancar={() => setPasso(3)}
+                  onVoltar={() => setPasso(1)}
+                />
               )}
               {passo === 3 && (
-                <WizardPasso3 tiposSelecionados={tiposSelecionados} grupos={grupos}
-                  mesasGeradas={mesasGeradas} setMesasGeradas={setMesasGeradas}
-                  onSalvar={salvarConfiguracao} onVoltar={() => setPasso(2)} />
+                <WizardPasso3
+                  tiposSelecionados={tiposSelecionados}
+                  grupos={grupos}
+                  mesasGeradas={mesasGeradas}
+                  onChange={setMesasGeradas}
+                  onSalvar={salvarConfiguracao}
+                  onVoltar={() => setPasso(2)}
+                />
               )}
             </div>
           )}

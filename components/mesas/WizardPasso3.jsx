@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export default function WizardPasso3({ tiposSelecionados, grupos, mesasGeradas, setMesasGeradas, onSalvar, onVoltar }) {
+export default function WizardPasso3({ tiposSelecionados, grupos, mesasGeradas, onChange, onSalvar, onVoltar }) {
   const [rotulos, setRotulos] = useState({});
 
   useEffect(() => {
@@ -11,7 +11,6 @@ export default function WizardPasso3({ tiposSelecionados, grupos, mesasGeradas, 
       return;
     }
 
-    // Gera mesas automaticamente
     let numero = 1;
     const geradas = [];
 
@@ -27,7 +26,6 @@ export default function WizardPasso3({ tiposSelecionados, grupos, mesasGeradas, 
       }
     });
 
-    // Sugere rotulos baseados nos grupos
     const nomesGrupos = grupos.map(g => g.nome);
     geradas.forEach((mesa, idx) => {
       if (nomesGrupos[idx]) {
@@ -35,17 +33,26 @@ export default function WizardPasso3({ tiposSelecionados, grupos, mesasGeradas, 
       }
     });
 
-    setMesasGeradas(geradas);
+    onChange(geradas);
     const map = {};
     geradas.forEach(m => { map[m.numero] = m.rotulo; });
     setRotulos(map);
   }, []);
 
+  useEffect(() => {
+    if (mesasGeradas.length > 0) {
+      const map = {};
+      mesasGeradas.forEach(m => { map[m.numero] = m.rotulo; });
+      setRotulos(map);
+    }
+  }, [mesasGeradas]);
+
   const atualizarRotulo = (numero, valor) => {
     setRotulos(prev => ({ ...prev, [numero]: valor }));
-    setMesasGeradas(prev =>
-      prev.map(m => m.numero === numero ? { ...m, rotulo: valor } : m)
+    const atualizadas = mesasGeradas.map(m =>
+      m.numero === numero ? { ...m, rotulo: valor } : m
     );
+    onChange(atualizadas);
   };
 
   const totalCapacidade = mesasGeradas.reduce((acc, m) => acc + m.capacidade, 0);

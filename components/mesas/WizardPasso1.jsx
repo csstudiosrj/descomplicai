@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 
-export default function WizardPasso1({ totalConvidados, setTotalConvidados, onAvancar }) {
-  const [valor, setValor] = useState(totalConvidados || '');
+export default function WizardPasso1({ totalConvidados, onChange, onAvancar }) {
+  const [valor, setValor] = useState(totalConvidados > 0 ? String(totalConvidados) : '');
   const [erro, setErro] = useState('');
 
   useEffect(() => {
-    setValor(totalConvidados || '');
+    if (totalConvidados > 0) setValor(String(totalConvidados));
   }, [totalConvidados]);
 
   const avancar = () => {
@@ -15,8 +15,17 @@ export default function WizardPasso1({ totalConvidados, setTotalConvidados, onAv
       return;
     }
     setErro('');
-    setTotalConvidados(num);
+    onChange(num);
     onAvancar();
+  };
+
+  const handleChange = (e) => {
+    const v = e.target.value;
+    setValor(v);
+    const num = Number(v);
+    if (num && num >= 1) {
+      onChange(num);
+    }
   };
 
   return (
@@ -44,7 +53,7 @@ export default function WizardPasso1({ totalConvidados, setTotalConvidados, onAv
         type="number"
         min="1"
         value={valor}
-        onChange={(e) => setValor(e.target.value)}
+        onChange={handleChange}
         onKeyDown={(e) => e.key === 'Enter' && avancar()}
         placeholder="Ex: 120"
         style={{
