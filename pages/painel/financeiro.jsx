@@ -9,7 +9,7 @@ import {
   getSubcategoriasPorPrincipal,
   getLabelSubcategoria,
   getLabelCategoriaPrincipal,
-  getCategoriaPrincipal,
+  getLabelCategoriaPrincipalPorId,
   STATUS_FORNECEDOR,
 } from '../../utils/catalogoFornecedores';
 
@@ -21,8 +21,18 @@ export default function FinanceiroPage({ readOnly }) {
   );
 }
 
+const PIZZA_COLORS = ['#8B6F5E', '#2E7D32', '#00838F', '#F9A825', '#C62828', '#7B1FA2', '#1565C0', '#E65100'];
+
+function getColorForCategory(cat, colorMap) {
+  if (!colorMap[cat]) {
+    const idx = Object.keys(colorMap).length % PIZZA_COLORS.length;
+    colorMap[cat] = PIZZA_COLORS[idx];
+  }
+  return colorMap[cat];
+}
+
 function FinanceiroContent({ readOnly }) {
-  const { evento, signOut, supabase } = useAuth();
+  const { evento, supabase } = useAuth();
   const [itens, setItens] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState({});
@@ -111,29 +121,24 @@ function FinanceiroContent({ readOnly }) {
   const dadosPizza = useMemo(() => {
     const map = {};
     itens.forEach((p) => {
-      const cat = getLabelCategoriaPrincipal(p.categoria) || p.categoria || 'Outros';
+      const cat = getLabelCategoriaPrincipal(p.categoria)
+        || getLabelCategoriaPrincipalPorId(p.categoria_principal)
+        || getLabelSubcategoria(p.categoria)
+        || p.categoria
+        || 'Outros';
       map[cat] = (map[cat] || 0) + (Number(p.valor_estimado) || 0);
     });
     const total = Object.values(map).reduce((a, b) => a + b, 0) || 1;
+    const colorMap = {};
     return Object.entries(map)
       .sort((a, b) => b[1] - a[1])
       .map(([cat, val]) => ({
         label: cat,
         valor: val,
         pct: (val / total) * 100,
-        color: getColorForCategory(cat),
+        color: getColorForCategory(cat, colorMap),
       }));
   }, [itens]);
-
-  function getColorForCategory(cat) {
-    const colors = ['#8B6F5E', '#2E7D32', '#00838F', '#F9A825', '#C62828', '#7B1FA2', '#1565C0', '#E65100'];
-    const map = {};
-    let idx = 0;
-    return (c) => {
-      if (!map[c]) map[c] = colors[idx++ % colors.length];
-      return map[c];
-    };
-  }
 
   // Filtros com status do fornecedor
   const itensFiltrados = useMemo(() => {
@@ -160,7 +165,11 @@ function FinanceiroContent({ readOnly }) {
     if (!agrupar) return null;
     const map = {};
     itensFiltrados.forEach((item) => {
-      const catPrincipal = item.categoria_principal || getLabelCategoriaPrincipal(item.categoria) || 'Outro';
+      const catPrincipal = getLabelCategoriaPrincipal(item.categoria)
+        || getLabelCategoriaPrincipalPorId(item.categoria_principal)
+        || getLabelSubcategoria(item.categoria)
+        || item.categoria
+        || 'Outro';
       if (!map[catPrincipal]) map[catPrincipal] = [];
       map[catPrincipal].push(item);
     });
@@ -175,7 +184,11 @@ function FinanceiroContent({ readOnly }) {
 
   const renderCard = (p) => {
     const saldo = (Number(p.valor_estimado) || 0) - (Number(p.valor_real) || 0);
-    const catPrincipal = getLabelCategoriaPrincipal(p.categoria) || p.categoria_principal || 'Outro';
+    const catPrincipal = getLabelCategoriaPrincipal(p.categoria)
+      || getLabelCategoriaPrincipalPorId(p.categoria_principal)
+      || getLabelSubcategoria(p.categoria)
+      || p.categoria
+      || 'Outro';
     const subcategoria = getLabelSubcategoria(p.categoria) || p.categoria || '';
     const statusInfo = STATUS_FORNECEDOR.find(s => {
       if (p.pago) return s.id === 'pago';
@@ -209,7 +222,7 @@ function FinanceiroContent({ readOnly }) {
         <div style={styles.cardItemBody}>
           <span style={styles.cardItemName}>{p.descricao || subcategoria || 'Item'}</span>
           <span style={styles.cardItemCategoria}>
-            {catPrincipal}{subcategoria && catPrincipal !== subcategoria ? ` → ${subcategoria}` : ''}
+            {catPrincipal}{subcategoria && catPrincipal !== subcategoria ? ` -> ${subcategoria}` : ''}
           </span>
           <span style={styles.cardItemDate}>
             <Icon name="calendar" size={12} /> {p.data_vencimento || 'Sem data'}
@@ -224,7 +237,11 @@ function FinanceiroContent({ readOnly }) {
 
   const renderListItem = (p) => {
     const saldo = (Number(p.valor_estimado) || 0) - (Number(p.valor_real) || 0);
-    const catPrincipal = getLabelCategoriaPrincipal(p.categoria) || p.categoria_principal || 'Outro';
+    const catPrincipal = getLabelCategoriaPrincipal(p.categoria)
+      || getLabelCategoriaPrincipalPorId(p.categoria_principal)
+      || getLabelSubcategoria(p.categoria)
+      || p.categoria
+      || 'Outro';
     const subcategoria = getLabelSubcategoria(p.categoria) || p.categoria || '';
     const statusInfo = STATUS_FORNECEDOR.find(s => {
       if (p.pago) return s.id === 'pago';
@@ -238,7 +255,7 @@ function FinanceiroContent({ readOnly }) {
         <div style={styles.listInfo}>
           <span style={styles.listName}>{p.descricao || subcategoria || 'Item'}</span>
           <span style={styles.listCategoria}>
-            {catPrincipal}{subcategoria && catPrincipal !== subcategoria ? ` → ${subcategoria}` : ''}
+            {catPrincipal}{subcategoria && catPrincipal !== subcategoria ? ` -> ${subcategoria}` : ''}
           </span>
           <span style={styles.listDate}>
             <Icon name="calendar" size={12} /> {p.data_vencimento || 'Sem data'}
