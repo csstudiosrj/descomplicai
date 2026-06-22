@@ -6,7 +6,7 @@ const STATUS_CONFIG = {
   recusado: { label: 'Recusado', cor: '#C62828', bg: '#FFEBEE' },
 };
 
-export default function ConvidadoItem({ convidado, grupos, readOnly, onStatusChange, onEdit, onExcluir }) {
+export default function ConvidadoItem({ convidado, grupos, mesas, readOnly, onStatusChange, onEdit, onExcluir }) {
   const [menuAberto, setMenuAberto] = useState(false);
   const [animarBadge, setAnimarBadge] = useState(false);
 
@@ -20,6 +20,7 @@ export default function ConvidadoItem({ convidado, grupos, readOnly, onStatusCha
   };
 
   const grupoLabel = grupos.find(g => g.nome === convidado.grupo)?.nome || convidado.grupo || 'Geral';
+  const mesa = mesas?.find(m => m.id === convidado.mesa_id);
 
   return (
     <div style={{
@@ -74,14 +75,17 @@ export default function ConvidadoItem({ convidado, grupos, readOnly, onStatusCha
               +{convidado.acompanhantes} acomp.
             </span>
           )}
-          {convidado.mesa && (
+          {mesa && (
             <span style={{
               fontSize: '11px',
-              color: 'var(--color-brand)',
-              fontWeight: 500,
+              color: '#fff',
+              background: 'var(--color-brand)',
+              fontWeight: 600,
               fontFamily: 'var(--font-body)',
+              padding: '2px 8px',
+              borderRadius: '10px',
             }}>
-              Mesa {convidado.mesa}
+              Mesa {mesa.numero}
             </span>
           )}
         </div>
