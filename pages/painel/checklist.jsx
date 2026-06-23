@@ -9,9 +9,6 @@ import { useAuth } from '../../hooks/useAuth';
 
 const CATEGORIAS_TAREFA = ['Fornecedores', 'Financeiro', 'Documentação', 'Decoração', 'Vestuário', 'Convidados', 'Outros'];
 
-const formatarMoeda = (v) =>
-  Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
 export default function ChecklistPage({ readOnly }) {
   return (
     <ProtectedRoute>
@@ -32,18 +29,33 @@ function ChecklistContent({ readOnly }) {
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    if (evento) {
+    if (evento?.id && evento?.data_evento) {
       gerarPadraoSeNecessario().then(() => buscar());
+    } else if (evento?.id) {
+      buscar();
     }
   }, [evento]);
 
   const gerarPadraoSeNecessario = async () => {
+    if (!evento?.data_evento) return;
+    
     try {
-      await fetch('/api/tarefas/gerar', {
+      const { data: { user } } = await supabase.auth.getUser();
+      const res = await fetch('/api/tarefas/gerar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ evento_id: evento.id, data_evento: evento.data_evento }),
+        body: JSON.stringify({ 
+          evento_id: evento.id, 
+          data_evento: evento.data_evento,
+          usuario_id: user?.id,
+        }),
       });
+      const json = await res.json();
+      if (!res.ok) {
+        console.error('[gerar]', json);
+      } else if (json.criadas > 0) {
+        buscar();
+      }
     } catch (err) {
       console.error('Erro ao gerar tarefas padrão:', err);
     }
@@ -224,7 +236,9 @@ function ChecklistContent({ readOnly }) {
             </span>
           </div>
           {colapsavel && (
-            <Icon name={aberto ? 'chevronUp' : 'chevronDown'} size={16} color="var(--color-text-muted)" />
+            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+              {aberto ? '▲' : '▼'}
+            </span>
           )}
         </div>
 
@@ -280,7 +294,6 @@ function ChecklistContent({ readOnly }) {
             </div>
           )}
 
-          {/* Cabeçalho */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -319,7 +332,6 @@ function ChecklistContent({ readOnly }) {
             )}
           </div>
 
-          {/* Cards de resumo */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
@@ -348,7 +360,6 @@ function ChecklistContent({ readOnly }) {
             ))}
           </div>
 
-          {/* Barra de progresso */}
           {resumo.total > 0 && (
             <div style={{
               background: 'var(--color-white)',
@@ -379,7 +390,6 @@ function ChecklistContent({ readOnly }) {
             </div>
           )}
 
-          {/* Filtros */}
           <div style={{
             background: 'var(--color-white)',
             borderRadius: 'var(--radius-md)',
@@ -433,7 +443,6 @@ function ChecklistContent({ readOnly }) {
             </div>
           </div>
 
-          {/* Lista de itens */}
           {carregando ? (
             <div style={{
               padding: 'var(--space-10)', textAlign: 'center',
@@ -488,7 +497,6 @@ function ChecklistContent({ readOnly }) {
         </main>
       </div>
 
-      {/* Modal */}
       {modalAberto && !readOnly && (
         <div
           style={{
@@ -535,7 +543,6 @@ function ChecklistContent({ readOnly }) {
               </button>
             </div>
 
-            {/* Título */}
             <div style={{ marginBottom: 'var(--space-4)' }}>
               <label style={{
                 display: 'block', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-medium)',
@@ -557,7 +564,6 @@ function ChecklistContent({ readOnly }) {
               />
             </div>
 
-            {/* Descrição */}
             <div style={{ marginBottom: 'var(--space-4)' }}>
               <label style={{
                 display: 'block', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-medium)',
@@ -579,7 +585,6 @@ function ChecklistContent({ readOnly }) {
               />
             </div>
 
-            {/* Prazo */}
             <div style={{ marginBottom: 'var(--space-4)' }}>
               <label style={{
                 display: 'block', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-medium)',
@@ -600,7 +605,6 @@ function ChecklistContent({ readOnly }) {
               />
             </div>
 
-            {/* Categoria */}
             <div style={{ marginBottom: 'var(--space-4)' }}>
               <label style={{
                 display: 'block', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-medium)',
@@ -625,7 +629,6 @@ function ChecklistContent({ readOnly }) {
               </select>
             </div>
 
-            {/* Concluída (só edição) */}
             {form.id && (
               <label style={{
                 display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
@@ -668,7 +671,6 @@ function ChecklistContent({ readOnly }) {
         </div>
       )}
 
-      {/* Toast */}
       {toast && (
         <Toast mensagem={toast.mensagem} tipo={toast.tipo} onClose={() => setToast(null)} />
       )}
