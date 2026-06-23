@@ -1,7 +1,7 @@
 /**
  * API Route — Persiste memorial no Supabase (validação server-side)
  * POST /api/memorial/salvar
- * Body: { estado: Object }
+ * Body: { evento_id: string, estado: Object, conteudo?: string }
  * Headers: Authorization (JWT do Supabase)
  */
 
@@ -9,6 +9,30 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+/** Extrai valores denormalizados do estado para sincronizar em eventos.* */
+function extrairDenormalizados(estado) {
+  if (!estado || typeof estado !== 'object') return {};
+
+  return {
+    tipo_cerimonia: estado.tipoCerimonia || null,
+    tipo_local: estado.tipoLocal || null,
+    estilo: estado.estilo || null,
+    total_convidados: estado.totalConvidados || null,
+    faixa_orcamento: estado.orcamentoTotal ? Number(estado.orcamentoTotal) : null,
+    musica_festa: estado.musicaFesta || null,
+    flores: estado.flores || null,
+    iluminacao: estado.iluminacao || null,
+    tipo_jantar: estado.tipoJantar || null,
+    tipo_bar: estado.tipoBar || null,
+    formato_convite: estado.formatoConvite || null,
+    estilo_vestido: estado.estiloVestido || null,
+    estado_civil_noivo: estado.estadoCivilNoivo || null,
+    estado_civil_noiva: estado.estadoCivilNoiva || null,
+    lua_de_mel: estado.luaDeMel === true,
+    memorial_concluido: true,
+  };
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -31,28 +55,86 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Token inválido' });
   }
 
-  const { estado } = req.body;
+  const { evento_id, estado, conteudo } = req.body;
+
+  if (!evento_id) {
+    return res.status(400).json({ error: 'evento_id é obrigatório' });
+  }
   if (!estado || typeof estado !== 'object') {
     return res.status(400).json({ error: 'Estado inválido' });
   }
 
   try {
-    const { error } = await supabaseAdmin
+    // 1. Verifica se o evento pertence ao usuário
+    const { data: evento, error: evtErr } = await supabaseAdmin
+      .from('eventos')
+      .select('id, usuario_id')
+      .eq('id', evento_id)
+      .single();
+
+    if (evtErr || !evento) {
+      return res.status(404).json({ error: 'Evento não encontrado' });
+    }
+    if (evento.usuario_id !== user.id) {
+      return res.status(403).json({ error: 'Acesso negado ao evento' });
+    }
+
+    // 2. Gera texto markdown se não vier do cliente
+    const conteudoFinal = conteudo || gerarTextoMemorialSimples(estado);
+
+    // 3. Upsert na tabela memoriais (por evento_id)
+    const { data: memorialUpsert, error: memErr } = await supabaseAdmin
       .from('memoriais')
       .upsert(
         {
           user_id: user.id,
+          evento_id,
           estado,
+          conteudo: conteudoFinal,
           atualizado_em: new Date().toISOString(),
         },
-        { onConflict: 'user_id' }
-      );
+        { onConflict: 'evento_id' }
+      )
+      .select('id')
+      .single();
 
-    if (error) throw error;
+    if (memErr) throw memErr;
 
-    return res.status(200).json({ sucesso: true });
+    // 4. Sincroniza colunas denormalizadas em eventos
+    const denorm = extrairDenormalizados(estado);
+    const { error: syncErr } = await supabaseAdmin
+      .from('eventos')
+      .update({
+        ...denorm,
+        memoriais_id: memorialUpsert.id,
+      })
+      .eq('id', evento_id);
+
+    if (syncErr) {
+      console.error('[memorial/salvar] Erro ao sincronizar eventos:', syncErr);
+      // Não falha a requisição, apenas loga
+    }
+
+    return res.status(200).json({ sucesso: true, memorial_id: memorialUpsert.id });
   } catch (e) {
     console.error('[API memorial/salvar]', e);
     return res.status(500).json({ sucesso: false, erro: e.message });
   }
+}
+
+/** Fallback simples de geração de texto caso o cliente não envie conteudo */
+function gerarTextoMemorialSimples(estado) {
+  const linhas = [];
+  linhas.push('# Memorial do Casamento');
+  linhas.push('');
+  if (estado.nomeCasal) linhas.push(`**Casal:** ${estado.nomeCasal}`);
+  if (estado.dataEvento) linhas.push(`**Data:** ${estado.dataEvento}`);
+  if (estado.tipoCerimonia) linhas.push(`**Cerimônia:** ${estado.tipoCerimonia}`);
+  if (estado.tipoLocal) linhas.push(`**Local:** ${estado.tipoLocal}`);
+  if (estado.estilo) linhas.push(`**Estilo:** ${estado.estilo}`);
+  if (estado.totalConvidados) linhas.push(`**Convidados:** ${estado.totalConvidados}`);
+  linhas.push('');
+  linhas.push('---');
+  linhas.push('*Gerado automaticamente pelo Descomplicaí*');
+  return linhas.join('\n');
 }

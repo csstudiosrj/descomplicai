@@ -31,6 +31,9 @@ function PainelContent() {
   const [tarefas, setTarefas] = useState({ total: 0, concluidas: 0, urgentes: [] });
   const [alertas, setAlertas] = useState([]);
 
+  // NOVO: status do memorial para alerta inteligente
+  const [memorialStatus, setMemorialStatus] = useState({ temMemorial: false, temEstado: false });
+
   // Modal de orçamento (legado, via ícone no card financeiro)
   const [modalOrcamentoAberto, setModalOrcamentoAberto] = useState(false);
   const [valorOrcamento, setValorOrcamento] = useState(0);
@@ -67,7 +70,23 @@ function PainelContent() {
     setLoading(true);
     const eventoId = evento.id;
 
-    await importarPreFornecedores(eventoId, supabase, user.id);
+    // --- NOVO: Verifica memorial do evento ---
+    const { data: memorialData } = await supabase
+      .from('memoriais')
+      .select('id, estado')
+      .eq('evento_id', eventoId)
+      .order('criado_em', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const temMemorial = !!memorialData;
+    const temEstado = temMemorial && !!memorialData.estado;
+    setMemorialStatus({ temMemorial, temEstado });
+
+    // Só importa pre-fornecedores se tiver estado estruturado
+    if (temEstado) {
+      await importarPreFornecedores(eventoId, supabase, user.id);
+    }
 
     const { data: fornData } = await supabase
       .from('fornecedores')
@@ -139,6 +158,18 @@ function PainelContent() {
     setProgresso(progressoGeral);
 
     const alertasLista = [];
+
+    // NOVO: Alerta memorial não preenchido
+    if (!temEstado) {
+      alertasLista.push({
+        tipo: 'urgente',
+        icone: 'fileText',
+        cor: 'var(--color-danger)',
+        titulo: 'Complete o memorial para ativar o painel inteligente',
+        descricao: 'O questionário estruturado alimenta tarefas, fornecedores e orçamento. Clique para preencher.',
+        onClick: () => router.push('/memorial'),
+      });
+    }
 
     // Alerta: dados do evento incompletos
     const dadosIncompletos = !evento?.data_evento || !evento?.orcamento || !evento?.nome_evento;

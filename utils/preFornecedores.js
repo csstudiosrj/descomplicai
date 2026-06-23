@@ -1,42 +1,40 @@
 // utils/preFornecedores.js
 // Importa pre-lista de fornecedores do memorial (tabela memoriais) automaticamente
 
+import { getCategoriaPrincipal, getSubcategoria } from './catalogoFornecedores';
+
 const MAPEAMENTO_CATEGORIAS = {
   'Fotografia': 'fotografia',
+  'Filmagem': 'filmagem',
   'Buffet': 'buffet',
   'Espaco / Venue': 'espaco_recepcao',
   'Oficializante': 'oficializante_religioso',
   'Celebrante laico': 'celebrante',
   'Floricultura / Decoracao': 'floricultura',
+  'Decoracao': 'decoracao',
   'DJ': 'dj',
   'Banda': 'banda',
   'Iluminacao cenica': 'iluminacao_cenica',
   'Som profissional': 'som_profissional',
+  'Cerimonialista': 'cerimonialista',
+  'Vestido / Atelie': 'vestido_atelier',
+  'Traje Masculino': 'traje_masculino',
+  'Beleza Noiva': 'beleza_noiva',
+  'Transporte Noivos': 'transporte_noivos',
+  'Transporte Convidados': 'transporte_convidados',
+  'Papelaria / Convites': 'papelaria',
+  'Bartender': 'bartender',
+  'Cabine de Fotos': 'cabine_fotos',
+  'Animacao Infantil': 'animacao_infantil',
+  'Drone': 'drone',
+  'Gerador': 'geradores',
+  'Banheiros Extras': 'banheiros_extras',
+  'Seguranca': 'seguranca',
 };
 
 function getCategoriaPrincipalId(subcategoriaId) {
-  const mapa = {
-    fotografia: 'foto_video', filmagem: 'foto_video', drone: 'foto_video',
-    buffet: 'alimentacao_bebidas', bolo_doces: 'alimentacao_bebidas',
-    bebidas: 'alimentacao_bebidas', bartender: 'alimentacao_bebidas',
-    espaco_recepcao: 'local_infraestrutura', mobiliario_locacao: 'local_infraestrutura',
-    som_profissional: 'local_infraestrutura', geradores: 'local_infraestrutura',
-    banheiros_extras: 'local_infraestrutura', seguranca: 'local_infraestrutura',
-    oficializante_religioso: 'cerimonia_assessoria', celebrante: 'cerimonia_assessoria',
-    cerimonialista: 'cerimonia_assessoria',
-    floricultura: 'decoracao_flores', decoracao: 'decoracao_flores',
-    iluminacao_cenica: 'decoracao_flores',
-    dj: 'musica_entretenimento', banda: 'musica_entretenimento',
-    musica_festa: 'musica_entretenimento', musica_cerimonia: 'musica_entretenimento',
-    cabine_fotos: 'musica_entretenimento', animacao_infantil: 'musica_entretenimento',
-    beleza_noiva: 'beleza_vestuario', dia_noivo: 'beleza_vestuario',
-    beleza_madrinhas: 'beleza_vestuario', vestido_atelier: 'beleza_vestuario',
-    traje_masculino: 'beleza_vestuario',
-    transporte_noivos: 'transporte', transporte_convidados: 'transporte',
-    papelaria: 'papelaria_detalhes', grafica: 'papelaria_detalhes',
-    aliancas: 'papelaria_detalhes', bem_casados: 'papelaria_detalhes',
-  };
-  return mapa[subcategoriaId] || 'outro';
+  const sub = getSubcategoria(subcategoriaId);
+  return sub?.categoriaPrincipalId || 'outro';
 }
 
 /**
@@ -55,7 +53,7 @@ async function extrairFornecedoresDoMemorial(eventoId, usuarioId, supabase) {
     .limit(1)
     .maybeSingle();
 
-  // 2. Se nao encontrar, busca pelo user_id (fallback para memoriais antigos)
+  // 2. Se não encontrar, busca pelo user_id (fallback para memoriais antigos)
   if (!memorial && usuarioId) {
     const { data: memorialPorUser } = await supabase
       .from('memoriais')
@@ -97,22 +95,87 @@ function gerarFornecedoresDoEstado(estado) {
   const lista = [];
   const add = (cat, nome) => lista.push({ categoria: cat, nome });
 
+  // --- Obrigatórios base ---
   add('Fotografia', 'Fotografo');
   add('Buffet', 'Buffet');
   add('Espaco / Venue', 'Espaco / Venue');
 
-  if (['catolica', 'evangelica', 'judaica'].includes(estado.tipoCerimonia)) add('Oficializante', 'Oficializante');
-  if (estado.tipoCerimonia === 'simbolica') add('Celebrante laico', 'Celebrante laico');
-  if (estado.flores) add('Floricultura / Decoracao', 'Floricultura / Decoracao');
+  // --- Cerimônia ---
+  if (['catolica', 'evangelica', 'judaica'].includes(estado.tipoCerimonia)) {
+    add('Oficializante', 'Oficializante');
+  }
+  if (estado.tipoCerimonia === 'simbolica') {
+    add('Celebrante laico', 'Celebrante laico');
+  }
+  if (estado.tipoCerimonia === 'civil') {
+    add('Celebrante laico', 'Juiz de paz / cartório');
+  }
 
-  // Correcao: "Banda + DJ" deve adicionar ambos
-  const musica = estado.musicaFesta || '';
+  // --- Decoração / Flores ---
+  if (estado.flores || estado.decoracaoContratada !== true) {
+    add('Floricultura / Decoracao', 'Floricultura / Decoracao');
+  }
+
+  // --- Música ---
+  const musica = estado.musicaFesta || estado.musicaCerimonia || '';
   if (musica.toLowerCase().includes('dj')) add('DJ', 'DJ');
   if (musica.toLowerCase().includes('banda')) add('Banda', 'Banda');
+  if (!musica && estado.musicaContratada !== true) {
+    add('DJ', 'DJ'); // fallback
+  }
 
+  // --- Local externo: infraestrutura ---
   if (['praia', 'sitio', 'jardim', 'rooftop', 'haras'].includes(estado.tipoLocal)) {
     add('Iluminacao cenica', 'Iluminacao cenica');
     add('Som profissional', 'Som profissional');
+  }
+  if (['sitio', 'jardim', 'haras'].includes(estado.tipoLocal)) {
+    if (estado.gerador !== true) add('Gerador', 'Gerador');
+    if (estado.banheirosExtras !== true) add('Banheiros Extras', 'Banheiros Extras');
+  }
+
+  // --- Convidados grandes ---
+  if (['grande', 'mega'].includes(estado.totalConvidados)) {
+    if (estado.seguranca !== true) add('Seguranca', 'Seguranca');
+    if (estado.transporteConvidados !== true) add('Transporte Convidados', 'Transporte Convidados');
+  }
+
+  // --- Vestuário ---
+  if (estado.vestidoComprado !== true) add('Vestido / Atelie', 'Vestido de Noiva');
+  if (estado.trajeNoivoContratado !== true) add('Traje Masculino', 'Traje do Noivo');
+  if (estado.belezaNoiva !== false) add('Beleza Noiva', 'Beleza da Noiva');
+
+  // --- Cerimonialista ---
+  if (estado.cerimonialistaContratado !== true) {
+    add('Cerimonialista', 'Cerimonialista');
+  }
+
+  // --- Entretenimento ---
+  if (Array.isArray(estado.atividadesEntretenimento)) {
+    if (estado.atividadesEntretenimento.includes('cabine-fotos') && estado.cabineFotos !== true) {
+      add('Cabine de Fotos', 'Cabine de Fotos');
+    }
+    if (estado.atividadesEntretenimento.includes('drone') && estado.droneContratado !== true) {
+      add('Drone', 'Drone');
+    }
+    if (estado.atividadesEntretenimento.includes('animacao-infantil') && estado.animacaoInfantil !== true) {
+      add('Animacao Infantil', 'Animacao Infantil');
+    }
+  }
+
+  // --- Papelaria ---
+  if (estado.formatoConvite === 'fisico' && estado.convitesEncomendados !== true) {
+    add('Papelaria / Convites', 'Papelaria e Convites');
+  }
+
+  // --- Transporte noivos ---
+  if (estado.transporteNoivos !== true) {
+    add('Transporte Noivos', 'Transporte dos Noivos');
+  }
+
+  // --- Bartender ---
+  if (estado.tipoBar === 'open bar completo' && estado.bartender !== true) {
+    add('Bartender', 'Bartender');
   }
 
   return lista;
@@ -126,7 +189,7 @@ export async function importarPreFornecedores(eventoId, supabase, usuarioId) {
 
   if (listaMemorial.length === 0) return 0;
 
-  // Busca APENAS pre-fornecedores ja existentes para este evento
+  // Busca APENAS pre-fornecedores já existentes para este evento
   const { data: preExistentes } = await supabase
     .from('fornecedores')
     .select('categoria')
@@ -153,8 +216,8 @@ export async function importarPreFornecedores(eventoId, supabase, usuarioId) {
       servico: item.nome || '',
     };
   }).filter((f) => {
-    // So ignora se ja existe um PRE-CRIADO com a mesma categoria
-    // Manuais nao bloqueiam a importacao
+    // Só ignora se já existe um PRE-CRIADO com a mesma categoria
+    // Manuais não bloqueiam a importação
     return !categoriasPreExistentes.has(f.categoria);
   });
 

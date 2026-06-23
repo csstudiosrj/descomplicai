@@ -1,0 +1,563 @@
+// utils/gerador-tarefas.js
+// Gera tarefas contextualizadas baseado no estado do memorial
+// Regras extraídas do Memorial Arquitetural — Descomplicaí
+
+/**
+ * Calcula data de prazo: dataEvento - diasAntes
+ */
+function calcularPrazo(dataEventoStr, diasAntes) {
+    const data = new Date(dataEventoStr + 'T00:00:00');
+    data.setDate(data.getDate() - diasAntes);
+    return data.toISOString().split('T')[0];
+  }
+  
+  /**
+   * Regras de tarefas. Cada regra:
+   * { condicao: (estado) => boolean, tarefa: { titulo, descricao, categoria, subcategoria?, prazo, prioridade } }
+   */
+  const REGRAS = [
+    // --- CERIMÔNIA: Católica ---
+    {
+      condicao: (e) => e.tipoCerimonia === 'catolica' && e.reservouIgreja !== true,
+      tarefa: {
+        titulo: 'Reservar data na igreja e confirmar disponibilidade com o padre',
+        descricao: 'Entre em contato com a paróquia de sua preferência e reserve a data. Algumas igrejas exigem reserva com 12 meses de antecedência.',
+        categoria: 'cerimonia_assessoria',
+        subcategoria: 'oficializante_religioso',
+        prazo: 365,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.tipoCerimonia === 'catolica' && e.cursoNoivos !== 'sim',
+      tarefa: {
+        titulo: 'Agendar curso de noivos na paróquia',
+        descricao: 'A maioria das dioceses exige curso de noivos com no mínimo 3 meses de antecedência. Verifique a programação da sua paróquia.',
+        categoria: 'cerimonia_assessoria',
+        subcategoria: 'oficializante_religioso',
+        prazo: 270,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.tipoCerimonia === 'catolica' && e.certidaoBatismo !== true,
+      tarefa: {
+        titulo: 'Atualizar certidão de batismo (validade 3 meses)',
+        descricao: 'A certidão de batismo deve ter emissão recente. Solicite na paróquia de batismo.',
+        categoria: 'Documentação',
+        prazo: 180,
+        prioridade: 'obrigatoria',
+      },
+    },
+  
+    // --- CERIMÔNIA: Judaica ---
+    {
+      condicao: (e) => e.tipoCerimonia === 'judaica' && e.reservouTemplo !== true,
+      tarefa: {
+        titulo: 'Reservar data no templo e confirmar com o rabino',
+        descricao: 'Casamentos judaicos geralmente ocorrem de domingo a quinta-feira. Confirme a disponibilidade do templo.',
+        categoria: 'cerimonia_assessoria',
+        subcategoria: 'oficializante_religioso',
+        prazo: 365,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.tipoCerimonia === 'judaica' && e.chupa !== true,
+      tarefa: {
+        titulo: 'Definir fornecedor e modelo da chupá',
+        descricao: 'A chupá pode ser alugada ou comprada. Defina o estilo e reserve com antecedência.',
+        categoria: 'decoracao_flores',
+        subcategoria: 'decoracao',
+        prazo: 180,
+        prioridade: 'recomendada',
+      },
+    },
+  
+    // --- CERIMÔNIA: Simbólica ---
+    {
+      condicao: (e) => e.tipoCerimonia === 'simbolica' && e.celebranteLaico !== true,
+      tarefa: {
+        titulo: 'Escolher e contratar celebrante laico',
+        descricao: 'Agende uma conversa para alinhar roteiro, votos e duração da cerimônia.',
+        categoria: 'cerimonia_assessoria',
+        subcategoria: 'celebrante',
+        prazo: 270,
+        prioridade: 'obrigatoria',
+      },
+    },
+  
+    // --- CERIMÔNIA: Civil ---
+    {
+      condicao: (e) => e.tipoCerimonia === 'civil' && e.agendouCartorio !== true,
+      tarefa: {
+        titulo: 'Agendar data no cartório e verificar documentação necessária',
+        descricao: 'Verifique se a certidão de nascimento está atualizada e se há exigências específicas do cartório.',
+        categoria: 'Documentação',
+        prazo: 180,
+        prioridade: 'obrigatoria',
+      },
+    },
+  
+    // --- ESTADO CIVIL ---
+    {
+      condicao: (e) => e.estadoCivilNoivo === 'divorciado' || e.estadoCivilNoiva === 'divorciado',
+      tarefa: {
+        titulo: 'Solicitar certidão de casamento anterior com averbação de divórcio',
+        descricao: 'O cartório exige certidão atualizada do casamento anterior com a averbação do divórcio.',
+        categoria: 'Documentação',
+        prazo: 270,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.estadoCivilNoivo === 'viuvo' || e.estadoCivilNoiva === 'viuvo',
+      tarefa: {
+        titulo: 'Solicitar certidão de óbito do cônjuge anterior',
+        descricao: 'Documento obrigatório para casamento civil e religioso.',
+        categoria: 'Documentação',
+        prazo: 270,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.nacionalidadeNoivo !== 'brasileiro' || e.nacionalidadeNoiva !== 'brasileiro',
+      tarefa: {
+        titulo: 'Verificar documentação para casamento de estrangeiro no Brasil',
+        descricao: 'Consulte o cartório sobre tradução juramentada, apostila de Haia e vistos.',
+        categoria: 'Documentação',
+        prazo: 365,
+        prioridade: 'obrigatoria',
+      },
+    },
+  
+    // --- LOCAL: Praia ---
+    {
+      condicao: (e) => e.tipoLocal === 'praia' && e.planoChuva !== 'cobertura',
+      tarefa: {
+        titulo: 'Contratar tenda ou cobertura de emergência (plano B praia)',
+        descricao: 'Praia é imprevisível. Reserve tenda ou espaço coberto próximo como plano B.',
+        categoria: 'local_infraestrutura',
+        subcategoria: 'mobiliario_locacao',
+        prazo: 180,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.tipoLocal === 'praia' && e.verificouMare !== true,
+      tarefa: {
+        titulo: 'Verificar previsão de maré e vento para a data',
+        descricao: 'Consulte tabuas de maré e histórico de vento para evitar surpresas.',
+        categoria: 'Outros',
+        prazo: 90,
+        prioridade: 'recomendada',
+      },
+    },
+  
+    // --- LOCAL: Externo (sítio, jardim, rooftop, haras) ---
+    {
+      condicao: (e) => ['sitio', 'jardim', 'rooftop', 'haras'].includes(e.tipoLocal) && e.iluminacaoCenica !== true,
+      tarefa: {
+        titulo: 'Contratar iluminação cênica para ambiente externo',
+        descricao: 'Locais ao ar livre precisam de iluminação profissional para cerimônia noturna e festa.',
+        categoria: 'decoracao_flores',
+        subcategoria: 'iluminacao_cenica',
+        prazo: 180,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => ['sitio', 'jardim', 'rooftop', 'haras'].includes(e.tipoLocal) && e.somProfissional !== true,
+      tarefa: {
+        titulo: 'Contratar som profissional para ambiente externo',
+        descricao: 'Som ambiente não é suficiente. Contrate empresa com caixas e mesa de som adequadas.',
+        categoria: 'local_infraestrutura',
+        subcategoria: 'som_profissional',
+        prazo: 180,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => ['sitio', 'jardim', 'haras'].includes(e.tipoLocal) && e.banheirosExtras !== true,
+      tarefa: {
+        titulo: 'Contratar banheiros químicos ou container premium',
+        descricao: 'Verifique a quantidade de banheiros do local e contrate extras se necessário.',
+        categoria: 'local_infraestrutura',
+        subcategoria: 'banheiros_extras',
+        prazo: 90,
+        prioridade: 'recomendada',
+      },
+    },
+    {
+      condicao: (e) => ['sitio', 'jardim', 'haras'].includes(e.tipoLocal) && e.gerador !== true,
+      tarefa: {
+        titulo: 'Contratar gerador de energia de apoio',
+        descricao: 'Locais rurais podem ter quedas de energia. Um gerador evita apagões durante a festa.',
+        categoria: 'local_infraestrutura',
+        subcategoria: 'geradores',
+        prazo: 90,
+        prioridade: 'recomendada',
+      },
+    },
+  
+    // --- CONVIDADOS ---
+    {
+      condicao: (e) => ['grande', 'mega'].includes(e.totalConvidados) && e.seguranca !== true,
+      tarefa: {
+        titulo: 'Contratar segurança e controle de acesso',
+        descricao: 'Eventos com mais de 100 convidados exigem segurança para portaria e estacionamento.',
+        categoria: 'local_infraestrutura',
+        subcategoria: 'seguranca',
+        prazo: 180,
+        prioridade: 'recomendada',
+      },
+    },
+    {
+      condicao: (e) => ['grande', 'mega'].includes(e.totalConvidados) && e.transporteConvidados !== true,
+      tarefa: {
+        titulo: 'Organizar transporte para convidados (van/ônibus)',
+        descricao: 'Considere transfer do hotel ao local e volta, especialmente se houver bebida alcoólica.',
+        categoria: 'transporte',
+        subcategoria: 'transporte_convidados',
+        prazo: 120,
+        prioridade: 'recomendada',
+      },
+    },
+    {
+      condicao: (e) => Number(e.convidadosForaCidade) > 0 && e.hotelIndicacao !== true,
+      tarefa: {
+        titulo: 'Reservar bloco de quartos ou indicar hotéis parceiros',
+        descricao: 'Negocie tarifa de grupo com hotéis próximos ao local.',
+        categoria: 'Outros',
+        prazo: 120,
+        prioridade: 'recomendada',
+      },
+    },
+    {
+      condicao: (e) => e.listaPreliminar !== true,
+      tarefa: {
+        titulo: 'Criar lista preliminar de convidados',
+        descricao: 'Comece com uma lista ampla e depois refine por prioridade e orçamento.',
+        categoria: 'Convidados',
+        prazo: 270,
+        prioridade: 'obrigatoria',
+      },
+    },
+  
+    // --- FORNECEDORES: Fotografia / Filmagem ---
+    {
+      condicao: (e) => e.fotografoContratado !== true,
+      tarefa: {
+        titulo: 'Contratar fotógrafo',
+        descricao: 'Fotógrafos de casamento são reservados com 9-12 meses de antecedência.',
+        categoria: 'foto_video',
+        subcategoria: 'fotografia',
+        prazo: 270,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.filmagemContratada !== true,
+      tarefa: {
+        titulo: 'Contratar filmagem',
+        descricao: 'Escolha entre estilos: documental, cinematográfico, highlight.',
+        categoria: 'foto_video',
+        subcategoria: 'filmagem',
+        prazo: 270,
+        prioridade: 'recomendada',
+      },
+    },
+  
+    // --- FORNECEDORES: Buffet / Decoração / Música ---
+    {
+      condicao: (e) => e.buffetContratado !== true,
+      tarefa: {
+        titulo: 'Contratar buffet e realizar degustação',
+        descricao: 'Agende degustação com 2-3 opções antes de fechar.',
+        categoria: 'alimentacao_bebidas',
+        subcategoria: 'buffet',
+        prazo: 270,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.decoracaoContratada !== true,
+      tarefa: {
+        titulo: 'Contratar decoração e florista',
+        descricao: 'Alinhe paleta de cores, estilo e orçamento. Peça projeto 3D.',
+        categoria: 'decoracao_flores',
+        subcategoria: 'decoracao',
+        prazo: 270,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.musicaContratada !== true,
+      tarefa: {
+        titulo: 'Contratar DJ ou banda',
+        descricao: 'Defina repertório, equipamentos e horários de montagem.',
+        categoria: 'musica_entretenimento',
+        subcategoria: 'musica_festa',
+        prazo: 270,
+        prioridade: 'obrigatoria',
+      },
+    },
+  
+    // --- FORNECEDORES: Vestuário ---
+    {
+      condicao: (e) => e.vestidoComprado !== true && e.estiloVestido !== 'jumpsuit',
+      tarefa: {
+        titulo: 'Escolher e encomendar vestido de noiva',
+        descricao: 'Prazo de confecção pode levar 6-9 meses. Inicie as provas com antecedência.',
+        categoria: 'beleza_vestuario',
+        subcategoria: 'vestido_atelier',
+        prazo: 270,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.vestidoComprado !== true && e.estiloVestido === 'jumpsuit',
+      tarefa: {
+        titulo: 'Provar e encomendar macacão/jumpsuit de noiva',
+        descricao: 'Macacões podem ser sob medida ou pronta-entrega. Verifique prazo.',
+        categoria: 'beleza_vestuario',
+        subcategoria: 'vestido_atelier',
+        prazo: 180,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.trajeNoivoContratado !== true,
+      tarefa: {
+        titulo: 'Escolher traje do noivo',
+        descricao: 'Defina se será compra, aluguel ou sob medida. Prazo médio: 3-4 meses.',
+        categoria: 'beleza_vestuario',
+        subcategoria: 'traje_masculino',
+        prazo: 180,
+        prioridade: 'obrigatoria',
+      },
+    },
+  
+    // --- CERIMONIALISTA ---
+    {
+      condicao: (e) => e.cerimonialistaContratado !== true && ['grande', 'mega'].includes(e.totalConvidados),
+      tarefa: {
+        titulo: 'Contratar cerimonialista/assessoria',
+        descricao: 'Eventos grandes exigem coordenação profissional. Contrate com 6-9 meses de antecedência.',
+        categoria: 'cerimonia_assessoria',
+        subcategoria: 'cerimonialista',
+        prazo: 270,
+        prioridade: 'recomendada',
+      },
+    },
+    {
+      condicao: (e) => e.cerimonialistaContratado !== true && ['intimo', 'medio'].includes(e.totalConvidados),
+      tarefa: {
+        titulo: 'Contratar cerimonialista ou definir coordenador do dia',
+        descricao: 'Mesmo casamentos menores precisam de alguém para coordenar o cronograma.',
+        categoria: 'cerimonia_assessoria',
+        subcategoria: 'cerimonialista',
+        prazo: 180,
+        prioridade: 'opcional',
+      },
+    },
+  
+    // --- DOCUMENTAÇÃO ---
+    {
+      condicao: (e) => e.certidaoNascimentoNoivo !== true || e.certidaoNascimentoNoiva !== true,
+      tarefa: {
+        titulo: 'Solicitar certidão de nascimento atualizada (noivo e noiva)',
+        descricao: 'Certidão de nascimento deve ter emissão recente. Solicite na cidade de nascimento.',
+        categoria: 'Documentação',
+        prazo: 180,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.rgValido !== true,
+      tarefa: {
+        titulo: 'Verificar validade do RG e CPF',
+        descricao: 'Documentos devem estar válidos no dia do casamento.',
+        categoria: 'Documentação',
+        prazo: 180,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.comprovanteResidencia !== true,
+      tarefa: {
+        titulo: 'Separar comprovante de residência atualizado',
+        descricao: 'Cartório pode exigir comprovante de residência dos noivos.',
+        categoria: 'Documentação',
+        prazo: 90,
+        prioridade: 'obrigatoria',
+      },
+    },
+  
+    // --- ALIMENTAÇÃO E BEBIDAS ---
+    {
+      condicao: (e) => Array.isArray(e.restricoesAlimentares) && e.restricoesAlimentares.length > 0,
+      tarefa: {
+        titulo: 'Informar buffet sobre restrições alimentares dos convidados',
+        descricao: 'Passe ao buffet a lista de vegetarianos, veganos, alérgicos e intolerantes.',
+        categoria: 'alimentacao_bebidas',
+        subcategoria: 'buffet',
+        prazo: 60,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.tipoBar === 'open bar completo' && e.bartender !== true,
+      tarefa: {
+        titulo: 'Contratar bartender para open bar',
+        descricao: 'Bartender profissional eleva a experiência do bar e evita desperdício.',
+        categoria: 'alimentacao_bebidas',
+        subcategoria: 'bartender',
+        prazo: 180,
+        prioridade: 'recomendada',
+      },
+    },
+  
+    // --- ENTRETENIMENTO ---
+    {
+      condicao: (e) => Array.isArray(e.atividadesEntretenimento) && e.atividadesEntretenimento.includes('cabine-fotos') && e.cabineFotos !== true,
+      tarefa: {
+        titulo: 'Contratar cabine de fotos',
+        descricao: 'Escolha entre cabine fechada, totem ou espelho mágico.',
+        categoria: 'musica_entretenimento',
+        subcategoria: 'cabine_fotos',
+        prazo: 120,
+        prioridade: 'opcional',
+      },
+    },
+    {
+      condicao: (e) => Array.isArray(e.atividadesEntretenimento) && e.atividadesEntretenimento.includes('drone') && e.droneContratado !== true,
+      tarefa: {
+        titulo: 'Contratar serviço de drone',
+        descricao: 'Verifique se o local permite voo de drone e contrate piloto licenciado.',
+        categoria: 'foto_video',
+        subcategoria: 'drone',
+        prazo: 120,
+        prioridade: 'opcional',
+      },
+    },
+    {
+      condicao: (e) => Array.isArray(e.atividadesEntretenimento) && e.atividadesEntretenimento.includes('animacao-infantil') && e.animacaoInfantil !== true,
+      tarefa: {
+        titulo: 'Contratar animação infantil / espaço kids',
+        descricao: 'Monitores e recreação garantem que pais aproveitem a festa.',
+        categoria: 'musica_entretenimento',
+        subcategoria: 'animacao_infantil',
+        prazo: 120,
+        prioridade: 'opcional',
+      },
+    },
+  
+    // --- PAPELARIA ---
+    {
+      condicao: (e) => e.formatoConvite === 'fisico' && e.convitesEncomendados !== true,
+      tarefa: {
+        titulo: 'Encomendar convites físicos',
+        descricao: 'Prazo de confecção: 30-60 dias. Envie com 2-3 meses de antecedência.',
+        categoria: 'papelaria_detalhes',
+        subcategoria: 'papelaria',
+        prazo: 120,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.formatoConvite === 'digital' && e.convitesEncomendados !== true,
+      tarefa: {
+        titulo: 'Criar e enviar convite digital',
+        descricao: 'Site do casal, vídeo ou design digital. Envie com 2 meses de antecedência.',
+        categoria: 'papelaria_detalhes',
+        subcategoria: 'papelaria',
+        prazo: 90,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.saveTheDate === true && e.saveTheDateEnviado !== true,
+      tarefa: {
+        titulo: 'Enviar save the date',
+        descricao: 'Envie 8-10 meses antes para reservar a data na agenda dos convidados.',
+        categoria: 'Convidados',
+        prazo: 270,
+        prioridade: 'recomendada',
+      },
+    },
+  
+    // --- LUA DE MEL ---
+    {
+      condicao: (e) => e.luaDeMel === true && e.luaDeMelReservada !== true,
+      tarefa: {
+        titulo: 'Reservar lua de mel',
+        descricao: 'Pacotes de lua de mel devem ser reservados com 3-6 meses de antecedência.',
+        categoria: 'Outros',
+        prazo: 180,
+        prioridade: 'recomendada',
+      },
+    },
+    {
+      condicao: (e) => e.luaDeMel === true && e.passaporteValido !== true,
+      tarefa: {
+        titulo: 'Verificar validade do passaporte (mínimo 6 meses)',
+        descricao: 'Alguns países exigem passaporte válido por pelo menos 6 meses após a data de entrada.',
+        categoria: 'Documentação',
+        prazo: 270,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.luaDeMel === true && e.destinoEstrangeiro === true && e.visto !== true,
+      tarefa: {
+        titulo: 'Verificar necessidade de visto para o destino da lua de mel',
+        descricao: 'Consulte o consulado do país de destino com antecedência.',
+        categoria: 'Documentação',
+        prazo: 270,
+        prioridade: 'obrigatoria',
+      },
+    },
+  ];
+  
+  /**
+   * Gera tarefas contextualizadas a partir do estado do memorial
+   * @param {Object} estado - memoriais.estado
+   * @param {string} dataEvento - ISO date string (YYYY-MM-DD)
+   * @returns {Array} lista de tarefas prontas para insert
+   */
+  export function gerarTarefasContextualizadas(estado, dataEvento) {
+    if (!estado || !dataEvento) return [];
+  
+    const tarefas = [];
+  
+    for (const regra of REGRAS) {
+      try {
+        if (regra.condicao(estado)) {
+          const t = regra.tarefa;
+          tarefas.push({
+            titulo: t.titulo,
+            descricao: t.descricao,
+            categoria: t.subcategoria || t.categoria,        // compatibilidade legada
+            categoria_principal: t.categoria,               // catálogo centralizado
+            prazo: calcularPrazo(dataEvento, t.prazo),
+            prioridade: t.prioridade,
+            concluida: false,
+            gerada_auto: true,
+          });
+        }
+      } catch (err) {
+        console.warn('[gerador-tarefas] Regra falhou:', err);
+      }
+    }
+  
+    // Deduplica por título (evita tarefas duplicadas se regras conflitarem)
+    const vistos = new Set();
+    return tarefas.filter((t) => {
+      if (vistos.has(t.titulo)) return false;
+      vistos.add(t.titulo);
+      return true;
+    });
+  }
+  
+  export default { gerarTarefasContextualizadas };
