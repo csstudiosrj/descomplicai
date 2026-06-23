@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
 import HeaderPainel from '../../components/painel/HeaderPainel';
 import Icon from '../../components/ui/Icon';
@@ -58,8 +59,10 @@ export default function FornecedoresPage() {
 }
 
 function FornecedoresContent() {
+  const router = useRouter();
   const { user, evento, hasAccess, supabase } = useAuth();
   const [fornecedores, setFornecedores] = useState([]);
+  const [contratos, setContratos] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState({});
   const [menuAbertoId, setMenuAbertoId] = useState(null);
@@ -88,12 +91,18 @@ function FornecedoresContent() {
   }, [menuAbertoId]);
 
   const buscar = async () => {
-    const { data } = await supabase
+    const { data: fornData } = await supabase
       .from('fornecedores')
       .select('*')
       .eq('evento_id', evento.id)
       .order('categoria');
-    setFornecedores(data || []);
+    setFornecedores(fornData || []);
+
+    const { data: contrData } = await supabase
+      .from('contratos')
+      .select('id, fornecedor_id, status')
+      .eq('evento_id', evento.id);
+    setContratos(contrData || []);
   };
 
   const salvar = async () => {
@@ -179,6 +188,7 @@ function FornecedoresContent() {
     const statusInfo = STATUS_FORNECEDOR.find(s => s.id === f.status);
     const badgeColors = BADGE_COLORS[f.status] || BADGE_COLORS.a_contratar;
     const contratoStatus = getContratoStatus(f);
+    const contrato = contratos.find(c => c.fornecedor_id === f.id);
 
     const catPrincipal = toSentenceCase(getLabelCategoriaPrincipal(f.categoria) || '');
     const subcategoria = toSentenceCase(getLabelSubcategoria(f.categoria) || '');
@@ -315,11 +325,16 @@ function FornecedoresContent() {
               {contratoStatus.label}
             </span>
             <button
-              onClick={() => {}}
+              onClick={() => {
+                if (contrato) {
+                  router.push(`/painel/contratos?contrato=${contrato.id}`);
+                } else {
+                  router.push(`/painel/contratos?fornecedor=${f.id}`);
+                }
+              }}
               style={btnVerContratoStyle}
-              title="Módulo de contratos em breve"
             >
-              Ver contrato
+              {contrato ? 'Ver contrato' : 'Criar contrato'}
             </button>
           </div>
         </div>
@@ -541,7 +556,6 @@ const grupoTituloStyle = { fontFamily: 'var(--font-display, Georgia, serif)', fo
 const gridStyle = { display: 'flex', flexDirection: 'column', gap: '12px' };
 const gridGradeStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' };
 
-/* Card preenchido */
 const cardStyle = { background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid #F0EDE9', display: 'flex', flexDirection: 'column', gap: '12px' };
 const cardHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' };
 const cardHeaderRightStyle = { display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 };
@@ -574,13 +588,11 @@ const valorDividerStyle = { width: '1px', height: '24px', background: '#F0EDE9' 
 const contratoRowStyle = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginTop: '2px' };
 const btnVerContratoStyle = { background: 'none', border: 'none', color: '#8B6F5E', fontSize: '12px', fontWeight: 600, fontFamily: 'var(--font-body)', cursor: 'pointer', padding: '4px 0', textDecoration: 'underline', textUnderlineOffset: '2px' };
 
-/* Card vazio (pré-criado) */
 const cardVazioStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#F5F0EB', border: '1px dashed #D4C8C0', borderRadius: '10px', minHeight: '44px', maxHeight: '52px', gap: '12px' };
 const cardVazioCategoriaStyle = { fontSize: '13px', color: '#A89B91', fontFamily: 'var(--font-body)', fontWeight: 500 };
 const cardVazioRightStyle = { display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 };
 const btnPreencherStyle = { background: 'none', border: 'none', color: '#8B6F5E', fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font-body)', cursor: 'pointer', padding: '4px 8px', borderRadius: '6px', transition: 'background 150ms ease' };
 
-/* Modal */
 const modalOverlayStyle = { position: 'fixed', inset: 0, background: 'rgba(26,23,20,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '16px' };
 const modalStyle = { background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.18)', display: 'flex', flexDirection: 'column' };
 const modalHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', background: '#8B6F5E', flexShrink: 0 };
