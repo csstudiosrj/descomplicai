@@ -12,10 +12,10 @@ export default function ContratoCard({ contrato, fornecedor, onEditar, onExcluir
   const nomeFornecedor = fornecedor?.nome || 'Fornecedor';
   const empresa = fornecedor?.empresa;
   const status = contrato.status;
-  const isModelo = contrato.origem !== 'upload';
+  const isUpload = contrato.tipo === 'upload_fornecedor';
   const temPdf = !!contrato.pdf_url;
   const enviadoNaoAssinado = ['enviado', 'visualizado'].includes(status);
-  const podeEditar = !readOnly && status !== 'assinado';
+  const podeEditar = !readOnly && status !== 'assinado' && status !== 'recusado';
   const podeExcluir = !readOnly && status !== 'assinado';
   const podeEnviar = !readOnly && status === 'rascunho';
   const podeReenviar = !readOnly && enviadoNaoAssinado;
@@ -38,11 +38,11 @@ export default function ContratoCard({ contrato, fornecedor, onEditar, onExcluir
 
       <div style={cardBodyStyle}>
         <div style={metaRowStyle}>
-          <div style={tipoBadgeStyle(isModelo)}>
-            <Icon name={isModelo ? 'fileText' : 'upload'} size={12} color={isModelo ? '#A89B91' : '#8B6F5E'} />
-            <span>{isModelo ? 'Modelo gerado' : 'Upload do fornecedor'}</span>
+          <div style={tipoBadgeStyle(isUpload)}>
+            <Icon name={isUpload ? 'upload' : 'fileText'} size={12} color={isUpload ? '#8B6F5E' : '#A89B91'} />
+            <span>{isUpload ? 'Upload do fornecedor' : 'Modelo gerado'}</span>
           </div>
-          <span style={tipoLabelStyle}>{contrato.tipo || 'Contrato'}</span>
+          <span style={tipoLabelStyle}>{isUpload ? 'Contrato enviado' : (contrato.categoria || 'Contrato')}</span>
         </div>
 
         <div style={datasStyle}>
@@ -134,7 +134,7 @@ const empresaStyle = { fontSize: '12px', color: '#A89B91', margin: 0, fontFamily
 
 const cardBodyStyle = { display: 'flex', flexDirection: 'column', gap: '10px' };
 const metaRowStyle = { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' };
-const tipoBadgeStyle = (isModelo) => ({ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 500, fontFamily: 'var(--font-body)', background: isModelo ? '#F5F5F5' : '#FFF8E1', color: isModelo ? '#9E9E9E' : '#F9A825', border: `1px solid ${isModelo ? '#E0E0E0' : '#FFE082'}` });
+const tipoBadgeStyle = (isUpload) => ({ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 500, fontFamily: 'var(--font-body)', background: isUpload ? '#FFF8E1' : '#F5F5F5', color: isUpload ? '#F9A825' : '#9E9E9E', border: `1px solid ${isUpload ? '#FFE082' : '#E0E0E0'}` });
 const tipoLabelStyle = { fontSize: '13px', color: '#A89B91', fontFamily: 'var(--font-body)' };
 
 const datasStyle = { display: 'flex', gap: '16px', flexWrap: 'wrap' };
