@@ -568,6 +568,18 @@ const icons = {
     </g>
   ),
 
+  chevronUp: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 15l6-6 6 6" />
+    </g>
+  ),
+
+  chevronDown: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 9l6 6 6-6" />
+    </g>
+  ),
+
   refreshCw: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 12a9 9 0 1 1-2.64-6.36L21 3" />
