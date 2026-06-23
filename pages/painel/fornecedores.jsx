@@ -35,6 +35,12 @@ function toSentenceCase(str) {
   return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
 }
 
+function getContratoStatus(f) {
+  if (f.contrato_assinado_em) return { label: 'Assinado', color: '#10B981', bg: '#E8F5E9' };
+  if (f.contrato_url) return { label: 'Aguardando assinatura', color: '#F9A825', bg: '#FFF8E1' };
+  return { label: 'Sem contrato', color: '#9E9E9E', bg: '#F5F5F5' };
+}
+
 const BADGE_COLORS = {
   a_contratar: { bg: '#F5F5F5', color: '#9E9E9E' },
   cotacao: { bg: '#FFF8E1', color: '#F9A825' },
@@ -56,9 +62,6 @@ function FornecedoresContent() {
   const [fornecedores, setFornecedores] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState({});
-  const [aceiteTermo, setAceiteTermo] = useState(false);
-  const [assinando, setAssinando] = useState(false);
-  const [tooltipVisivel, setTooltipVisivel] = useState(false);
   const [menuAbertoId, setMenuAbertoId] = useState(null);
 
   const [filtroStatus, setFiltroStatus] = useState('todos');
@@ -135,7 +138,6 @@ function FornecedoresContent() {
 
     setModalAberto(false);
     setForm({});
-    setAceiteTermo(false);
     buscar();
   };
 
@@ -145,30 +147,6 @@ function FornecedoresContent() {
     if (!confirm(`Excluir "${f?.nome || 'fornecedor'}"?`)) return;
     await supabase.from('fornecedores').delete().eq('id', id);
     buscar();
-  };
-
-  const assinarContrato = async (fornecedorId) => {
-    if (!aceiteTermo) return;
-    setAssinando(true);
-    try {
-      const res = await fetch('/api/fornecedores/assinar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fornecedorId }),
-      });
-      const data = await res.json();
-      if (data.sucesso) {
-        alert('Contrato assinado digitalmente com sucesso!');
-        buscar();
-      } else {
-        alert('Erro: ' + data.erro);
-      }
-    } catch (err) {
-      alert('Erro ao assinar contrato');
-    } finally {
-      setAssinando(false);
-      setAceiteTermo(false);
-    }
   };
 
   const subcategoriasDisponiveis = form.categoria_principal
@@ -200,6 +178,7 @@ function FornecedoresContent() {
     const ehPreCriado = f.pre_criado === true && (!f.nome || !f.nome.trim());
     const statusInfo = STATUS_FORNECEDOR.find(s => s.id === f.status);
     const badgeColors = BADGE_COLORS[f.status] || BADGE_COLORS.a_contratar;
+    const contratoStatus = getContratoStatus(f);
 
     const catPrincipal = toSentenceCase(getLabelCategoriaPrincipal(f.categoria) || '');
     const subcategoria = toSentenceCase(getLabelSubcategoria(f.categoria) || '');
@@ -224,7 +203,6 @@ function FornecedoresContent() {
                 onClick={() => {
                   const catPrincipal = getCategoriaPrincipal(f.categoria)?.id || '';
                   setForm({ ...f, categoria_principal: catPrincipal });
-                  setAceiteTermo(false);
                   setModalAberto(true);
                 }}
                 style={btnPreencherStyle}
@@ -266,7 +244,6 @@ function FornecedoresContent() {
                         onClick={() => {
                           const catPrincipal = getCategoriaPrincipal(f.categoria)?.id || '';
                           setForm({ ...f, categoria_principal: catPrincipal });
-                          setAceiteTermo(false);
                           setModalAberto(true);
                           setMenuAbertoId(null);
                         }}
@@ -329,12 +306,22 @@ function FornecedoresContent() {
             </div>
           </div>
 
-          {f.contrato_assinado_em && (
-            <div style={assinadoStyle}>
-              <Icon name="check" size={14} color="#10B981" />
-              <span>Assinado em {new Date(f.contrato_assinado_em).toLocaleDateString('pt-BR')}</span>
-            </div>
-          )}
+          <div style={contratoRowStyle}>
+            <span style={{
+              ...badgeStyle,
+              background: contratoStatus.bg,
+              color: contratoStatus.color,
+            }}>
+              {contratoStatus.label}
+            </span>
+            <button
+              onClick={() => {}}
+              style={btnVerContratoStyle}
+              title="Módulo de contratos em breve"
+            >
+              Ver contrato
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -356,7 +343,7 @@ function FornecedoresContent() {
             <h1 style={titleStyle}>Fornecedores</h1>
             {!readOnly && (
               <button
-                onClick={() => { setForm({ status: 'a_contratar' }); setAceiteTermo(false); setModalAberto(true); }}
+                onClick={() => { setForm({ status: 'a_contratar' }); setModalAberto(true); }}
                 style={btnPrimaryStyle}
               >
                 <Icon name="plus" size={16} color="#fff" /> Adicionar
@@ -494,23 +481,11 @@ function FornecedoresContent() {
                   <InputMoeda label="Valor Total" value={form.valor_total || 0} onChange={(v) => setForm({ ...form, valor_total: v })} />
                 </div>
                 <div style={colStyle}>
-                  <div style={{ position: 'relative' }}>
-                    <InputMoeda
-                      label={
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          Sinal / adiantamento
-                          <span style={ajudaIconeStyle} onMouseEnter={() => setTooltipVisivel(true)} onMouseLeave={() => setTooltipVisivel(false)}>
-                            <Icon name="info" size={12} />
-                          </span>
-                        </span>
-                      }
-                      value={form.valor_entrada || 0}
-                      onChange={(v) => setForm({ ...form, valor_entrada: v })}
-                    />
-                    {tooltipVisivel && (
-                      <div style={tooltipStyle}>Valor pago antecipadamente para confirmar a contratacao.</div>
-                    )}
-                  </div>
+                  <InputMoeda
+                    label="Sinal / adiantamento"
+                    value={form.valor_entrada || 0}
+                    onChange={(v) => setForm({ ...form, valor_entrada: v })}
+                  />
                 </div>
               </div>
 
@@ -527,22 +502,6 @@ function FornecedoresContent() {
                 <label style={labelStyle}>Notas</label>
                 <textarea style={textareaStyle} placeholder="Observacoes..." value={form.notas || ''} onChange={(e) => setForm({ ...form, notas: e.target.value })} rows={3} />
               </div>
-
-              {form.id && !form.pre_criado && (
-                <div style={assinaturaBoxStyle}>
-                  <label style={checkboxLabelStyle}>
-                    <input type="checkbox" checked={aceiteTermo} onChange={(e) => setAceiteTermo(e.target.checked)} style={checkboxStyle} />
-                    Li e aceito os termos do contrato com {form.nome || 'este fornecedor'}
-                  </label>
-                  <button
-                    onClick={() => assinarContrato(form.id)}
-                    disabled={!aceiteTermo || assinando}
-                    style={{ ...btnAssinarStyle, opacity: !aceiteTermo || assinando ? 0.5 : 1, cursor: !aceiteTermo || assinando ? 'not-allowed' : 'pointer' }}
-                  >
-                    {assinando ? 'Assinando...' : 'Assinar digitalmente'}
-                  </button>
-                </div>
-              )}
 
               <div style={modalBotoesStyle}>
                 <button onClick={() => setModalAberto(false)} style={btnCancelTextStyle}>Cancelar</button>
@@ -612,7 +571,8 @@ const valorTotalStyle = { fontSize: '14px', fontWeight: 700, color: '#8B6F5E', f
 const valorNumStyle = { fontSize: '13px', fontWeight: 500, color: '#1A1714', fontFamily: 'var(--font-body)' };
 const valorDividerStyle = { width: '1px', height: '24px', background: '#F0EDE9' };
 
-const assinadoStyle = { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#10B981', fontFamily: 'var(--font-body)' };
+const contratoRowStyle = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginTop: '2px' };
+const btnVerContratoStyle = { background: 'none', border: 'none', color: '#8B6F5E', fontSize: '12px', fontWeight: 600, fontFamily: 'var(--font-body)', cursor: 'pointer', padding: '4px 0', textDecoration: 'underline', textUnderlineOffset: '2px' };
 
 /* Card vazio (pré-criado) */
 const cardVazioStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#F5F0EB', border: '1px dashed #D4C8C0', borderRadius: '10px', minHeight: '44px', maxHeight: '52px', gap: '12px' };
@@ -636,8 +596,6 @@ const selectStyle = { width: '100%', padding: '10px 12px', borderRadius: '8px', 
 const textareaStyle = { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #D4C8C0', fontSize: '14px', fontFamily: 'var(--font-body)', color: '#1A1714', minHeight: '80px', resize: 'vertical', outline: 'none', boxSizing: 'border-box', background: '#fff' };
 const rowStyle = { display: 'flex', gap: '12px', flexWrap: 'wrap' };
 const colStyle = { flex: 1, minWidth: '180px' };
-const tooltipStyle = { position: 'absolute', bottom: '100%', left: 0, background: '#1A1714', color: '#fff', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', marginBottom: '6px', whiteSpace: 'nowrap', zIndex: 10, fontFamily: 'var(--font-body)' };
-const ajudaIconeStyle = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', border: '1.5px solid #8B6F5E', color: '#8B6F5E', fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-display)', cursor: 'help', lineHeight: 1 };
 
 const modalBotoesStyle = { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px', alignItems: 'center' };
 const btnCancelTextStyle = { background: 'none', border: 'none', color: '#A89B91', fontSize: '14px', fontWeight: 500, fontFamily: 'var(--font-body)', cursor: 'pointer', padding: '10px 12px' };
@@ -645,8 +603,3 @@ const btnSaveStyle = { background: '#8B6F5E', color: '#fff', border: 'none', pad
 
 const readOnlyBannerStyle = { background: '#FFF8E1', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' };
 const readOnlyTextStyle = { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' };
-
-const assinaturaBoxStyle = { border: '1px solid #F0EDE9', borderRadius: '8px', padding: '12px', marginBottom: '10px', background: '#F9F7F4' };
-const checkboxLabelStyle = { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#1A1714', marginBottom: '10px', cursor: 'pointer', fontFamily: 'var(--font-body)' };
-const checkboxStyle = { width: '16px', height: '16px', cursor: 'pointer' };
-const btnAssinarStyle = { width: '100%', padding: '10px', background: '#10B981', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 600, fontFamily: 'var(--font-body)' };
