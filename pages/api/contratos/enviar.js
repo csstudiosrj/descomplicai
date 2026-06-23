@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { gerarContrato } from '../../utils/templateContratos';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -11,33 +10,22 @@ export default async function handler(req, res) {
     return res.status(405).json({ erro: 'Método não permitido' });
   }
 
-  const { evento_id, fornecedor_id, tipo, categoria, conteudo } = req.body;
-
-  if (!evento_id || !fornecedor_id || !tipo || !conteudo) {
-    return res.status(400).json({ erro: 'Dados incompletos' });
+  const { contrato_id } = req.body;
+  if (!contrato_id) {
+    return res.status(400).json({ erro: 'contrato_id obrigatório' });
   }
 
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('contratos')
-      .insert({
-        evento_id,
-        fornecedor_id,
-        tipo,
-        categoria,
-        status: 'rascunho',
-        conteudo,
-        criado_em: new Date().toISOString(),
-        atualizado_em: new Date().toISOString(),
-      })
-      .select()
-      .single();
+      .update({ status: 'enviado', atualizado_em: new Date().toISOString() })
+      .eq('id', contrato_id);
 
     if (error) throw error;
 
-    return res.status(200).json({ contrato: data });
+    return res.status(200).json({ sucesso: true, mensagem: 'Status atualizado para enviado' });
   } catch (err) {
-    console.error('Erro ao criar contrato:', err);
+    console.error('Erro ao enviar contrato:', err);
     return res.status(500).json({ erro: err.message || 'Erro interno' });
   }
 }
