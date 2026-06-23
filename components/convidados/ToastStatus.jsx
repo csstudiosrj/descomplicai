@@ -48,20 +48,14 @@ export default function ToastStatus({ toast, onUndo, onClose }) {
 
   const cores = {
     pendente: { bg: '#FFF8E1', border: '#F9A825', icon: 'clock', iconColor: '#F9A825' },
-    confirmado: { bg: '#E8F5E9', border: '#2E7D32', icon: 'check', iconColor: '#2E7D32' },
+    confirmado: { bg: '#E8F5E9', border: '#10B981', icon: 'check', iconColor: '#10B981' },
     recusado: { bg: '#FFEBEE', border: '#C62828', icon: 'close', iconColor: '#C62828' },
   };
 
   const cfg = cores[toast.novoStatus] || cores.pendente;
 
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: '24px',
-      right: '24px',
-      zIndex: 999,
-      animation: 'slideIn 0.3s ease',
-    }}>
+    <div style={toastContainerStyle}>
       <style>{`
         @keyframes slideIn {
           from { transform: translateX(120%); opacity: 0; }
@@ -74,75 +68,111 @@ export default function ToastStatus({ toast, onUndo, onClose }) {
         }
       `}</style>
       <div style={{
+        ...toastCardStyle,
         background: cfg.bg,
         border: `1px solid ${cfg.border}`,
-        borderRadius: '12px',
-        padding: '14px 18px',
-        minWidth: '280px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={toastRowStyle}>
           <div style={{
-            width: '28px',
-            height: '28px',
-            borderRadius: '50%',
+            ...toastIconWrapStyle,
             background: cfg.iconColor,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            animation: 'pop 0.4s ease',
-            color: '#fff',
           }}>
             {ICONES[cfg.icon]}
           </div>
           <div style={{ flex: 1 }}>
-            <p style={{
-              margin: 0,
-              fontSize: '13px',
-              fontWeight: 600,
-              color: 'var(--color-text-primary)',
-              fontFamily: 'var(--font-body)',
-            }}>
+            <p style={toastTextStyle}>
               {toast.nome} — {toast.novoStatus === 'confirmado' ? 'confirmou presenca' : toast.novoStatus === 'recusado' ? 'recusou' : 'pendente'}
             </p>
           </div>
           <button
             onClick={() => { onUndo(); setVisible(false); }}
             style={{
-              background: 'none',
-              border: 'none',
+              ...undoBtnStyle,
               color: cfg.iconColor,
-              fontSize: '12px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: 'var(--font-body)',
-              padding: '4px 8px',
-              borderRadius: '6px',
-              whiteSpace: 'nowrap',
             }}
           >
             Desfazer
           </button>
         </div>
-        <div style={{
-          width: '100%',
-          height: '3px',
-          background: 'rgba(0,0,0,0.08)',
-          borderRadius: '2px',
-          overflow: 'hidden',
-        }}>
+        <div style={progressBarBgStyle}>
           <div style={{
+            ...progressBarFillStyle,
             width: `${progress}%`,
-            height: '100%',
             background: cfg.iconColor,
-            borderRadius: '2px',
-            transition: 'width 50ms linear',
           }} />
         </div>
       </div>
     </div>
   );
 }
+
+/* ===== STYLES ===== */
+const toastContainerStyle = {
+  position: 'fixed',
+  bottom: '24px',
+  right: '24px',
+  zIndex: 999,
+  animation: 'slideIn 0.3s ease',
+};
+
+const toastCardStyle = {
+  borderRadius: '12px',
+  padding: '14px 18px',
+  minWidth: '280px',
+  boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '10px',
+};
+
+const toastRowStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+};
+
+const toastIconWrapStyle = {
+  width: '28px',
+  height: '28px',
+  borderRadius: '50%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  animation: 'pop 0.4s ease',
+  color: '#fff',
+  flexShrink: 0,
+};
+
+const toastTextStyle = {
+  margin: 0,
+  fontSize: '13px',
+  fontWeight: 600,
+  color: '#1A1714',
+  fontFamily: 'var(--font-body)',
+};
+
+const undoBtnStyle = {
+  background: 'none',
+  border: 'none',
+  fontSize: '12px',
+  fontWeight: 600,
+  cursor: 'pointer',
+  fontFamily: 'var(--font-body)',
+  padding: '4px 8px',
+  borderRadius: '6px',
+  whiteSpace: 'nowrap',
+};
+
+const progressBarBgStyle = {
+  width: '100%',
+  height: '3px',
+  background: 'rgba(0,0,0,0.08)',
+  borderRadius: '2px',
+  overflow: 'hidden',
+};
+
+const progressBarFillStyle = {
+  height: '100%',
+  borderRadius: '2px',
+  transition: 'width 50ms linear',
+};

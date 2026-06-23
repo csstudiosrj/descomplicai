@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
 import HeaderPainel from '../../components/painel/HeaderPainel';
 import Icon from '../../components/ui/Icon';
+import Modal from '../../components/ui/Modal';
 import { useAuth } from '../../hooks/useAuth';
 import ConvidadoItem from '../../components/convidados/ConvidadoItem';
 import ConvidadoFiltros from '../../components/convidados/ConvidadoFiltros';
@@ -48,12 +49,15 @@ function ConvidadosContent({ readOnly }) {
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [filtroGrupo, setFiltroGrupo] = useState('todos');
 
+  // Modal Adicionar
+  const [modalAdicionar, setModalAdicionar] = useState(false);
   const [novoNome, setNovoNome] = useState('');
   const [novoGrupo, setNovoGrupo] = useState('');
   const [novoGrupoOutro, setNovoGrupoOutro] = useState('');
   const [novoTelefone, setNovoTelefone] = useState('');
   const [novoAcompanhantes, setNovoAcompanhantes] = useState('');
 
+  // Modal Editar
   const [modalEditar, setModalEditar] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [editGrupoOutro, setEditGrupoOutro] = useState('');
@@ -136,6 +140,15 @@ function ConvidadosContent({ readOnly }) {
     setResumo({ total, confirmados, pendentes, recusados, pessoasConfirmadas });
   };
 
+  const resetFormAdicionar = () => {
+    setNovoNome('');
+    setNovoGrupo('');
+    setNovoGrupoOutro('');
+    setNovoTelefone('');
+    setNovoAcompanhantes('');
+    setErro('');
+  };
+
   const adicionar = async () => {
     if (readOnly || !novoNome.trim()) return;
     setErro('');
@@ -164,8 +177,8 @@ function ConvidadosContent({ readOnly }) {
     const { error } = await supabase.from('convidados').insert(payload);
     if (error) { setErro('Erro ao adicionar: ' + error.message); return; }
 
-    setNovoNome(''); setNovoGrupo(''); setNovoGrupoOutro('');
-    setNovoTelefone(''); setNovoAcompanhantes('');
+    resetFormAdicionar();
+    setModalAdicionar(false);
     carregarTudo();
   };
 
@@ -208,12 +221,14 @@ function ConvidadosContent({ readOnly }) {
     const { error } = await supabase.from('convidados').update(payload).eq('id', editForm.id);
     if (error) { setErro('Erro ao editar: ' + error.message); return; }
 
-    setModalEditar(false); setEditForm({}); setEditGrupoOutro('');
+    setModalEditar(false); setEditForm({}); setEditGrupoOutro(''); setErro('');
     carregarTudo();
   };
 
   const excluir = async (id) => {
-    if (readOnly || !confirm('Excluir convidado?')) return;
+    if (readOnly) return;
+    const conv = convidados.find(c => c.id === id);
+    if (!confirm(`Excluir "${conv?.nome || 'convidado'}"?`)) return;
     await supabase.from('convidados').delete().eq('id', id);
     carregarTudo();
   };
@@ -237,6 +252,7 @@ function ConvidadosContent({ readOnly }) {
       setEditForm(prev => ({ ...prev, grupo: 'Outro' }));
       setEditGrupoOutro(c.grupo);
     } else { setEditGrupoOutro(''); }
+    setErro('');
     setModalEditar(true);
   };
 
@@ -250,29 +266,129 @@ function ConvidadosContent({ readOnly }) {
   const nomeCasal = evento?.nome_evento || '';
   const todosGrupos = Array.from(new Set([...GRUPOS_PADRAO, ...grupos.map(g => g.nome)]));
 
+  const renderFormFields = (isEdit = false) => {
+    const form = isEdit ? editForm : {
+      nome: novoNome, grupo: novoGrupo, telefone: novoTelefone, acompanhantes: novoAcompanhantes, mesa: ''
+    };
+    const setForm = isEdit ? setEditForm : null;
+
+    const handleChange = (field, val) => {
+      if (isEdit) setForm(prev => ({ ...prev, [field]: val }));
+      else {
+        if (field === 'nome') setNovoNome(val);
+        if (field === 'grupo') setNovoGrupo(val);
+        if (field === 'telefone') setNovoTelefone(val);
+        if (field === 'acompanhantes') setNovoAcompanhantes(val);
+      }
+    };
+
+    const grupoValue = isEdit ? editForm.grupo : novoGrupo;
+    const grupoOutroValue = isEdit ? editGrupoOutro : novoGrupoOutro;
+    const setGrupoOutro = isEdit ? setEditGrupoOutro : setNovoGrupoOutro;
+
+    return (
+      <>
+        <div style={formGroupStyle}>
+          <label style={labelStyle}>Nome</label>
+          <input
+            style={inputStyle}
+            placeholder="Nome do convidado"
+            value={form.nome || ''}
+            onChange={(e) => handleChange('nome', e.target.value)}
+          />
+        </div>
+        <div style={formGroupStyle}>
+          <label style={labelStyle}>Grupo</label>
+          <select
+            style={selectStyle}
+            value={grupoValue || ''}
+            onChange={(e) => handleChange('grupo', e.target.value)}
+          >
+            <option value="">Selecione...</option>
+            {todosGrupos.map(g => <option key={g} value={g}>{g}</option>)}
+            <option value="Outro">Outro...</option>
+          </select>
+          {grupoValue === 'Outro' && (
+            <input
+              style={{ ...inputStyle, marginTop: '8px' }}
+              placeholder="Qual grupo?"
+              value={grupoOutroValue}
+              onChange={(e) => setGrupoOutro(e.target.value)}
+            />
+          )}
+        </div>
+        <div style={formGroupStyle}>
+          <label style={labelStyle}>Telefone</label>
+          <input
+            style={inputStyle}
+            placeholder="(00) 00000-0000"
+            value={form.telefone || ''}
+            onChange={(e) => handleChange('telefone', formatarTelefone(e.target.value))}
+          />
+        </div>
+        <div style={formGroupStyle}>
+          <label style={labelStyle}>Acompanhantes</label>
+          <input
+            style={inputStyle}
+            type="number"
+            min="0"
+            placeholder="0"
+            value={form.acompanhantes || ''}
+            onChange={(e) => handleChange('acompanhantes', e.target.value)}
+          />
+        </div>
+        {isEdit && (
+          <div style={formGroupStyle}>
+            <label style={labelStyle}>Mesa</label>
+            <input
+              style={inputStyle}
+              placeholder="Número ou nome da mesa"
+              value={editForm.mesa || ''}
+              onChange={(e) => setEditForm({ ...editForm, mesa: e.target.value })}
+            />
+          </div>
+        )}
+      </>
+    );
+  };
+
   return (
     <>
       <Head><title>Convidados | descomplicai</title></Head>
-      <div style={styles.page}>
+      <div style={pageStyle}>
         <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} />
-        <main style={styles.main}>
+        <main style={mainStyle}>
           {readOnly && (
-            <div style={styles.readOnlyBanner}>
-              <span style={styles.readOnlyText}>Modo somente leitura. Assine para editar.</span>
+            <div style={readOnlyBannerStyle}>
+              <span style={readOnlyTextStyle}>Modo somente leitura. Assine para editar.</span>
             </div>
           )}
-          {erro && (
-            <div style={styles.erroBanner} onClick={() => setErro('')}>
-              <span style={styles.erroText}>{erro}</span>
-              <button style={styles.btnFecharErro}><Icon name="close" size={12} /></button>
+          {erro && !modalAdicionar && !modalEditar && (
+            <div style={erroBannerStyle} onClick={() => setErro('')}>
+              <span style={erroTextStyle}>{erro}</span>
+              <button style={btnFecharErroStyle} onClick={() => setErro('')}>
+                <Icon name="close" size={12} />
+              </button>
             </div>
           )}
-          <div style={styles.headerRow}>
-            <h1 style={styles.title}>Convidados</h1>
-            <button onClick={() => router.push('/painel/mesas')} style={styles.btnMesas}>
-              <Icon name="layout" size={16} /> Ver mesas
-            </button>
+
+          <div style={headerRowStyle}>
+            <h1 style={titleStyle}>Convidados</h1>
+            <div style={headerActionsStyle}>
+              <button onClick={exportarCSV} style={btnSecondaryStyle}>
+                <Icon name="download" size={16} /> Exportar CSV
+              </button>
+              <button onClick={() => router.push('/painel/mesas')} style={btnMesasStyle}>
+                <Icon name="layout" size={16} /> Ver mesas
+              </button>
+              {!readOnly && (
+                <button onClick={() => { resetFormAdicionar(); setModalAdicionar(true); }} style={btnPrimaryStyle}>
+                  <Icon name="plus" size={16} /> Adicionar convidado
+                </button>
+              )}
+            </div>
           </div>
+
           <ConvidadoFiltros
             busca={busca} setBusca={setBusca}
             filtroStatus={filtroStatus} setFiltroStatus={setFiltroStatus}
@@ -282,44 +398,13 @@ function ConvidadosContent({ readOnly }) {
             pendentes={resumo.pendentes} recusados={resumo.recusados}
             pessoasConfirmadas={resumo.pessoasConfirmadas}
           />
-          {!readOnly && (
-            <div style={styles.addBox}>
-              <div style={styles.addRow}>
-                <input style={{ ...styles.input, flex: 2 }} placeholder="Nome do convidado"
-                  value={novoNome} onChange={(e) => setNovoNome(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && adicionar()} />
-                <select style={{ ...styles.input, flex: '0 0 150px', cursor: 'pointer' }}
-                  value={novoGrupo} onChange={(e) => setNovoGrupo(e.target.value)}>
-                  <option value="">Grupo...</option>
-                  {todosGrupos.map(g => <option key={g} value={g}>{g}</option>)}
-                  <option value="Outro">Outro...</option>
-                </select>
-                {novoGrupo === 'Outro' && (
-                  <input style={{ ...styles.input, flex: '0 0 140px' }} placeholder="Qual grupo?"
-                    value={novoGrupoOutro} onChange={(e) => setNovoGrupoOutro(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && adicionar()} />
-                )}
-                <input style={{ ...styles.input, flex: '0 0 130px' }} placeholder="Telefone"
-                  value={novoTelefone} onChange={(e) => setNovoTelefone(formatarTelefone(e.target.value))}
-                  onKeyDown={(e) => e.key === 'Enter' && adicionar()} />
-                <input style={{ ...styles.input, flex: '0 0 90px' }} placeholder="Acomp." type="number" min="0"
-                  value={novoAcompanhantes} onChange={(e) => setNovoAcompanhantes(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && adicionar()} />
-                <button onClick={adicionar} style={styles.btnPrimary}>
-                  <Icon name="plus" size={16} color="#fff" />
-                </button>
-              </div>
-            </div>
-          )}
-          <button onClick={exportarCSV} style={styles.btnSecondary}>
-            <Icon name="download" size={16} /> Exportar CSV
-          </button>
-          <div style={styles.list}>
+
+          <div style={listCardStyle}>
             {carregando ? (
-              <div style={styles.emptyState}><span style={styles.emptyText}>Carregando...</span></div>
+              <div style={emptyStateStyle}><span style={emptyTextStyle}>Carregando...</span></div>
             ) : filtrados.length === 0 ? (
-              <div style={styles.emptyState}>
-                <span style={styles.emptyText}>
+              <div style={emptyStateStyle}>
+                <span style={emptyTextStyle}>
                   {convidados.length === 0 ? 'Nenhum convidado cadastrado' : 'Nenhum resultado para os filtros'}
                 </span>
               </div>
@@ -333,91 +418,207 @@ function ConvidadosContent({ readOnly }) {
           </div>
         </main>
       </div>
+
       <ToastStatus toast={toast} onUndo={desfazerStatus} onClose={() => setToast(null)} />
-      {modalEditar && !readOnly && (
-        <div style={styles.modalOverlay} onClick={() => setModalEditar(false)}>
-          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>Editar convidado</h2>
-              <button onClick={() => setModalEditar(false)} style={styles.btnFechar}>
-                <Icon name="close" size={20} />
-              </button>
-            </div>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Nome</label>
-              <input style={styles.input} value={editForm.nome || ''}
-                onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} />
-            </div>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Grupo</label>
-              <select style={styles.select} value={editForm.grupo || ''}
-                onChange={(e) => setEditForm({ ...editForm, grupo: e.target.value })}>
-                <option value="">Selecione...</option>
-                {todosGrupos.map(g => <option key={g} value={g}>{g}</option>)}
-                <option value="Outro">Outro...</option>
-              </select>
-              {editForm.grupo === 'Outro' && (
-                <input style={{ ...styles.input, marginTop: '8px' }} placeholder="Qual grupo?"
-                  value={editGrupoOutro} onChange={(e) => setEditGrupoOutro(e.target.value)} />
-              )}
-            </div>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Telefone</label>
-              <input style={styles.input} placeholder="(00) 00000-0000"
-                value={editForm.telefone || ''}
-                onChange={(e) => setEditForm({ ...editForm, telefone: formatarTelefone(e.target.value) })} />
-            </div>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Acompanhantes</label>
-              <input style={styles.input} type="number" min="0"
-                value={editForm.acompanhantes || 0}
-                onChange={(e) => setEditForm({ ...editForm, acompanhantes: e.target.value })} />
-            </div>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Mesa</label>
-              <input style={styles.input} placeholder="Numero ou nome da mesa"
-                value={editForm.mesa || ''}
-                onChange={(e) => setEditForm({ ...editForm, mesa: e.target.value })} />
-            </div>
-            <div style={styles.modalBotoes}>
-              <button onClick={() => setModalEditar(false)} style={styles.btnCancel}>Cancelar</button>
-              <button onClick={salvarEdicao} style={styles.btnSave}>Salvar</button>
-            </div>
+
+      {/* Modal Adicionar */}
+      <Modal isOpen={modalAdicionar} onClose={() => setModalAdicionar(false)} title="Adicionar convidado" size="md">
+        {erro && modalAdicionar && (
+          <div style={{ ...erroBannerStyle, marginBottom: '16px' }} onClick={() => setErro('')}>
+            <span style={erroTextStyle}>{erro}</span>
           </div>
+        )}
+        {renderFormFields(false)}
+        <div style={modalBotoesStyle}>
+          <button onClick={() => setModalAdicionar(false)} style={btnCancelStyle}>Cancelar</button>
+          <button onClick={adicionar} style={btnSaveStyle}>Salvar</button>
         </div>
-      )}
+      </Modal>
+
+      {/* Modal Editar */}
+      <Modal isOpen={modalEditar} onClose={() => setModalEditar(false)} title="Editar convidado" size="md">
+        {erro && modalEditar && (
+          <div style={{ ...erroBannerStyle, marginBottom: '16px' }} onClick={() => setErro('')}>
+            <span style={erroTextStyle}>{erro}</span>
+          </div>
+        )}
+        {renderFormFields(true)}
+        <div style={modalBotoesStyle}>
+          <button onClick={() => setModalEditar(false)} style={btnCancelStyle}>Cancelar</button>
+          <button onClick={salvarEdicao} style={btnSaveStyle}>Salvar</button>
+        </div>
+      </Modal>
     </>
   );
 }
 
-const styles = {
-  page: { minHeight: '100vh', background: 'var(--color-off-white)', paddingTop: '52px' },
-  main: { maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px' },
-  headerRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' },
-  title: { fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--color-text-primary)', margin: 0 },
-  btnMesas: { display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--color-brand)', background: 'var(--color-white)', color: 'var(--color-brand)', fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font-body)', cursor: 'pointer' },
-  addBox: { marginBottom: '16px' },
-  addRow: { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' },
-  input: { flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '14px', fontFamily: 'var(--font-body)', background: 'var(--color-white)', color: 'var(--color-text-primary)', minWidth: '100px', outline: 'none', boxSizing: 'border-box' },
-  select: { width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '14px', fontFamily: 'var(--font-body)', background: 'var(--color-white)', color: 'var(--color-text-primary)', outline: 'none', boxSizing: 'border-box' },
-  btnPrimary: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: 'var(--color-brand)', color: '#fff', border: 'none', padding: '10px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, minWidth: '44px', height: '42px' },
-  btnSecondary: { display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--color-off-white)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)', padding: '10px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', marginBottom: '16px' },
-  list: { background: 'var(--color-white)', borderRadius: '12px', border: '1px solid var(--color-border)' },
-  emptyState: { padding: '40px 16px', textAlign: 'center' },
-  emptyText: { fontSize: '14px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' },
-  readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center', marginBottom: '16px' },
-  readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
-  erroBanner: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#FDE8E8', border: '1px solid #C62828', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', cursor: 'pointer' },
-  erroText: { fontSize: '13px', color: '#C62828', fontFamily: 'var(--font-body)' },
-  btnFecharErro: { background: 'none', border: 'none', cursor: 'pointer', color: '#C62828', padding: '2px' },
-  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '16px' },
-  modal: { background: 'var(--color-white)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
-  modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
-  modalTitle: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-text-primary)', margin: 0 },
-  btnFechar: { background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--color-text-secondary)' },
-  formGroup: { marginBottom: '14px' },
-  label: { display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: '6px', fontFamily: 'var(--font-body)' },
-  modalBotoes: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' },
-  btnCancel: { background: 'var(--color-off-white)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
-  btnSave: { background: 'var(--color-brand)', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 },
+/* ===== TOKENS VISUAIS ===== */
+const pageStyle = { minHeight: '100vh', background: '#F9F7F4', paddingTop: '52px' };
+const mainStyle = { maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px' };
+
+const headerRowStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: '20px',
+  flexWrap: 'wrap',
+  gap: '12px',
+};
+
+const titleStyle = {
+  fontFamily: 'var(--font-display, Georgia, serif)',
+  fontSize: '24px',
+  color: '#8B6F5E',
+  fontWeight: 400,
+  margin: 0,
+};
+
+const headerActionsStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  flexWrap: 'wrap',
+};
+
+const btnPrimaryStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  background: '#8B6F5E',
+  color: '#fff',
+  border: 'none',
+  padding: '10px 16px',
+  borderRadius: '8px',
+  cursor: 'pointer',
+  fontSize: '14px',
+  fontWeight: 600,
+  fontFamily: 'var(--font-body)',
+};
+
+const btnSecondaryStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  background: '#F9F7F4',
+  color: '#1A1714',
+  border: '1px solid #D4C8C0',
+  padding: '10px 14px',
+  borderRadius: '8px',
+  cursor: 'pointer',
+  fontSize: '14px',
+  fontFamily: 'var(--font-body)',
+};
+
+const btnMesasStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  padding: '10px 14px',
+  borderRadius: '8px',
+  border: '1px solid #8B6F5E',
+  background: '#fff',
+  color: '#8B6F5E',
+  fontSize: '14px',
+  fontWeight: 600,
+  fontFamily: 'var(--font-body)',
+  cursor: 'pointer',
+};
+
+const listCardStyle = {
+  background: '#fff',
+  borderRadius: '12px',
+  border: '1px solid #F0EDE9',
+  overflow: 'hidden',
+};
+
+const emptyStateStyle = { padding: '40px 16px', textAlign: 'center' };
+const emptyTextStyle = { fontSize: '14px', color: '#A89B91', fontFamily: 'var(--font-body)' };
+
+const readOnlyBannerStyle = {
+  background: '#FFF8E1',
+  border: '1px solid #F9A825',
+  borderRadius: '10px',
+  padding: '12px 16px',
+  textAlign: 'center',
+  marginBottom: '16px',
+};
+const readOnlyTextStyle = { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' };
+
+const erroBannerStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  background: '#FFEBEE',
+  border: '1px solid #C62828',
+  borderRadius: '10px',
+  padding: '10px 14px',
+  cursor: 'pointer',
+};
+const erroTextStyle = { fontSize: '13px', color: '#C62828', fontFamily: 'var(--font-body)' };
+const btnFecharErroStyle = { background: 'none', border: 'none', cursor: 'pointer', color: '#C62828', padding: '2px' };
+
+const formGroupStyle = { marginBottom: '14px' };
+const labelStyle = {
+  display: 'block',
+  fontSize: '13px',
+  fontWeight: 500,
+  color: '#1A1714',
+  marginBottom: '6px',
+  fontFamily: 'var(--font-body)',
+};
+
+const inputStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  borderRadius: '8px',
+  border: '1px solid #D4C8C0',
+  fontSize: '14px',
+  fontFamily: 'var(--font-body)',
+  background: '#fff',
+  color: '#1A1714',
+  outline: 'none',
+  boxSizing: 'border-box',
+};
+
+const selectStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  borderRadius: '8px',
+  border: '1px solid #D4C8C0',
+  fontSize: '14px',
+  fontFamily: 'var(--font-body)',
+  background: '#fff',
+  color: '#1A1714',
+  outline: 'none',
+  boxSizing: 'border-box',
+};
+
+const modalBotoesStyle = {
+  display: 'flex',
+  gap: '10px',
+  justifyContent: 'flex-end',
+  marginTop: '10px',
+};
+
+const btnCancelStyle = {
+  background: '#F9F7F4',
+  color: '#1A1714',
+  border: '1px solid #D4C8C0',
+  padding: '10px 18px',
+  borderRadius: '8px',
+  cursor: 'pointer',
+  fontSize: '14px',
+  fontFamily: 'var(--font-body)',
+};
+
+const btnSaveStyle = {
+  background: '#8B6F5E',
+  color: '#fff',
+  border: 'none',
+  padding: '10px 18px',
+  borderRadius: '8px',
+  cursor: 'pointer',
+  fontSize: '14px',
+  fontWeight: 600,
+  fontFamily: 'var(--font-body)',
 };
