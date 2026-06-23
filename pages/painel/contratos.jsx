@@ -12,11 +12,12 @@ import ContratoEditor from '../../components/contratos/ContratoEditor';
 import ContratoFiltros from '../../components/contratos/ContratoFiltros';
 
 const STATUS_CONTRATO = [
+  { id: 'todos', label: 'Todos' },
   { id: 'rascunho', label: 'Rascunho', color: '#9E9E9E', bg: '#F5F5F5' },
-  { id: 'aguardando_assinatura', label: 'Aguardando assinatura', color: '#F9A825', bg: '#FFF8E1' },
-  { id: 'assinado_noivos', label: 'Assinado pelos noivos', color: '#1976D2', bg: '#E3F2FD' },
+  { id: 'enviado', label: 'Enviado', color: '#F9A825', bg: '#FFF8E1' },
+  { id: 'visualizado', label: 'Visualizado', color: '#1976D2', bg: '#E3F2FD' },
   { id: 'assinado', label: 'Assinado', color: '#10B981', bg: '#E8F5E9' },
-  { id: 'cancelado', label: 'Cancelado', color: '#C62828', bg: '#FFEBEE' },
+  { id: 'recusado', label: 'Recusado', color: '#C62828', bg: '#FFEBEE' },
 ];
 
 export default function ContratosPage() {
@@ -35,7 +36,7 @@ function ContratosContent() {
   const [modalEditor, setModalEditor] = useState(false);
   const [contratoAtual, setContratoAtual] = useState(null);
   const [filtroStatus, setFiltroStatus] = useState('todos');
-  const [filtroCategoria, setFiltroCategoria] = useState('todos');
+  const [filtroFornecedor, setFiltroFornecedor] = useState('todos');
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
 
@@ -126,7 +127,7 @@ function ContratosContent() {
         body: JSON.stringify({
           evento_id: evento.id,
           fornecedor_id: fornecedorId,
-          tipo: catPrincipal,
+          tipo: 'modelo_gerado',
           categoria: fornecedor.categoria,
           conteudo: template.conteudo,
         }),
@@ -170,26 +171,6 @@ function ContratosContent() {
     carregarDados();
   };
 
-  const assinarNoivos = async (id) => {
-    if (readOnly) return;
-    const { error } = await supabase
-      .from('contratos')
-      .update({
-        assinado_noivos_em: new Date().toISOString(),
-        status: 'assinado_noivos',
-        atualizado_em: new Date().toISOString(),
-      })
-      .eq('id', id);
-
-    if (error) {
-      setToast({ tipo: 'erro', mensagem: 'Erro ao assinar.' });
-      return;
-    }
-
-    setToast({ tipo: 'sucesso', mensagem: 'Contrato assinado pelos noivos!' });
-    carregarDados();
-  };
-
   const enviarFornecedor = async (id) => {
     if (readOnly) return;
     try {
@@ -222,8 +203,8 @@ function ContratosContent() {
 
   const contratosFiltrados = contratos.filter(c => {
     const okStatus = filtroStatus === 'todos' || c.status === filtroStatus;
-    const okCategoria = filtroCategoria === 'todos' || c.categoria === filtroCategoria;
-    return okStatus && okCategoria;
+    const okFornecedor = filtroFornecedor === 'todos' || c.fornecedor_id === filtroFornecedor;
+    return okStatus && okFornecedor;
   });
 
   return (
@@ -245,10 +226,9 @@ function ContratosContent() {
           <ContratoFiltros
             filtroStatus={filtroStatus}
             setFiltroStatus={setFiltroStatus}
-            filtroCategoria={filtroCategoria}
-            setFiltroCategoria={setFiltroCategoria}
-            statusOptions={STATUS_CONTRATO}
-            categorias={[...new Set(fornecedores.map(f => f.categoria))]}
+            filtroFornecedor={filtroFornecedor}
+            setFiltroFornecedor={setFiltroFornecedor}
+            fornecedores={fornecedores}
           />
 
           {!readOnly && fornecedoresSemContrato.length > 0 && (
@@ -300,11 +280,11 @@ function ContratosContent() {
                     key={c.id}
                     contrato={c}
                     fornecedor={fornecedores.find(f => f.id === c.fornecedor_id)}
-                    statusInfo={STATUS_CONTRATO.find(s => s.id === c.status)}
                     onEditar={() => abrirEditor(c)}
                     onExcluir={() => excluirContrato(c.id)}
-                    onAssinar={() => assinarNoivos(c.id)}
                     onEnviar={() => enviarFornecedor(c.id)}
+                    onReenviar={() => enviarFornecedor(c.id)}
+                    onDownload={() => c.pdf_url && window.open(c.pdf_url, '_blank')}
                     readOnly={readOnly}
                   />
                 ))}

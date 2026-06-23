@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { enviarEmailAssinaturaNoivos } from '../../../lib/email';
+import { enviarEmailRecusaNoivos } from '../../../lib/email';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -11,18 +11,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ erro: 'Método não permitido' });
   }
 
-  const { token, nome, email } = req.body;
+  const { token, justificativa } = req.body;
   if (!token) {
     return res.status(400).json({ erro: 'Token obrigatório' });
-  }
-  if (!nome?.trim()) {
-    return res.status(400).json({ erro: 'Nome obrigatório' });
   }
 
   try {
     const { data: contrato, error: err1 } = await supabase
       .from('contratos')
-      .select('id, evento_id, fornecedor_id, tipo, status, fornecedores(nome, email)')
+      .select('id, evento_id, fornecedor_id, status, fornecedores(nome, email)')
       .eq('token_assinatura', token)
       .single();
 
@@ -30,17 +27,16 @@ export default async function handler(req, res) {
       return res.status(404).json({ erro: 'Contrato não encontrado' });
     }
 
-    if (contrato.status === 'assinado') {
-      return res.status(400).json({ erro: 'Contrato já assinado' });
+    if (contrato.status === 'assinado' || contrato.status === 'recusado') {
+      return res.status(400).json({ erro: 'Contrato já finalizado' });
     }
 
     const { error: err2 } = await supabase
       .from('contratos')
       .update({
-        assinado_fornecedor_em: new Date().toISOString(),
-        fornecedor_nome_assinatura: nome.trim(),
-        fornecedor_email_assinatura: email?.trim() || null,
-        status: 'assinado',
+        status: 'recusado',
+        recusado_em: new Date().toISOString(),
+        justificativa_recusa: justificativa?.trim() || null,
         atualizado_em: new Date().toISOString(),
       })
       .eq('id', contrato.id);
@@ -61,21 +57,17 @@ export default async function handler(req, res) {
     } catch (e) { /* ignora erro de auth */ }
 
     if (emailNoivos) {
-      await enviarEmailAssinaturaNoivos({
+      await enviarEmailRecusaNoivos({
         to: emailNoivos,
-        fornecedorNome: nome.trim(),
+        fornecedorNome: contrato.fornecedores?.nome || 'Fornecedor',
         noivosNome: evento?.nome_evento || 'os noivos',
-        contratoTipo: contrato.tipo === 'upload_fornecedor' ? 'Upload do fornecedor' : (contrato.tipo || 'Prestação de serviços'),
+        justificativa: justificativa?.trim(),
       });
     }
 
-    return res.status(200).json({
-      sucesso: true,
-      mensagem: 'Contrato assinado com sucesso!',
-      contrato_id: contrato.id,
-    });
+    return res.status(200).json({ sucesso: true, mensagem: 'Contrato recusado' });
   } catch (err) {
-    console.error('Erro ao assinar contrato:', err);
+    console.error('Erro ao recusar contrato:', err);
     return res.status(500).json({ erro: err.message || 'Erro interno' });
   }
 }

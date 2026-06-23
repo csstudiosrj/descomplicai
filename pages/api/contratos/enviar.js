@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { enviarEmailContratoParaFornecedor } from '../../../lib/email';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -16,14 +17,57 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { error } = await supabase
+    const { data: contrato, error: err1 } = await supabase
       .from('contratos')
-      .update({ status: 'enviado', atualizado_em: new Date().toISOString() })
+      .select('id, evento_id, fornecedor_id, tipo, status, token_assinatura, fornecedores(nome, email)')
+      .eq('id', contrato_id)
+      .single();
+
+    if (err1 || !contrato) {
+      return res.status(404).json({ erro: 'Contrato não encontrado' });
+    }
+
+    if (!contrato.fornecedores?.email) {
+      return res.status(400).json({ erro: 'Fornecedor sem email cadastrado' });
+    }
+
+    // Gera token se não existir
+    let token = contrato.token_assinatura;
+    if (!token) {
+      const { data: novoToken, error: errToken } = await supabase.rpc('gen_random_uuid');
+      if (errToken) throw errToken;
+      token = novoToken;
+      await supabase.from('contratos').update({ token_assinatura: token }).eq('id', contrato_id);
+    }
+
+    // Atualiza status
+    const { error: err2 } = await supabase
+      .from('contratos')
+      .update({
+        status: 'enviado',
+        fornecedor_email_enviado_em: new Date().toISOString(),
+        atualizado_em: new Date().toISOString(),
+      })
       .eq('id', contrato_id);
 
-    if (error) throw error;
+    if (err2) throw err2;
 
-    return res.status(200).json({ sucesso: true, mensagem: 'Status atualizado para enviado' });
+    // Busca evento para email
+    const { data: evento } = await supabase
+      .from('eventos')
+      .select('nome_evento')
+      .eq('id', contrato.evento_id)
+      .single();
+
+    // Envia email
+    await enviarEmailContratoParaFornecedor({
+      to: contrato.fornecedores.email,
+      fornecedorNome: contrato.fornecedores.nome || 'Fornecedor',
+      noivosNome: evento?.nome_evento || 'os noivos',
+      token,
+    });
+
+    return res.status(200).json({ sucesso: true, mensagem: 'Contrato enviado', token });
   } catch (err) {
     console.error('Erro ao enviar contrato:', err);
     return res.status(500).json({ erro: err.message || 'Erro interno' });
