@@ -260,6 +260,17 @@ function MesasContent() {
             </div>
             {configurado && (
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <button
+                  onClick={() => router.push('/painel/convidados')}
+                  style={{
+                    padding: '8px 16px', borderRadius: 8,
+                    border: '1px solid #D4C8C0', background: '#F9F7F4',
+                    color: '#1A1714', fontSize: 13, fontWeight: 600,
+                    fontFamily: 'var(--font-body)', cursor: 'pointer',
+                  }}
+                >
+                  Convidados
+                </button>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   {['lista', 'grade'].map((v) => (
                     <button
