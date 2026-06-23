@@ -3,6 +3,8 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import ProtectedRoute from '../../components/painel/ProtectedRoute';
 import HeaderPainel from '../../components/painel/HeaderPainel';
+import NavCards from '../../components/painel/NavCards';
+import AlertCards from '../../components/painel/AlertCards';
 import Icon from '../../components/ui/Icon';
 import InputMoeda from '../../components/ui/InputMoeda';
 import { useAuth } from '../../hooks/useAuth';
@@ -29,9 +31,15 @@ function PainelContent() {
   const [tarefas, setTarefas] = useState({ total: 0, concluidas: 0, urgentes: [] });
   const [alertas, setAlertas] = useState([]);
 
+  // Modal de orçamento (legado, via ícone no card financeiro)
   const [modalOrcamentoAberto, setModalOrcamentoAberto] = useState(false);
   const [valorOrcamento, setValorOrcamento] = useState(0);
   const [salvandoOrcamento, setSalvandoOrcamento] = useState(false);
+
+  // Modal de edição do evento
+  const [modalEventoAberto, setModalEventoAberto] = useState(false);
+  const [formEvento, setFormEvento] = useState({ nome_evento: '', data_evento: '', orcamento: 0 });
+  const [salvandoEvento, setSalvandoEvento] = useState(false);
 
   useEffect(() => {
     if (!evento || !user) return;
@@ -45,6 +53,16 @@ function PainelContent() {
     }
   }, [modalOrcamentoAberto, evento]);
 
+  useEffect(() => {
+    if (modalEventoAberto && evento) {
+      setFormEvento({
+        nome_evento: evento.nome_evento || '',
+        data_evento: evento.data_evento || '',
+        orcamento: Number(evento.orcamento) || Number(evento.orcamento_total) || 0,
+      });
+    }
+  }, [modalEventoAberto, evento]);
+
   const carregarDashboard = async () => {
     setLoading(true);
     const eventoId = evento.id;
@@ -53,7 +71,7 @@ function PainelContent() {
 
     const { data: fornData } = await supabase
       .from('fornecedores')
-      .select('status, valor_total, pre_criado, nome')
+      .select('status, valor_total, pre_criado, nome, categoria')
       .eq('evento_id', eventoId);
 
     const fornTotal = fornData?.length || 0;
@@ -92,11 +110,12 @@ function PainelContent() {
       .order('prazo', { ascending: true });
 
     const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
     const tarTotal = tarData?.length || 0;
     const tarConcluidas = tarData?.filter(t => t.concluida).length || 0;
 
     const tarComStatus = tarData?.map(t => {
-      const prazo = t.prazo ? new Date(t.prazo) : null;
+      const prazo = t.prazo ? new Date(t.prazo + 'T00:00:00') : null;
       const dias = prazo ? Math.ceil((prazo - hoje) / (1000 * 60 * 60 * 24)) : null;
       return { ...t, dias, atrasada: prazo && dias < 0 && !t.concluida };
     }) || [];
@@ -121,27 +140,44 @@ function PainelContent() {
 
     const alertasLista = [];
 
+    // Alerta: dados do evento incompletos
+    const dadosIncompletos = !evento?.data_evento || !evento?.orcamento || !evento?.nome_evento;
+    if (dadosIncompletos) {
+      const faltando = [];
+      if (!evento?.nome_evento) faltando.push('nome do casal');
+      if (!evento?.data_evento) faltando.push('data do evento');
+      if (!evento?.orcamento) faltando.push('orçamento');
+      alertasLista.push({
+        tipo: 'aviso',
+        icone: 'info',
+        cor: 'var(--color-warning)',
+        titulo: 'Complete os dados do seu casamento',
+        descricao: `Faltando: ${faltando.join(', ')} — clique para preencher`,
+        onClick: () => setModalEventoAberto(true),
+      });
+    }
+
     const atrasadas = tarUrgentes.filter(t => t.atrasada);
     if (atrasadas.length > 0) {
       alertasLista.push({
-        tipo: 'urgente', icone: 'alert', cor: '#C62828',
+        tipo: 'urgente', icone: 'alert', cor: 'var(--color-danger)',
         titulo: `${atrasadas.length} tarefa${atrasadas.length > 1 ? 's' : ''} atrasada${atrasadas.length > 1 ? 's' : ''}`,
-        descricao: 'Precisa de atencao imediata', link: '/painel/checklist',
+        descricao: 'Precisa de atenção imediata', onClick: () => router.push('/painel/checklist'),
       });
     }
 
     const prePendentes = fornData?.filter(f => f.pre_criado && !f.nome).length || 0;
     if (prePendentes > 0) {
       alertasLista.push({
-        tipo: 'aviso', icone: 'store', cor: '#8B6F5E',
+        tipo: 'aviso', icone: 'store', cor: 'var(--color-brand)',
         titulo: `${prePendentes} fornecedor${prePendentes > 1 ? 'es' : ''} do memorial`,
-        descricao: 'Aguardando informacoes — clique para preencher', link: '/painel/fornecedores',
+        descricao: 'Aguardando informações — clique para preencher', onClick: () => router.push('/painel/fornecedores'),
       });
     }
 
     const vencendo = finData?.filter(f => {
       if (f.pago) return false;
-      const venc = f.data_vencimento ? new Date(f.data_vencimento) : null;
+      const venc = f.data_vencimento ? new Date(f.data_vencimento + 'T00:00:00') : null;
       if (!venc) return false;
       const dias = Math.ceil((venc - hoje) / (1000 * 60 * 60 * 24));
       return dias <= 7 && dias >= 0;
@@ -149,29 +185,29 @@ function PainelContent() {
 
     if (vencendo.length > 0) {
       alertasLista.push({
-        tipo: 'aviso', icone: 'dollar', cor: '#F9A825',
+        tipo: 'aviso', icone: 'dollar', cor: 'var(--color-warning)',
         titulo: `${vencendo.length} pagamento${vencendo.length > 1 ? 's' : ''} vencendo`,
-        descricao: 'Proximos 7 dias', link: '/painel/financeiro',
+        descricao: 'Próximos 7 dias', onClick: () => router.push('/painel/financeiro'),
       });
     }
 
     if (evento?.data_evento) {
-      const dataEvento = new Date(evento.data_evento);
+      const dataEvento = new Date(evento.data_evento + 'T00:00:00');
       const mesesAteEvento = (dataEvento - hoje) / (1000 * 60 * 60 * 24 * 30);
       if (mesesAteEvento <= 6 && mesesAteEvento > 0) {
         const criticos = ['fotografia', 'filmagem', 'espaco_recepcao', 'buffet'];
         const faltando = criticos.filter(c => !fornData?.some(f => f.categoria === c && (f.status === 'contratado' || f.status === 'pago')));
         if (faltando.length > 0) {
           alertasLista.push({
-            tipo: 'aviso', icone: 'store', cor: '#8B6F5E',
-            titulo: `${faltando.length} fornecedor${faltando.length > 1 ? 'es' : ''} critico${faltando.length > 1 ? 's' : ''} faltando`,
-            descricao: 'Menos de 6 meses para o casamento', link: '/painel/fornecedores',
+            tipo: 'aviso', icone: 'store', cor: 'var(--color-brand)',
+            titulo: `${faltando.length} fornecedor${faltando.length > 1 ? 'es' : ''} crítico${faltando.length > 1 ? 's' : ''} faltando`,
+            descricao: 'Menos de 6 meses para o casamento', onClick: () => router.push('/painel/fornecedores'),
           });
         }
       }
     }
 
-    setAlertas(alertasLista.slice(0, 3));
+    setAlertas(alertasLista.slice(0, 4));
     setLoading(false);
   };
 
@@ -185,7 +221,7 @@ function PainelContent() {
     if (!hasAccess || !evento) return;
     const valor = Number(valorOrcamento);
     if (isNaN(valor) || valor < 0) {
-      alert('Informe um valor valido');
+      alert('Informe um valor válido');
       return;
     }
     setSalvandoOrcamento(true);
@@ -195,19 +231,45 @@ function PainelContent() {
       .eq('id', evento.id);
     setSalvandoOrcamento(false);
     if (error) {
-      console.error('Erro ao salvar orcamento:', error);
-      alert('Erro ao salvar orcamento');
+      console.error('Erro ao salvar orçamento:', error);
+      alert('Erro ao salvar orçamento');
       return;
     }
     setFinanceiro(prev => ({ ...prev, orcamento: valor }));
     setModalOrcamentoAberto(false);
   };
 
+  const salvarEvento = async () => {
+    if (!hasAccess || !evento) return;
+    setSalvandoEvento(true);
+
+    const payload = {};
+    if (formEvento.nome_evento !== undefined) payload.nome_evento = formEvento.nome_evento;
+    if (formEvento.data_evento !== undefined) payload.data_evento = formEvento.data_evento || null;
+    if (formEvento.orcamento !== undefined) payload.orcamento = Number(formEvento.orcamento) || 0;
+
+    const { error } = await supabase
+      .from('eventos')
+      .update(payload)
+      .eq('id', evento.id);
+
+    setSalvandoEvento(false);
+    if (error) {
+      console.error('Erro ao salvar evento:', error);
+      alert('Erro ao salvar dados do evento');
+      return;
+    }
+
+    setModalEventoAberto(false);
+    window.location.reload();
+  };
+
   const nomeCasal = evento?.nome_evento || '';
+  const dadosEventoCompletos = evento?.data_evento && evento?.orcamento && evento?.nome_evento;
 
   return (
     <>
-      <Head><title>Painel | descomplicai</title></Head>
+      <Head><title>Painel | descomplicaí</title></Head>
       <div style={styles.page}>
         <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} />
         <main style={styles.main}>
@@ -217,6 +279,63 @@ function PainelContent() {
             </div>
           )}
 
+          {/* Seção Meu Casamento */}
+          <section style={styles.meuCasamentoSection}>
+            <div style={styles.meuCasamentoHeader}>
+              <div style={styles.meuCasamentoIcone}>
+                <Icon name="calendar" size={20} color="var(--color-brand)" />
+              </div>
+              <div style={styles.meuCasamentoTituloWrap}>
+                <h2 style={styles.meuCasamentoTitulo}>Meu Casamento</h2>
+                <p style={styles.meuCasamentoSubtitulo}>
+                  {dadosEventoCompletos
+                    ? 'Informações do seu evento'
+                    : 'Preencha os dados para ativar todas as funcionalidades'}
+                </p>
+              </div>
+              {hasAccess && (
+                <button
+                  onClick={() => setModalEventoAberto(true)}
+                  style={styles.btnEditarEvento}
+                >
+                  <Icon name="edit" size={14} color="var(--color-brand)" />
+                  <span>Editar</span>
+                </button>
+              )}
+            </div>
+
+            <div style={styles.meuCasamentoGrid}>
+              <div style={styles.meuCasamentoItem}>
+                <span style={styles.meuCasamentoLabel}>Nome</span>
+                <span style={styles.meuCasamentoValor}>
+                  {evento?.nome_evento || <span style={styles.valorVazio}>Não definido</span>}
+                </span>
+              </div>
+              <div style={styles.meuCasamentoItem}>
+                <span style={styles.meuCasamentoLabel}>Data</span>
+                <span style={styles.meuCasamentoValor}>
+                  {evento?.data_evento
+                    ? (() => {
+                        const [ano, mes, dia] = evento.data_evento.split('-');
+                        return `${dia}/${mes}/${ano}`;
+                      })()
+                    : <span style={styles.valorVazio}>Não definida</span>
+                  }
+                </span>
+              </div>
+              <div style={styles.meuCasamentoItem}>
+                <span style={styles.meuCasamentoLabel}>Orçamento</span>
+                <span style={styles.meuCasamentoValor}>
+                  {evento?.orcamento
+                    ? `R$ ${Number(evento.orcamento).toLocaleString('pt-BR')}`
+                    : <span style={styles.valorVazio}>Não definido</span>
+                  }
+                </span>
+              </div>
+            </div>
+          </section>
+
+          {/* Progresso */}
           <section style={styles.progressoSection}>
             <div style={styles.progressoHeader}>
               <span style={styles.progressoLabel}>Progresso do planejamento</span>
@@ -227,73 +346,78 @@ function PainelContent() {
             </div>
           </section>
 
-          {alertas.length > 0 && (
-            <section style={styles.alertasSection}>
-              {alertas.map((a, i) => (
-                <button key={i} onClick={() => router.push(a.link)} style={{ ...styles.alertaCard, borderLeftColor: a.cor }}>
-                  <div style={{ ...styles.alertaIcone, background: a.cor }}>
-                    <Icon name={a.icone} size={16} color="#fff" />
-                  </div>
-                  <div style={styles.alertaTexto}>
-                    <span style={styles.alertaTitulo}>{a.titulo}</span>
-                    <span style={styles.alertaDescricao}>{a.descricao}</span>
-                  </div>
-                  <Icon name="arrowRight" size={16} color="var(--color-text-soft)" />
-                </button>
-              ))}
-            </section>
-          )}
+          {/* Alertas */}
+          <section>
+            <AlertCards alertas={alertas} />
+          </section>
 
+          {/* Cards rápidos com métricas */}
           <section style={styles.cardsSection}>
+            <h2 style={styles.sectionTitle}>Resumo</h2>
             <div style={styles.cardsGrid}>
               <button onClick={() => router.push('/painel/fornecedores')} style={styles.cardRapido}>
-                <div style={styles.cardRapidoIcone}><Icon name="store" size={24} color="#8B6F5E" /></div>
+                <div style={styles.cardRapidoIcone}>
+                  <Icon name="store" size={24} color="var(--color-brand)" />
+                </div>
                 <div style={styles.cardRapidoInfo}>
                   <span style={styles.cardRapidoNumero}>{fornecedores.contratados}<span style={styles.cardRapidoDe}> de </span>{fornecedores.total}</span>
                   <span style={styles.cardRapidoLabel}>Fornecedores contratados</span>
                 </div>
               </button>
 
-              {/* Card financeiro: clique vai para a pagina, icone de editar abre modal */}
               <button onClick={() => router.push('/painel/financeiro')} style={{ ...styles.cardRapido, position: 'relative' }}>
                 {hasAccess && (
-                  <div onClick={abrirModalOrcamento} style={styles.btnEditar} title="Ajustar orcamento">
-                    <Icon name="edit" size={14} color="var(--color-text-soft)" />
+                  <div onClick={abrirModalOrcamento} style={styles.btnEditar} title="Ajustar orçamento">
+                    <Icon name="edit" size={14} color="var(--color-text-muted)" />
                   </div>
                 )}
-                <div style={styles.cardRapidoIcone}><Icon name="dollar" size={24} color="#2E7D32" /></div>
+                <div style={styles.cardRapidoIcone}>
+                  <Icon name="dollar" size={24} color="var(--color-success)" />
+                </div>
                 <div style={styles.cardRapidoInfo}>
                   <span style={styles.cardRapidoNumero}>R$ {financeiro.comprometido.toLocaleString('pt-BR')}<span style={styles.cardRapidoDe}> de </span>R$ {financeiro.orcamento.toLocaleString('pt-BR')}</span>
-                  <span style={styles.cardRapidoLabel}>Orcamento comprometido</span>
+                  <span style={styles.cardRapidoLabel}>Orçamento comprometido</span>
                 </div>
               </button>
 
               <button onClick={() => router.push('/painel/convidados')} style={styles.cardRapido}>
-                <div style={styles.cardRapidoIcone}><Icon name="users" size={24} color="#00838F" /></div>
+                <div style={styles.cardRapidoIcone}>
+                  <Icon name="users" size={24} color="var(--color-info)" />
+                </div>
                 <div style={styles.cardRapidoInfo}>
                   <span style={styles.cardRapidoNumero}>{convidados.confirmados}<span style={styles.cardRapidoDe}> de </span>{convidados.total}</span>
                   <span style={styles.cardRapidoLabel}>Convidados confirmados</span>
                 </div>
               </button>
+
               <button onClick={() => router.push('/painel/checklist')} style={styles.cardRapido}>
-                <div style={styles.cardRapidoIcone}><Icon name="checklist" size={24} color="#F9A825" /></div>
+                <div style={styles.cardRapidoIcone}>
+                  <Icon name="checklist" size={24} color="var(--color-warning)" />
+                </div>
                 <div style={styles.cardRapidoInfo}>
                   <span style={styles.cardRapidoNumero}>{tarefas.concluidas}<span style={styles.cardRapidoDe}> de </span>{tarefas.total}</span>
-                  <span style={styles.cardRapidoLabel}>Tarefas concluidas</span>
+                  <span style={styles.cardRapidoLabel}>Tarefas concluídas</span>
                 </div>
               </button>
             </div>
           </section>
 
+          {/* Navegação */}
+          <section style={styles.navSection}>
+            <h2 style={styles.sectionTitle}>Acessar módulos</h2>
+            <NavCards />
+          </section>
+
+          {/* Próximas ações */}
           {(tarefas.urgentes.length > 0) && (
             <section style={styles.proximasSection}>
-              <h2 style={styles.sectionTitle}>Proximas acoes</h2>
+              <h2 style={styles.sectionTitle}>Próximas ações</h2>
               <div style={styles.proximasLista}>
                 {tarefas.urgentes.slice(0, 3).map((t) => (
-                  <div key={t.id} style={{ ...styles.proximaItem, borderLeftColor: t.atrasada ? '#C62828' : '#F9A825' }}>
+                  <div key={t.id} style={{ ...styles.proximaItem, borderLeftColor: t.atrasada ? 'var(--color-danger)' : 'var(--color-warning)' }}>
                     <div style={styles.proximaHeader}>
                       <span style={styles.proximaTitulo}>{t.titulo}</span>
-                      <span style={{ ...styles.proximaPrazo, color: t.atrasada ? '#C62828' : '#F9A825' }}>
+                      <span style={{ ...styles.proximaPrazo, color: t.atrasada ? 'var(--color-danger)' : 'var(--color-warning)' }}>
                         {t.atrasada ? `Atrasada ${Math.abs(t.dias)}d` : `Em ${t.dias}d`}
                       </span>
                     </div>
@@ -307,16 +431,14 @@ function PainelContent() {
         </main>
       </div>
 
+      {/* Modal de orçamento (legado) */}
       {modalOrcamentoAberto && (
         <div style={styles.modalOverlay} onClick={() => setModalOrcamentoAberto(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h2 style={styles.modalTitle}>Definir orcamento</h2>
+            <h2 style={styles.modalTitle}>Definir orçamento</h2>
             <p style={styles.modalDesc}>Informe o valor total planejado para o casamento.</p>
             <div style={styles.inputWrapper}>
-              <InputMoeda
-                value={valorOrcamento}
-                onChange={(v) => setValorOrcamento(v)}
-              />
+              <InputMoeda value={valorOrcamento} onChange={(v) => setValorOrcamento(v)} />
             </div>
             <div style={styles.modalBotoes}>
               <button onClick={() => setModalOrcamentoAberto(false)} style={styles.btnCancel}>Cancelar</button>
@@ -327,51 +449,119 @@ function PainelContent() {
           </div>
         </div>
       )}
+
+      {/* Modal de edição do evento */}
+      {modalEventoAberto && (
+        <div style={styles.modalOverlay} onClick={() => setModalEventoAberto(false)}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h2 style={styles.modalTitle}>Dados do casamento</h2>
+            <p style={styles.modalDesc}>Edite as informações principais do seu evento.</p>
+
+            <div style={styles.inputWrapper}>
+              <label style={styles.inputLabel}>Nome do casal / Evento *</label>
+              <input
+                type="text"
+                placeholder="Ex: Ana & João"
+                value={formEvento.nome_evento}
+                onChange={(e) => setFormEvento(prev => ({ ...prev, nome_evento: e.target.value }))}
+                style={styles.input}
+              />
+            </div>
+
+            <div style={styles.inputWrapper}>
+              <label style={styles.inputLabel}>Data do evento *</label>
+              <input
+                type="date"
+                value={formEvento.data_evento}
+                onChange={(e) => setFormEvento(prev => ({ ...prev, data_evento: e.target.value }))}
+                style={styles.input}
+              />
+            </div>
+
+            <div style={styles.inputWrapper}>
+              <label style={styles.inputLabel}>Orçamento total *</label>
+              <InputMoeda
+                value={formEvento.orcamento}
+                onChange={(v) => setFormEvento(prev => ({ ...prev, orcamento: v }))}
+              />
+            </div>
+
+            <div style={styles.modalBotoes}>
+              <button onClick={() => setModalEventoAberto(false)} style={styles.btnCancel}>Cancelar</button>
+              <button onClick={salvarEvento} disabled={salvandoEvento} style={{ ...styles.btnSave, opacity: salvandoEvento ? 0.6 : 1 }}>
+                {salvandoEvento ? 'Salvando...' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
 
 const styles = {
-  page: { minHeight: '100vh', background: 'var(--color-fundo)', paddingTop: '52px' },
-  main: { maxWidth: '960px', margin: '0 auto', padding: '20px 16px 40px', display: 'flex', flexDirection: 'column', gap: '24px' },
-  readOnlyBanner: { background: '#FFF3E6', border: '1px solid #F9A825', borderRadius: '10px', padding: '12px 16px', textAlign: 'center' },
-  readOnlyText: { fontSize: '13px', color: '#8B6F5E', fontFamily: 'var(--font-body)' },
-  progressoSection: { background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid var(--color-secondary)' },
-  progressoHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' },
-  progressoLabel: { fontFamily: 'var(--font-display)', fontSize: '16px', color: 'var(--color-primary)', fontWeight: 600 },
-  progressoValor: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-brand)', fontWeight: 700 },
-  progressoBarraBg: { width: '100%', height: '8px', background: 'var(--color-secondary)', borderRadius: '4px', overflow: 'hidden' },
-  progressoBarraFill: { height: '100%', background: '#8B6F5E', borderRadius: '4px', transition: 'width 500ms ease' },
-  alertasSection: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  alertaCard: { display: 'flex', alignItems: 'center', gap: '12px', background: '#fff', borderRadius: '10px', padding: '14px 16px', border: '1px solid var(--color-secondary)', borderLeftWidth: '4px', cursor: 'pointer', textAlign: 'left', width: '100%' },
-  alertaIcone: { width: '36px', height: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  alertaTexto: { flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' },
-  alertaTitulo: { fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 600, color: 'var(--color-text)' },
-  alertaDescricao: { fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--color-text-soft)' },
+  page: { minHeight: '100vh', background: 'var(--color-off-white)', paddingTop: '52px' },
+  main: { maxWidth: '960px', margin: '0 auto', padding: 'var(--space-6) var(--space-4) var(--space-12)', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' },
+
+  readOnlyBanner: { background: 'var(--color-warning-light)', border: '1px solid var(--color-warning)', borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)', textAlign: 'center' },
+  readOnlyText: { fontSize: 'var(--text-sm)', color: 'var(--color-warning)', fontFamily: 'var(--font-body)' },
+
+  // Meu Casamento
+  meuCasamentoSection: { background: 'var(--color-white)', borderRadius: 'var(--radius-md)', padding: 'var(--space-5)', border: '1px solid var(--color-border)' },
+  meuCasamentoHeader: { display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' },
+  meuCasamentoIcone: { width: '40px', height: '40px', borderRadius: 'var(--radius-sm)', background: 'var(--color-off-white)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  meuCasamentoTituloWrap: { flex: 1 },
+  meuCasamentoTitulo: { fontFamily: 'var(--font-display)', fontSize: 'var(--text-lg)', color: 'var(--color-brand)', margin: 0, fontWeight: 'var(--font-normal)' },
+  meuCasamentoSubtitulo: { fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: '2px 0 0' },
+  btnEditarEvento: { display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--color-off-white)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', padding: '8px 14px', cursor: 'pointer', fontSize: 'var(--text-sm)', color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' },
+  meuCasamentoGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-4)' },
+  meuCasamentoItem: { display: 'flex', flexDirection: 'column', gap: '4px' },
+  meuCasamentoLabel: { fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontWeight: 'var(--font-medium)', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  meuCasamentoValor: { fontSize: 'var(--text-base)', color: 'var(--color-text-primary)', fontWeight: 'var(--font-semibold)' },
+  valorVazio: { color: 'var(--color-text-muted)', fontStyle: 'italic' },
+
+  // Progresso
+  progressoSection: { background: 'var(--color-white)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', border: '1px solid var(--color-border)' },
+  progressoHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' },
+  progressoLabel: { fontFamily: 'var(--font-display)', fontSize: 'var(--text-base)', color: 'var(--color-text-primary)', fontWeight: 'var(--font-semibold)' },
+  progressoValor: { fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)', color: 'var(--color-brand)', fontWeight: 'var(--font-bold)' },
+  progressoBarraBg: { width: '100%', height: '8px', background: 'var(--color-surface)', borderRadius: 'var(--radius-full)', overflow: 'hidden' },
+  progressoBarraFill: { height: '100%', background: 'var(--color-brand)', borderRadius: 'var(--radius-full)', transition: 'width 500ms ease' },
+
+  // Cards
   cardsSection: {},
-  cardsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' },
-  cardRapido: { display: 'flex', flexDirection: 'column', gap: '10px', background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid var(--color-secondary)', cursor: 'pointer', textAlign: 'left', alignItems: 'flex-start' },
+  sectionTitle: { fontFamily: 'var(--font-display)', fontSize: 'var(--text-lg)', color: 'var(--color-brand)', fontWeight: 'var(--font-normal)', marginBottom: 'var(--space-3)' },
+  cardsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--space-3)' },
+  cardRapido: { display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', background: 'var(--color-white)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', border: '1px solid var(--color-border)', cursor: 'pointer', textAlign: 'left', alignItems: 'flex-start' },
   btnEditar: { position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', borderRadius: '6px', zIndex: 2 },
-  cardRapidoIcone: { width: '40px', height: '40px', borderRadius: '10px', background: 'var(--color-fundo)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  cardRapidoIcone: { width: '40px', height: '40px', borderRadius: 'var(--radius-sm)', background: 'var(--color-off-white)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   cardRapidoInfo: { display: 'flex', flexDirection: 'column', gap: '2px' },
-  cardRapidoNumero: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-text)', fontWeight: 700 },
-  cardRapidoDe: { fontSize: '14px', color: 'var(--color-text-soft)', fontWeight: 400 },
-  cardRapidoLabel: { fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--color-text-soft)' },
-  proximasSection: { background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid var(--color-secondary)' },
-  sectionTitle: { fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--color-primary)', fontWeight: 600, marginBottom: '12px' },
-  proximasLista: { display: 'flex', flexDirection: 'column', gap: '8px' },
-  proximaItem: { padding: '12px 14px', borderRadius: '8px', background: 'var(--color-fundo)', borderLeftWidth: '3px', borderLeftStyle: 'solid' },
+  cardRapidoNumero: { fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)', color: 'var(--color-text-primary)', fontWeight: 'var(--font-bold)' },
+  cardRapidoDe: { fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', fontWeight: 'var(--font-normal)' },
+  cardRapidoLabel: { fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' },
+
+  // Navegação
+  navSection: {},
+
+  // Próximas ações
+  proximasSection: { background: 'var(--color-white)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', border: '1px solid var(--color-border)' },
+  proximasLista: { display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' },
+  proximaItem: { padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-sm)', background: 'var(--color-off-white)', borderLeftWidth: '3px', borderLeftStyle: 'solid' },
   proximaHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' },
-  proximaTitulo: { fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 600, color: 'var(--color-text)' },
-  proximaPrazo: { fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500 },
-  proximaCategoria: { fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--color-text-soft)' },
-  verTodas: { marginTop: '12px', background: 'none', border: 'none', color: '#8B6F5E', fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', padding: '0', textAlign: 'left' },
-  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '16px' },
-  modal: { background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
-  modalTitle: { fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-primary)', marginBottom: '6px' },
-  modalDesc: { fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--color-text-soft)', marginBottom: '16px' },
-  inputWrapper: { marginBottom: '16px' },
-  modalBotoes: { display: 'flex', gap: '10px', justifyContent: 'flex-end' },
-  btnCancel: { background: 'var(--color-secondary)', color: 'var(--color-text)', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
-  btnSave: { background: '#8B6F5E', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 },
+  proximaTitulo: { fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' },
+  proximaPrazo: { fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', fontWeight: 'var(--font-medium)' },
+  proximaCategoria: { fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' },
+  verTodas: { marginTop: 'var(--space-3)', background: 'none', border: 'none', color: 'var(--color-brand)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)', cursor: 'pointer', padding: '0', textAlign: 'left' },
+
+  // Modais
+  modalOverlay: { position: 'fixed', inset: 0, background: 'var(--color-overlay)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--z-modal)', padding: 'var(--space-4)' },
+  modal: { background: 'var(--color-white)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-6)', width: '100%', maxWidth: '400px', boxShadow: 'var(--shadow-xl)' },
+  modalTitle: { fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)', color: 'var(--color-brand)', marginBottom: '6px' },
+  modalDesc: { fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-4)' },
+  inputWrapper: { marginBottom: 'var(--space-4)' },
+  inputLabel: { display: 'block', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' },
+  input: { width: '100%', padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--color-border-strong)', fontSize: 'var(--text-sm)', color: 'var(--color-text-primary)', background: 'var(--color-white)', outline: 'none', boxSizing: 'border-box' },
+  modalBotoes: { display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' },
+  btnCancel: { background: 'var(--color-surface)', color: 'var(--color-text-primary)', border: 'none', padding: '10px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: 'var(--text-sm)' },
+  btnSave: { background: 'var(--color-brand)', color: 'var(--color-white)', border: 'none', padding: '10px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)' },
 };

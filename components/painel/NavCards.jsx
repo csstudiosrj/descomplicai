@@ -2,12 +2,13 @@ import Link from 'next/link';
 import Icon from '../ui/Icon';
 
 const PAGES = [
-  { href: '/painel/fornecedores', icon: 'store', label: 'Fornecedores', desc: 'Gestao de contratos' },
-  { href: '/painel/financeiro', icon: 'dollar', label: 'Financeiro', desc: 'Orcamento e pagamentos' },
+  { href: '/painel/fornecedores', icon: 'store', label: 'Fornecedores', desc: 'Gestão de contratos' },
+  { href: '/painel/financeiro', icon: 'dollar', label: 'Financeiro', desc: 'Orçamento e pagamentos' },
   { href: '/painel/checklist', icon: 'checklist', label: 'Checklist', desc: 'Tarefas e prazos' },
-  { href: '/painel/convidados', icon: 'users', label: 'Convidados', desc: 'Lista e confirmacoes' },
-  { href: '/painel/mesas', icon: 'layout', label: 'Mesas', desc: 'Distribuicao e mapa visual' },
+  { href: '/painel/convidados', icon: 'users', label: 'Convidados', desc: 'Lista e confirmações' },
+  { href: '/painel/mesas', icon: 'mesas', label: 'Mesas', desc: 'Distribuição e mapa visual' },
   { href: '/painel/cronograma', icon: 'clock', label: 'Cronograma', desc: 'Dia do casamento' },
+  { href: '/painel/contratos', icon: 'contratos', label: 'Contratos', desc: 'Documentos e assinaturas' },
 ];
 
 export default function NavCards() {
@@ -17,13 +18,13 @@ export default function NavCards() {
         <Link key={page.href} href={page.href} style={styles.link}>
           <div style={styles.card}>
             <div style={styles.iconWrap}>
-              <Icon name={page.icon} size={24} color="var(--color-primary)" />
+              <Icon name={page.icon} size={24} color="var(--color-brand)" />
             </div>
             <div style={styles.text}>
               <span style={styles.label}>{page.label}</span>
               <span style={styles.desc}>{page.desc}</span>
             </div>
-            <Icon name="arrowRight" size={16} color="var(--color-text-soft)" />
+            <Icon name="arrowRight" size={16} color="var(--color-text-muted)" />
           </div>
         </Link>
       ))}
@@ -34,8 +35,8 @@ export default function NavCards() {
 const styles = {
   grid: {
     display: 'grid',
-    gridTemplateColumns: '1fr',
-    gap: '10px',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+    gap: 'var(--space-3)',
   },
   link: {
     textDecoration: 'none',
@@ -44,19 +45,19 @@ const styles = {
   card: {
     display: 'flex',
     alignItems: 'center',
-    gap: '14px',
-    background: '#fff',
-    borderRadius: '12px',
-    padding: '16px',
-    border: '1px solid var(--color-secondary)',
-    transition: 'box-shadow 0.2s, transform 0.2s',
+    gap: 'var(--space-3)',
+    background: 'var(--color-white)',
+    borderRadius: 'var(--radius-md)',
+    padding: 'var(--space-4)',
+    border: '1px solid var(--color-border)',
+    transition: 'box-shadow var(--transition-fast), transform var(--transition-fast)',
     cursor: 'pointer',
   },
   iconWrap: {
     width: '44px',
     height: '44px',
-    borderRadius: '10px',
-    background: 'var(--color-fundo)',
+    borderRadius: 'var(--radius-sm)',
+    background: 'var(--color-off-white)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -69,12 +70,12 @@ const styles = {
     flex: 1,
   },
   label: {
-    fontSize: '15px',
-    fontWeight: 600,
-    color: 'var(--color-text)',
+    fontSize: 'var(--text-sm)',
+    fontWeight: 'var(--font-semibold)',
+    color: 'var(--color-text-primary)',
   },
   desc: {
-    fontSize: '12px',
-    color: 'var(--color-text-soft)',
+    fontSize: 'var(--text-xs)',
+    color: 'var(--color-text-muted)',
   },
 };

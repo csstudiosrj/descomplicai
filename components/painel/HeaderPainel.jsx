@@ -18,7 +18,8 @@ export default function HeaderPainel({ nomeCasal, dataEvento }) {
   const diasRestantes = useMemo(() => {
     if (!dataEvento) return null;
     const hoje = new Date();
-    const evento = new Date(dataEvento);
+    hoje.setHours(0, 0, 0, 0);
+    const evento = new Date(dataEvento + 'T00:00:00');
     const diff = Math.ceil((evento - hoje) / (1000 * 60 * 60 * 24));
     return diff > 0 ? diff : 0;
   }, [dataEvento]);
@@ -27,7 +28,7 @@ export default function HeaderPainel({ nomeCasal, dataEvento }) {
     if (!dataEvento) return '';
     const [ano, mes, dia] = dataEvento.split('-');
     const meses = [
-      'janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho',
+      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
       'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
     ];
     return `${parseInt(dia)} de ${meses[parseInt(mes) - 1]} de ${ano}`;
@@ -44,7 +45,7 @@ export default function HeaderPainel({ nomeCasal, dataEvento }) {
               onClick={() => router.push('/painel')}
               style={styles.btnVoltar}
             >
-              <Icon name="arrowLeft" size={14} color="var(--color-text-soft)" />
+              <Icon name="arrowLeft" size={14} color="var(--color-text-muted)" />
               <span>Voltar ao painel</span>
             </button>
           )}
@@ -58,6 +59,9 @@ export default function HeaderPainel({ nomeCasal, dataEvento }) {
             {dataPorExtenso && (
               <span style={styles.dataExtenso}>{dataPorExtenso}</span>
             )}
+            {!dataEvento && (
+              <span style={styles.dataExtenso}>Data não definida</span>
+            )}
           </div>
         </div>
       </div>
@@ -67,20 +71,14 @@ export default function HeaderPainel({ nomeCasal, dataEvento }) {
 
 const styles = {
   header: {
-    background: 'var(--color-fundo)',
-    borderBottom: '1px solid var(--color-secondary)',
-    padding: '20px 0',
-    position: 'sticky',
-    top: 0,
-    zIndex: 200,
-    backdropFilter: 'blur(10px)',
-    WebkitBackdropFilter: 'blur(10px)',
-    boxShadow: '0 1px 0 var(--color-secondary)',
+    background: 'var(--color-off-white)',
+    borderBottom: '1px solid var(--color-border)',
+    padding: 'var(--space-5) 0',
   },
   container: {
     maxWidth: '960px',
     margin: '0 auto',
-    padding: '0 16px',
+    padding: '0 var(--space-4)',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -88,7 +86,7 @@ const styles = {
   brand: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '6px',
+    gap: 'var(--space-1)',
   },
   btnVoltar: {
     display: 'flex',
@@ -96,8 +94,8 @@ const styles = {
     gap: '4px',
     background: 'none',
     border: 'none',
-    color: 'var(--color-text-soft)',
-    fontSize: '13px',
+    color: 'var(--color-text-muted)',
+    fontSize: 'var(--text-sm)',
     cursor: 'pointer',
     padding: '0',
     fontFamily: 'var(--font-body)',
@@ -105,11 +103,11 @@ const styles = {
   },
   title: {
     fontFamily: 'var(--font-display)',
-    fontSize: '24px',
-    color: 'var(--color-primary)',
+    fontSize: 'var(--text-2xl)',
+    color: 'var(--color-brand)',
     margin: 0,
     lineHeight: 1.2,
-    fontWeight: 600,
+    fontWeight: 'var(--font-normal)',
   },
   meta: {
     display: 'flex',
@@ -118,13 +116,13 @@ const styles = {
   },
   countdown: {
     fontFamily: 'var(--font-body)',
-    fontSize: '15px',
+    fontSize: 'var(--text-base)',
     color: 'var(--color-brand)',
-    fontWeight: 500,
+    fontWeight: 'var(--font-medium)',
   },
   dataExtenso: {
     fontFamily: 'var(--font-body)',
-    fontSize: '13px',
-    color: 'var(--color-text-soft)',
+    fontSize: 'var(--text-sm)',
+    color: 'var(--color-text-muted)',
   },
 };

@@ -568,6 +568,17 @@ const icons = {
     </g>
   ),
 
+  contratos: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a1 1 0 0 0-1 1v18a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8L14 2z" />
+      <path d="M14 2v6h6" />
+      <path d="M8 13h5" />
+      <path d="M8 17h3" />
+      <circle cx="17" cy="17" r="2.5" />
+      <path d="M16 17l.8.8 1.7-1.6" />
+    </g>
+  ),
+
   chevronUp: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M6 15l6-6 6 6" />
