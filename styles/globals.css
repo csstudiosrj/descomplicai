@@ -1,46 +1,90 @@
-/* styles/globals.css */
+/* ============================================
+   CSS dos componentes Logo e Header
+   Adicionar ao final do styles/globals.css existente
+   ============================================ */
 
-/* ========== RESET ========== */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* --- Logo --- */
+.logo-root {
+    display: inline-flex;
+    align-items: baseline;
+    text-decoration: none;
+  }
 
-html {
-  font-size: 16px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  .logo-descomplica {
+    font-family: var(--font-display);
+    font-weight: 300;
+    color: var(--color-brand);
+    font-size: 24px;
+  }
 
-body {
-  font-family: var(--font-body);
-  font-weight: var(--font-normal);
-  color: var(--color-text-primary);
-  background-color: var(--color-off-white);
-  line-height: var(--leading-normal);
-  min-height: 100vh;
-}
+  .logo-i {
+    font-family: var(--font-tech);
+    font-style: italic;
+    font-weight: 400;
+    color: var(--color-tech);
+    font-size: 24px;
+  }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+  /* --- Header --- */
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 52px;
+    background: var(--color-white);
+    border-bottom: 1px solid var(--color-border);
+    z-index: var(--z-sticky);
+  }
 
-button {
-  font-family: inherit;
-  cursor: pointer;
-}
+  .header-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    height: 100%;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 
-img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
+  .header-logo-link {
+    text-decoration: none;
+  }
 
-/* ========== UTILITÁRIOS ========== */
+  .header-nav-list {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .header-nav-link {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+  }
+
+  .header-nav-link--primary {
+    color: var(--color-brand);
+    font-weight: 500;
+  }
+
+  .header-menu-toggle {
+    display: none;
+  }
+
+  .header-mobile-menu {
+    display: none;
+  }
+
+/* ============================================
+   ACESSIBILIDADE — utilitários globais
+   ============================================ */
+
+/* Texto exclusivo para leitores de tela */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -50,150 +94,53 @@ img {
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
-  border-width: 0;
+  border: 0;
 }
 
-/* ========== LOGO ========== */
-.logo-root {
-  display: inline-flex;
-  align-items: baseline;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.logo-descomplica {
-  font-family: var(--font-display);
-  font-weight: 300;
-  color: var(--color-brand);
-  font-size: inherit;
-  line-height: 1;
-}
-
-.logo-i {
-  font-family: var(--font-mono);
-  font-style: italic;
-  font-weight: 400;
-  color: var(--color-tech);
-  font-size: inherit;
-  line-height: 1;
-}
-
-/* ========== HEADER ========== */
-.header {
-  position: fixed;
-  top: 0;
+/* Skip-link para navegação por teclado */
+.skip-link {
+  position: absolute;
+  top: -40px;
   left: 0;
-  right: 0;
-  height: 52px;
-  background: var(--color-white);
-  border-bottom: 1px solid var(--color-border);
-  z-index: var(--z-sticky);
-}
-
-.header-container {
-  max-width: 1280px;
-  margin: 0 auto;
-  height: 100%;
-  padding: 0 var(--space-6);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.header-logo-link {
+  background: var(--color-brand);
+  color: var(--color-white);
+  padding: 8px 16px;
+  z-index: var(--z-toast);
   text-decoration: none;
-  font-size: 22px;
-}
-
-.header-nav {
-  display: flex;
-  align-items: center;
-}
-
-.header-nav-list {
-  display: flex;
-  align-items: center;
-  gap: var(--space-6);
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.header-nav-link {
   font-family: var(--font-body);
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  text-decoration: none;
-  transition: color var(--transition-fast);
-}
-
-.header-nav-link:hover {
-  color: var(--color-text-primary);
-}
-
-.header-nav-link--primary {
-  color: var(--color-brand);
   font-weight: var(--font-medium);
+  border-radius: 0 0 var(--radius-md) 0;
+  transition: top var(--transition-fast);
 }
 
-.header-menu-toggle {
-  display: none;
+.skip-link:focus {
+  top: 0;
 }
 
-/* ========== MENU MOBILE ========== */
-@media (max-width: 640px) {
-  .header-nav {
-    display: none;
-    position: absolute;
-    top: 52px;
-    left: 0;
-    right: 0;
-    background: var(--color-white);
-    border-bottom: 1px solid var(--color-border);
-    padding: var(--space-4) var(--space-6);
-    flex-direction: column;
-    align-items: flex-start;
-    z-index: 999;
+/* Focus visível para navegação por teclado */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/* Remove outline padrão do mouse, mantém do teclado */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ============================================
+   ACESSIBILIDADE — prefers-reduced-motion global
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
 
-  .header-nav--open {
-    display: flex !important;
-  }
-
-  .header-nav--open .header-nav-list {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-4);
-    width: 100%;
-  }
-
-  .header-menu-toggle {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: var(--space-2);
-  }
-
-  .header-menu-bar {
-    width: 22px;
-    height: 2px;
-    background: var(--color-text-primary);
-    border-radius: 2px;
-    transition: all 0.3s ease;
-  }
-
-  .header-menu-toggle[aria-expanded="true"] .header-menu-bar:nth-child(1) {
-    transform: rotate(45deg) translate(5px, 5px);
-  }
-
-  .header-menu-toggle[aria-expanded="true"] .header-menu-bar:nth-child(2) {
-    opacity: 0;
-  }
-
-  .header-menu-toggle[aria-expanded="true"] .header-menu-bar:nth-child(3) {
-    transform: rotate(-45deg) translate(5px, -5px);
+  .fade-in,
+  .slide-in,
+  .scale-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }

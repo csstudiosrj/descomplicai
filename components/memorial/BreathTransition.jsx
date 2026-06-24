@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import styles from './BreathTransition.module.css';
 
 export default function BreathTransition({ ativa, cor, children }) {
   const [prefersReduced, setPrefersReduced] = useState(false);
@@ -38,26 +39,26 @@ export default function BreathTransition({ ativa, cor, children }) {
   const wrapperTransform =
     animState === 'active' || animState === 'fading' ? 'scale(1.02)' : 'scale(1)';
 
-  const wrapperStyle = {
-    position: 'relative',
-    transform: wrapperTransform,
-    transition: 'transform 220ms ease',
-  };
-
-  const overlayStyle = {
-    position: 'fixed',
-    inset: 0,
-    zIndex: 'var(--z-modal)',
-    backgroundColor: cor || 'var(--color-brand)',
-    opacity: overlayOpacity,
-    pointerEvents: 'none',
-    transition: 'opacity 110ms ease',
-  };
-
   return (
-    <div style={wrapperStyle}>
+    <div
+      className={styles.wrapper}
+      style={{ transform: wrapperTransform }}
+      aria-live="polite"
+      aria-atomic="true"
+      role="status"
+    >
       {children}
-      <div aria-hidden="true" style={overlayStyle} />
+      <div className={styles.srOnly}>
+        {ativa ? 'Avançando para a próxima etapa...' : ''}
+      </div>
+      <div
+        aria-hidden="true"
+        className={styles.overlay}
+        style={{
+          backgroundColor: cor || 'var(--color-brand)',
+          opacity: overlayOpacity,
+        }}
+      />
     </div>
   );
 }

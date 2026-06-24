@@ -1,57 +1,77 @@
-# Instalação — Fluxo de Assinatura de Contratos
+# Instalação — Sprint 1: Respiro Visual + Acessibilidade + Ícones
 
 ## Arquivos no pacote
 
-| Arquivo | Ação |
-|---------|------|
-| `pages/assinar/[token].jsx` | Substituir |
-| `components/contratos/ContratoCard.jsx` | Substituir |
-| `pages/painel/contratos.jsx` | Substituir |
-| `pages/api/contratos/assinar-noivos.js` | Criar (novo) |
-| `pages/api/contratos/assinar.js` | Substituir |
-| `pages/api/contratos/enviar.js` | Substituir |
-| `pages/api/contratos/pdf.js` | Substituir |
-| `components/contratos/ContratoEditor.jsx` | Substituir |
-| `utils/pdfContrato.js` | Criar (novo) |
-| `lib/email.js` | Substituir |
+| Arquivo | Ação | Prioridade |
+|---------|------|------------|
+| `components/memorial/BreathTransition.jsx` | Substituir | P1 |
+| `components/memorial/BreathTransition.module.css` | Criar (novo) | P1 |
+| `components/memorial/MemorialOrchestrator.jsx` | Substituir | P1 |
+| `components/memorial/steps/Step01Modo.jsx` | Substituir | P1/P2 |
+| `styles/tokens.css` | Substituir | P2 |
+| `styles/globals.css` | Substituir | P2 |
+| `pages/_document.jsx` | Substituir | P2 |
 
 ## Comandos para aplicar
 
 ```bash
-# Descompactar na raiz do projeto
 cd ~/descomplicai
-unzip -o contratos-fluxo-assinatura.zip
-
-# Verificar se o arquivo novo existe
-ls pages/api/contratos/assinar-noivos.js
-ls utils/pdfContrato.js
+unzip -o sprint1-acessibilidade-respiro.zip
 ```
 
-## Variável de ambiente
+## O que mudou
 
-Adicione no Vercel (ou `.env.local`):
+### Prioridade 1 — Respiro Visual
+- **BreathTransition** agora usa CSS Module (não mais inline styles)
+- Adicionado `aria-live="polite"`, `role="status"`, texto `.sr-only` para leitores de tela
+- **MemorialOrchestrator** passa a cor do card selecionado para o BreathTransition
+- **Step01Modo** demonstra como passar a cor: `onSelect(campo, valor, cor)`
+- `handleSelect` aceita terceiro parâmetro opcional `cor`
+
+### Prioridade 2 — Acessibilidade
+- **VLibras removido** — script do gov federal nunca funcionou. Comentário explicativo no `_document.jsx`
+- **Skip-link** adicionado — teclado pode pular para conteúdo principal
+- **Focus-visible** — outline visível só para navegação por teclado
+- **`.sr-only`** — classe utilitária para texto exclusivo de leitores de tela
+- **`tokens.css`** — adicionado `@media (prefers-reduced-motion: reduce)` e `@media (prefers-contrast: high)`
+- **`globals.css`** — regras de acessibilidade globais (focus, skip-link, reduced-motion)
+- **Step01Modo** — `aria-label` descritivo no Card, `role="radio"`, `aria-checked`
+
+### Prioridade 3 — Ícones faltantes (especificação para o Claude)
+
+Adicione ao `components/ui/Icon.jsx` quando o Claude desenhar:
+
+```javascript
+rings: (
+  <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <ellipse cx="9" cy="12" rx="4" ry="4.5" transform="rotate(-30 9 12)" />
+    <ellipse cx="15" cy="12" rx="4" ry="4.5" transform="rotate(30 15 12)" />
+  </g>
+),
+
+flower: (
+  <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="10" r="2" />
+    <path d="M12 6c1.5-2 3-2 4.5 0s0 4-4.5 4" />
+    <path d="M12 6c-1.5-2-3-2-4.5 0s0 4 4.5 4" />
+    <path d="M12 14c1.5 2 3 2 4.5 0s0-4-4.5-4" />
+    <path d="M12 14c-1.5 2-3 2-4.5 0s0-4 4.5-4" />
+    <path d="M12 14v6" />
+  </g>
+),
+
+sparkle: (
+  <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+    <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+  </g>
+),
 ```
-NEXT_PUBLIC_APP_URL=https://descomplicai.com
-```
 
-Se não tiver domínio custom, use a URL do Vercel:
-```
-NEXT_PUBLIC_APP_URL=https://descomplicai-lovat.vercel.app
-```
+**Nota:** O `sparkle` já é referenciado no Step01Modo. Atualmente o Icon.jsx mostra `null` em dev (warning no console). Quando o ícone for adicionado, renderiza automaticamente.
 
-## Fluxo validado
+## Próximos passos (não incluídos neste pacote)
 
-1. Criar contrato → status `rascunho`
-2. Noivos clicam "Assinar contrato" → `assinado_noivos_em` preenchido
-3. Botão "Enviar" libera → envia email ao fornecedor com link `/assinar/{token}`
-4. Fornecedor abre link, preenche dados, assina
-5. Sistema gera PDF automaticamente, atualiza `pdf_url`
-6. Tela de confirmação mostra botão de download funcional
-7. Email de notificação enviado aos noivos
-
-## Observações
-
-- O ícone usado no botão "Assinar contrato" é `fileText` (fallback seguro).
-- Se quiser `fileSignature`, adicione ao `components/ui/Icon.jsx` ou peça pro Claude desenhar.
-- Não foi criada tabela de logs — auditoria fica nos campos de timestamp do banco.
-- O portal do fornecedor (`pages/fornecedor/painel.jsx`) não foi alterado; o email com link direto é suficiente para o MVP.
+1. **Replicar o padrão ARIA nos demais steps** — cada step deve passar `cor` no `onSelect` e ter `aria-label` nos cards
+2. **Reimplementar VLibras** — quando houver uma solução estável (widget npm ou iframe)
+3. **Adicionar ícones `rings`, `flower`, `sparkle`** ao `Icon.jsx` via Claude

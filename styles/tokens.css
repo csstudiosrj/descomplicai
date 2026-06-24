@@ -99,3 +99,30 @@
 }
 
 /* Breakpoints de referência: mobile-first 390px base | sm: 640px | md: 768px | lg: 1024px | xl: 1280px */
+
+/* ============================================
+   ACESSIBILIDADE — prefers-reduced-motion
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================
+   ACESSIBILIDADE — prefers-contrast: high
+   ============================================ */
+@media (prefers-contrast: high) {
+  :root {
+    --color-text-primary: #000000;
+    --color-text-secondary: #1a1a1a;
+    --color-border: #666666;
+    --color-border-strong: #333333;
+    --color-overlay: rgba(0, 0, 0, 0.7);
+  }
+}

@@ -35,7 +35,6 @@ const STEP_COMPONENTS = {
   Step16Referencias: React.lazy(() => import('./steps/Step16Referencias')),
   Step60Fornecedores: React.lazy(() => import('./steps/Step60Fornecedores')),
 
-  // === STEPS DESMEMBRADOS (Bloco E: Decoração) ===
   Step17Flores: React.lazy(() => import('./steps/Step17Flores')),
   Step18Iluminacao: React.lazy(() => import('./steps/Step18Iluminacao')),
   Step19Velas: React.lazy(() => import('./steps/Step19Velas')),
@@ -43,7 +42,6 @@ const STEP_COMPONENTS = {
   Step21Backdrop: React.lazy(() => import('./steps/Step21Backdrop')),
   Step22Tecidos: React.lazy(() => import('./steps/Step22Tecidos')),
 
-  // === STEPS DESMEMBRADOS (Bloco F: Mesa Posta) ===
   Step23Toalha: React.lazy(() => import('./steps/Step23Toalha')),
   Step24Loucas: React.lazy(() => import('./steps/Step24Loucas')),
   Step25Talheres: React.lazy(() => import('./steps/Step25Talheres')),
@@ -52,26 +50,21 @@ const STEP_COMPONENTS = {
   Step28Guardanapo: React.lazy(() => import('./steps/Step28Guardanapo')),
   Step29CartaoLugar: React.lazy(() => import('./steps/Step29CartaoLugar')),
 
-  // === STEPS DESMEMBRADOS (Bloco G: Cerimônia Detalhada) ===
   Step30Entrada: React.lazy(() => import('./steps/Step30Entrada')),
   Step31MusicaCerimonia: React.lazy(() => import('./steps/Step31MusicaCerimonia')),
   Step32PadrinhosCriancas: React.lazy(() => import('./steps/Step32PadrinhosCriancas')),
   Step33RituaisSaida: React.lazy(() => import('./steps/Step33RituaisSaida')),
 
-  // === STEPS DESMEMBRADOS (Bloco H: Recepção) ===
   Step38Coquetel: React.lazy(() => import('./steps/Step38Coquetel')),
   Step39BoloDocesBar: React.lazy(() => import('./steps/Step39BoloDocesBar')),
   Step40MusicaEntretenimento: React.lazy(() => import('./steps/Step40MusicaEntretenimento')),
 
-  // === STEPS DESMEMBRADOS (Bloco I: Papelaria) ===
   Step49Convites: React.lazy(() => import('./steps/Step49Convites')),
   Step50IdentidadeVisual: React.lazy(() => import('./steps/Step50IdentidadeVisual')),
 
-  // === STEPS DESMEMBRADOS (Bloco J: Vestuário) ===
   Step54Vestido: React.lazy(() => import('./steps/Step54Vestido')),
   Step55BelezaPadronizacao: React.lazy(() => import('./steps/Step55BelezaPadronizacao')),
 
-  // === EXPANSÃO: Bloco A (Perfil) ===
   StepA4Criancas: React.lazy(() => import('./steps/StepA4Criancas')),
   StepA5Padrinhos: React.lazy(() => import('./steps/StepA5Padrinhos')),
   StepA6DataPrevista: React.lazy(() => import('./steps/StepA6DataPrevista')),
@@ -86,7 +79,6 @@ const STEP_COMPONENTS = {
   StepA15TradicaoFamiliar: React.lazy(() => import('./steps/StepA15TradicaoFamiliar')),
   StepA16RestricaoCultural: React.lazy(() => import('./steps/StepA16RestricaoCultural')),
 
-  // === EXPANSÃO: Bloco B (Cerimônia) ===
   StepB5CriancasCerimonia: React.lazy(() => import('./steps/StepB5CriancasCerimonia')),
   StepB6DuracaoCerimonia: React.lazy(() => import('./steps/StepB6DuracaoCerimonia')),
   StepB7MusicaCerimoniaViva: React.lazy(() => import('./steps/StepB7MusicaCerimoniaViva')),
@@ -102,7 +94,6 @@ const STEP_COMPONENTS = {
   StepB17MusicosCerimonia: React.lazy(() => import('./steps/StepB17MusicosCerimonia')),
   StepB18CertidaoBatismo: React.lazy(() => import('./steps/StepB18CertidaoBatismo')),
 
-  // === EXPANSÃO: Bloco C (Local) ===
   StepC4Estacionamento: React.lazy(() => import('./steps/StepC4Estacionamento')),
   StepC5CozinhaApoio: React.lazy(() => import('./steps/StepC5CozinhaApoio')),
   StepC6CapacidadeLocal: React.lazy(() => import('./steps/StepC6CapacidadeLocal')),
@@ -116,7 +107,6 @@ const STEP_COMPONENTS = {
   StepC14HorarioFesta: React.lazy(() => import('./steps/StepC14HorarioFesta')),
   StepC15DuracaoCoquetel: React.lazy(() => import('./steps/StepC15DuracaoCoquetel')),
 
-  // === EXPANSÃO: Bloco D (Fornecedores progresso) ===
   StepD1TipoFlores: React.lazy(() => import('./steps/StepD1TipoFlores')),
   StepD2TipoIluminacao: React.lazy(() => import('./steps/StepD2TipoIluminacao')),
   StepD3MobiliarioQual: React.lazy(() => import('./steps/StepD3MobiliarioQual')),
@@ -141,7 +131,6 @@ const STEP_COMPONENTS = {
   StepD22Lembrancinhas: React.lazy(() => import('./steps/StepD22Lembrancinhas')),
   StepD23KitSaida: React.lazy(() => import('./steps/StepD23KitSaida')),
 
-  // === EXPANSÃO: Bloco G/H (Alimentação e Entretenimento) ===
   StepG8MesaFrios: React.lazy(() => import('./steps/StepG8MesaFrios')),
   StepG9BebidasPorPessoa: React.lazy(() => import('./steps/StepG9BebidasPorPessoa')),
   StepG10MenuInfantil: React.lazy(() => import('./steps/StepG10MenuInfantil')),
@@ -149,12 +138,10 @@ const STEP_COMPONENTS = {
   StepH4MesaDocesExposta: React.lazy(() => import('./steps/StepH4MesaDocesExposta')),
   StepH5AulaDanca: React.lazy(() => import('./steps/StepH5AulaDanca')),
 
-  // === EXPANSÃO: Bloco I (Vestuário) ===
   StepI4AulasDanca: React.lazy(() => import('./steps/StepI4AulasDanca')),
   StepI5MudancaLook: React.lazy(() => import('./steps/StepI5MudancaLook')),
   StepI6QuantasMadrinhas: React.lazy(() => import('./steps/StepI6QuantasMadrinhas')),
 
-  // === NOVO: Bloco L (Logística e Documentação) ===
   StepL1Aliancas: React.lazy(() => import('./steps/StepL1Aliancas')),
   StepL2CivilJunto: React.lazy(() => import('./steps/StepL2CivilJunto')),
   StepL3TransporteEspecialNoivos: React.lazy(() => import('./steps/StepL3TransporteEspecialNoivos')),
@@ -162,11 +149,9 @@ const STEP_COMPONENTS = {
   StepL5TransporteConvidados: React.lazy(() => import('./steps/StepL5TransporteConvidados')),
   StepL6Seguranca: React.lazy(() => import('./steps/StepL6Seguranca')),
 
-  // === NOVO: Bloco M (Pós-casamento) ===
   StepM1LuaDeMel: React.lazy(() => import('./steps/StepM1LuaDeMel')),
   StepM2FotosLuaDeMel: React.lazy(() => import('./steps/StepM2FotosLuaDeMel')),
 
-  // === NOVO: Bloco N (Documentação/Financeiro) ===
   StepE1EstadoCivilNoivo: React.lazy(() => import('./steps/StepE1EstadoCivilNoivo')),
   StepE2EstadoCivilNoiva: React.lazy(() => import('./steps/StepE2EstadoCivilNoiva')),
   StepE3CertidaoDivorcioNoivo: React.lazy(() => import('./steps/StepE3CertidaoDivorcioNoivo')),
@@ -221,6 +206,7 @@ export default function MemorialOrchestrator() {
   const { temDraft, carregarDraft, limparDraft, salvandoAgora } = useAutoSave(estado, user, evento);
 
   const [transicionando, setTransicionando] = useState(false);
+  const [corTransicao, setCorTransicao] = useState(null);
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
   const restauracaoFeita = useRef(false);
@@ -262,9 +248,10 @@ export default function MemorialOrchestrator() {
   const progress = etapasTotais > 0 ? (estado.etapaAtual / etapasTotais) * 100 : 0;
   const blockName = BLOCK_NAMES[blocoAtual] || '';
 
-  const handleSelect = useCallback((campo, valor) => {
+  const handleSelect = useCallback((campo, valor, cor) => {
     setRespostas(campo, valor);
     setTransicionando(true);
+    if (cor) setCorTransicao(cor);
     const novoEstado = { ...estado, [campo]: valor };
     setTimeout(() => {
       const proxima = calcularProximaEtapa(novoEstado, estado.etapaAtual);
@@ -276,6 +263,7 @@ export default function MemorialOrchestrator() {
       }
       irParaEtapa(proxima);
       setTransicionando(false);
+      setCorTransicao(null);
     }, 220);
   }, [estado, setRespostas, irParaEtapa, user]);
 
@@ -291,7 +279,6 @@ export default function MemorialOrchestrator() {
     try {
       localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
 
-      // Se usuário logado e tem evento, salva no Supabase
       if (user && evento?.id) {
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData?.session?.access_token;
@@ -340,7 +327,7 @@ export default function MemorialOrchestrator() {
     : () => <PlaceholderStep titulo="Memorial Concluído" />;
 
   return (
-    <BreathTransition ativa={transicionando} cor="var(--color-brand-lighter)">
+    <BreathTransition ativa={transicionando} cor={corTransicao || 'var(--color-brand-lighter)'}>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', backgroundColor: 'var(--color-off-white)' }}>
         <ProgressBar progress={progress} blockName={blockName} />
         {salvandoAgora && (
@@ -357,7 +344,7 @@ export default function MemorialOrchestrator() {
         </main>
         <BackButton onClick={handleBack} disabled={!estado.historicoEtapas || estado.historicoEtapas.length === 0} />
         {oferecerDraft && (
-          <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }}>
+          <div role="dialog" aria-modal="true" aria-label="Continuar memorial salvo" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }}>
             <div style={{ backgroundColor: 'var(--color-white)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-8)', maxWidth: '420px', width: '100%', boxShadow: 'var(--shadow-xl)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-3)', color: 'var(--color-text-primary)' }}>Continuar onde parou?</h2>
               <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)', lineHeight: 'var(--leading-relaxed)' }}>Encontramos um memorial salvo neste dispositivo. Deseja continuar de onde parou?</p>
@@ -369,7 +356,7 @@ export default function MemorialOrchestrator() {
           </div>
         )}
         {mostrandoLogin && (
-          <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }} onClick={(e) => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" aria-label="Login necessário" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ backgroundColor: 'var(--color-white)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-8)', maxWidth: '400px', width: '100%', boxShadow: 'var(--shadow-xl)' }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-4)' }}>Quase lá!</h2>
               <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)' }}>Para continuar seu memorial na nuvem e acessar de qualquer lugar, faça login ou crie sua conta.</p>

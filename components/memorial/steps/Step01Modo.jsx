@@ -12,12 +12,14 @@ const OPCOES = [
     label: 'Me guiem',
     subtexto: 'Prefiro receber sugestões e aprovar. Ideal para quem está começando a imaginar o casamento.',
     icone: 'sparkle',
+    cor: 'var(--color-brand-lighter)',
   },
   {
     valor: 'ativo',
     label: 'Já tenho referências',
     subtexto: 'Quero organizar o que imagino. Você vai poder fazer uploads e colar links do Pinterest.',
     icone: 'link',
+    cor: 'var(--color-info-light)',
   },
 ];
 
@@ -34,16 +36,8 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
         display: 'flex',
         flexDirection: 'column',
         gap: 'var(--space-6)',
-        animation: 'fadeInUp 300ms ease-out',
       }}
     >
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-
       <div>
         <h1
           style={{
@@ -73,14 +67,15 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
               interactive
               selected={isSelected}
               padding="lg"
-              onClick={() => onSelect('modoPlanejamento', opcao.valor)}
+              onClick={() => onSelect('modoPlanejamento', opcao.valor, opcao.cor)}
               role="radio"
               aria-checked={isSelected}
+              aria-label={`${opcao.label}: ${opcao.subtexto}`}
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  onSelect('modoPlanejamento', opcao.valor);
+                  onSelect('modoPlanejamento', opcao.valor, opcao.cor);
                 }
               }}
             >
@@ -96,7 +91,7 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
                     width: '48px',
                     height: '48px',
                     borderRadius: 'var(--radius-lg)',
-                    backgroundColor: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-surface)',
+                    backgroundColor: isSelected ? opcao.cor : 'var(--color-surface)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
