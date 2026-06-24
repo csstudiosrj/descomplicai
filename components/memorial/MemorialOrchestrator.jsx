@@ -217,8 +217,8 @@ function PlaceholderStep({ titulo }) {
 export default function MemorialOrchestrator() {
   const router = useRouter();
   const { estado, setRespostas, carregarEstado, irParaEtapa, voltarEtapa } = useMemorial();
-  const { user, loading: carregandoAuth, supabase } = useAuth();
-  const { temDraft, carregarDraft, limparDraft, salvandoAgora } = useAutoSave(estado);
+  const { user, evento, loading: carregandoAuth, supabase } = useAuth();
+  const { temDraft, carregarDraft, limparDraft, salvandoAgora } = useAutoSave(estado, user, evento);
 
   const [transicionando, setTransicionando] = useState(false);
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
@@ -290,11 +290,35 @@ export default function MemorialOrchestrator() {
     setRespostas('fornecedoresNecessarios', fornecedores);
     try {
       localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
+
+      // Se usuário logado e tem evento, salva no Supabase
+      if (user && evento?.id) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+        if (token) {
+          const res = await fetch('/api/memorial/salvar', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              evento_id: evento.id,
+              estado: estado,
+            }),
+          });
+          if (!res.ok) {
+            console.error('[MemorialOrchestrator] Erro ao salvar no Supabase:', await res.text());
+          }
+        }
+      }
+
       router.push('/memorial/conclusao?concluido=1');
     } catch (erro) {
+      console.error('[MemorialOrchestrator] Falha ao salvar:', erro);
       alert('Falha ao salvar o progresso. Tente novamente.');
     }
-  }, [estado, setRespostas, router]);
+  }, [estado, setRespostas, router, user, evento, supabase]);
 
   const handleBack = useCallback(() => {
     if (estado.historicoEtapas && estado.historicoEtapas.length > 0) voltarEtapa();

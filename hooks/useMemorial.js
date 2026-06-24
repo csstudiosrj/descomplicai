@@ -17,7 +17,7 @@ const ESTADO_INICIAL = {
   nomeNoivo: '',
   dataCasamento: '',
   cidade: '',
-  estado: '',
+  uf: '',              // ← antes era 'estado', renomeado para evitar conflito com coluna do banco
   totalConvidados: 0,
   dataPrevista: '',
   criancas: false,
