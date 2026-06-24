@@ -10,14 +10,28 @@ export default function VLibrasWidget() {
 
     if (document.getElementById('vlibras-script')) return;
 
-    // CSS oficial do VLibras
+    // 1. CSS oficial do governo
     const css = document.createElement('link');
     css.id = 'vlibras-css';
     css.rel = 'stylesheet';
     css.href = 'https://vlibras.gov.br/app/vlibras-plugin.css';
     document.head.appendChild(css);
 
-    // Container
+    // 2. Só força o container a ser visível e fixed — o CSS oficial cuida do botão
+    const style = document.createElement('style');
+    style.id = 'vlibras-fix';
+    style.textContent = `
+      [vw].enabled {
+        position: fixed !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        z-index: 9999 !important;
+        display: block !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    // 3. Container exatamente como o governo espera
     const container = document.createElement('div');
     container.setAttribute('vw', '');
     container.classList.add('enabled');
@@ -29,7 +43,7 @@ export default function VLibrasWidget() {
     `;
     document.body.appendChild(container);
 
-    // Script
+    // 4. Script
     const script = document.createElement('script');
     script.id = 'vlibras-script';
     script.src = 'https://vlibras.gov.br/app/vlibras-plugin.js';
@@ -44,10 +58,6 @@ export default function VLibrasWidget() {
           console.warn('[VLibras] Erro:', err);
         }
       }
-    };
-
-    script.onerror = () => {
-      console.warn('[VLibras] Script falhou');
     };
 
     document.body.appendChild(script);
