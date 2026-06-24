@@ -3,7 +3,6 @@ import React from 'react';
 import { useRouter } from 'next/router';
 import { AuthProvider } from '../context/AuthContext';
 import MainLayout from '../components/layout/MainLayout';
-import VLibrasWidget from '../components/VLibrasWidget';
 import '../styles/tokens.css';
 import '../styles/globals.css';
 
@@ -23,12 +22,7 @@ function MyApp({ Component, pageProps }) {
     </MainLayout>
   );
 
-  return (
-    <AuthProvider>
-      {content}
-      <VLibrasWidget />
-    </AuthProvider>
-  );
+  return <AuthProvider>{content}</AuthProvider>;
 }
 
 export default MyApp;
