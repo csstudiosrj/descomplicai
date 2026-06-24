@@ -627,6 +627,64 @@ const icons = {
     </g>
   ),
 
+  fileSignature: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a1 1 0 0 0-1 1v18a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8L14 2z" />
+      <path d="M14 2v6h6" />
+      <path d="M8 13h4" />
+      <path d="M8 17h3" />
+      <path d="M16 14l-2 6-1-3-3 1" />
+      <path d="M17 13l2 2" />
+    </g>
+  ),
+
+  fileSignature: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a1 1 0 0 0-1 1v18a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8L14 2z" />
+      <path d="M14 2v6h6" />
+      <path d="M8 13h4" />
+      <path d="M8 17h3" />
+      <path d="M16 14l-2 6-1-3-3 1" />
+      <path d="M17 13l2 2" />
+    </g>
+  ),
+
+  rings: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="12" r="5" />
+      <circle cx="15" cy="12" r="5" />
+    </g>
+  ),
+
+  flower: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="10" r="2" />
+      <ellipse cx="12" cy="5.5" rx="1.8" ry="2.8" />
+      <ellipse cx="12" cy="14.5" rx="1.8" ry="2.8" />
+      <ellipse cx="7.5" cy="10" rx="2.8" ry="1.8" />
+      <ellipse cx="16.5" cy="10" rx="2.8" ry="1.8" />
+      <ellipse cx="8.9" cy="6.9" rx="1.8" ry="2.8" transform="rotate(-45 8.9 6.9)" />
+      <ellipse cx="15.1" cy="13.1" rx="1.8" ry="2.8" transform="rotate(-45 15.1 13.1)" />
+      <ellipse cx="15.1" cy="6.9" rx="1.8" ry="2.8" transform="rotate(45 15.1 6.9)" />
+      <ellipse cx="8.9" cy="13.1" rx="1.8" ry="2.8" transform="rotate(45 8.9 13.1)" />
+      <path d="M12 16v6" />
+    </g>
+  ),
+
+  sparkle: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2c0 5-2 8-2 10s2 5 2 10c0-5 2-8 2-10S12 7 12 2z" />
+      <path d="M2 12c5 0 8 2 10 2s5-2 10-2c-5 0-8-2-10-2S7 12 2 12z" />
+    </g>
+  ),
+
+  heart: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+    </g>
+  ),
+
+
 };
 
 export default function Icon({ name, size = 24, color = 'currentColor', className = '' }) {
@@ -653,3 +711,5 @@ export default function Icon({ name, size = 24, color = 'currentColor', classNam
     </svg>
   );
 }
+
+// NOVOS ÍCONES — adicionados
