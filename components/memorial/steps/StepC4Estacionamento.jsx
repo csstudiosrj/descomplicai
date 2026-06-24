@@ -1,5 +1,5 @@
 // components/memorial/steps/StepC4Estacionamento.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
@@ -26,8 +26,19 @@ const OPCOES = [
 ];
 
 export default function StepC4Estacionamento({ onSelect, estadoAtual }) {
+  const [cardPulsando, setCardPulsando] = React.useState(null);
+
   const selecionado = estadoAtual?.estacionamento;
 
+
+  const handleCardClick = (opcao) => {
+    if (cardPulsando) return;
+    setCardPulsando(opcao.valor);
+    setTimeout(() => {
+      onSelect(opcao.campo || opcao.valor, opcao.valor, opcao.cor);
+      setCardPulsando(null);
+    }, 350);
+  };
   return (
     <div
       role="radiogroup"
@@ -61,12 +72,21 @@ export default function StepC4Estacionamento({ onSelect, estadoAtual }) {
         {OPCOES.map((opcao) => {
           const isSelected = selecionado === opcao.valor;
           return (
-            <Card
+            <div
+      key={opcao.valor}
+      style={{
+        transition: 'transform 300ms ease, box-shadow 300ms ease',
+        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+        borderRadius: 'var(--radius-lg)',
+      }}
+    >
+      <Card
               key={opcao.valor}
               interactive
               selected={isSelected}
               padding="lg"
-              onClick={() => onSelect('estacionamento', opcao.valor)}
+              onClick={() => handleCardClick(opcao)}
               role="radio"
               aria-checked={isSelected}
               tabIndex={0}
@@ -101,8 +121,9 @@ export default function StepC4Estacionamento({ onSelect, estadoAtual }) {
                 </div>
               </div>
             </Card>
-          );
-        })}
+    </div>
+  );
+})}
       </div>
     </div>
   );

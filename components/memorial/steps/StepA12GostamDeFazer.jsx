@@ -17,6 +17,8 @@ const OPCOES = [
 ];
 
 export default function StepA12GostamDeFazer({ onSelect, estadoAtual }) {
+  const [cardPulsando, setCardPulsando] = React.useState(null);
+
   const [selecionadas, setSelecionadas] = useState(estadoAtual?.gostamDeFazer || []);
 
   const toggle = (valor) => {
@@ -46,14 +48,24 @@ export default function StepA12GostamDeFazer({ onSelect, estadoAtual }) {
         {OPCOES.map((o) => {
           const isSelected = selecionadas.includes(o.valor);
           return (
-            <Card key={o.valor} interactive selected={isSelected} padding="lg" onClick={() => toggle(o.valor)} role="checkbox" aria-checked={isSelected} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(o.valor); } }}>
+            <div
+      key={opcao.valor}
+      style={{
+        transition: 'transform 300ms ease, box-shadow 300ms ease',
+        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+        borderRadius: 'var(--radius-lg)',
+      }}
+    >
+      <Card key={o.valor} interactive selected={isSelected} padding="lg" onClick={() => toggle(o.valor)} role="checkbox" aria-checked={isSelected} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(o.valor); } }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                 <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }}>{o.label}</span>
                 {o.desc && <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>{o.desc}</span>}
               </div>
             </Card>
-          );
-        })}
+    </div>
+  );
+})}
       </div>
 
       <button

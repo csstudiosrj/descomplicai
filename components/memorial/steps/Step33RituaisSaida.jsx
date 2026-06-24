@@ -38,6 +38,8 @@ const OPCOES = [
 ];
 
 export default function Step33RituaisSaida({ onSelect, estadoAtual }) {
+  const [cardPulsando, setCardPulsando] = React.useState(null);
+
   const [selecionados, setSelecionados] = useState(estadoAtual?.rituaisSimbolicos || []);
 
   const toggle = (valor) => {
@@ -68,7 +70,16 @@ export default function Step33RituaisSaida({ onSelect, estadoAtual }) {
         {OPCOES.map((opcao) => {
           const isSelected = selecionados.includes(opcao.valor);
           return (
-            <Card
+            <div
+      key={opcao.valor}
+      style={{
+        transition: 'transform 300ms ease, box-shadow 300ms ease',
+        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+        borderRadius: 'var(--radius-lg)',
+      }}
+    >
+      <Card
               key={opcao.valor}
               interactive
               selected={isSelected}
@@ -108,8 +119,9 @@ export default function Step33RituaisSaida({ onSelect, estadoAtual }) {
                 </div>
               </div>
             </Card>
-          );
-        })}
+    </div>
+  );
+})}
       </div>
 
       <button

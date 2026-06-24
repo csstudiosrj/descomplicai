@@ -1,5 +1,5 @@
 // components/memorial/steps/Step03Data.jsx
-// B2 — Data do casamento com validação de data futura
+// B2 — Data do evento com validação de data futura
 // Agora usa um <input> nativo para garantir o funcionamento do atributo min
 
 import React, { useState, useMemo } from 'react';
@@ -61,7 +61,7 @@ export default function Step03Data({ onSelect, estadoAtual }) {
           color: 'var(--color-text-primary)',
         }}
       >
-        Quando será o casamento?
+        Quando será a celebração?
       </h1>
 
       {/* Campo de data nativo */}

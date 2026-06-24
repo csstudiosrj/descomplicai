@@ -1,7 +1,7 @@
 // Etapa de tipo de local — 9 opções + outro, com aviso para locais externos
 // Dependências diretas: React, PropTypes, Card
 
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 
@@ -21,7 +21,18 @@ const OPCOES = [
 const LOCAIS_EXTERNOS = ['praia', 'sitio', 'jardim', 'rooftop', 'haras'];
 
 export default function Step03Local({ onSelect, estadoAtual }) {
+  const [cardPulsando, setCardPulsando] = React.useState(null);
+
   const selecionado = estadoAtual?.tipoLocal;
+
+  const handleCardClick = (opcao) => {
+    if (cardPulsando) return;
+    setCardPulsando(opcao.valor);
+    setTimeout(() => {
+      onSelect(opcao.campo || opcao.valor, opcao.valor, opcao.cor);
+      setCardPulsando(null);
+    }, 350);
+  };
   const mostrarAviso = selecionado && LOCAIS_EXTERNOS.includes(selecionado);
 
   return (
@@ -59,12 +70,21 @@ export default function Step03Local({ onSelect, estadoAtual }) {
         {OPCOES.map((opcao) => {
           const isSelected = selecionado === opcao.valor;
           return (
-            <Card
+            <div
+      key={opcao.valor}
+      style={{
+        transition: 'transform 300ms ease, box-shadow 300ms ease',
+        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+        borderRadius: 'var(--radius-lg)',
+      }}
+    >
+      <Card
               key={opcao.valor}
               interactive
               selected={isSelected}
               padding="md"
-              onClick={() => onSelect('tipoLocal', opcao.valor)}
+              onClick={() => handleCardClick(opcao)}
               role="radio"
               aria-checked={isSelected}
               tabIndex={0}
@@ -103,8 +123,9 @@ export default function Step03Local({ onSelect, estadoAtual }) {
                 </span>
               </div>
             </Card>
-          );
-        })}
+    </div>
+  );
+})}
       </div>
 
       {mostrarAviso && (
