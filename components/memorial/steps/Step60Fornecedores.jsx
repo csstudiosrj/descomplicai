@@ -2,11 +2,11 @@
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
-import { listarFornecedoresNecessarios } from '../../../utils/gerador-memorial';
+import { montarPayloadMemorial } from '../../../utils/gerador-memorial';
 
 export default function Step60Fornecedores({ onConcluir, estadoAtual }) {
   const fornecedores = useMemo(
-    () => listarFornecedoresNecessarios(estadoAtual),
+    () => montarPayloadMemorial(estadoAtual),
     [estadoAtual]
   );
 

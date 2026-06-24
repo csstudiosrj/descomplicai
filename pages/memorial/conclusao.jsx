@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { montarPayloadParaAPI } from '../../utils/gerador-memorial';
+import { montarPayloadMemorial } from '../../utils/gerador-memorial';
 import { useAuth } from '../../hooks/useAuth';
 import { useMemorial } from '../../hooks/useMemorial';
 import useAutoSave from '../../hooks/useAutoSave';
@@ -71,7 +71,7 @@ export default function ConclusaoPage() {
     if (!estado || !estado.etapaAtual || status !== 'carregando') return;
     const gerarMemorial = async () => {
       try {
-        const payload = montarPayloadParaAPI(estado);
+        const payload = montarPayloadMemorial(estado);
         const resposta = await fetch('/api/ia/gerar-memorial', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -94,7 +94,7 @@ export default function ConclusaoPage() {
   const baixarPDF = async () => {
     setBaixandoPDF(true);
     try {
-      const dadosEvento = montarPayloadParaAPI(estado);
+      const dadosEvento = montarPayloadMemorial(estado);
       const resposta = await fetch('/api/gerar-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -156,7 +156,7 @@ export default function ConclusaoPage() {
     if (!aceiteTermosPDF) { alert('Aceite os termos para continuar.'); return; }
     setPagando(true);
     try {
-      const dadosEvento = { ...montarPayloadParaAPI(estado), email: user?.email || null };
+      const dadosEvento = { ...montarPayloadMemorial(estado), email: user?.email || null };
       const resposta = await fetch('/api/pagamento/criar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -178,7 +178,7 @@ export default function ConclusaoPage() {
     if (!aceiteTermosAssinatura) { alert('Aceite os termos para continuar.'); return; }
     setPagando(true);
     try {
-      const dadosEvento = { ...montarPayloadParaAPI(estado), email: user?.email || null };
+      const dadosEvento = { ...montarPayloadMemorial(estado), email: user?.email || null };
       const resposta = await fetch('/api/pagamento/criar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
