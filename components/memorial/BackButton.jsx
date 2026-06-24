@@ -16,33 +16,38 @@ export default function BackButton({ onClick, disabled = false }) {
         bottom: 'var(--space-6)',
         left: 'var(--space-6)',
         zIndex: 'var(--z-sticky)',
-        width: '44px',
-        height: '44px',
+        width: '48px',
+        height: '48px',
         borderRadius: 'var(--radius-full)',
-        border: 'none',
-        backgroundColor: 'transparent',
+        border: disabled ? '1.5px solid var(--color-border)' : '1.5px solid var(--color-border-strong)',
+        backgroundColor: disabled ? 'var(--color-surface)' : 'var(--color-white)',
         color: 'var(--color-text-primary)',
         cursor: disabled ? 'not-allowed' : 'pointer',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        opacity: disabled ? 0.4 : 1,
-        transition: 'background-color var(--transition-fast), transform var(--transition-fast)',
+        opacity: disabled ? 0.5 : 1,
+        boxShadow: 'var(--shadow-md)',
+        transition: 'background-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast)',
       }}
       onMouseEnter={(e) => {
-        if (!disabled) e.currentTarget.style.backgroundColor = 'var(--color-surface)';
+        if (!disabled) {
+          e.currentTarget.style.backgroundColor = 'var(--color-brand-lighter)';
+          e.currentTarget.style.transform = 'scale(1.08)';
+        }
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'transparent';
-      }}
-      onMouseDown={(e) => {
-        if (!disabled) e.currentTarget.style.transform = 'scale(1.05)';
-      }}
-      onMouseUp={(e) => {
+        e.currentTarget.style.backgroundColor = disabled ? 'var(--color-surface)' : 'var(--color-white)';
         e.currentTarget.style.transform = 'scale(1)';
       }}
+      onMouseDown={(e) => {
+        if (!disabled) e.currentTarget.style.transform = 'scale(0.95)';
+      }}
+      onMouseUp={(e) => {
+        if (!disabled) e.currentTarget.style.transform = 'scale(1.08)';
+      }}
     >
-      <Icon name="arrow-left" size={20} ariaHidden={false} ariaLabel="Voltar" />
+      <Icon name="arrowLeft" size={20} />
     </button>
   );
 }

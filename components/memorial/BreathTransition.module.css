@@ -1,5 +1,6 @@
 /* BreathTransition.module.css
-   Animação de respiro visual entre etapas do memorial */
+   Animação de respiro visual entre etapas do memorial
+   Agora mais perceptível: overlay mais opaco, scale maior, brilho sutil */
 
 .wrapper {
   position: relative;
@@ -12,8 +13,8 @@
   inset: 0;
   z-index: var(--z-modal);
   pointer-events: none;
-  transition: opacity 110ms ease;
-  will-change: opacity;
+  transition: opacity 110ms ease, backdrop-filter 110ms ease;
+  will-change: opacity, backdrop-filter;
 }
 
 /* Texto exclusivo para leitores de tela */
@@ -38,5 +39,6 @@
   .overlay {
     transition: none !important;
     opacity: 0 !important;
+    backdrop-filter: none !important;
   }
 }

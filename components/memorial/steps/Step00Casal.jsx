@@ -7,10 +7,10 @@ import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
 
 const OPCOES = [
-  { valor: 'noiva-noivo', label: 'Noiva e Noivo', icone: 'users' },
-  { valor: 'duas-noivas', label: 'Duas Noivas', icone: 'users' },
-  { valor: 'dois-noivos', label: 'Dois Noivos', icone: 'users' },
-  { valor: 'nao-especificar', label: 'Prefiro não especificar', icone: 'heart' },
+  { valor: 'noiva-noivo', label: 'Noiva e Noivo', icone: 'users', cor: 'var(--color-brand-lighter)' },
+  { valor: 'duas-noivas', label: 'Duas Noivas', icone: 'users', cor: 'var(--color-brand-lighter)' },
+  { valor: 'dois-noivos', label: 'Dois Noivos', icone: 'users', cor: 'var(--color-brand-lighter)' },
+  { valor: 'nao-especificar', label: 'Prefiro não especificar', icone: 'heart', cor: 'var(--color-info-light)' },
 ];
 
 export default function Step00Casal({ onSelect, estadoAtual }) {
@@ -26,16 +26,8 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
         display: 'flex',
         flexDirection: 'column',
         gap: 'var(--space-6)',
-        animation: 'fadeInUp 300ms ease-out',
       }}
     >
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-
       <div>
         <h1
           style={{
@@ -65,14 +57,15 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
               interactive
               selected={isSelected}
               padding="md"
-              onClick={() => onSelect('perfilCasal', opcao.valor)}
+              onClick={() => onSelect('perfilCasal', opcao.valor, opcao.cor)}
               role="radio"
               aria-checked={isSelected}
+              aria-label={opcao.label}
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  onSelect('perfilCasal', opcao.valor);
+                  onSelect('perfilCasal', opcao.valor, opcao.cor);
                 }
               }}
             >
@@ -88,7 +81,7 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
                     width: '48px',
                     height: '48px',
                     borderRadius: 'var(--radius-lg)',
-                    backgroundColor: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-surface)',
+                    backgroundColor: isSelected ? opcao.cor : 'var(--color-surface)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

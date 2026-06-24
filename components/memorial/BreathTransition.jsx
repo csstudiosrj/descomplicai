@@ -1,7 +1,8 @@
 // components/memorial/BreathTransition.jsx
 // Animação de "respiro visual" entre etapas do questionário
-// Overlay: opacidade 0 → 0.12 → 0 em 220ms
-// Card selecionado: scale 1 → 1.02 → 1 em 220ms
+// Overlay: opacidade 0 → 0.22 → 0 em 220ms
+// Card selecionado: scale 1 → 1.035 → 1 em 220ms
+// Brilho sutil: backdrop-filter brightness(0.97)
 // Respeita prefers-reduced-motion
 
 import React, { useState, useEffect } from 'react';
@@ -35,9 +36,10 @@ export default function BreathTransition({ ativa, cor, children }) {
 
   if (prefersReduced) return <>{children}</>;
 
-  const overlayOpacity = animState === 'active' ? 0.12 : 0;
+  const overlayOpacity = animState === 'active' ? 0.22 : 0;
   const wrapperTransform =
-    animState === 'active' || animState === 'fading' ? 'scale(1.02)' : 'scale(1)';
+    animState === 'active' || animState === 'fading' ? 'scale(1.035)' : 'scale(1)';
+  const backdropFilter = animState === 'active' ? 'brightness(0.97)' : 'brightness(1)';
 
   return (
     <div
@@ -57,6 +59,8 @@ export default function BreathTransition({ ativa, cor, children }) {
         style={{
           backgroundColor: cor || 'var(--color-brand)',
           opacity: overlayOpacity,
+          backdropFilter: backdropFilter,
+          WebkitBackdropFilter: backdropFilter,
         }}
       />
     </div>
