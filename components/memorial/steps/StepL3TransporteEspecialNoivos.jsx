@@ -6,13 +6,13 @@ import Icon from '../../ui/Icon';
 
 const OPCOES = [
     {
-      valor: 'True',
+      valor: true,
       label: 'Sim',
       subtexto: 'Carro clássico, limousine, helicóptero',
       icone: 'car',
     },
     {
-      valor: 'False',
+      valor: false,
       label: 'Não',
       subtexto: 'Transporte próprio',
       icone: 'x',
@@ -56,7 +56,7 @@ export default function StepL3TransporteEspecialNoivos({ onSelect, estadoAtual }
           const isSelected = selecionado === opcao.valor;
           return (
             <Card
-              key={opcao.valor}
+              key={String(opcao.valor)}
               interactive
               selected={isSelected}
               padding="lg"

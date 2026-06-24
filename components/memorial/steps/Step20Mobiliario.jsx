@@ -6,13 +6,13 @@ import Icon from '../../ui/Icon';
 
 const OPCOES = [
     {
-      valor: 'True',
+      valor: true,
       label: 'Sim',
       subtexto: 'Lounge, puffs, poltronas, etc.',
       icone: 'sofa',
     },
     {
-      valor: 'False',
+      valor: false,
       label: 'Não',
       subtexto: 'Mobiliário padrão do local',
       icone: 'x',
@@ -56,7 +56,7 @@ export default function Step20Mobiliario({ onSelect, estadoAtual }) {
           const isSelected = selecionado === opcao.valor;
           return (
             <Card
-              key={opcao.valor}
+              key={String(opcao.valor)}
               interactive
               selected={isSelected}
               padding="lg"

@@ -6,13 +6,13 @@ import Icon from '../../ui/Icon';
 
 const OPCOES = [
     {
-      valor: 'True',
+      valor: true,
       label: 'Sim',
       subtexto: 'Identificação elegante para cada convidado',
       icone: 'card',
     },
     {
-      valor: 'False',
+      valor: false,
       label: 'Não',
       subtexto: 'Sem cartões de lugar',
       icone: 'x',
@@ -56,7 +56,7 @@ export default function Step29CartaoLugar({ onSelect, estadoAtual }) {
           const isSelected = selecionado === opcao.valor;
           return (
             <Card
-              key={opcao.valor}
+              key={String(opcao.valor)}
               interactive
               selected={isSelected}
               padding="lg"

@@ -6,13 +6,13 @@ import Icon from '../../ui/Icon';
 
 const OPCOES = [
     {
-      valor: 'True',
+      valor: true,
       label: 'Sim',
       subtexto: 'Velas decorativas para ambiente romântico',
       icone: 'flame',
     },
     {
-      valor: 'False',
+      valor: false,
       label: 'Não',
       subtexto: 'Sem velas',
       icone: 'x',
@@ -56,7 +56,7 @@ export default function Step19Velas({ onSelect, estadoAtual }) {
           const isSelected = selecionado === opcao.valor;
           return (
             <Card
-              key={opcao.valor}
+              key={String(opcao.valor)}
               interactive
               selected={isSelected}
               padding="lg"

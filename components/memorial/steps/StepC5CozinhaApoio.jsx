@@ -6,13 +6,13 @@ import Icon from '../../ui/Icon';
 
 const OPCOES = [
     {
-      valor: 'True',
+      valor: true,
       label: 'Sim',
       subtexto: 'Cozinha adequada para o buffet',
       icone: 'chef',
     },
     {
-      valor: 'False',
+      valor: false,
       label: 'Não',
       subtexto: 'Precisaremos de estrutura móvel',
       icone: 'x',
@@ -56,7 +56,7 @@ export default function StepC5CozinhaApoio({ onSelect, estadoAtual }) {
           const isSelected = selecionado === opcao.valor;
           return (
             <Card
-              key={opcao.valor}
+              key={String(opcao.valor)}
               interactive
               selected={isSelected}
               padding="lg"

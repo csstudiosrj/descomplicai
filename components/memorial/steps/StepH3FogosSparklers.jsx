@@ -6,13 +6,13 @@ import Icon from '../../ui/Icon';
 
 const OPCOES = [
     {
-      valor: 'True',
+      valor: true,
       label: 'Sim',
       subtexto: 'Final mágico para a festa',
       icone: 'sparkle',
     },
     {
-      valor: 'False',
+      valor: false,
       label: 'Não',
       subtexto: 'Sem fogos',
       icone: 'x',
@@ -56,7 +56,7 @@ export default function StepH3FogosSparklers({ onSelect, estadoAtual }) {
           const isSelected = selecionado === opcao.valor;
           return (
             <Card
-              key={opcao.valor}
+              key={String(opcao.valor)}
               interactive
               selected={isSelected}
               padding="lg"

@@ -6,13 +6,13 @@ import Icon from '../../ui/Icon';
 
 const OPCOES = [
     {
-      valor: 'True',
+      valor: true,
       label: 'Sim',
       subtexto: 'Ensaio pós-casamento no destino',
       icone: 'camera',
     },
     {
-      valor: 'False',
+      valor: false,
       label: 'Não',
       subtexto: 'Apenas descanso e aproveitar',
       icone: 'x',
@@ -56,7 +56,7 @@ export default function StepM2FotosLuaDeMel({ onSelect, estadoAtual }) {
           const isSelected = selecionado === opcao.valor;
           return (
             <Card
-              key={opcao.valor}
+              key={String(opcao.valor)}
               interactive
               selected={isSelected}
               padding="lg"

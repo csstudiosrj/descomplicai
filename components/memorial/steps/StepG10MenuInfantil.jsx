@@ -6,13 +6,13 @@ import Icon from '../../ui/Icon';
 
 const OPCOES = [
     {
-      valor: 'True',
+      valor: true,
       label: 'Sim',
       subtexto: 'Opções kid-friendly no buffet',
       icone: 'baby',
     },
     {
-      valor: 'False',
+      valor: false,
       label: 'Não',
       subtexto: 'Crianças comem o mesmo menu',
       icone: 'x',
@@ -56,7 +56,7 @@ export default function StepG10MenuInfantil({ onSelect, estadoAtual }) {
           const isSelected = selecionado === opcao.valor;
           return (
             <Card
-              key={opcao.valor}
+              key={String(opcao.valor)}
               interactive
               selected={isSelected}
               padding="lg"

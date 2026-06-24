@@ -6,13 +6,13 @@ import Icon from '../../ui/Icon';
 
 const OPCOES = [
     {
-      valor: 'True',
+      valor: true,
       label: 'Sim',
       subtexto: 'Noivos + padrinhos juntos',
       icone: 'users',
     },
     {
-      valor: 'False',
+      valor: false,
       label: 'Não',
       subtexto: 'Apenas os noivos',
       icone: 'x',
@@ -56,7 +56,7 @@ export default function StepI4AulasDanca({ onSelect, estadoAtual }) {
           const isSelected = selecionado === opcao.valor;
           return (
             <Card
-              key={opcao.valor}
+              key={String(opcao.valor)}
               interactive
               selected={isSelected}
               padding="lg"
