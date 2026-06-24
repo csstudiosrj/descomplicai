@@ -1,4 +1,6 @@
 // components/memorial/MemorialOrchestrator.jsx
+// AJUSTADO: delay de 500ms para o respiro visual ser perceptível
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import useMemorial from '../../hooks/useMemorial';
@@ -9,7 +11,6 @@ import BreathTransition from './BreathTransition';
 import ProgressBar from './ProgressBar';
 import BackButton from './BackButton';
 
-// === STEPS EXISTENTES (não mexer) ===
 const STEP_COMPONENTS = {
   Step00Casal: React.lazy(() => import('./steps/Step00Casal')),
   Step01Modo: React.lazy(() => import('./steps/Step01Modo')),
@@ -34,14 +35,12 @@ const STEP_COMPONENTS = {
   Step15Tom: React.lazy(() => import('./steps/Step15Tom')),
   Step16Referencias: React.lazy(() => import('./steps/Step16Referencias')),
   Step60Fornecedores: React.lazy(() => import('./steps/Step60Fornecedores')),
-
   Step17Flores: React.lazy(() => import('./steps/Step17Flores')),
   Step18Iluminacao: React.lazy(() => import('./steps/Step18Iluminacao')),
   Step19Velas: React.lazy(() => import('./steps/Step19Velas')),
   Step20Mobiliario: React.lazy(() => import('./steps/Step20Mobiliario')),
   Step21Backdrop: React.lazy(() => import('./steps/Step21Backdrop')),
   Step22Tecidos: React.lazy(() => import('./steps/Step22Tecidos')),
-
   Step23Toalha: React.lazy(() => import('./steps/Step23Toalha')),
   Step24Loucas: React.lazy(() => import('./steps/Step24Loucas')),
   Step25Talheres: React.lazy(() => import('./steps/Step25Talheres')),
@@ -49,22 +48,17 @@ const STEP_COMPONENTS = {
   Step27CentroMesa: React.lazy(() => import('./steps/Step27CentroMesa')),
   Step28Guardanapo: React.lazy(() => import('./steps/Step28Guardanapo')),
   Step29CartaoLugar: React.lazy(() => import('./steps/Step29CartaoLugar')),
-
   Step30Entrada: React.lazy(() => import('./steps/Step30Entrada')),
   Step31MusicaCerimonia: React.lazy(() => import('./steps/Step31MusicaCerimonia')),
   Step32PadrinhosCriancas: React.lazy(() => import('./steps/Step32PadrinhosCriancas')),
   Step33RituaisSaida: React.lazy(() => import('./steps/Step33RituaisSaida')),
-
   Step38Coquetel: React.lazy(() => import('./steps/Step38Coquetel')),
   Step39BoloDocesBar: React.lazy(() => import('./steps/Step39BoloDocesBar')),
   Step40MusicaEntretenimento: React.lazy(() => import('./steps/Step40MusicaEntretenimento')),
-
   Step49Convites: React.lazy(() => import('./steps/Step49Convites')),
   Step50IdentidadeVisual: React.lazy(() => import('./steps/Step50IdentidadeVisual')),
-
   Step54Vestido: React.lazy(() => import('./steps/Step54Vestido')),
   Step55BelezaPadronizacao: React.lazy(() => import('./steps/Step55BelezaPadronizacao')),
-
   StepA4Criancas: React.lazy(() => import('./steps/StepA4Criancas')),
   StepA5Padrinhos: React.lazy(() => import('./steps/StepA5Padrinhos')),
   StepA6DataPrevista: React.lazy(() => import('./steps/StepA6DataPrevista')),
@@ -78,7 +72,6 @@ const STEP_COMPONENTS = {
   StepA14PersonalidadeNoiva: React.lazy(() => import('./steps/StepA14PersonalidadeNoiva')),
   StepA15TradicaoFamiliar: React.lazy(() => import('./steps/StepA15TradicaoFamiliar')),
   StepA16RestricaoCultural: React.lazy(() => import('./steps/StepA16RestricaoCultural')),
-
   StepB5CriancasCerimonia: React.lazy(() => import('./steps/StepB5CriancasCerimonia')),
   StepB6DuracaoCerimonia: React.lazy(() => import('./steps/StepB6DuracaoCerimonia')),
   StepB7MusicaCerimoniaViva: React.lazy(() => import('./steps/StepB7MusicaCerimoniaViva')),
@@ -93,7 +86,6 @@ const STEP_COMPONENTS = {
   StepB16DefiniramEntrada: React.lazy(() => import('./steps/StepB16DefiniramEntrada')),
   StepB17MusicosCerimonia: React.lazy(() => import('./steps/StepB17MusicosCerimonia')),
   StepB18CertidaoBatismo: React.lazy(() => import('./steps/StepB18CertidaoBatismo')),
-
   StepC4Estacionamento: React.lazy(() => import('./steps/StepC4Estacionamento')),
   StepC5CozinhaApoio: React.lazy(() => import('./steps/StepC5CozinhaApoio')),
   StepC6CapacidadeLocal: React.lazy(() => import('./steps/StepC6CapacidadeLocal')),
@@ -106,7 +98,6 @@ const STEP_COMPONENTS = {
   StepC13HotelIndicacao: React.lazy(() => import('./steps/StepC13HotelIndicacao')),
   StepC14HorarioFesta: React.lazy(() => import('./steps/StepC14HorarioFesta')),
   StepC15DuracaoCoquetel: React.lazy(() => import('./steps/StepC15DuracaoCoquetel')),
-
   StepD1TipoFlores: React.lazy(() => import('./steps/StepD1TipoFlores')),
   StepD2TipoIluminacao: React.lazy(() => import('./steps/StepD2TipoIluminacao')),
   StepD3MobiliarioQual: React.lazy(() => import('./steps/StepD3MobiliarioQual')),
@@ -130,28 +121,23 @@ const STEP_COMPONENTS = {
   StepD21SaveTheDate: React.lazy(() => import('./steps/StepD21SaveTheDate')),
   StepD22Lembrancinhas: React.lazy(() => import('./steps/StepD22Lembrancinhas')),
   StepD23KitSaida: React.lazy(() => import('./steps/StepD23KitSaida')),
-
   StepG8MesaFrios: React.lazy(() => import('./steps/StepG8MesaFrios')),
   StepG9BebidasPorPessoa: React.lazy(() => import('./steps/StepG9BebidasPorPessoa')),
   StepG10MenuInfantil: React.lazy(() => import('./steps/StepG10MenuInfantil')),
   StepH3FogosSparklers: React.lazy(() => import('./steps/StepH3FogosSparklers')),
   StepH4MesaDocesExposta: React.lazy(() => import('./steps/StepH4MesaDocesExposta')),
   StepH5AulaDanca: React.lazy(() => import('./steps/StepH5AulaDanca')),
-
   StepI4AulasDanca: React.lazy(() => import('./steps/StepI4AulasDanca')),
   StepI5MudancaLook: React.lazy(() => import('./steps/StepI5MudancaLook')),
   StepI6QuantasMadrinhas: React.lazy(() => import('./steps/StepI6QuantasMadrinhas')),
-
   StepL1Aliancas: React.lazy(() => import('./steps/StepL1Aliancas')),
   StepL2CivilJunto: React.lazy(() => import('./steps/StepL2CivilJunto')),
   StepL3TransporteEspecialNoivos: React.lazy(() => import('./steps/StepL3TransporteEspecialNoivos')),
   StepL4CarroNoivos: React.lazy(() => import('./steps/StepL4CarroNoivos')),
   StepL5TransporteConvidados: React.lazy(() => import('./steps/StepL5TransporteConvidados')),
   StepL6Seguranca: React.lazy(() => import('./steps/StepL6Seguranca')),
-
   StepM1LuaDeMel: React.lazy(() => import('./steps/StepM1LuaDeMel')),
   StepM2FotosLuaDeMel: React.lazy(() => import('./steps/StepM2FotosLuaDeMel')),
-
   StepE1EstadoCivilNoivo: React.lazy(() => import('./steps/StepE1EstadoCivilNoivo')),
   StepE2EstadoCivilNoiva: React.lazy(() => import('./steps/StepE2EstadoCivilNoiva')),
   StepE3CertidaoDivorcioNoivo: React.lazy(() => import('./steps/StepE3CertidaoDivorcioNoivo')),
@@ -211,7 +197,6 @@ export default function MemorialOrchestrator() {
   const [oferecerDraft, setOferecerDraft] = useState(false);
   const restauracaoFeita = useRef(false);
 
-  // ========== RESTAURAÇÃO APÓS LOGIN VIA SUPABASE ==========
   useEffect(() => {
     if (!user) return;
     if (estado.etapaAtual !== 0 || estado.perfilCasal) return;
@@ -221,19 +206,17 @@ export default function MemorialOrchestrator() {
 
     async function buscarDoSupabase() {
       try {
-        console.log('buscando memorial para user_id:', user.id);
         const { data, error } = await supabase
           .from('memoriais')
           .select('estado')
           .eq('user_id', user.id)
           .maybeSingle();
-        console.log('resultado supabase:', data, error);
         if (data?.estado && data.estado.perfilCasal) {
           carregarEstado(data.estado);
           return;
         }
       } catch (e) {
-        console.warn('Erro ao buscar memorial no Supabase:', e);
+        console.warn('Erro ao buscar memorial:', e);
       }
       const draft = carregarDraft();
       if (draft) setOferecerDraft(true);
@@ -252,7 +235,10 @@ export default function MemorialOrchestrator() {
     setRespostas(campo, valor);
     setTransicionando(true);
     if (cor) setCorTransicao(cor);
+
     const novoEstado = { ...estado, [campo]: valor };
+
+    // Aguarda 500ms para o respiro visual ser perceptível
     setTimeout(() => {
       const proxima = calcularProximaEtapa(novoEstado, estado.etapaAtual);
       const etapaId = getEtapaPorIndice(proxima)?.id;
@@ -264,7 +250,7 @@ export default function MemorialOrchestrator() {
       irParaEtapa(proxima);
       setTransicionando(false);
       setCorTransicao(null);
-    }, 220);
+    }, 500);
   }, [estado, setRespostas, irParaEtapa, user]);
 
   const handleIrParaLogin = (destino) => {
@@ -278,7 +264,6 @@ export default function MemorialOrchestrator() {
     setRespostas('fornecedoresNecessarios', fornecedores);
     try {
       localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
-
       if (user && evento?.id) {
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData?.session?.access_token;
@@ -289,26 +274,20 @@ export default function MemorialOrchestrator() {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`,
             },
-            body: JSON.stringify({
-              evento_id: evento.id,
-              estado: estado,
-            }),
+            body: JSON.stringify({ evento_id: evento.id, estado }),
           });
-          if (!res.ok) {
-            console.error('[MemorialOrchestrator] Erro ao salvar no Supabase:', await res.text());
-          }
+          if (!res.ok) console.error('Erro ao salvar:', await res.text());
         }
       }
-
       router.push('/memorial/conclusao?concluido=1');
     } catch (erro) {
-      console.error('[MemorialOrchestrator] Falha ao salvar:', erro);
+      console.error('Falha ao salvar:', erro);
       alert('Falha ao salvar o progresso. Tente novamente.');
     }
   }, [estado, setRespostas, router, user, evento, supabase]);
 
   const handleBack = useCallback(() => {
-    if (estado.historicoEtapas && estado.historicoEtapas.length > 0) voltarEtapa();
+    if (estado.historicoEtapas?.length > 0) voltarEtapa();
   }, [estado.historicoEtapas, voltarEtapa]);
 
   const handleContinuarDraft = () => {
@@ -330,7 +309,7 @@ export default function MemorialOrchestrator() {
     <BreathTransition ativa={transicionando} cor={corTransicao || 'var(--color-brand-lighter)'}>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', backgroundColor: 'var(--color-off-white)' }}>
         <ProgressBar progress={progress} blockName={blockName} />
-        {salvandoAgora && (
+        {salvandoAgoro && (
           <div style={{ position: 'fixed', top: '4px', right: 'var(--space-4)', zIndex: 'var(--z-sticky)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-brand)', animation: 'pulse 1.5s ease-in-out infinite' }} />
             <style jsx>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
@@ -342,7 +321,7 @@ export default function MemorialOrchestrator() {
             <StepComponent onSelect={handleSelect} estadoAtual={estado} onConcluir={handleConcluirMemorial} />
           </React.Suspense>
         </main>
-        <BackButton onClick={handleBack} disabled={!estado.historicoEtapas || estado.historicoEtapas.length === 0} />
+        <BackButton onClick={handleBack} disabled={!estado.historicoEtapas?.length} />
         {oferecerDraft && (
           <div role="dialog" aria-modal="true" aria-label="Continuar memorial salvo" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }}>
             <div style={{ backgroundColor: 'var(--color-white)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-8)', maxWidth: '420px', width: '100%', boxShadow: 'var(--shadow-xl)' }}>

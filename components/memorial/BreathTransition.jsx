@@ -1,7 +1,6 @@
 // components/memorial/BreathTransition.jsx
-// Animação de "respiro visual" entre etapas do questionário
-// O card clicado pulsa suavemente na cor escolhida antes de avançar
-// Sistema aguarda 400ms (respiro visual mais perceptível e elegante)
+// Respiro visual INTENSO — agora perceptível
+// Overlay opacidade 0.40 + blur + glow central + 500ms
 // Respeita prefers-reduced-motion
 
 import React, { useState, useEffect } from 'react';
@@ -26,10 +25,10 @@ export default function BreathTransition({ ativa, cor, children }) {
       return;
     }
 
-    // Ciclo de respiração: inspira (200ms) → expira (200ms)
+    // Ciclo de respiração: inspira (250ms) → expira (250ms) = 500ms total
     setFase('inhale');
-    const exhaleTimeout = setTimeout(() => setFase('exhale'), 200);
-    const idleTimeout = setTimeout(() => setFase('idle'), 400);
+    const exhaleTimeout = setTimeout(() => setFase('exhale'), 250);
+    const idleTimeout = setTimeout(() => setFase('idle'), 500);
 
     return () => {
       clearTimeout(exhaleTimeout);
@@ -52,12 +51,19 @@ export default function BreathTransition({ ativa, cor, children }) {
       <div className={styles.srOnly}>
         {isBreathing ? 'Avançando para a próxima etapa...' : ''}
       </div>
+
+      {/* Overlay de cor — mais opaco e com blur */}
       <div
         aria-hidden="true"
         className={`${styles.overlay} ${isBreathing ? styles.overlayActive : ''}`}
-        style={{
-          backgroundColor: cor || 'var(--color-brand)',
-        }}
+        style={{ backgroundColor: cor || 'var(--color-brand)' }}
+      />
+
+      {/* Glow central — círculo de luz que expande */}
+      <div
+        aria-hidden="true"
+        className={`${styles.glow} ${isBreathing ? styles.glowActive : ''}`}
+        style={{ backgroundColor: cor || 'var(--color-brand)' }}
       />
     </div>
   );
