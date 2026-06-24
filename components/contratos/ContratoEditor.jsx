@@ -39,10 +39,10 @@ export default function ContratoEditor({ contrato, fornecedor, onSalvar, onFecha
               disabled={readOnly}
             >
               <option value="rascunho">Rascunho</option>
-              <option value="aguardando_assinatura">Aguardando assinatura</option>
-              <option value="assinado_noivos">Assinado pelos noivos</option>
+              <option value="enviado">Enviado</option>
+              <option value="visualizado">Visualizado</option>
               <option value="assinado">Assinado</option>
-              <option value="cancelado">Cancelado</option>
+              <option value="recusado">Recusado</option>
             </select>
           </div>
 

@@ -17,6 +17,7 @@ export default function AssinarPage() {
   const [recusando, setRecusando] = useState(false);
   const [justificativa, setJustificativa] = useState('');
   const [mostrarRecusa, setMostrarRecusa] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState(null);
 
   useEffect(() => {
     if (!token) return;
@@ -29,10 +30,10 @@ export default function AssinarPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro || 'Erro ao carregar');
       setContrato(data.contrato);
+      setPdfUrl(data.contrato?.pdf_url || null);
       if (data.contrato.status === 'assinado') setAssinado(true);
       if (data.contrato.status === 'recusado') setMostrarRecusa(true);
 
-      // Marca como visualizado silenciosamente
       fetch('/api/contratos/visualizado', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -58,6 +59,7 @@ export default function AssinarPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro || 'Erro ao assinar');
       setAssinado(true);
+      if (data.pdf_url) setPdfUrl(data.pdf_url);
     } catch (err) {
       setErro(err.message);
     } finally {
@@ -112,10 +114,12 @@ export default function AssinarPage() {
           <Icon name="checkCircle" size={64} color="#10B981" />
           <h1 style={titleStyle}>Contrato Assinado!</h1>
           <p style={textStyle}>O contrato foi assinado digitalmente com sucesso.</p>
-          {contrato?.pdf_url && (
-            <a href={contrato.pdf_url} target="_blank" rel="noopener noreferrer" style={btnPrimarioStyle}>
+          {pdfUrl ? (
+            <a href={pdfUrl} target="_blank" rel="noopener noreferrer" style={btnPrimarioStyle}>
               <Icon name="download" size={16} /> Baixar PDF assinado
             </a>
+          ) : (
+            <p style={{ ...textStyle, color: '#A89B91', fontSize: '13px' }}>O PDF será disponibilizado em breve.</p>
           )}
           <div style={ctaBoxStyle}>
             <p style={ctaTitleStyle}>Gerencie seus contratos no Descomplicaí</p>
@@ -156,7 +160,11 @@ export default function AssinarPage() {
           </div>
 
           <div style={conteudoBoxStyle}>
-            <pre style={conteudoPreStyle}>{contrato?.conteudo || ''}</pre>
+            <div style={conteudoDocStyle}>
+              {contrato?.conteudo?.split('\n').map((line, i) => (
+                <p key={i} style={lineStyle(line)}>{line}</p>
+              )) || <p style={textStyle}>Conteúdo não disponível</p>}
+            </div>
           </div>
 
           <div style={formBoxStyle}>
@@ -239,6 +247,19 @@ export default function AssinarPage() {
   );
 }
 
+function lineStyle(line) {
+  if (line.startsWith('CONTRATO') || line.startsWith('CONTRATANTES') || line.startsWith('CONTRATADA') || line.startsWith('CONTRATADO')) {
+    return { ...docParagraphStyle, fontWeight: 600, marginTop: '16px' };
+  }
+  if (/^\d+\./.test(line)) {
+    return { ...docParagraphStyle, fontWeight: 600, marginTop: '12px' };
+  }
+  if (line.trim() === '') {
+    return { ...docParagraphStyle, margin: '4px 0' };
+  }
+  return docParagraphStyle;
+}
+
 const pageStyle = { minHeight: '100vh', background: '#F9F7F4', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' };
 const cardStyle = { background: '#fff', borderRadius: '16px', border: '1px solid #F0EDE9', maxWidth: '720px', width: '100%', padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' };
 const headerStyle = { textAlign: 'center' };
@@ -247,7 +268,8 @@ const subStyle = { fontSize: '14px', color: '#A89B91', fontFamily: 'var(--font-b
 const textStyle = { fontSize: '15px', color: '#1A1714', fontFamily: 'var(--font-body)', margin: 0, textAlign: 'center' };
 
 const conteudoBoxStyle = { background: '#F9F7F4', borderRadius: '12px', padding: '20px', border: '1px solid #F0EDE9', maxHeight: '50vh', overflowY: 'auto' };
-const conteudoPreStyle = { fontFamily: 'Georgia, serif', fontSize: '13px', lineHeight: 1.7, color: '#1A1714', whiteSpace: 'pre-wrap', margin: 0, wordWrap: 'break-word' };
+const conteudoDocStyle = { fontFamily: 'Georgia, serif', fontSize: '13px', lineHeight: 1.7, color: '#1A1714' };
+const docParagraphStyle = { margin: '0 0 8px 0', lineHeight: 1.7 };
 
 const formBoxStyle = { display: 'flex', flexDirection: 'column', gap: '14px' };
 const sectionTitleStyle = { fontFamily: 'var(--font-display, Georgia, serif)', fontSize: '16px', color: '#8B6F5E', fontWeight: 400, margin: 0 };

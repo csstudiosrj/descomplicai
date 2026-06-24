@@ -19,7 +19,7 @@ export default async function handler(req, res) {
   try {
     const { data: contrato, error: err1 } = await supabase
       .from('contratos')
-      .select('id, evento_id, fornecedor_id, tipo, status, token_assinatura, fornecedores(nome, email)')
+      .select('id, evento_id, fornecedor_id, tipo, status, token_assinatura, assinado_noivos_em, fornecedores(nome, email)')
       .eq('id', contrato_id)
       .single();
 
@@ -31,7 +31,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ erro: 'Fornecedor sem email cadastrado' });
     }
 
-    // Gera token se não existir
+    if (!contrato.assinado_noivos_em) {
+      return res.status(400).json({ erro: 'Assine o contrato antes de enviar ao fornecedor' });
+    }
+
     let token = contrato.token_assinatura;
     if (!token) {
       const { data: novoToken, error: errToken } = await supabase.rpc('gen_random_uuid');
@@ -40,7 +43,6 @@ export default async function handler(req, res) {
       await supabase.from('contratos').update({ token_assinatura: token }).eq('id', contrato_id);
     }
 
-    // Atualiza status
     const { error: err2 } = await supabase
       .from('contratos')
       .update({
@@ -52,19 +54,20 @@ export default async function handler(req, res) {
 
     if (err2) throw err2;
 
-    // Busca evento para email
     const { data: evento } = await supabase
       .from('eventos')
       .select('nome_evento')
       .eq('id', contrato.evento_id)
       .single();
 
-    // Envia email
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://descomplicai.com';
+
     await enviarEmailContratoParaFornecedor({
       to: contrato.fornecedores.email,
       fornecedorNome: contrato.fornecedores.nome || 'Fornecedor',
       noivosNome: evento?.nome_evento || 'os noivos',
       token,
+      baseUrl,
     });
 
     return res.status(200).json({ sucesso: true, mensagem: 'Contrato enviado', token });

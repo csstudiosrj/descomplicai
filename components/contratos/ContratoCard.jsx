@@ -8,7 +8,7 @@ function getIniciais(nome) {
   return (partes[0].charAt(0) + partes[partes.length - 1].charAt(0)).toUpperCase();
 }
 
-export default function ContratoCard({ contrato, fornecedor, onEditar, onExcluir, onEnviar, onReenviar, onDownload, readOnly }) {
+export default function ContratoCard({ contrato, fornecedor, onEditar, onExcluir, onEnviar, onReenviar, onDownload, onAssinarNoivos, readOnly }) {
   const nomeFornecedor = fornecedor?.nome || 'Fornecedor';
   const empresa = fornecedor?.empresa;
   const status = contrato.status;
@@ -17,7 +17,8 @@ export default function ContratoCard({ contrato, fornecedor, onEditar, onExcluir
   const enviadoNaoAssinado = ['enviado', 'visualizado'].includes(status);
   const podeEditar = !readOnly && status !== 'assinado' && status !== 'recusado';
   const podeExcluir = !readOnly && status !== 'assinado';
-  const podeEnviar = !readOnly && status === 'rascunho';
+  const podeAssinarNoivos = !readOnly && status === 'rascunho' && !contrato.assinado_noivos_em;
+  const podeEnviar = !readOnly && status === 'rascunho' && !!contrato.assinado_noivos_em;
   const podeReenviar = !readOnly && enviadoNaoAssinado;
   const podeDownload = temPdf;
 
@@ -58,6 +59,14 @@ export default function ContratoCard({ contrato, fornecedor, onEditar, onExcluir
               {contrato.atualizado_em ? new Date(contrato.atualizado_em).toLocaleDateString('pt-BR') : '—'}
             </span>
           </div>
+          {contrato.assinado_noivos_em && (
+            <div style={dataItemStyle}>
+              <span style={dataLabelStyle}>Assinado noivos</span>
+              <span style={{ ...dataValueStyle, color: '#10B981' }}>
+                {new Date(contrato.assinado_noivos_em).toLocaleDateString('pt-BR')}
+              </span>
+            </div>
+          )}
           {contrato.visualizado_em && (
             <div style={dataItemStyle}>
               <span style={dataLabelStyle}>Visualizado</span>
@@ -68,7 +77,7 @@ export default function ContratoCard({ contrato, fornecedor, onEditar, onExcluir
           )}
           {contrato.assinado_fornecedor_em && (
             <div style={dataItemStyle}>
-              <span style={dataLabelStyle}>Assinado</span>
+              <span style={dataLabelStyle}>Assinado fornecedor</span>
               <span style={dataValueStyle}>
                 {new Date(contrato.assinado_fornecedor_em).toLocaleDateString('pt-BR')}
               </span>
@@ -98,10 +107,22 @@ export default function ContratoCard({ contrato, fornecedor, onEditar, onExcluir
             <Icon name="edit" size={14} /> Editar
           </button>
         )}
+        {podeAssinarNoivos && (
+          <button onClick={onAssinarNoivos} style={btnAssinarNoivosStyle}>
+            <Icon name="fileText" size={14} /> Assinar contrato
+          </button>
+        )}
         {podeEnviar && (
           <button onClick={onEnviar} style={btnPrimarioStyle}>
             <Icon name="mail" size={14} /> Enviar
           </button>
+        )}
+        {!podeEnviar && status === 'rascunho' && !readOnly && (
+          <span style={tooltipWrapStyle}>
+            <button disabled style={{ ...btnPrimarioStyle, opacity: 0.5, cursor: 'not-allowed' }}>
+              <Icon name="mail" size={14} /> Enviar
+            </button>
+          </span>
         )}
         {podeReenviar && (
           <button onClick={onReenviar} style={btnReenviarStyle}>
@@ -151,3 +172,5 @@ const btnSecundarioStyle = { ...btnBaseStyle, background: '#F9F7F4', color: '#1A
 const btnPrimarioStyle = { ...btnBaseStyle, background: '#8B6F5E', color: '#fff' };
 const btnReenviarStyle = { ...btnBaseStyle, background: '#1976D2', color: '#fff' };
 const btnExcluirStyle = { ...btnBaseStyle, background: '#FFEBEE', color: '#C62828', border: '1px solid #FFCDD2', padding: '8px' };
+const btnAssinarNoivosStyle = { ...btnBaseStyle, background: '#10B981', color: '#fff' };
+const tooltipWrapStyle = { position: 'relative', display: 'inline-block' };

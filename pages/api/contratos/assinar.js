@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { enviarEmailAssinaturaNoivos } from '../../../lib/email';
+import { gerarPDFContratoAssinado } from '../../../utils/pdfContrato';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -22,7 +23,7 @@ export default async function handler(req, res) {
   try {
     const { data: contrato, error: err1 } = await supabase
       .from('contratos')
-      .select('id, evento_id, fornecedor_id, tipo, status, fornecedores(nome, email)')
+      .select('id, evento_id, fornecedor_id, tipo, status, conteudo, token_assinatura, fornecedores(nome, email)')
       .eq('token_assinatura', token)
       .single();
 
@@ -47,7 +48,39 @@ export default async function handler(req, res) {
 
     if (err2) throw err2;
 
-    // Notifica noivos
+    let pdfUrl = null;
+    try {
+      const { data: evento } = await supabase
+        .from('eventos')
+        .select('nome_evento, data_evento, local_evento, cidade_evento')
+        .eq('id', contrato.evento_id)
+        .single();
+
+      const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '0.0.0.0').toString();
+
+      pdfUrl = await gerarPDFContratoAssinado({
+        contrato,
+        fornecedor: contrato.fornecedores,
+        evento,
+        rodape: {
+          nome: nome.trim(),
+          email: email?.trim() || contrato.fornecedores?.email || '',
+          dataHora: new Date().toLocaleString('pt-BR'),
+          ip: ip.split(',')[0].trim(),
+          identificador: contrato.token_assinatura || contrato.id,
+        }
+      });
+
+      if (pdfUrl) {
+        await supabase
+          .from('contratos')
+          .update({ pdf_url: pdfUrl, atualizado_em: new Date().toISOString() })
+          .eq('id', contrato.id);
+      }
+    } catch (pdfErr) {
+      console.error('Erro ao gerar PDF automaticamente:', pdfErr);
+    }
+
     const { data: evento } = await supabase
       .from('eventos')
       .select('nome_evento, usuario_id')
@@ -73,6 +106,7 @@ export default async function handler(req, res) {
       sucesso: true,
       mensagem: 'Contrato assinado com sucesso!',
       contrato_id: contrato.id,
+      pdf_url: pdfUrl,
     });
   } catch (err) {
     console.error('Erro ao assinar contrato:', err);

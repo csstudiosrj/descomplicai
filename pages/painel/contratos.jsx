@@ -53,7 +53,6 @@ function ContratosContent() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  // Abrir editor via query param (vem da página de fornecedores)
   useEffect(() => {
     if (!router.isReady || !contratos.length) return;
     const { contrato: contratoId, fornecedor: fornecedorId } = router.query;
@@ -171,8 +170,31 @@ function ContratosContent() {
     carregarDados();
   };
 
+  const assinarNoivos = async (id) => {
+    if (readOnly) return;
+    try {
+      const res = await fetch('/api/contratos/assinar-noivos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contrato_id: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro || 'Erro ao assinar');
+      setToast({ tipo: 'sucesso', mensagem: 'Contrato assinado pelos noivos!' });
+      await carregarDados();
+    } catch (err) {
+      console.error(err);
+      setToast({ tipo: 'erro', mensagem: err.message || 'Erro ao assinar contrato.' });
+    }
+  };
+
   const enviarFornecedor = async (id) => {
     if (readOnly) return;
+    const contrato = contratos.find(c => c.id === id);
+    if (contrato && !contrato.assinado_noivos_em) {
+      setToast({ tipo: 'erro', mensagem: 'Assine o contrato antes de enviar ao fornecedor.' });
+      return;
+    }
     try {
       const res = await fetch('/api/contratos/enviar', {
         method: 'POST',
@@ -285,6 +307,7 @@ function ContratosContent() {
                     onEnviar={() => enviarFornecedor(c.id)}
                     onReenviar={() => enviarFornecedor(c.id)}
                     onDownload={() => c.pdf_url && window.open(c.pdf_url, '_blank')}
+                    onAssinarNoivos={() => assinarNoivos(c.id)}
                     readOnly={readOnly}
                   />
                 ))}
