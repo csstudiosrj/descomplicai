@@ -1,11 +1,12 @@
 /**
- * API Route — Persiste memorial no Supabase (validação server-side)
+ * API Route — Persiste memorial no Supabase + gera financeiro sugerido
  * POST /api/memorial/salvar
  * Body: { evento_id: string, estado: Object, conteudo?: string }
  * Headers: Authorization (JWT do Supabase)
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { gerarLinhasFinanceiro } from '../../../utils/gerador-financeiro';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -65,10 +66,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Verifica se o evento pertence ao usuário
+    // 1. Verifica se o evento pertence ao usuário + pega orçamento
     const { data: evento, error: evtErr } = await supabaseAdmin
       .from('eventos')
-      .select('id, usuario_id')
+      .select('id, usuario_id, orcamento')
       .eq('id', evento_id)
       .single();
 
@@ -115,7 +116,47 @@ export default async function handler(req, res) {
       // Não falha a requisição, apenas loga
     }
 
-    return res.status(200).json({ sucesso: true, memorial_id: memorialUpsert.id });
+    // 5. GERA FINANCEIRO SUGERIDO (novo)
+    const orcamentoTotal = Number(evento.orcamento) || Number(estado.orcamentoTotal) || 0;
+    if (orcamentoTotal > 0) {
+      const linhasFinanceiro = gerarLinhasFinanceiro(estado, orcamentoTotal);
+
+      if (linhasFinanceiro.length > 0) {
+        // Remove linhas financeiro geradas_auto antigas deste evento
+        const { error: delFinErr } = await supabaseAdmin
+          .from('financeiro')
+          .delete()
+          .eq('evento_id', evento_id)
+          .eq('gerado_auto', true)
+          .eq('sincronizado', false);
+
+        if (delFinErr) {
+          console.error('[memorial/salvar] Erro ao limpar financeiro antigo:', delFinErr);
+        }
+
+        // Insere novas linhas sugeridas
+        const linhasCompletas = linhasFinanceiro.map((l) => ({
+          ...l,
+          evento_id,
+          usuario_id: user.id,
+        }));
+
+        const { error: finErr } = await supabaseAdmin
+          .from('financeiro')
+          .insert(linhasCompletas);
+
+        if (finErr) {
+          console.error('[memorial/salvar] Erro ao inserir financeiro:', finErr);
+          // Não falha a requisição, apenas loga
+        }
+      }
+    }
+
+    return res.status(200).json({
+      sucesso: true,
+      memorial_id: memorialUpsert.id,
+      financeiro_gerado: orcamentoTotal > 0,
+    });
   } catch (e) {
     console.error('[API memorial/salvar]', e);
     return res.status(500).json({ sucesso: false, erro: e.message });
