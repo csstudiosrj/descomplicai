@@ -5,6 +5,11 @@ import { useState, useEffect, useCallback } from 'react';
  * Blocos A-M, incluindo expansão completa do questionário
  */
 const ESTADO_INICIAL = {
+  // ─── Navegação ───
+  etapaAtual: 0,
+  historicoEtapas: [],
+  perfilCasal: false,
+
   // ─── BLOCO A: Perfil do Casal ───
   perfil: '',
   modoPlanejamento: '',
@@ -18,7 +23,6 @@ const ESTADO_INICIAL = {
   criancas: false,
   padrinhosEscolhidos: false,
   quantosPadrinhos: 0,
-  // Expansão A (A7-A16)
   tempoJuntos: '',
   moramJuntos: '',
   comoSeConheceram: '',
@@ -40,9 +44,6 @@ const ESTADO_INICIAL = {
   criancasCerimonia: false,
   duracaoCerimonia: '',
   musicaCerimoniaViva: '',
-  // Expansão B (B8-B18)
-  reservouIgreja: '',
-  cursoNoivos: '',
   escolheuPadre: '',
   reservouTemplo: '',
   definiuChupa: '',
@@ -62,7 +63,6 @@ const ESTADO_INICIAL = {
   cozinhaApoio: false,
   capacidadeLocal: 0,
   geradorLocal: '',
-  // Expansão C (C8-C15)
   reservouLocalCerimonia: '',
   reservouLocalFesta: '',
   verificouMare: '',
@@ -78,7 +78,6 @@ const ESTADO_INICIAL = {
   paleta: [],
   tom: '',
   referencias: [],
-  // Expansão D (D1-D23)
   tipoFlores: '',
   tipoIluminacao: '',
   mobiliarioQual: '',
@@ -128,14 +127,12 @@ const ESTADO_INICIAL = {
   musicaCerimonia: '',
   elementosCerimonia: [],
   padrinhos: false,
-  criancasCerimonia: false,
   papeisCriancas: '',
   rituaisSimbolicos: [],
   saidaNoivos: '',
 
   // ─── BLOCO H: Recepção ───
   coquetel: false,
-  duracaoCoquetel: '',
   tipoJantar: '',
   restricoesAlimentares: [],
   bolo: '',
@@ -150,8 +147,6 @@ const ESTADO_INICIAL = {
   musicaFesta: '',
   estiloMusical: '',
   atividadesEntretenimento: [],
-  lembrancinhas: false,
-  kitSaida: false,
   itensKitSaida: [],
   fogosSparklers: false,
   mesaDocesExposta: false,
@@ -159,7 +154,6 @@ const ESTADO_INICIAL = {
 
   // ─── BLOCO I: Papelaria e Identidade ───
   formatoConvite: '',
-  saveTheDate: false,
   sinalizacaoEvento: false,
   monograma: '',
   fontesIdentidade: [],
@@ -193,7 +187,7 @@ const ESTADO_INICIAL = {
   luaDeMel: false,
   destinoLuaDeMel: '',
   fotosLuaDeMel: false,
-  // Expansão E (E1-E19)
+  // Expansão N (E1-E19)
   estadoCivilNoivo: '',
   estadoCivilNoiva: '',
   certidaoDivorcioNoivo: '',
@@ -214,10 +208,6 @@ const ESTADO_INICIAL = {
   vacinas: '',
 };
 
-/**
- * Hook de gerenciamento do estado do memorial
- * Persiste no localStorage antes do login, Supabase depois
- */
 export function useMemorial() {
   const [estado, setEstado] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -233,19 +223,43 @@ export function useMemorial() {
     return ESTADO_INICIAL;
   });
 
-  // Autosave no localStorage a cada mudança
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('memorial_estado', JSON.stringify(estado));
     }
   }, [estado]);
 
-  const atualizar = useCallback((campo, valor) => {
+  const setRespostas = useCallback((campo, valor) => {
     setEstado(prev => ({ ...prev, [campo]: valor }));
   }, []);
 
   const atualizarMultiplo = useCallback((atualizacoes) => {
     setEstado(prev => ({ ...prev, ...atualizacoes }));
+  }, []);
+
+  const carregarEstado = useCallback((novoEstado) => {
+    setEstado(prev => ({ ...prev, ...novoEstado }));
+  }, []);
+
+  const irParaEtapa = useCallback((indice) => {
+    setEstado(prev => ({
+      ...prev,
+      historicoEtapas: [...prev.historicoEtapas, prev.etapaAtual],
+      etapaAtual: indice,
+    }));
+  }, []);
+
+  const voltarEtapa = useCallback(() => {
+    setEstado(prev => {
+      if (!prev.historicoEtapas || prev.historicoEtapas.length === 0) return prev;
+      const novoHistorico = [...prev.historicoEtapas];
+      const etapaAnterior = novoHistorico.pop();
+      return {
+        ...prev,
+        historicoEtapas: novoHistorico,
+        etapaAtual: etapaAnterior,
+      };
+    });
   }, []);
 
   const resetar = useCallback(() => {
@@ -261,14 +275,17 @@ export function useMemorial() {
       estado.tipoCerimonia &&
       estado.tipoLocal &&
       estado.estilo &&
-      estado.paleta.length > 0
+      estado.paleta && estado.paleta.length > 0
     );
   }, [estado]);
 
   return {
     estado,
-    atualizar,
+    setRespostas,
     atualizarMultiplo,
+    carregarEstado,
+    irParaEtapa,
+    voltarEtapa,
     resetar,
     estaCompleto,
     ESTADO_INICIAL,
