@@ -75,17 +75,71 @@ const STEP_COMPONENTS = {
   StepA4Criancas: React.lazy(() => import('./steps/StepA4Criancas')),
   StepA5Padrinhos: React.lazy(() => import('./steps/StepA5Padrinhos')),
   StepA6DataPrevista: React.lazy(() => import('./steps/StepA6DataPrevista')),
+  StepA7TempoJuntos: React.lazy(() => import('./steps/StepA7TempoJuntos')),
+  StepA8MoramJuntos: React.lazy(() => import('./steps/StepA8MoramJuntos')),
+  StepA9ComoSeConheceram: React.lazy(() => import('./steps/StepA9ComoSeConheceram')),
+  StepA10TemFilhos: React.lazy(() => import('./steps/StepA10TemFilhos')),
+  StepA11TemAnimais: React.lazy(() => import('./steps/StepA11TemAnimais')),
+  StepA12GostamDeFazer: React.lazy(() => import('./steps/StepA12GostamDeFazer')),
+  StepA13PersonalidadeNoivo: React.lazy(() => import('./steps/StepA13PersonalidadeNoivo')),
+  StepA14PersonalidadeNoiva: React.lazy(() => import('./steps/StepA14PersonalidadeNoiva')),
+  StepA15TradicaoFamiliar: React.lazy(() => import('./steps/StepA15TradicaoFamiliar')),
+  StepA16RestricaoCultural: React.lazy(() => import('./steps/StepA16RestricaoCultural')),
 
   // === EXPANSÃO: Bloco B (Cerimônia) ===
   StepB5CriancasCerimonia: React.lazy(() => import('./steps/StepB5CriancasCerimonia')),
   StepB6DuracaoCerimonia: React.lazy(() => import('./steps/StepB6DuracaoCerimonia')),
   StepB7MusicaCerimoniaViva: React.lazy(() => import('./steps/StepB7MusicaCerimoniaViva')),
+  StepB8ReservouIgreja: React.lazy(() => import('./steps/StepB8ReservouIgreja')),
+  StepB9CursoNoivos: React.lazy(() => import('./steps/StepB9CursoNoivos')),
+  StepB10EscolheuPadre: React.lazy(() => import('./steps/StepB10EscolheuPadre')),
+  StepB11ReservouTemplo: React.lazy(() => import('./steps/StepB11ReservouTemplo')),
+  StepB12DefiniuChupa: React.lazy(() => import('./steps/StepB12DefiniuChupa')),
+  StepB13EscolheuCelebrante: React.lazy(() => import('./steps/StepB13EscolheuCelebrante')),
+  StepB14AgendouCartorio: React.lazy(() => import('./steps/StepB14AgendouCartorio')),
+  StepB15PadrinhosEscolhidos: React.lazy(() => import('./steps/StepB15PadrinhosEscolhidos')),
+  StepB16DefiniramEntrada: React.lazy(() => import('./steps/StepB16DefiniramEntrada')),
+  StepB17MusicosCerimonia: React.lazy(() => import('./steps/StepB17MusicosCerimonia')),
+  StepB18CertidaoBatismo: React.lazy(() => import('./steps/StepB18CertidaoBatismo')),
 
   // === EXPANSÃO: Bloco C (Local) ===
   StepC4Estacionamento: React.lazy(() => import('./steps/StepC4Estacionamento')),
   StepC5CozinhaApoio: React.lazy(() => import('./steps/StepC5CozinhaApoio')),
   StepC6CapacidadeLocal: React.lazy(() => import('./steps/StepC6CapacidadeLocal')),
   StepC7GeradorLocal: React.lazy(() => import('./steps/StepC7GeradorLocal')),
+  StepC8ReservouLocalCerimonia: React.lazy(() => import('./steps/StepC8ReservouLocalCerimonia')),
+  StepC9ReservouLocalFesta: React.lazy(() => import('./steps/StepC9ReservouLocalFesta')),
+  StepC10VerificouMare: React.lazy(() => import('./steps/StepC10VerificouMare')),
+  StepC11ListaPreliminar: React.lazy(() => import('./steps/StepC11ListaPreliminar')),
+  StepC12ConvidadosForaCidade: React.lazy(() => import('./steps/StepC12ConvidadosForaCidade')),
+  StepC13HotelIndicacao: React.lazy(() => import('./steps/StepC13HotelIndicacao')),
+  StepC14HorarioFesta: React.lazy(() => import('./steps/StepC14HorarioFesta')),
+  StepC15DuracaoCoquetel: React.lazy(() => import('./steps/StepC15DuracaoCoquetel')),
+
+  // === EXPANSÃO: Bloco D (Fornecedores progresso) ===
+  StepD1TipoFlores: React.lazy(() => import('./steps/StepD1TipoFlores')),
+  StepD2TipoIluminacao: React.lazy(() => import('./steps/StepD2TipoIluminacao')),
+  StepD3MobiliarioQual: React.lazy(() => import('./steps/StepD3MobiliarioQual')),
+  StepD4FotografoContratado: React.lazy(() => import('./steps/StepD4FotografoContratado')),
+  StepD5FilmagemContratada: React.lazy(() => import('./steps/StepD5FilmagemContratada')),
+  StepD6BuffetContratado: React.lazy(() => import('./steps/StepD6BuffetContratado')),
+  StepD7DecoracaoContratada: React.lazy(() => import('./steps/StepD7DecoracaoContratada')),
+  StepD8MusicaContratada: React.lazy(() => import('./steps/StepD8MusicaContratada')),
+  StepD9EspacoContratado: React.lazy(() => import('./steps/StepD9EspacoContratado')),
+  StepD10VestidoContratado: React.lazy(() => import('./steps/StepD10VestidoContratado')),
+  StepD11TrajeNoivoContratado: React.lazy(() => import('./steps/StepD11TrajeNoivoContratado')),
+  StepD12CerimonialistaContratado: React.lazy(() => import('./steps/StepD12CerimonialistaContratado')),
+  StepD13TransporteContratado: React.lazy(() => import('./steps/StepD13TransporteContratado')),
+  StepD14PapelariaContratada: React.lazy(() => import('./steps/StepD14PapelariaContratada')),
+  StepD15CabineFotos: React.lazy(() => import('./steps/StepD15CabineFotos')),
+  StepD16Drone: React.lazy(() => import('./steps/StepD16Drone')),
+  StepD17AnimacaoInfantil: React.lazy(() => import('./steps/StepD17AnimacaoInfantil')),
+  StepD18VestidoComprado: React.lazy(() => import('./steps/StepD18VestidoComprado')),
+  StepD19TesteBeleza: React.lazy(() => import('./steps/StepD19TesteBeleza')),
+  StepD20ConvitesEncomendados: React.lazy(() => import('./steps/StepD20ConvitesEncomendados')),
+  StepD21SaveTheDate: React.lazy(() => import('./steps/StepD21SaveTheDate')),
+  StepD22Lembrancinhas: React.lazy(() => import('./steps/StepD22Lembrancinhas')),
+  StepD23KitSaida: React.lazy(() => import('./steps/StepD23KitSaida')),
 
   // === EXPANSÃO: Bloco G/H (Alimentação e Entretenimento) ===
   StepG8MesaFrios: React.lazy(() => import('./steps/StepG8MesaFrios')),
@@ -111,6 +165,27 @@ const STEP_COMPONENTS = {
   // === NOVO: Bloco M (Pós-casamento) ===
   StepM1LuaDeMel: React.lazy(() => import('./steps/StepM1LuaDeMel')),
   StepM2FotosLuaDeMel: React.lazy(() => import('./steps/StepM2FotosLuaDeMel')),
+
+  // === NOVO: Bloco E (Documentação/Financeiro) ===
+  StepE1EstadoCivilNoivo: React.lazy(() => import('./steps/StepE1EstadoCivilNoivo')),
+  StepE2EstadoCivilNoiva: React.lazy(() => import('./steps/StepE2EstadoCivilNoiva')),
+  StepE3CertidaoDivorcioNoivo: React.lazy(() => import('./steps/StepE3CertidaoDivorcioNoivo')),
+  StepE4CertidaoDivorcioNoiva: React.lazy(() => import('./steps/StepE4CertidaoDivorcioNoiva')),
+  StepE5CertidaoObitoNoivo: React.lazy(() => import('./steps/StepE5CertidaoObitoNoivo')),
+  StepE6CertidaoObitoNoiva: React.lazy(() => import('./steps/StepE6CertidaoObitoNoiva')),
+  StepE7NacionalidadeNoivo: React.lazy(() => import('./steps/StepE7NacionalidadeNoivo')),
+  StepE8NacionalidadeNoiva: React.lazy(() => import('./steps/StepE8NacionalidadeNoiva')),
+  StepE9DocumentacaoEstrangeiro: React.lazy(() => import('./steps/StepE9DocumentacaoEstrangeiro')),
+  StepE10QuemPaga: React.lazy(() => import('./steps/StepE10QuemPaga')),
+  StepE11FormaPagamento: React.lazy(() => import('./steps/StepE11FormaPagamento')),
+  StepE12CronogramaDia: React.lazy(() => import('./steps/StepE12CronogramaDia')),
+  StepE13HorarioMakingOfNoiva: React.lazy(() => import('./steps/StepE13HorarioMakingOfNoiva')),
+  StepE14HorarioMakingOfNoivo: React.lazy(() => import('./steps/StepE14HorarioMakingOfNoivo')),
+  StepE15DestinoLuaDeMel: React.lazy(() => import('./steps/StepE15DestinoLuaDeMel')),
+  StepE16LuaDeMelReservada: React.lazy(() => import('./steps/StepE16LuaDeMelReservada')),
+  StepE17PassaporteValido: React.lazy(() => import('./steps/StepE17PassaporteValido')),
+  StepE18Visto: React.lazy(() => import('./steps/StepE18Visto')),
+  StepE19Vacinas: React.lazy(() => import('./steps/StepE19Vacinas')),
 };
 
 const BLOCK_NAMES = {
@@ -160,15 +235,12 @@ export default function MemorialOrchestrator() {
     async function buscarDoSupabase() {
       try {
         console.log('buscando memorial para user_id:', user.id);
-
         const { data, error } = await supabase
           .from('memoriais')
           .select('estado')
           .eq('user_id', user.id)
           .maybeSingle();
-
         console.log('resultado supabase:', data, error);
-
         if (data?.estado && data.estado.perfilCasal) {
           carregarEstado(data.estado);
           return;
@@ -176,12 +248,8 @@ export default function MemorialOrchestrator() {
       } catch (e) {
         console.warn('Erro ao buscar memorial no Supabase:', e);
       }
-
-      // Fallback: oferece draft local se existir
       const draft = carregarDraft();
-      if (draft) {
-        setOferecerDraft(true);
-      }
+      if (draft) setOferecerDraft(true);
     }
 
     buscarDoSupabase();
@@ -196,30 +264,23 @@ export default function MemorialOrchestrator() {
   const handleSelect = useCallback((campo, valor) => {
     setRespostas(campo, valor);
     setTransicionando(true);
-
     const novoEstado = { ...estado, [campo]: valor };
     setTimeout(() => {
       const proxima = calcularProximaEtapa(novoEstado, estado.etapaAtual);
       const etapaId = getEtapaPorIndice(proxima)?.id;
-
       if (!user && deveExibirLoginAgora(novoEstado, etapaId)) {
         setMostrandoLogin(true);
         setTransicionando(false);
         return;
       }
-
       irParaEtapa(proxima);
       setTransicionando(false);
     }, 220);
   }, [estado, setRespostas, irParaEtapa, user]);
 
-  // ========== SALVA ESTADO NO sessionStorage ANTES DE IR PARA LOGIN ==========
   const handleIrParaLogin = (destino) => {
     try {
-      sessionStorage.setItem(
-        'descomplicai-pre-login-state',
-        JSON.stringify(estado)
-      );
+      sessionStorage.setItem('descomplicai-pre-login-state', JSON.stringify(estado));
     } catch (e) {}
     router.push(`${destino}?redirect=${encodeURIComponent('/memorial')}`);
   };
@@ -257,7 +318,6 @@ export default function MemorialOrchestrator() {
     <BreathTransition ativa={transicionando} cor="var(--color-brand-lighter)">
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', backgroundColor: 'var(--color-off-white)' }}>
         <ProgressBar progress={progress} blockName={blockName} />
-
         {salvandoAgora && (
           <div style={{ position: 'fixed', top: '4px', right: 'var(--space-4)', zIndex: 'var(--z-sticky)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-brand)', animation: 'pulse 1.5s ease-in-out infinite' }} />
@@ -265,15 +325,12 @@ export default function MemorialOrchestrator() {
             Salvando...
           </div>
         )}
-
         <main style={{ flex: 1, overflowY: 'auto', paddingTop: 'var(--space-6)', paddingBottom: 'var(--space-4)', paddingLeft: 'var(--space-4)', paddingRight: 'var(--space-4)' }}>
           <React.Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><span style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando...</span></div>}>
             <StepComponent onSelect={handleSelect} estadoAtual={estado} onConcluir={handleConcluirMemorial} />
           </React.Suspense>
         </main>
-
         <BackButton onClick={handleBack} disabled={estado.historicoEtapas.length === 0} />
-
         {oferecerDraft && (
           <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }}>
             <div style={{ backgroundColor: 'var(--color-white)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-8)', maxWidth: '420px', width: '100%', boxShadow: 'var(--shadow-xl)' }}>
@@ -286,7 +343,6 @@ export default function MemorialOrchestrator() {
             </div>
           </div>
         )}
-
         {mostrandoLogin && (
           <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ backgroundColor: 'var(--color-white)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-8)', maxWidth: '400px', width: '100%', boxShadow: 'var(--shadow-xl)' }}>

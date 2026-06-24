@@ -1,44 +1,76 @@
 import { useState, useEffect, useCallback } from 'react';
 
 /**
- * Estado inicial completo do memorial — ~110 campos
- * Blocos A-M, incluindo expansão do questionário
+ * Estado inicial completo do memorial — ~145 campos
+ * Blocos A-M, incluindo expansão completa do questionário
  */
 const ESTADO_INICIAL = {
   // ─── BLOCO A: Perfil do Casal ───
-  perfil: '',                 // A1: noiva+noivo | duas_noivas | dois_noivos | nao_especificado
-  modoPlanejamento: '',       // A2: me_guiem | tenho_referencias | ambos
+  perfil: '',
+  modoPlanejamento: '',
   nomeNoiva: '',
   nomeNoivo: '',
-  dataCasamento: '',          // A3
+  dataCasamento: '',
   cidade: '',
   estado: '',
-  totalConvidados: 0,         // A5
-  dataPrevista: '',           // A6 (mês/ano aproximado)
-  criancas: false,            // A4 (terão crianças na festa?)
-  padrinhosEscolhidos: false, // A5
-  quantosPadrinhos: 0,        // A5
+  totalConvidados: 0,
+  dataPrevista: '',
+  criancas: false,
+  padrinhosEscolhidos: false,
+  quantosPadrinhos: 0,
+  // Expansão A (A7-A16)
+  tempoJuntos: '',
+  moramJuntos: '',
+  comoSeConheceram: '',
+  temFilhos: '',
+  temAnimais: '',
+  gostamDeFazer: [],
+  personalidadeNoivo: '',
+  personalidadeNoiva: '',
+  tradicaoFamiliar: '',
+  restricaoCultural: '',
 
   // ─── BLOCO B: Cerimônia ───
-  tipoCerimonia: '',          // B1
-  reservouIgreja: false,      // B2 ramificação
-  padreEscolhido: false,      // B2 ramificação
-  cursoNoivos: false,         // B2 ramificação
-  celebranteLaico: false,     // B2 ramificação
-  mesmoLocal: false,          // B3
-  criancasCerimonia: false,   // B5 (expansão)
-  duracaoCerimonia: '',       // B6: 30min | 1h | mais_1h
-  musicaCerimoniaViva: '',    // B7: sim | nao | talvez
+  tipoCerimonia: '',
+  reservouIgreja: false,
+  padreEscolhido: false,
+  cursoNoivos: false,
+  celebranteLaico: false,
+  mesmoLocal: false,
+  criancasCerimonia: false,
+  duracaoCerimonia: '',
+  musicaCerimoniaViva: '',
+  // Expansão B (B8-B18)
+  reservouIgreja: '',
+  cursoNoivos: '',
+  escolheuPadre: '',
+  reservouTemplo: '',
+  definiuChupa: '',
+  escolheuCelebrante: '',
+  agendouCartorio: '',
+  padrinhosEscolhidosCerimonia: '',
+  definiramEntrada: '',
+  musicosCerimonia: '',
+  certidaoBatismo: '',
 
   // ─── BLOCO C: Local e Estrutura ───
-  tipoLocal: '',              // C1
-  horarioCasamento: '',       // C2: diurno | por_do_sol | noturno
-  planoChuva: false,          // C3
-  transporteNoivos: '',       // Step11b
-  estacionamento: '',         // C4: sim | nao | valet
-  cozinhaApoio: false,        // C5
-  capacidadeLocal: 0,         // C6
-  geradorLocal: '',           // C7: sim | nao | nao_sei
+  tipoLocal: '',
+  horarioCasamento: '',
+  planoChuva: false,
+  transporteNoivos: '',
+  estacionamento: '',
+  cozinhaApoio: false,
+  capacidadeLocal: 0,
+  geradorLocal: '',
+  // Expansão C (C8-C15)
+  reservouLocalCerimonia: '',
+  reservouLocalFesta: '',
+  verificouMare: '',
+  listaPreliminar: '',
+  convidadosForaCidade: 0,
+  hotelIndicacao: '',
+  horarioFesta: '',
+  duracaoCoquetel: '',
 
   // ─── BLOCO D: Identidade Visual ───
   estilo: '',
@@ -46,6 +78,30 @@ const ESTADO_INICIAL = {
   paleta: [],
   tom: '',
   referencias: [],
+  // Expansão D (D1-D23)
+  tipoFlores: '',
+  tipoIluminacao: '',
+  mobiliarioQual: '',
+  fotografoContratado: '',
+  filmagemContratada: '',
+  buffetContratado: '',
+  decoracaoContratada: '',
+  musicaContratada: '',
+  espacoContratado: '',
+  vestidoContratado: '',
+  trajeNoivoContratado: '',
+  cerimonialistaContratado: '',
+  transporteContratado: '',
+  papelariaContratada: '',
+  cabineFotos: '',
+  drone: '',
+  animacaoInfantil: '',
+  vestidoComprado: '',
+  testeBeleza: '',
+  convitesEncomendados: '',
+  saveTheDate: '',
+  lembrancinhas: '',
+  kitSaida: '',
 
   // ─── BLOCO E: Decoração ───
   flores: false,
@@ -72,7 +128,7 @@ const ESTADO_INICIAL = {
   musicaCerimonia: '',
   elementosCerimonia: [],
   padrinhos: false,
-  criancasCerimonia: false,   // duplicado intencional — B5 e G3
+  criancasCerimonia: false,
   papeisCriancas: '',
   rituaisSimbolicos: [],
   saidaNoivos: '',
@@ -88,18 +144,18 @@ const ESTADO_INICIAL = {
   bemCasados: false,
   tipoBar: '',
   bartender: false,
-  mesaFrios: false,           // G8 (expansão)
-  bebidasPorPessoa: '',       // G9: livre | controlado
-  menuInfantil: false,        // G10
+  mesaFrios: false,
+  bebidasPorPessoa: '',
+  menuInfantil: false,
   musicaFesta: '',
   estiloMusical: '',
   atividadesEntretenimento: [],
   lembrancinhas: false,
   kitSaida: false,
   itensKitSaida: [],
-  fogosSparklers: false,      // H3 (expansão)
-  mesaDocesExposta: false,    // H4 (expansão)
-  aulaDanca: false,           // H5 (expansão)
+  fogosSparklers: false,
+  mesaDocesExposta: false,
+  aulaDanca: false,
 
   // ─── BLOCO I: Papelaria e Identidade ───
   formatoConvite: '',
@@ -118,25 +174,44 @@ const ESTADO_INICIAL = {
   profissionalBeleza: false,
   padronizarMadrinhas: '',
   padronizarPadrinhos: '',
-  aulasDanca: false,          // I4 (expansão)
-  mudancaLook: false,         // I5 (expansão)
-  quantasMadrinhas: 0,        // I6 (expansão)
+  aulasDanca: false,
+  mudancaLook: false,
+  quantasMadrinhas: 0,
 
   // ─── BLOCO K: Fornecedores ───
   fornecedoresNecessarios: [],
 
   // ─── BLOCO L: Logística e Documentação ───
-  aliancasEscolhidas: '',     // L1: sim | nao | buscando
-  civilJunto: '',             // L2: sim | ja_casados | nao
-  transporteEspecialNoivos: false, // L3
-  carroNoivos: '',            // L4: sim | nao | talvez
-  transporteConvidados: '',   // L5: sim | nao | alguns
-  seguranca: false,           // L6
+  aliancasEscolhidas: '',
+  civilJunto: '',
+  transporteEspecialNoivos: false,
+  carroNoivos: '',
+  transporteConvidados: '',
+  seguranca: false,
 
   // ─── BLOCO M: Pós-casamento ───
   luaDeMel: false,
   destinoLuaDeMel: '',
-  fotosLuaDeMel: false,       // M2 (expansão)
+  fotosLuaDeMel: false,
+  // Expansão E (E1-E19)
+  estadoCivilNoivo: '',
+  estadoCivilNoiva: '',
+  certidaoDivorcioNoivo: '',
+  certidaoDivorcioNoiva: '',
+  certidaoObitoNoivo: '',
+  certidaoObitoNoiva: '',
+  nacionalidadeNoivo: '',
+  nacionalidadeNoiva: '',
+  documentacaoEstrangeiro: '',
+  quemPaga: '',
+  formaPagamento: '',
+  cronogramaDia: '',
+  horarioMakingOfNoiva: '',
+  horarioMakingOfNoivo: '',
+  luaDeMelReservada: '',
+  passaporteValido: '',
+  visto: '',
+  vacinas: '',
 };
 
 /**
@@ -181,7 +256,6 @@ export function useMemorial() {
   }, []);
 
   const estaCompleto = useCallback(() => {
-    // Verifica campos obrigatórios mínimos
     return !!(
       estado.perfil &&
       estado.tipoCerimonia &&
