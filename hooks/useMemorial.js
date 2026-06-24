@@ -1,198 +1,204 @@
-// hooks/useMemorial.js
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
+/**
+ * Estado inicial completo do memorial — ~110 campos
+ * Blocos A-M, incluindo expansão do questionário
+ */
 const ESTADO_INICIAL = {
-  perfilCasal: null,
-  modoPlanejamento: null,
-  nomePessoa1: '',
-  nomePessoa2: '',
-  nomeJuntos: '',
-  dataEvento: null,
-  periodoAno: null,
-  cidadeEvento: '',
-  estadoEvento: '',
-  regiaoEvento: '',
-  totalConvidados: null,
-  faixaOrcamento: null,
-  tipoCerimonia: null,
-  tipoLocal: null,
-  ceremoniaFestaMesmoLocal: null,
-  horarioCasamento: null,
-  planoChuva: null,
-  estilo: null,
-  formalidade: null,
+  // ─── BLOCO A: Perfil do Casal ───
+  perfil: '',                 // A1: noiva+noivo | duas_noivas | dois_noivos | nao_especificado
+  modoPlanejamento: '',       // A2: me_guiem | tenho_referencias | ambos
+  nomeNoiva: '',
+  nomeNoivo: '',
+  dataCasamento: '',          // A3
+  cidade: '',
+  estado: '',
+  totalConvidados: 0,         // A5
+  dataPrevista: '',           // A6 (mês/ano aproximado)
+  criancas: false,            // A4 (terão crianças na festa?)
+  padrinhosEscolhidos: false, // A5
+  quantosPadrinhos: 0,        // A5
+
+  // ─── BLOCO B: Cerimônia ───
+  tipoCerimonia: '',          // B1
+  reservouIgreja: false,      // B2 ramificação
+  padreEscolhido: false,      // B2 ramificação
+  cursoNoivos: false,         // B2 ramificação
+  celebranteLaico: false,     // B2 ramificação
+  mesmoLocal: false,          // B3
+  criancasCerimonia: false,   // B5 (expansão)
+  duracaoCerimonia: '',       // B6: 30min | 1h | mais_1h
+  musicaCerimoniaViva: '',    // B7: sim | nao | talvez
+
+  // ─── BLOCO C: Local e Estrutura ───
+  tipoLocal: '',              // C1
+  horarioCasamento: '',       // C2: diurno | por_do_sol | noturno
+  planoChuva: false,          // C3
+  transporteNoivos: '',       // Step11b
+  estacionamento: '',         // C4: sim | nao | valet
+  cozinhaApoio: false,        // C5
+  capacidadeLocal: 0,         // C6
+  geradorLocal: '',           // C7: sim | nao | nao_sei
+
+  // ─── BLOCO D: Identidade Visual ───
+  estilo: '',
+  formalidade: '',
   paleta: [],
-  tomsIdentidade: [],
-  referenciasVisuais: [],
-  flores: null,
+  tom: '',
+  referencias: [],
+
+  // ─── BLOCO E: Decoração ───
+  flores: false,
   locaisFlores: [],
-  tipoFlores: null,
-  floricultura: '',
-  iluminacao: null,
-  velas: null,
-  tipoVelas: null,
-  mobiliarioEspecial: null,
-  tipoMesa: null,
-  lounge: null,
-  backdrop: null,
-  tecidos: null,
-  toalha: null,
-  loucas: null,
-  talheres: null,
-  tacas: null,
-  centroMesa: null,
-  guardanapo: null,
-  cartaoLugar: null,
-  menuImpresso: null,
-  entradaNoivos: null,
-  acompanhamento: null,
-  musicaCerimonia: null,
+  iluminacao: '',
+  velas: false,
+  tipoVelas: '',
+  mobiliarioEspecial: false,
+  backdrop: false,
+  tecidos: false,
+
+  // ─── BLOCO F: Mesa Posta ───
+  toalha: '',
+  loucas: '',
+  talheres: '',
+  tacas: '',
+  centroMesa: '',
+  guardanapo: '',
+  cartaoLugar: false,
+
+  // ─── BLOCO G: Cerimônia Detalhada ───
+  entradaNoivos: '',
+  acompanhamento: '',
+  musicaCerimonia: '',
   elementosCerimonia: [],
-  padrinhos: null,
-  criancasCerimonia: null,
-  papeisCriancas: [],
+  padrinhos: false,
+  criancasCerimonia: false,   // duplicado intencional — B5 e G3
+  papeisCriancas: '',
   rituaisSimbolicos: [],
-  saidaNoivos: null,
-  coquetel: null,
-  duracaoCoquetel: null,
-  tipoJantar: null,
+  saidaNoivos: '',
+
+  // ─── BLOCO H: Recepção ───
+  coquetel: false,
+  duracaoCoquetel: '',
+  tipoJantar: '',
   restricoesAlimentares: [],
-  bolo: null,
+  bolo: '',
   saborBolo: '',
-  mesaDoces: null,
-  bemCasados: null,
-  tipoBar: null,
-  bartender: null,
-  musicaFesta: null,
-  estiloMusical: [],
+  mesaDoces: false,
+  bemCasados: false,
+  tipoBar: '',
+  bartender: false,
+  mesaFrios: false,           // G8 (expansão)
+  bebidasPorPessoa: '',       // G9: livre | controlado
+  menuInfantil: false,        // G10
+  musicaFesta: '',
+  estiloMusical: '',
   atividadesEntretenimento: [],
-  lembrancinhas: null,
-  kitSaida: null,
+  lembrancinhas: false,
+  kitSaida: false,
   itensKitSaida: [],
-  formatoConvite: null,
-  saveTheDate: null,
-  sinalizacaoEvento: [],
-  monograma: null,
+  fogosSparklers: false,      // H3 (expansão)
+  mesaDocesExposta: false,    // H4 (expansão)
+  aulaDanca: false,           // H5 (expansão)
+
+  // ─── BLOCO I: Papelaria e Identidade ───
+  formatoConvite: '',
+  saveTheDate: false,
+  sinalizacaoEvento: false,
+  monograma: '',
   fontesIdentidade: [],
   itensDigitais: [],
-  estiloVestido: null,
-  atelierContratado: null,
+
+  // ─── BLOCO J: Vestuário e Beleza ───
+  estiloVestido: '',
+  atelierContratado: false,
   acessorios: [],
-  estiloMaquiagem: null,
-  estiloCabelo: null,
-  profissionalBeleza: null,
-  padronizarMadrinhas: null,
-  padronizarPadrinhos: null,
+  estiloMaquiagem: '',
+  estiloCabelo: '',
+  profissionalBeleza: false,
+  padronizarMadrinhas: '',
+  padronizarPadrinhos: '',
+  aulasDanca: false,          // I4 (expansão)
+  mudancaLook: false,         // I5 (expansão)
+  quantasMadrinhas: 0,        // I6 (expansão)
+
+  // ─── BLOCO K: Fornecedores ───
   fornecedoresNecessarios: [],
-  etapaAtual: 0,
-  historicoEtapas: [],
-  loginFeito: false,
-  memorialConcluido: false,
+
+  // ─── BLOCO L: Logística e Documentação ───
+  aliancasEscolhidas: '',     // L1: sim | nao | buscando
+  civilJunto: '',             // L2: sim | ja_casados | nao
+  transporteEspecialNoivos: false, // L3
+  carroNoivos: '',            // L4: sim | nao | talvez
+  transporteConvidados: '',   // L5: sim | nao | alguns
+  seguranca: false,           // L6
+
+  // ─── BLOCO M: Pós-casamento ───
+  luaDeMel: false,
+  destinoLuaDeMel: '',
+  fotosLuaDeMel: false,       // M2 (expansão)
 };
 
-export default function useMemorial() {
-  const [estado, setEstado] = useState(ESTADO_INICIAL);
-
-  const setRespostas = useCallback((campo, valor) => {
-    setEstado((prev) => {
-      const next = { ...prev, [campo]: valor };
-      if (campo === 'cidadeEvento' && valor) {
-        next.regiaoEvento = '';
+/**
+ * Hook de gerenciamento do estado do memorial
+ * Persiste no localStorage antes do login, Supabase depois
+ */
+export function useMemorial() {
+  const [estado, setEstado] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const salvo = localStorage.getItem('memorial_estado');
+      if (salvo) {
+        try {
+          return { ...ESTADO_INICIAL, ...JSON.parse(salvo) };
+        } catch {
+          return ESTADO_INICIAL;
+        }
       }
-      return next;
-    });
+    }
+    return ESTADO_INICIAL;
+  });
+
+  // Autosave no localStorage a cada mudança
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('memorial_estado', JSON.stringify(estado));
+    }
+  }, [estado]);
+
+  const atualizar = useCallback((campo, valor) => {
+    setEstado(prev => ({ ...prev, [campo]: valor }));
   }, []);
 
-  const carregarEstado = useCallback((novoEstado) => {
-    setEstado((prev) => {
-      // Mescla o estado anterior com o novo, garantindo que arrays e objetos sejam preservados
-      return {
-        ...prev,
-        ...novoEstado,
-        // Arrays: se vierem no novoEstado, usa eles; senão mantém os anteriores
-        paleta: Array.isArray(novoEstado.paleta) ? novoEstado.paleta : prev.paleta,
-        tomsIdentidade: Array.isArray(novoEstado.tomsIdentidade) ? novoEstado.tomsIdentidade : prev.tomsIdentidade,
-        referenciasVisuais: Array.isArray(novoEstado.referenciasVisuais) ? novoEstado.referenciasVisuais : prev.referenciasVisuais,
-        locaisFlores: Array.isArray(novoEstado.locaisFlores) ? novoEstado.locaisFlores : prev.locaisFlores,
-        elementosCerimonia: Array.isArray(novoEstado.elementosCerimonia) ? novoEstado.elementosCerimonia : prev.elementosCerimonia,
-        papeisCriancas: Array.isArray(novoEstado.papeisCriancas) ? novoEstado.papeisCriancas : prev.papeisCriancas,
-        rituaisSimbolicos: Array.isArray(novoEstado.rituaisSimbolicos) ? novoEstado.rituaisSimbolicos : prev.rituaisSimbolicos,
-        estiloMusical: Array.isArray(novoEstado.estiloMusical) ? novoEstado.estiloMusical : prev.estiloMusical,
-        atividadesEntretenimento: Array.isArray(novoEstado.atividadesEntretenimento) ? novoEstado.atividadesEntretenimento : prev.atividadesEntretenimento,
-        itensKitSaida: Array.isArray(novoEstado.itensKitSaida) ? novoEstado.itensKitSaida : prev.itensKitSaida,
-        sinalizacaoEvento: Array.isArray(novoEstado.sinalizacaoEvento) ? novoEstado.sinalizacaoEvento : prev.sinalizacaoEvento,
-        fontesIdentidade: Array.isArray(novoEstado.fontesIdentidade) ? novoEstado.fontesIdentidade : prev.fontesIdentidade,
-        itensDigitais: Array.isArray(novoEstado.itensDigitais) ? novoEstado.itensDigitais : prev.itensDigitais,
-        acessorios: Array.isArray(novoEstado.acessorios) ? novoEstado.acessorios : prev.acessorios,
-        fornecedoresNecessarios: Array.isArray(novoEstado.fornecedoresNecessarios) ? novoEstado.fornecedoresNecessarios : prev.fornecedoresNecessarios,
-        restricoesAlimentares: Array.isArray(novoEstado.restricoesAlimentares) ? novoEstado.restricoesAlimentares : prev.restricoesAlimentares,
-        historicoEtapas: Array.isArray(novoEstado.historicoEtapas) ? novoEstado.historicoEtapas : prev.historicoEtapas,
-        // Garante que etapaAtual seja um número válido
-        etapaAtual: typeof novoEstado.etapaAtual === 'number' ? novoEstado.etapaAtual : prev.etapaAtual,
-      };
-    });
+  const atualizarMultiplo = useCallback((atualizacoes) => {
+    setEstado(prev => ({ ...prev, ...atualizacoes }));
   }, []);
 
-  const avancarEtapa = useCallback(() => {
-    setEstado((prev) => ({
-      ...prev,
-      historicoEtapas: [...prev.historicoEtapas, prev.etapaAtual],
-      etapaAtual: prev.etapaAtual + 1,
-    }));
-  }, []);
-
-  const voltarEtapa = useCallback(() => {
-    setEstado((prev) => {
-      if (prev.historicoEtapas.length === 0) return prev;
-      const historico = [...prev.historicoEtapas];
-      const etapaAnterior = historico.pop();
-      return { ...prev, historicoEtapas: historico, etapaAtual: etapaAnterior };
-    });
-  }, []);
-
-  const pularEtapa = useCallback(() => {
-    setEstado((prev) => ({
-      ...prev,
-      etapaAtual: prev.etapaAtual + 1,
-    }));
-  }, []);
-
-  const irParaEtapa = useCallback((indice) => {
-    setEstado((prev) => {
-      if (indice === prev.etapaAtual) return prev;
-      return {
-        ...prev,
-        historicoEtapas: [...prev.historicoEtapas, prev.etapaAtual],
-        etapaAtual: indice,
-      };
-    });
-  }, []);
-
-  const getSugestoes = useCallback((categoria) => {
-    return [];
-  }, []);
-
-  const resetarMemorial = useCallback(() => {
+  const resetar = useCallback(() => {
     setEstado(ESTADO_INICIAL);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('memorial_estado');
+    }
   }, []);
 
-  const exportarDados = useCallback(() => {
-    const { etapaAtual, etapasTotais, historicoEtapas, loginFeito, memorialConcluido, ...dadosLimpos } = estado;
-    return dadosLimpos;
+  const estaCompleto = useCallback(() => {
+    // Verifica campos obrigatórios mínimos
+    return !!(
+      estado.perfil &&
+      estado.tipoCerimonia &&
+      estado.tipoLocal &&
+      estado.estilo &&
+      estado.paleta.length > 0
+    );
   }, [estado]);
 
   return {
     estado,
-    setRespostas,
-    carregarEstado,
-    avancarEtapa,
-    voltarEtapa,
-    pularEtapa,
-    irParaEtapa,
-    getSugestoes,
-    resetarMemorial,
-    exportarDados,
+    atualizar,
+    atualizarMultiplo,
+    resetar,
+    estaCompleto,
+    ESTADO_INICIAL,
   };
 }
 
-export { useMemorial };
+export default useMemorial;

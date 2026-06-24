@@ -18,6 +18,8 @@ export const CATALOGO_FORNECEDORES = [
           'Bolo fake + mesa de doces',
           'Cupcakes',
           'Mesa de doces finos',
+          'Mesa de frios',
+          'Mesa de doces exposta',
         ]
       },
       {
@@ -31,6 +33,7 @@ export const CATALOGO_FORNECEDORES = [
           'Coquetel',
           'Food trucks',
           'Misto (buffet + estacoes)',
+          'Menu infantil',
         ]
       },
       {
@@ -42,6 +45,8 @@ export const CATALOGO_FORNECEDORES = [
           'Espumante e refrigerantes',
           'Cerveja e refrigerantes',
           'Bar sem alcool',
+          'Bebidas por pessoa (controle)',
+          'Bebidas por pessoa (livre)',
         ]
       },
       {
@@ -68,6 +73,7 @@ export const CATALOGO_FORNECEDORES = [
           'Cabelo',
           'Penteado',
           'Dia da noiva completo (cabelo, maquiagem, unhas)',
+          'Mudanca de look (festa)',
         ]
       },
       {
@@ -133,6 +139,7 @@ export const CATALOGO_FORNECEDORES = [
           'Making of noiva',
           'Making of noivo',
           'Cobertura completa + pre-wedding',
+          'Fotos lua de mel',
         ]
       },
       {
@@ -176,6 +183,7 @@ export const CATALOGO_FORNECEDORES = [
           'Violao solo',
           'Violinista',
           'Musica gravada',
+          'Musica ao vivo (cerimonia)',
         ]
       },
       {
@@ -236,6 +244,25 @@ export const CATALOGO_FORNECEDORES = [
           'Animacao + espaco kids',
         ]
       },
+      {
+        id: 'fogos_sparklers',
+        label: 'Fogos e Sparklers',
+        servicos: [
+          'Fogos de artificio',
+          'Sparklers (luzinhas)',
+          'Fogos + sparklers',
+          'Fogos indoor (frio)',
+        ]
+      },
+      {
+        id: 'aula_danca',
+        label: 'Aula de Danca',
+        servicos: [
+          'Aula de danca dos noivos',
+          'Aula de danca em grupo',
+          'Coreografo exclusivo',
+        ]
+      },
     ]
   },
   {
@@ -281,6 +308,38 @@ export const CATALOGO_FORNECEDORES = [
           'Projecao mapeada',
           'Canhoes de luz',
           'Iluminacao externa',
+        ]
+      },
+      {
+        id: 'mobiliario',
+        label: 'Mobiliario Especial',
+        servicos: [
+          'Mobiliario completo (cerimonia + festa)',
+          'Mobiliario cerimonia',
+          'Mobiliario festa',
+          'Lounge completo',
+          'Altar + passarela',
+          'Backdrop estrutural',
+        ]
+      },
+      {
+        id: 'velas',
+        label: 'Velas e Luminarias',
+        servicos: [
+          'Velas decorativas',
+          'Luminarias suspensas',
+          'Velas flutuantes',
+          'Candelabros',
+        ]
+      },
+      {
+        id: 'tecidos',
+        label: 'Tecidos e Texteis',
+        servicos: [
+          'Drapes e cortinas',
+          'Tecidos cerimonia',
+          'Tecidos festa',
+          'Tecidos + flores',
         ]
       },
     ]
@@ -473,6 +532,40 @@ export const CATALOGO_FORNECEDORES = [
           'Portaria',
           'Controle de acesso',
           'Seguranca + portaria',
+        ]
+      },
+      {
+        id: 'estacionamento',
+        label: 'Estacionamento e Valet',
+        servicos: [
+          'Estacionamento organizado',
+          'Valet parking',
+          'Estacionamento + valet',
+        ]
+      },
+      {
+        id: 'cozinha_apoio',
+        label: 'Cozinha de Apoio',
+        servicos: [
+          'Cozinha industrial completa',
+          'Cozinha de apoio (buffet)',
+          'Area de preparo',
+        ]
+      },
+    ]
+  },
+  {
+    id: 'lua_de_mel',
+    label: 'Lua de Mel',
+    subcategorias: [
+      {
+        id: 'agencia_viagem',
+        label: 'Agencia de Viagem',
+        servicos: [
+          'Pacote lua de mel completo',
+          'Pacote lua de mel (nacional)',
+          'Pacote lua de mel (internacional)',
+          'Consultoria de viagem',
         ]
       },
     ]

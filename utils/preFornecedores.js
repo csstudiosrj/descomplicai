@@ -2,6 +2,7 @@
 // Importa pre-lista de fornecedores do memorial (tabela memoriais) automaticamente
 
 import { getCategoriaPrincipal, getSubcategoria } from './catalogoFornecedores';
+import { computarCondicoes } from './condicoesFornecedores';
 
 const MAPEAMENTO_CATEGORIAS = {
   'Fotografia': 'fotografia',
@@ -30,6 +31,13 @@ const MAPEAMENTO_CATEGORIAS = {
   'Gerador': 'geradores',
   'Banheiros Extras': 'banheiros_extras',
   'Seguranca': 'seguranca',
+  'Aliancas': 'aliancas',
+  'Fornecedor kosher': 'fornecedor_kosher',
+  'Aula de Danca': 'aula_danca',
+  'Fogos e Sparklers': 'fogos_sparklers',
+  'Mesa de Frios': 'bolo_doces',
+  'Menu Infantil': 'buffet',
+  'Lua de Mel': 'agencia_viagem',
 };
 
 function getCategoriaPrincipalId(subcategoriaId) {
@@ -94,88 +102,145 @@ function gerarFornecedoresDoEstado(estado) {
   if (!estado) return [];
   const lista = [];
   const add = (cat, nome) => lista.push({ categoria: cat, nome });
+  const cond = computarCondicoes(estado);
 
   // --- Obrigatórios base ---
   add('Fotografia', 'Fotografo');
   add('Buffet', 'Buffet');
   add('Espaco / Venue', 'Espaco / Venue');
 
+  // --- Alianças (sempre visível) ---
+  if (!cond.aliancas_escolhidas) {
+    add('Aliancas', 'Aliancas');
+  }
+
   // --- Cerimônia ---
-  if (['catolica', 'evangelica', 'judaica'].includes(estado.tipoCerimonia)) {
+  if (cond.cerimonia_religiosa) {
     add('Oficializante', 'Oficializante');
   }
-  if (estado.tipoCerimonia === 'simbolica') {
+  if (cond.cerimonia_simbolica) {
     add('Celebrante laico', 'Celebrante laico');
   }
-  if (estado.tipoCerimonia === 'civil') {
-    add('Celebrante laico', 'Juiz de paz / cartório');
+  if (cond.cerimonia_civil && !cond.ja_casados) {
+    add('Celebrante laico', 'Juiz de paz / cartorio');
+  }
+  if (cond.cerimonia_judaica) {
+    add('Fornecedor kosher', 'Fornecedor kosher');
   }
 
   // --- Decoração / Flores ---
-  if (estado.flores || estado.decoracaoContratada !== true) {
+  if (cond.tem_flores || !cond.decoracao_contratada) {
     add('Floricultura / Decoracao', 'Floricultura / Decoracao');
+  }
+  if (cond.tem_iluminacao && !cond.decoracao_contratada) {
+    add('Decoracao', 'Iluminacao cenica');
+  }
+  if (cond.tem_mobiliario && !cond.decoracao_contratada) {
+    add('Decoracao', 'Mobiliario especial');
+  }
+  if (cond.tem_backdrop && !cond.decoracao_contratada) {
+    add('Decoracao', 'Backdrop');
   }
 
   // --- Música ---
   const musica = estado.musicaFesta || estado.musicaCerimonia || '';
   if (musica.toLowerCase().includes('dj')) add('DJ', 'DJ');
   if (musica.toLowerCase().includes('banda')) add('Banda', 'Banda');
-  if (!musica && estado.musicaContratada !== true) {
+  if (!musica && !cond.musica_contratada) {
     add('DJ', 'DJ'); // fallback
+  }
+  if (cond.musica_viva_cerimonia && !cond.musica_contratada) {
+    add('Musica da Cerimonia', 'Musica ao vivo (cerimonia)');
   }
 
   // --- Local externo: infraestrutura ---
-  if (['praia', 'sitio', 'jardim', 'rooftop', 'haras'].includes(estado.tipoLocal)) {
-    add('Iluminacao cenica', 'Iluminacao cenica');
-    add('Som profissional', 'Som profissional');
+  if (cond.local_externo) {
+    if (!cond.decoracao_contratada) add('Iluminacao cenica', 'Iluminacao cenica');
+    if (!cond.musica_contratada) add('Som profissional', 'Som profissional');
   }
-  if (['sitio', 'jardim', 'haras'].includes(estado.tipoLocal)) {
-    if (estado.gerador !== true) add('Gerador', 'Gerador');
+  if (cond.local_rural) {
+    if (!cond.tem_gerador && !cond.gerador_contratado) add('Gerador', 'Gerador');
     if (estado.banheirosExtras !== true) add('Banheiros Extras', 'Banheiros Extras');
+  }
+  if (cond.local_praia) {
+    if (!cond.tem_estacionamento) add('Estacionamento e Valet', 'Estacionamento organizado');
+  }
+  if (!cond.tem_cozinha_apoio && estado.cozinhaApoio === false) {
+    add('Cozinha de Apoio', 'Cozinha de apoio');
   }
 
   // --- Convidados grandes ---
-  if (['grande', 'mega'].includes(estado.totalConvidados)) {
-    if (estado.seguranca !== true) add('Seguranca', 'Seguranca');
-    if (estado.transporteConvidados !== true) add('Transporte Convidados', 'Transporte Convidados');
+  if (cond.convidados_grandes) {
+    if (!cond.seguranca_contratada) add('Seguranca', 'Seguranca');
+    if (cond.transporte_convidados_sim && !cond.transporte_convidados_contratado) {
+      add('Transporte Convidados', 'Transporte de Convidados');
+    }
   }
 
   // --- Vestuário ---
-  if (estado.vestidoComprado !== true) add('Vestido / Atelie', 'Vestido de Noiva');
-  if (estado.trajeNoivoContratado !== true) add('Traje Masculino', 'Traje do Noivo');
-  if (estado.belezaNoiva !== false) add('Beleza Noiva', 'Beleza da Noiva');
+  if (cond.tem_noiva && !cond.vestido_comprado) add('Vestido / Atelie', 'Vestido de Noiva');
+  if (cond.tem_noivo && !cond.traje_noivo_contratado) add('Traje Masculino', 'Traje do Noivo');
+  if (cond.tem_noiva && estado.belezaNoiva !== false) add('Beleza Noiva', 'Beleza da Noiva');
+  if (cond.tem_madrinhas && estado.belezaMadrinhas !== false) {
+    add('Beleza das Madrinhas', 'Beleza das Madrinhas');
+  }
 
   // --- Cerimonialista ---
-  if (estado.cerimonialistaContratado !== true) {
+  if (!cond.cerimonialista_contratado) {
     add('Cerimonialista', 'Cerimonialista');
   }
 
   // --- Entretenimento ---
-  if (Array.isArray(estado.atividadesEntretenimento)) {
-    if (estado.atividadesEntretenimento.includes('cabine-fotos') && estado.cabineFotos !== true) {
-      add('Cabine de Fotos', 'Cabine de Fotos');
-    }
-    if (estado.atividadesEntretenimento.includes('drone') && estado.droneContratado !== true) {
-      add('Drone', 'Drone');
-    }
-    if (estado.atividadesEntretenimento.includes('animacao-infantil') && estado.animacaoInfantil !== true) {
-      add('Animacao Infantil', 'Animacao Infantil');
-    }
+  if (cond.tem_cabine_fotos && !cond.cabine_fotos_contratada) {
+    add('Cabine de Fotos', 'Cabine de Fotos');
+  }
+  if (cond.tem_drone && !cond.drone_contratado) {
+    add('Drone', 'Drone');
+  }
+  if (cond.tem_animacao_infantil && !cond.animacao_infantil_contratada) {
+    add('Animacao Infantil', 'Animacao Infantil');
+  }
+  if (cond.tem_fogos) {
+    add('Fogos e Sparklers', 'Fogos e Sparklers');
+  }
+  if (cond.tem_aula_danca) {
+    add('Aula de Danca', 'Aula de danca dos noivos');
+  }
+
+  // --- Alimentação expansão ---
+  if (cond.tem_mesa_frios) {
+    add('Mesa de Frios', 'Mesa de frios');
+  }
+  if (cond.tem_menu_infantil) {
+    add('Menu Infantil', 'Menu infantil');
   }
 
   // --- Papelaria ---
-  if (estado.formatoConvite === 'fisico' && estado.convitesEncomendados !== true) {
+  if (cond.convite_fisico && !cond.convites_encomendados) {
     add('Papelaria / Convites', 'Papelaria e Convites');
+  }
+  if (cond.convite_digital && !cond.convites_encomendados) {
+    add('Papelaria / Convites', 'Convites digitais');
   }
 
   // --- Transporte noivos ---
-  if (estado.transporteNoivos !== true) {
-    add('Transporte Noivos', 'Transporte dos Noivos');
+  if (cond.transporte_especial_noivos || cond.tem_carro_noivos) {
+    if (estado.transporteNoivos !== true) add('Transporte Noivos', 'Transporte dos Noivos');
   }
 
   // --- Bartender ---
-  if (estado.tipoBar === 'open bar completo' && estado.bartender !== true) {
+  if (cond.open_bar_completo && !cond.bartender_contratado) {
     add('Bartender', 'Bartender');
+  }
+
+  // --- Lua de mel ---
+  if (cond.tem_lua_de_mel && !cond.lua_de_mel_reservada) {
+    add('Lua de Mel', 'Agencia de viagem');
+  }
+
+  // --- Pós-casamento fotos ---
+  if (cond.tem_fotos_lua_de_mel) {
+    add('Fotografia', 'Fotos lua de mel');
   }
 
   return lista;

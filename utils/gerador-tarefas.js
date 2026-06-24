@@ -2,6 +2,8 @@
 // Gera tarefas contextualizadas baseado no estado do memorial
 // Regras extraídas do Memorial Arquitetural — Descomplicaí
 
+import { computarCondicoes } from './condicoesFornecedores';
+
 /**
  * Calcula data de prazo: dataEvento - diasAntes
  */
@@ -10,12 +12,61 @@ function calcularPrazo(dataEventoStr, diasAntes) {
     data.setDate(data.getDate() - diasAntes);
     return data.toISOString().split('T')[0];
   }
-  
+
   /**
    * Regras de tarefas. Cada regra:
    * { condicao: (estado) => boolean, tarefa: { titulo, descricao, categoria, subcategoria?, prazo, prioridade } }
    */
   const REGRAS = [
+    // --- PERFIL: Crianças ---
+    {
+      condicao: (e) => e.criancas === true || e.criancas === 'sim' || e.criancas === 'alguns',
+      tarefa: {
+        titulo: 'Contratar animação infantil ou espaço kids',
+        descricao: 'Com crianças na festa, reserve monitores ou um espaço kids para que os pais aproveitem.',
+        categoria: 'musica_entretenimento',
+        subcategoria: 'animacao_infantil',
+        prazo: 180,
+        prioridade: 'recomendada',
+      },
+    },
+    {
+      condicao: (e) => e.criancas === true || e.criancas === 'sim',
+      tarefa: {
+        titulo: 'Verificar menu infantil com o buffet',
+        descricao: 'Solicite opções kid-friendly e verifique alergias alimentares comuns.',
+        categoria: 'alimentacao_bebidas',
+        subcategoria: 'buffet',
+        prazo: 120,
+        prioridade: 'recomendada',
+      },
+    },
+
+    // --- PERFIL: Padrinhos ---
+    {
+      condicao: (e) => e.padrinhosEscolhidos === true && Number(e.quantosPadrinhos || 0) > 0,
+      tarefa: {
+        titulo: 'Definir padronização de vestuário dos padrinhos',
+        descricao: 'Escolha cor, tecido e estilo. Combine com as madrinhas para harmonia visual.',
+        categoria: 'beleza_vestuario',
+        subcategoria: 'traje_masculino',
+        prazo: 180,
+        prioridade: 'recomendada',
+      },
+    },
+
+    // --- PERFIL: Data prevista ---
+    {
+      condicao: (e) => !!e.dataPrevista && !e.dataCasamento,
+      tarefa: {
+        titulo: 'Definir data exata do casamento',
+        descricao: 'Você indicou um mês/ano aproximado. Reserve a data exata para iniciar contratações.',
+        categoria: 'Planejamento',
+        prazo: 365,
+        prioridade: 'obrigatoria',
+      },
+    },
+
     // --- CERIMÔNIA: Católica ---
     {
       condicao: (e) => e.tipoCerimonia === 'catolica' && e.reservouIgreja !== true,
@@ -49,7 +100,7 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         prioridade: 'obrigatoria',
       },
     },
-  
+
     // --- CERIMÔNIA: Judaica ---
     {
       condicao: (e) => e.tipoCerimonia === 'judaica' && e.reservouTemplo !== true,
@@ -73,7 +124,18 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         prioridade: 'recomendada',
       },
     },
-  
+    {
+      condicao: (e) => e.tipoCerimonia === 'judaica',
+      tarefa: {
+        titulo: 'Contratar fornecedor kosher para o buffet',
+        descricao: 'Buffet judaico exige certificação kosher. Verifique fornecedores credenciados na sua região.',
+        categoria: 'alimentacao_bebidas',
+        subcategoria: 'buffet',
+        prazo: 270,
+        prioridade: 'obrigatoria',
+      },
+    },
+
     // --- CERIMÔNIA: Simbólica ---
     {
       condicao: (e) => e.tipoCerimonia === 'simbolica' && e.celebranteLaico !== true,
@@ -86,7 +148,7 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         prioridade: 'obrigatoria',
       },
     },
-  
+
     // --- CERIMÔNIA: Civil ---
     {
       condicao: (e) => e.tipoCerimonia === 'civil' && e.agendouCartorio !== true,
@@ -98,7 +160,42 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         prioridade: 'obrigatoria',
       },
     },
-  
+
+    // --- CERIMÔNIA: Expansão ---
+    {
+      condicao: (e) => e.criancasCerimonia === true || e.criancasCerimonia === 'sim',
+      tarefa: {
+        titulo: 'Definir papel das crianças na cerimônia',
+        descricao: 'Daminhas, pajens, porta-alianças? Defina idades, roupas e ensaios.',
+        categoria: 'cerimonia_assessoria',
+        subcategoria: 'cerimonialista',
+        prazo: 180,
+        prioridade: 'recomendada',
+      },
+    },
+    {
+      condicao: (e) => e.duracaoCerimonia === 'mais_1h',
+      tarefa: {
+        titulo: 'Planejar cerimônia longa com intervalos',
+        descricao: 'Cerimônias acima de 1h precisam de intervalos, água para convidados e cadeiras confortáveis.',
+        categoria: 'cerimonia_assessoria',
+        subcategoria: 'cerimonialista',
+        prazo: 90,
+        prioridade: 'recomendada',
+      },
+    },
+    {
+      condicao: (e) => e.musicaCerimoniaViva === 'sim',
+      tarefa: {
+        titulo: 'Contratar músicos ao vivo para a cerimônia',
+        descricao: 'Quarteto de cordas, coral, violinista ou duo. Reserve com 6-9 meses de antecedência.',
+        categoria: 'musica_entretenimento',
+        subcategoria: 'musica_cerimonia',
+        prazo: 270,
+        prioridade: 'recomendada',
+      },
+    },
+
     // --- ESTADO CIVIL ---
     {
       condicao: (e) => e.estadoCivilNoivo === 'divorciado' || e.estadoCivilNoiva === 'divorciado',
@@ -130,7 +227,7 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         prioridade: 'obrigatoria',
       },
     },
-  
+
     // --- LOCAL: Praia ---
     {
       condicao: (e) => e.tipoLocal === 'praia' && e.planoChuva !== 'cobertura',
@@ -153,7 +250,53 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         prioridade: 'recomendada',
       },
     },
-  
+
+    // --- LOCAL: Expansão ---
+    {
+      condicao: (e) => e.estacionamento === 'valet',
+      tarefa: {
+        titulo: 'Contratar serviço de valet parking',
+        descricao: 'Verifique quantidade de manobristas e seguro para veículos dos convidados.',
+        categoria: 'transporte',
+        subcategoria: 'transporte_convidados',
+        prazo: 120,
+        prioridade: 'recomendada',
+      },
+    },
+    {
+      condicao: (e) => e.cozinhaApoio === false && ['sitio', 'jardim', 'haras', 'praia'].includes(e.tipoLocal),
+      tarefa: {
+        titulo: 'Verificar cozinha de apoio ou contratar estrutura móvel',
+        descricao: 'Locais externos podem não ter cozinha adequada. O buffet precisa de área de preparo.',
+        categoria: 'local_infraestrutura',
+        subcategoria: 'cozinha_apoio',
+        prazo: 180,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => Number(e.capacidadeLocal || 0) > 0 && Number(e.capacidadeLocal) < Number(e.totalConvidados || 0),
+      tarefa: {
+        titulo: 'ATENÇÃO: capacidade do local menor que número de convidados',
+        descricao: 'O local comporta ' + (e.capacidadeLocal || 0) + ' pessoas, mas você planeja ' + (e.totalConvidados || 0) + ' convidados. Reduza lista ou mude de local.',
+        categoria: 'local_infraestrutura',
+        subcategoria: 'espaco_recepcao',
+        prazo: 30,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.geradorLocal === 'nao' && ['sitio', 'jardim', 'haras'].includes(e.tipoLocal),
+      tarefa: {
+        titulo: 'Contratar gerador de energia de apoio',
+        descricao: 'Locais rurais podem ter quedas de energia. Um gerador evita apagões durante a festa.',
+        categoria: 'local_infraestrutura',
+        subcategoria: 'geradores',
+        prazo: 90,
+        prioridade: 'recomendada',
+      },
+    },
+
     // --- LOCAL: Externo (sítio, jardim, rooftop, haras) ---
     {
       condicao: (e) => ['sitio', 'jardim', 'rooftop', 'haras'].includes(e.tipoLocal) && e.iluminacaoCenica !== true,
@@ -199,7 +342,7 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         prioridade: 'recomendada',
       },
     },
-  
+
     // --- CONVIDADOS ---
     {
       condicao: (e) => ['grande', 'mega'].includes(e.totalConvidados) && e.seguranca !== true,
@@ -243,7 +386,7 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         prioridade: 'obrigatoria',
       },
     },
-  
+
     // --- FORNECEDORES: Fotografia / Filmagem ---
     {
       condicao: (e) => e.fotografoContratado !== true,
@@ -267,7 +410,7 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         prioridade: 'recomendada',
       },
     },
-  
+
     // --- FORNECEDORES: Buffet / Decoração / Música ---
     {
       condicao: (e) => e.buffetContratado !== true,
@@ -302,7 +445,7 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         prioridade: 'obrigatoria',
       },
     },
-  
+
     // --- FORNECEDORES: Vestuário ---
     {
       condicao: (e) => e.vestidoComprado !== true && e.estiloVestido !== 'jumpsuit',
@@ -337,7 +480,7 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         prioridade: 'obrigatoria',
       },
     },
-  
+
     // --- CERIMONIALISTA ---
     {
       condicao: (e) => e.cerimonialistaContratado !== true && ['grande', 'mega'].includes(e.totalConvidados),
@@ -361,7 +504,7 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         prioridade: 'opcional',
       },
     },
-  
+
     // --- DOCUMENTAÇÃO ---
     {
       condicao: (e) => e.certidaoNascimentoNoivo !== true || e.certidaoNascimentoNoiva !== true,
@@ -393,8 +536,41 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         prioridade: 'obrigatoria',
       },
     },
-  
-    // --- ALIMENTAÇÃO E BEBIDAS ---
+
+    // --- ALIMENTAÇÃO E BEBIDAS: Expansão ---
+    {
+      condicao: (e) => e.mesaFrios === true && e.mesaFriosContratada !== true,
+      tarefa: {
+        titulo: 'Contratar mesa de frios para coquetel',
+        descricao: 'Defina variedade, quantidade por convidado e apresentação.',
+        categoria: 'alimentacao_bebidas',
+        subcategoria: 'bolo_doces',
+        prazo: 120,
+        prioridade: 'recomendada',
+      },
+    },
+    {
+      condicao: (e) => e.bebidasPorPessoa === 'controlado',
+      tarefa: {
+        titulo: 'Definir controle de bebidas por pessoa',
+        descricao: 'Estime consumo por convidado, defina marcações nos copos e controle de garçons.',
+        categoria: 'alimentacao_bebidas',
+        subcategoria: 'bebidas',
+        prazo: 60,
+        prioridade: 'recomendada',
+      },
+    },
+    {
+      condicao: (e) => e.menuInfantil === true,
+      tarefa: {
+        titulo: 'Confirmar menu infantil com o buffet',
+        descricao: 'Verifique opções saudáveis, sem alergenos e apresentação atrativa.',
+        categoria: 'alimentacao_bebidas',
+        subcategoria: 'buffet',
+        prazo: 90,
+        prioridade: 'recomendada',
+      },
+    },
     {
       condicao: (e) => Array.isArray(e.restricoesAlimentares) && e.restricoesAlimentares.length > 0,
       tarefa: {
@@ -417,7 +593,42 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         prioridade: 'recomendada',
       },
     },
-  
+
+    // --- ENTRETENIMENTO: Expansão ---
+    {
+      condicao: (e) => e.fogosSparklers === true && e.fogosContratados !== true,
+      tarefa: {
+        titulo: 'Contratar fogos de artifício ou sparklers',
+        descricao: 'Verifique permissão do local, seguro e horário permitido.',
+        categoria: 'musica_entretenimento',
+        subcategoria: 'fogos_sparklers',
+        prazo: 120,
+        prioridade: 'opcional',
+      },
+    },
+    {
+      condicao: (e) => e.mesaDocesExposta === true && e.mesaDocesExpostaContratada !== true,
+      tarefa: {
+        titulo: 'Contratar mesa de doces exposta (display)',
+        descricao: 'Doces finos, macarons, brigadeiros gourmet em apresentação visual impactante.',
+        categoria: 'alimentacao_bebidas',
+        subcategoria: 'bolo_doces',
+        prazo: 120,
+        prioridade: 'opcional',
+      },
+    },
+    {
+      condicao: (e) => e.aulaDanca === true && e.aulaDancaContratada !== true,
+      tarefa: {
+        titulo: 'Contratar aula de dança para os noivos',
+        descricao: 'Inicie 3-6 meses antes. Escolha estilo (valsa, salsa, coreografia surpresa).',
+        categoria: 'musica_entretenimento',
+        subcategoria: 'aula_danca',
+        prazo: 180,
+        prioridade: 'opcional',
+      },
+    },
+
     // --- ENTRETENIMENTO ---
     {
       condicao: (e) => Array.isArray(e.atividadesEntretenimento) && e.atividadesEntretenimento.includes('cabine-fotos') && e.cabineFotos !== true,
@@ -452,7 +663,7 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         prioridade: 'opcional',
       },
     },
-  
+
     // --- PAPELARIA ---
     {
       condicao: (e) => e.formatoConvite === 'fisico' && e.convitesEncomendados !== true,
@@ -486,10 +697,123 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         prioridade: 'recomendada',
       },
     },
-  
+
+    // --- VESTUÁRIO: Expansão ---
+    {
+      condicao: (e) => e.aulasDanca === true && e.aulasDancaContratadas !== true,
+      tarefa: {
+        titulo: 'Contratar aulas de dança (noivos + padrinhos)',
+        descricao: 'Aulas em grupo são divertidas e criam momento especial na festa.',
+        categoria: 'musica_entretenimento',
+        subcategoria: 'aula_danca',
+        prazo: 180,
+        prioridade: 'opcional',
+      },
+    },
+    {
+      condicao: (e) => e.mudancaLook === true,
+      tarefa: {
+        titulo: 'Planejar mudança de look para a festa',
+        descricao: 'Segundo vestido, troca de acessórios ou penteado. Reserve tempo no cronograma.',
+        categoria: 'beleza_vestuario',
+        subcategoria: 'beleza_noiva',
+        prazo: 180,
+        prioridade: 'recomendada',
+      },
+    },
+    {
+      condicao: (e) => Number(e.quantasMadrinhas || 0) > 0 && e.padronizarMadrinhas !== 'nao',
+      tarefa: {
+        titulo: 'Definir vestido/cor das madrinhas',
+        descricao: 'Escolha cor que combine com a paleta. Envie referências com 6 meses de antecedência.',
+        categoria: 'beleza_vestuario',
+        subcategoria: 'beleza_madrinhas',
+        prazo: 180,
+        prioridade: 'recomendada',
+      },
+    },
+
+    // --- LOGÍSTICA: Expansão ---
+    {
+      condicao: (e) => e.aliancasEscolhidas === 'buscando',
+      tarefa: {
+        titulo: 'Escolher e encomendar alianças',
+        descricao: 'Prazo de confecção: 30-60 dias. Grave as iniciais com antecedência.',
+        categoria: 'papelaria_detalhes',
+        subcategoria: 'aliancas',
+        prazo: 120,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.aliancasEscolhidas === 'nao',
+      tarefa: {
+        titulo: 'Decidir sobre alianças',
+        descricao: 'Alianças são símbolo central. Defina se usarão, qual material e onde comprar.',
+        categoria: 'papelaria_detalhes',
+        subcategoria: 'aliancas',
+        prazo: 180,
+        prioridade: 'recomendada',
+      },
+    },
+    {
+      condicao: (e) => e.civilJunto === 'sim' && e.agendouCartorio !== true,
+      tarefa: {
+        titulo: 'Agendar casamento civil junto com a cerimônia',
+        descricao: 'Verifique se o celebrante tem poderes de oficializar ou se precisa de juiz de paz.',
+        categoria: 'Documentação',
+        prazo: 180,
+        prioridade: 'obrigatoria',
+      },
+    },
+    {
+      condicao: (e) => e.transporteEspecialNoivos === true && e.transporteNoivos !== true,
+      tarefa: {
+        titulo: 'Contratar transporte especial dos noivos',
+        descricao: 'Carro clássico, limousine, helicóptero? Reserve com 3-6 meses de antecedência.',
+        categoria: 'transporte',
+        subcategoria: 'transporte_noivos',
+        prazo: 180,
+        prioridade: 'recomendada',
+      },
+    },
+    {
+      condicao: (e) => e.carroNoivos === 'sim' || e.carroNoivos === 'talvez',
+      tarefa: {
+        titulo: 'Reservar carro dos noivos',
+        descricao: 'Verifique decoração, horários de chegada/saída e rota.',
+        categoria: 'transporte',
+        subcategoria: 'transporte_noivos',
+        prazo: 120,
+        prioridade: 'recomendada',
+      },
+    },
+    {
+      condicao: (e) => e.transporteConvidados === 'sim' || e.transporteConvidados === 'alguns',
+      tarefa: {
+        titulo: 'Organizar transporte de convidados',
+        descricao: 'Van, ônibus ou transfer. Defina pontos de embarque e horários.',
+        categoria: 'transporte',
+        subcategoria: 'transporte_convidados',
+        prazo: 120,
+        prioridade: 'recomendada',
+      },
+    },
+    {
+      condicao: (e) => e.seguranca === true || ['grande', 'mega'].includes(e.totalConvidados),
+      tarefa: {
+        titulo: 'Contratar segurança do evento',
+        descricao: 'Portaria, controle de acesso e vigilância. Essencial para eventos grandes.',
+        categoria: 'local_infraestrutura',
+        subcategoria: 'seguranca',
+        prazo: 120,
+        prioridade: 'recomendada',
+      },
+    },
+
     // --- LUA DE MEL ---
     {
-      condicao: (e) => e.luaDeMel === true && e.luaDeMelReservada !== true,
+      condicao: (e) => (e.luaDeMel === true || e.luaDeMel === 'sim' || e.luaDeMel === 'em_pesquisa') && e.luaDeMelReservada !== true,
       tarefa: {
         titulo: 'Reservar lua de mel',
         descricao: 'Pacotes de lua de mel devem ser reservados com 3-6 meses de antecedência.',
@@ -499,7 +823,7 @@ function calcularPrazo(dataEventoStr, diasAntes) {
       },
     },
     {
-      condicao: (e) => e.luaDeMel === true && e.passaporteValido !== true,
+      condicao: (e) => (e.luaDeMel === true || e.luaDeMel === 'sim') && e.passaporteValido !== true,
       tarefa: {
         titulo: 'Verificar validade do passaporte (mínimo 6 meses)',
         descricao: 'Alguns países exigem passaporte válido por pelo menos 6 meses após a data de entrada.',
@@ -509,7 +833,7 @@ function calcularPrazo(dataEventoStr, diasAntes) {
       },
     },
     {
-      condicao: (e) => e.luaDeMel === true && e.destinoEstrangeiro === true && e.visto !== true,
+      condicao: (e) => (e.luaDeMel === true || e.luaDeMel === 'sim') && e.destinoLuaDeMel && !['brasil', 'nacional', ''].includes(e.destinoLuaDeMel.toLowerCase()) && e.visto !== true,
       tarefa: {
         titulo: 'Verificar necessidade de visto para o destino da lua de mel',
         descricao: 'Consulte o consulado do país de destino com antecedência.',
@@ -518,8 +842,19 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         prioridade: 'obrigatoria',
       },
     },
+    {
+      condicao: (e) => e.fotosLuaDeMel === true && e.fotografoLuaDeMel !== true,
+      tarefa: {
+        titulo: 'Contratar fotógrafo para lua de mel',
+        descricao: 'Ensaio pós-casamento no destino. Reserve fotógrafo local ou leve o seu.',
+        categoria: 'foto_video',
+        subcategoria: 'fotografia',
+        prazo: 120,
+        prioridade: 'opcional',
+      },
+    },
   ];
-  
+
   /**
    * Gera tarefas contextualizadas a partir do estado do memorial
    * @param {Object} estado - memoriais.estado
@@ -528,9 +863,9 @@ function calcularPrazo(dataEventoStr, diasAntes) {
    */
   export function gerarTarefasContextualizadas(estado, dataEvento) {
     if (!estado || !dataEvento) return [];
-  
+
     const tarefas = [];
-  
+
     for (const regra of REGRAS) {
       try {
         if (regra.condicao(estado)) {
@@ -550,7 +885,7 @@ function calcularPrazo(dataEventoStr, diasAntes) {
         console.warn('[gerador-tarefas] Regra falhou:', err);
       }
     }
-  
+
     // Deduplica por título (evita tarefas duplicadas se regras conflitarem)
     const vistos = new Set();
     return tarefas.filter((t) => {
@@ -559,5 +894,5 @@ function calcularPrazo(dataEventoStr, diasAntes) {
       return true;
     });
   }
-  
+
   export default { gerarTarefasContextualizadas };

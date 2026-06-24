@@ -9,6 +9,7 @@ import BreathTransition from './BreathTransition';
 import ProgressBar from './ProgressBar';
 import BackButton from './BackButton';
 
+// === STEPS EXISTENTES (não mexer) ===
 const STEP_COMPONENTS = {
   Step00Casal: React.lazy(() => import('./steps/Step00Casal')),
   Step01Modo: React.lazy(() => import('./steps/Step01Modo')),
@@ -32,27 +33,100 @@ const STEP_COMPONENTS = {
   Step14Paleta: React.lazy(() => import('./steps/Step14Paleta')),
   Step15Tom: React.lazy(() => import('./steps/Step15Tom')),
   Step16Referencias: React.lazy(() => import('./steps/Step16Referencias')),
-  Step17Flores: React.lazy(() => import('./steps/Step17Flores')),
-  Step23Toalha: React.lazy(() => import('./steps/Step23Toalha')),
-  Step30Entrada: React.lazy(() => import('./steps/Step30Entrada')),
-  Step38Coquetel: React.lazy(() => import('./steps/Step38Coquetel')),
-  Step49Convites: React.lazy(() => import('./steps/Step49Convites')),
-  Step54Vestido: React.lazy(() => import('./steps/Step54Vestido')),
   Step60Fornecedores: React.lazy(() => import('./steps/Step60Fornecedores')),
+
+  // === STEPS DESMEMBRADOS (Bloco E: Decoração) ===
+  Step17Flores: React.lazy(() => import('./steps/Step17Flores')),
+  Step18Iluminacao: React.lazy(() => import('./steps/Step18Iluminacao')),
+  Step19Velas: React.lazy(() => import('./steps/Step19Velas')),
+  Step20Mobiliario: React.lazy(() => import('./steps/Step20Mobiliario')),
+  Step21Backdrop: React.lazy(() => import('./steps/Step21Backdrop')),
+  Step22Tecidos: React.lazy(() => import('./steps/Step22Tecidos')),
+
+  // === STEPS DESMEMBRADOS (Bloco F: Mesa Posta) ===
+  Step23Toalha: React.lazy(() => import('./steps/Step23Toalha')),
+  Step24Loucas: React.lazy(() => import('./steps/Step24Loucas')),
+  Step25Talheres: React.lazy(() => import('./steps/Step25Talheres')),
+  Step26Tacas: React.lazy(() => import('./steps/Step26Tacas')),
+  Step27CentroMesa: React.lazy(() => import('./steps/Step27CentroMesa')),
+  Step28Guardanapo: React.lazy(() => import('./steps/Step28Guardanapo')),
+  Step29CartaoLugar: React.lazy(() => import('./steps/Step29CartaoLugar')),
+
+  // === STEPS DESMEMBRADOS (Bloco G: Cerimônia Detalhada) ===
+  Step30Entrada: React.lazy(() => import('./steps/Step30Entrada')),
+  Step31MusicaCerimonia: React.lazy(() => import('./steps/Step31MusicaCerimonia')),
+  Step32PadrinhosCriancas: React.lazy(() => import('./steps/Step32PadrinhosCriancas')),
+  Step33RituaisSaida: React.lazy(() => import('./steps/Step33RituaisSaida')),
+
+  // === STEPS DESMEMBRADOS (Bloco H: Recepção) ===
+  Step38Coquetel: React.lazy(() => import('./steps/Step38Coquetel')),
+  Step39BoloDocesBar: React.lazy(() => import('./steps/Step39BoloDocesBar')),
+  Step40MusicaEntretenimento: React.lazy(() => import('./steps/Step40MusicaEntretenimento')),
+
+  // === STEPS DESMEMBRADOS (Bloco I: Papelaria) ===
+  Step49Convites: React.lazy(() => import('./steps/Step49Convites')),
+  Step50IdentidadeVisual: React.lazy(() => import('./steps/Step50IdentidadeVisual')),
+
+  // === STEPS DESMEMBRADOS (Bloco J: Vestuário) ===
+  Step54Vestido: React.lazy(() => import('./steps/Step54Vestido')),
+  Step55BelezaPadronizacao: React.lazy(() => import('./steps/Step55BelezaPadronizacao')),
+
+  // === EXPANSÃO: Bloco A (Perfil) ===
+  StepA4Criancas: React.lazy(() => import('./steps/StepA4Criancas')),
+  StepA5Padrinhos: React.lazy(() => import('./steps/StepA5Padrinhos')),
+  StepA6DataPrevista: React.lazy(() => import('./steps/StepA6DataPrevista')),
+
+  // === EXPANSÃO: Bloco B (Cerimônia) ===
+  StepB5CriancasCerimonia: React.lazy(() => import('./steps/StepB5CriancasCerimonia')),
+  StepB6DuracaoCerimonia: React.lazy(() => import('./steps/StepB6DuracaoCerimonia')),
+  StepB7MusicaCerimoniaViva: React.lazy(() => import('./steps/StepB7MusicaCerimoniaViva')),
+
+  // === EXPANSÃO: Bloco C (Local) ===
+  StepC4Estacionamento: React.lazy(() => import('./steps/StepC4Estacionamento')),
+  StepC5CozinhaApoio: React.lazy(() => import('./steps/StepC5CozinhaApoio')),
+  StepC6CapacidadeLocal: React.lazy(() => import('./steps/StepC6CapacidadeLocal')),
+  StepC7GeradorLocal: React.lazy(() => import('./steps/StepC7GeradorLocal')),
+
+  // === EXPANSÃO: Bloco G/H (Alimentação e Entretenimento) ===
+  StepG8MesaFrios: React.lazy(() => import('./steps/StepG8MesaFrios')),
+  StepG9BebidasPorPessoa: React.lazy(() => import('./steps/StepG9BebidasPorPessoa')),
+  StepG10MenuInfantil: React.lazy(() => import('./steps/StepG10MenuInfantil')),
+  StepH3FogosSparklers: React.lazy(() => import('./steps/StepH3FogosSparklers')),
+  StepH4MesaDocesExposta: React.lazy(() => import('./steps/StepH4MesaDocesExposta')),
+  StepH5AulaDanca: React.lazy(() => import('./steps/StepH5AulaDanca')),
+
+  // === EXPANSÃO: Bloco I (Vestuário) ===
+  StepI4AulasDanca: React.lazy(() => import('./steps/StepI4AulasDanca')),
+  StepI5MudancaLook: React.lazy(() => import('./steps/StepI5MudancaLook')),
+  StepI6QuantasMadrinhas: React.lazy(() => import('./steps/StepI6QuantasMadrinhas')),
+
+  // === NOVO: Bloco L (Logística e Documentação) ===
+  StepL1Aliancas: React.lazy(() => import('./steps/StepL1Aliancas')),
+  StepL2CivilJunto: React.lazy(() => import('./steps/StepL2CivilJunto')),
+  StepL3TransporteEspecialNoivos: React.lazy(() => import('./steps/StepL3TransporteEspecialNoivos')),
+  StepL4CarroNoivos: React.lazy(() => import('./steps/StepL4CarroNoivos')),
+  StepL5TransporteConvidados: React.lazy(() => import('./steps/StepL5TransporteConvidados')),
+  StepL6Seguranca: React.lazy(() => import('./steps/StepL6Seguranca')),
+
+  // === NOVO: Bloco M (Pós-casamento) ===
+  StepM1LuaDeMel: React.lazy(() => import('./steps/StepM1LuaDeMel')),
+  StepM2FotosLuaDeMel: React.lazy(() => import('./steps/StepM2FotosLuaDeMel')),
 };
 
 const BLOCK_NAMES = {
   'A': 'Bloco A — Perfil do Casal',
-  'B': 'Bloco B — Dados do evento',
+  'B': 'Bloco B — Cerimônia',
   'C': 'Bloco C — Local e Estrutura',
   'D': 'Bloco D — Identidade Visual',
   'E': 'Bloco E — Decoração',
   'F': 'Bloco F — Mesa Posta',
-  'G': 'Bloco G — Cerimônia detalhada',
+  'G': 'Bloco G — Cerimônia Detalhada',
   'H': 'Bloco H — Recepção',
   'I': 'Bloco I — Papelaria e Identidade',
   'J': 'Bloco J — Vestuário e Beleza',
   'K': 'Bloco K — Fornecedores',
+  'L': 'Bloco L — Logística e Documentação',
+  'M': 'Bloco M — Pós-casamento',
 };
 
 function PlaceholderStep({ titulo }) {
