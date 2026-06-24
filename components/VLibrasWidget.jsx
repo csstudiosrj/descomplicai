@@ -1,9 +1,6 @@
 export default function VLibrasWidget() {
     const abrirVLibras = () => {
-      const url = typeof window !== 'undefined'
-        ? `https://vlibras.gov.br/app/?url=${encodeURIComponent(window.location.href)}`
-        : 'https://vlibras.gov.br/app';
-      window.open(url, '_blank', 'noopener,noreferrer');
+      window.open('https://www.vlibras.gov.br/', '_blank', 'noopener,noreferrer');
     };
   
     return (
