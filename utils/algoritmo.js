@@ -1,5 +1,6 @@
 // utils/algoritmo.js
 // Algoritmo de navegação do memorial — fluxo completo com expansão (~145 etapas)
+// CORREÇÕES: bloco N para Documentação, campos padronizados, condicionais ajustadas
 
 const ETAPAS = [
   // === BLOCO A: Perfil do Casal ===
@@ -68,7 +69,7 @@ const ETAPAS = [
   { id: 'stepC14', bloco: 'C', componente: 'StepC14HorarioFesta', titulo: 'Horário da festa' },
   { id: 'stepC15', bloco: 'C', componente: 'StepC15DuracaoCoquetel', titulo: 'Duração do coquetel' },
 
-  // === BLOCO D: Identidade Visual ===
+  // === BLOCO D: Identidade Visual e Fornecedores ===
   { id: 'step12', bloco: 'D', componente: 'Step12Estilo', titulo: 'Estilo do casamento' },
   { id: 'step13', bloco: 'D', componente: 'Step13Formalidade', titulo: 'Formalidade' },
   { id: 'step14', bloco: 'D', componente: 'Step14Paleta', titulo: 'Paleta de cores' },
@@ -161,26 +162,26 @@ const ETAPAS = [
   { id: 'stepM1', bloco: 'M', componente: 'StepM1LuaDeMel', titulo: 'Lua de mel' },
   { id: 'stepM2', bloco: 'M', componente: 'StepM2FotosLuaDeMel', titulo: 'Fotos na lua de mel' },
 
-  // === BLOCO E: Documentação/Financeiro (E1-E19) ===
-  { id: 'stepE1', bloco: 'E', componente: 'StepE1EstadoCivilNoivo', titulo: 'Estado civil do noivo' },
-  { id: 'stepE2', bloco: 'E', componente: 'StepE2EstadoCivilNoiva', titulo: 'Estado civil da noiva' },
-  { id: 'stepE3', bloco: 'E', componente: 'StepE3CertidaoDivorcioNoivo', titulo: 'Certidão de divórcio do noivo' },
-  { id: 'stepE4', bloco: 'E', componente: 'StepE4CertidaoDivorcioNoiva', titulo: 'Certidão de divórcio da noiva' },
-  { id: 'stepE5', bloco: 'E', componente: 'StepE5CertidaoObitoNoivo', titulo: 'Certidão de óbito do noivo' },
-  { id: 'stepE6', bloco: 'E', componente: 'StepE6CertidaoObitoNoiva', titulo: 'Certidão de óbito da noiva' },
-  { id: 'stepE7', bloco: 'E', componente: 'StepE7NacionalidadeNoivo', titulo: 'Nacionalidade do noivo' },
-  { id: 'stepE8', bloco: 'E', componente: 'StepE8NacionalidadeNoiva', titulo: 'Nacionalidade da noiva' },
-  { id: 'stepE9', bloco: 'E', componente: 'StepE9DocumentacaoEstrangeiro', titulo: 'Documentação estrangeiro' },
-  { id: 'stepE10', bloco: 'E', componente: 'StepE10QuemPaga', titulo: 'Quem paga o casamento' },
-  { id: 'stepE11', bloco: 'E', componente: 'StepE11FormaPagamento', titulo: 'Forma de pagamento' },
-  { id: 'stepE12', bloco: 'E', componente: 'StepE12CronogramaDia', titulo: 'Cronograma do dia' },
-  { id: 'stepE13', bloco: 'E', componente: 'StepE13HorarioMakingOfNoiva', titulo: 'Horário making of noiva' },
-  { id: 'stepE14', bloco: 'E', componente: 'StepE14HorarioMakingOfNoivo', titulo: 'Horário making of noivo' },
-  { id: 'stepE15', bloco: 'E', componente: 'StepE15DestinoLuaDeMel', titulo: 'Destino lua de mel' },
-  { id: 'stepE16', bloco: 'E', componente: 'StepE16LuaDeMelReservada', titulo: 'Lua de mel reservada' },
-  { id: 'stepE17', bloco: 'E', componente: 'StepE17PassaporteValido', titulo: 'Passaporte válido' },
-  { id: 'stepE18', bloco: 'E', componente: 'StepE18Visto', titulo: 'Visto' },
-  { id: 'stepE19', bloco: 'E', componente: 'StepE19Vacinas', titulo: 'Vacinas' },
+  // === BLOCO N: Documentação e Financeiro (E1-E19) ===
+  { id: 'stepE1', bloco: 'N', componente: 'StepE1EstadoCivilNoivo', titulo: 'Estado civil do noivo' },
+  { id: 'stepE2', bloco: 'N', componente: 'StepE2EstadoCivilNoiva', titulo: 'Estado civil da noiva' },
+  { id: 'stepE3', bloco: 'N', componente: 'StepE3CertidaoDivorcioNoivo', titulo: 'Certidão de divórcio do noivo' },
+  { id: 'stepE4', bloco: 'N', componente: 'StepE4CertidaoDivorcioNoiva', titulo: 'Certidão de divórcio da noiva' },
+  { id: 'stepE5', bloco: 'N', componente: 'StepE5CertidaoObitoNoivo', titulo: 'Certidão de óbito do noivo' },
+  { id: 'stepE6', bloco: 'N', componente: 'StepE6CertidaoObitoNoiva', titulo: 'Certidão de óbito da noiva' },
+  { id: 'stepE7', bloco: 'N', componente: 'StepE7NacionalidadeNoivo', titulo: 'Nacionalidade do noivo' },
+  { id: 'stepE8', bloco: 'N', componente: 'StepE8NacionalidadeNoiva', titulo: 'Nacionalidade da noiva' },
+  { id: 'stepE9', bloco: 'N', componente: 'StepE9DocumentacaoEstrangeiro', titulo: 'Documentação estrangeiro' },
+  { id: 'stepE10', bloco: 'N', componente: 'StepE10QuemPaga', titulo: 'Quem paga o casamento' },
+  { id: 'stepE11', bloco: 'N', componente: 'StepE11FormaPagamento', titulo: 'Forma de pagamento' },
+  { id: 'stepE12', bloco: 'N', componente: 'StepE12CronogramaDia', titulo: 'Cronograma do dia' },
+  { id: 'stepE13', bloco: 'N', componente: 'StepE13HorarioMakingOfNoiva', titulo: 'Horário making of noiva' },
+  { id: 'stepE14', bloco: 'N', componente: 'StepE14HorarioMakingOfNoivo', titulo: 'Horário making of noivo' },
+  { id: 'stepE15', bloco: 'N', componente: 'StepE15DestinoLuaDeMel', titulo: 'Destino lua de mel' },
+  { id: 'stepE16', bloco: 'N', componente: 'StepE16LuaDeMelReservada', titulo: 'Lua de mel reservada' },
+  { id: 'stepE17', bloco: 'N', componente: 'StepE17PassaporteValido', titulo: 'Passaporte válido' },
+  { id: 'stepE18', bloco: 'N', componente: 'StepE18Visto', titulo: 'Visto' },
+  { id: 'stepE19', bloco: 'N', componente: 'StepE19Vacinas', titulo: 'Vacinas' },
 ];
 
 const INDICE_POR_ID = {};
@@ -234,32 +235,32 @@ export function calcularProximaEtapa(estado, indiceAtual) {
 
   // Expansão D
   if (etapa.id === 'stepD1' && estado.flores !== true) return calcularProximaEtapa(estado, proximo);
-  if (etapa.id === 'stepD2' && !estado.iluminacao) return calcularProximaEtapa(estado, proximo);
-  if (etapa.id === 'stepD3' && estado.mobiliarioEspecial !== true) return calcularProximaEtapa(estado, proximo);
+  if (etapa.id === 'stepD2' && !estado.tipoIluminacao) return calcularProximaEtapa(estado, proximo);
+  if (etapa.id === 'stepD3' && estado.mobiliarioQual !== true) return calcularProximaEtapa(estado, proximo);
 
-  // Expansão E
+  // Expansão N (antiga E - Documentação)
   if (etapa.id === 'stepE3' && estado.estadoCivilNoivo !== 'divorciado') return calcularProximaEtapa(estado, proximo);
   if (etapa.id === 'stepE4' && estado.estadoCivilNoiva !== 'divorciado') return calcularProximaEtapa(estado, proximo);
   if (etapa.id === 'stepE5' && estado.estadoCivilNoivo !== 'viuvo') return calcularProximaEtapa(estado, proximo);
   if (etapa.id === 'stepE6' && estado.estadoCivilNoiva !== 'viuvo') return calcularProximaEtapa(estado, proximo);
   if (etapa.id === 'stepE9' && estado.nacionalidadeNoivo === 'brasileiro' && estado.nacionalidadeNoiva === 'brasileiro') return calcularProximaEtapa(estado, proximo);
-  if (etapa.id === 'stepE15' && estado.luaDeMel !== true) return calcularProximaEtapa(estado, proximo);
-  if (etapa.id === 'stepE16' && estado.luaDeMel !== true) return calcularProximaEtapa(estado, proximo);
-  if (etapa.id === 'stepE17' && estado.luaDeMel !== true) return calcularProximaEtapa(estado, proximo);
-  if (etapa.id === 'stepE18' && estado.luaDeMel !== true) return calcularProximaEtapa(estado, proximo);
-  if (etapa.id === 'stepE19' && estado.luaDeMel !== true) return calcularProximaEtapa(estado, proximo);
+  if (etapa.id === 'stepE15' && estado.luaDeMel !== true && estado.luaDeMel !== 'sim') return calcularProximaEtapa(estado, proximo);
+  if (etapa.id === 'stepE16' && estado.luaDeMel !== true && estado.luaDeMel !== 'sim') return calcularProximaEtapa(estado, proximo);
+  if (etapa.id === 'stepE17' && estado.luaDeMel !== true && estado.luaDeMel !== 'sim') return calcularProximaEtapa(estado, proximo);
+  if (etapa.id === 'stepE18' && estado.luaDeMel !== true && estado.luaDeMel !== 'sim') return calcularProximaEtapa(estado, proximo);
+  if (etapa.id === 'stepE19' && estado.luaDeMel !== true && estado.luaDeMel !== 'sim') return calcularProximaEtapa(estado, proximo);
 
   // Expansão G/H
   if (etapa.id === 'stepG8' && estado.coquetel !== true) return calcularProximaEtapa(estado, proximo);
   if (etapa.id === 'stepG9' && !estado.tipoBar) return calcularProximaEtapa(estado, proximo);
   if (etapa.id === 'stepG10' && (estado.criancas === false || estado.criancas === 'nao')) return calcularProximaEtapa(estado, proximo);
   if (etapa.id === 'stepH3' && estado.atividadesEntretenimento && !estado.atividadesEntretenimento.includes('fogos')) return calcularProximaEtapa(estado, proximo);
-  if (etapa.id === 'stepH4' && estado.mesaDoces !== true) return calcularProximaEtapa(estado, proximo);
+  if (etapa.id === 'stepH4' && estado.mesaDocesExposta !== true) return calcularProximaEtapa(estado, proximo);
   if (etapa.id === 'stepH5' && estado.atividadesEntretenimento && !estado.atividadesEntretenimento.includes('aula-danca')) return calcularProximaEtapa(estado, proximo);
 
   // Expansão I
   if (etapa.id === 'stepI4' && estado.atividadesEntretenimento && !estado.atividadesEntretenimento.includes('aula-danca')) return calcularProximaEtapa(estado, proximo);
-  if (etapa.id === 'stepI5' && estado.estiloVestido !== 'jumpsuit' && !estado.tem_noiva) return calcularProximaEtapa(estado, proximo);
+  if (etapa.id === 'stepI5' && estado.mudancaLook !== true) return calcularProximaEtapa(estado, proximo);
   if (etapa.id === 'stepI6' && estado.padrinhosEscolhidos !== true) return calcularProximaEtapa(estado, proximo);
 
   // Bloco L
@@ -302,26 +303,26 @@ export function calcularEtapasTotais(estado) {
     if (etapa.id === 'stepC13' && (estado.convidadosForaCidade || 0) === 0) continue;
     if (etapa.id === 'stepC15' && estado.coquetel !== true) continue;
     if (etapa.id === 'stepD1' && estado.flores !== true) continue;
-    if (etapa.id === 'stepD2' && !estado.iluminacao) continue;
-    if (etapa.id === 'stepD3' && estado.mobiliarioEspecial !== true) continue;
+    if (etapa.id === 'stepD2' && !estado.tipoIluminacao) continue;
+    if (etapa.id === 'stepD3' && estado.mobiliarioQual !== true) continue;
     if (etapa.id === 'stepE3' && estado.estadoCivilNoivo !== 'divorciado') continue;
     if (etapa.id === 'stepE4' && estado.estadoCivilNoiva !== 'divorciado') continue;
     if (etapa.id === 'stepE5' && estado.estadoCivilNoivo !== 'viuvo') continue;
     if (etapa.id === 'stepE6' && estado.estadoCivilNoiva !== 'viuvo') continue;
     if (etapa.id === 'stepE9' && estado.nacionalidadeNoivo === 'brasileiro' && estado.nacionalidadeNoiva === 'brasileiro') continue;
-    if (etapa.id === 'stepE15' && estado.luaDeMel !== true) continue;
-    if (etapa.id === 'stepE16' && estado.luaDeMel !== true) continue;
-    if (etapa.id === 'stepE17' && estado.luaDeMel !== true) continue;
-    if (etapa.id === 'stepE18' && estado.luaDeMel !== true) continue;
-    if (etapa.id === 'stepE19' && estado.luaDeMel !== true) continue;
+    if (etapa.id === 'stepE15' && estado.luaDeMel !== true && estado.luaDeMel !== 'sim') continue;
+    if (etapa.id === 'stepE16' && estado.luaDeMel !== true && estado.luaDeMel !== 'sim') continue;
+    if (etapa.id === 'stepE17' && estado.luaDeMel !== true && estado.luaDeMel !== 'sim') continue;
+    if (etapa.id === 'stepE18' && estado.luaDeMel !== true && estado.luaDeMel !== 'sim') continue;
+    if (etapa.id === 'stepE19' && estado.luaDeMel !== true && estado.luaDeMel !== 'sim') continue;
     if (etapa.id === 'stepG8' && estado.coquetel !== true) continue;
     if (etapa.id === 'stepG9' && !estado.tipoBar) continue;
     if (etapa.id === 'stepG10' && (estado.criancas === false || estado.criancas === 'nao')) continue;
     if (etapa.id === 'stepH3' && estado.atividadesEntretenimento && !estado.atividadesEntretenimento.includes('fogos')) continue;
-    if (etapa.id === 'stepH4' && estado.mesaDoces !== true) continue;
+    if (etapa.id === 'stepH4' && estado.mesaDocesExposta !== true) continue;
     if (etapa.id === 'stepH5' && estado.atividadesEntretenimento && !estado.atividadesEntretenimento.includes('aula-danca')) continue;
     if (etapa.id === 'stepI4' && estado.atividadesEntretenimento && !estado.atividadesEntretenimento.includes('aula-danca')) continue;
-    if (etapa.id === 'stepI5' && estado.estiloVestido !== 'jumpsuit' && !estado.tem_noiva) continue;
+    if (etapa.id === 'stepI5' && estado.mudancaLook !== true) continue;
     if (etapa.id === 'stepI6' && estado.padrinhosEscolhidos !== true) continue;
     if (etapa.id === 'stepL3' && estado.transporteEspecialNoivos !== true) continue;
     if (etapa.id === 'stepL4' && estado.carroNoivos === 'nao') continue;

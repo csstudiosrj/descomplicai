@@ -166,7 +166,7 @@ const STEP_COMPONENTS = {
   StepM1LuaDeMel: React.lazy(() => import('./steps/StepM1LuaDeMel')),
   StepM2FotosLuaDeMel: React.lazy(() => import('./steps/StepM2FotosLuaDeMel')),
 
-  // === NOVO: Bloco E (Documentação/Financeiro) ===
+  // === NOVO: Bloco N (Documentação/Financeiro) ===
   StepE1EstadoCivilNoivo: React.lazy(() => import('./steps/StepE1EstadoCivilNoivo')),
   StepE2EstadoCivilNoiva: React.lazy(() => import('./steps/StepE2EstadoCivilNoiva')),
   StepE3CertidaoDivorcioNoivo: React.lazy(() => import('./steps/StepE3CertidaoDivorcioNoivo')),
@@ -192,7 +192,7 @@ const BLOCK_NAMES = {
   'A': 'Bloco A — Perfil do Casal',
   'B': 'Bloco B — Cerimônia',
   'C': 'Bloco C — Local e Estrutura',
-  'D': 'Bloco D — Identidade Visual',
+  'D': 'Bloco D — Identidade Visual e Fornecedores',
   'E': 'Bloco E — Decoração',
   'F': 'Bloco F — Mesa Posta',
   'G': 'Bloco G — Cerimônia Detalhada',
@@ -202,6 +202,7 @@ const BLOCK_NAMES = {
   'K': 'Bloco K — Fornecedores',
   'L': 'Bloco L — Logística e Documentação',
   'M': 'Bloco M — Pós-casamento',
+  'N': 'Bloco N — Documentação e Financeiro',
 };
 
 function PlaceholderStep({ titulo }) {
@@ -296,8 +297,8 @@ export default function MemorialOrchestrator() {
   }, [estado, setRespostas, router]);
 
   const handleBack = useCallback(() => {
-    if (estado.historicoEtapas.length > 0) voltarEtapa();
-  }, [estado.historicoEtapas.length, voltarEtapa]);
+    if (estado.historicoEtapas && estado.historicoEtapas.length > 0) voltarEtapa();
+  }, [estado.historicoEtapas, voltarEtapa]);
 
   const handleContinuarDraft = () => {
     const draft = carregarDraft();
@@ -330,7 +331,7 @@ export default function MemorialOrchestrator() {
             <StepComponent onSelect={handleSelect} estadoAtual={estado} onConcluir={handleConcluirMemorial} />
           </React.Suspense>
         </main>
-        <BackButton onClick={handleBack} disabled={estado.historicoEtapas.length === 0} />
+        <BackButton onClick={handleBack} disabled={!estado.historicoEtapas || estado.historicoEtapas.length === 0} />
         {oferecerDraft && (
           <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }}>
             <div style={{ backgroundColor: 'var(--color-white)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-8)', maxWidth: '420px', width: '100%', boxShadow: 'var(--shadow-xl)' }}>
