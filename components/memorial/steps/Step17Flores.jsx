@@ -6,7 +6,7 @@ import Icon from '../../ui/Icon';
 
 const OPCOES = [
   { valor: true, label: 'Sim', subtexto: 'Flores naturais ou artificiais na decoração', icone: 'flower' },
-  { valor: false, label: 'Não', subtexto: 'Sem flores, outros elementos decorativos', icone: 'x' },
+  { valor: false, label: 'Não', subtexto: 'Sem flores, outros elementos decorativos', icone: 'close' },
 ];
 
 export default function Step17Flores({ onSelect, estadoAtual }) {

@@ -6,11 +6,11 @@ import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 
 const OPCOES = [
-  { valor: "rosas", label: "Rosas", desc: "Clássicas e românticas" },
-  { valor: "campo", label: "Flores do campo", desc: "Despojadas e naturais" },
-  { valor: "secas", label: "Flores secas", desc: "Estilo boho e duradouro" },
-  { valor: "orquideas", label: "Orquídeas", desc: "Elegantes e sofisticadas" },
-  { valor: "outro", label: "Outro", desc: "Quero definir depois" }
+  { valor: "rosas", label: "Rosas", desc: "Clássicas e românticas", icone: 'flower' },
+  { valor: "campo", label: "Flores do campo", desc: "Despojadas e naturais", icone: 'flower' },
+  { valor: "secas", label: "Flores secas", desc: "Estilo boho e duradouro", icone: 'flower' },
+  { valor: "orquideas", label: "Orquídeas", desc: "Elegantes e sofisticadas", icone: 'flower' },
+  { valor: "outro", label: "Outro", desc: "Quero definir depois", icone: 'flower' }
 ];
 
 export default function StepD1TipoFlores({ onSelect, estadoAtual }) {

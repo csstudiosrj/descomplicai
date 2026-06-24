@@ -9,7 +9,7 @@ const OPCOES = [
       valor: 'sim',
       label: 'Sim',
       subtexto: 'Já compramos ou encomendamos',
-      icone: 'check',
+      icone: 'rings',
     },
     {
       valor: 'nao',

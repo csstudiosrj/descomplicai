@@ -638,16 +638,7 @@ const icons = {
     </g>
   ),
 
-  fileSignature: (
-    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a1 1 0 0 0-1 1v18a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8L14 2z" />
-      <path d="M14 2v6h6" />
-      <path d="M8 13h4" />
-      <path d="M8 17h3" />
-      <path d="M16 14l-2 6-1-3-3 1" />
-      <path d="M17 13l2 2" />
-    </g>
-  ),
+  
 
   rings: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -683,7 +674,6 @@ const icons = {
       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
     </g>
   ),
-
 
 };
 

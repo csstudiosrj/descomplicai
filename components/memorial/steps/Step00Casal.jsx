@@ -7,7 +7,7 @@ import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
 
 const OPCOES = [
-  { valor: 'noiva-noivo', label: 'Noiva e Noivo', icone: 'users', cor: 'var(--color-brand-lighter)' },
+  { valor: 'noiva-noivo', label: 'Noiva e Noivo', icone: 'heart', cor: 'var(--color-info-light)' },
   { valor: 'duas-noivas', label: 'Duas Noivas', icone: 'users', cor: 'var(--color-brand-lighter)' },
   { valor: 'dois-noivos', label: 'Dois Noivos', icone: 'users', cor: 'var(--color-brand-lighter)' },
   { valor: 'nao-especificar', label: 'Prefiro não especificar', icone: 'heart', cor: 'var(--color-info-light)' },
