@@ -10,7 +10,7 @@ const OPCOES = [
   {
     valor: 'guiado',
     label: 'Me guiem',
-    subtexto: 'Prefiro receber sugestões e aprovar. Ideal para quem está começando a imaginar o casamento.',
+    subtexto: 'Prefiro receber sugestões e aprovar. Ideal para quem está começando a imaginar o evento.',
     icone: 'sparkle',
     cor: 'var(--color-brand-lighter)',
     corPulso: 'rgba(139, 111, 94, 0.22)',

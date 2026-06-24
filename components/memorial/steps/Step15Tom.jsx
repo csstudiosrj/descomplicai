@@ -41,7 +41,7 @@ export default function Step15Tom({ onSelect, estadoAtual }) {
         Tom da identidade
       </h1>
       <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
-        Escolha até 3 palavras que definem a vibe do casamento:
+        Escolha até 3 palavras que definem a vibe do evento:
       </p>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)' }}>

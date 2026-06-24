@@ -38,7 +38,7 @@ export default function Step03Local({ onSelect, estadoAtual }) {
   return (
     <div
       role="radiogroup"
-      aria-label="Onde vai acontecer o casamento?"
+      aria-label="Onde vai acontecer o evento?"
       style={{
         maxWidth: '640px',
         margin: '0 auto',
@@ -62,7 +62,7 @@ export default function Step03Local({ onSelect, estadoAtual }) {
 
       <div>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', lineHeight: 'var(--leading-tight)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>
-          Onde vai acontecer o casamento?
+          Onde vai acontecer o evento?
         </h1>
       </div>
 

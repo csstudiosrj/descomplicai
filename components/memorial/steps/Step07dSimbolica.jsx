@@ -5,15 +5,15 @@ import PropTypes from 'prop-types';
 const RITUAIS = [
   {
     nome: 'Areia',
-    desc: 'Os noivos despejam areia colorida em um recipiente, simbolizando a união indivisível.',
+    desc: 'O casal despeja areia colorida em um recipiente, simbolizando a união indivisível.',
   },
   {
     nome: 'Vela',
-    desc: 'Cada noivo acende uma vela e juntos acendem uma terceira, representando a nova família.',
+    desc: 'Cada pessoa acende uma vela e juntos acendem uma terceira, representando a nova família.',
   },
   {
     nome: 'Vinho',
-    desc: 'Os noivos bebem do mesmo cálice, selando a partilha da vida.',
+    desc: 'O casal bebe do mesmo cálice, selando a partilha da vida.',
   },
   {
     nome: 'Rosas',
@@ -25,11 +25,11 @@ const RITUAIS = [
   },
   {
     nome: 'Árvore',
-    desc: 'Os noivos plantam uma muda ou regam uma árvore, representando o crescimento do amor.',
+    desc: 'O casal planta uma muda ou regam uma árvore, representando o crescimento do amor.',
   },
   {
     nome: 'Pétalas',
-    desc: 'Convidados jogam pétalas sobre os noivos, abençoando a união.',
+    desc: 'Convidados jogam pétalas sobre o casal, abençoando a união.',
   },
   {
     nome: 'Balões',
@@ -37,11 +37,11 @@ const RITUAIS = [
   },
   {
     nome: 'Lágrimas de alegria',
-    desc: 'Os noivos oferecem lenços ou frascos para guardar as lágrimas de felicidade.',
+    desc: 'O casal oferece lenços ou frascos para guardar as lágrimas de felicidade.',
   },
   {
     nome: 'Escrita de votos',
-    desc: 'Os noivos leem votos pessoais escritos por eles mesmos.',
+    desc: 'O casal lê votos pessoais escritos por eles mesmos.',
   },
 ];
 

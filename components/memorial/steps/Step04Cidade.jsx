@@ -1,5 +1,5 @@
 // components/memorial/steps/Step04Cidade.jsx
-// B3 — Cidade e estado do casamento com busca IBGE
+// B3 — Cidade e estado do evento com busca IBGE
 
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
@@ -93,7 +93,7 @@ export default function Step04Cidade({ onSelect, estadoAtual }) {
           color: 'var(--color-text-primary)',
         }}
       >
-        Onde será o casamento?
+        Onde será a celebração?
       </h1>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>

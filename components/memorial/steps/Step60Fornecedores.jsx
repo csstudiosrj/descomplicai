@@ -58,7 +58,7 @@ export default function Step60Fornecedores({ onConcluir, estadoAtual }) {
         }}
       >
         Com base em todas as suas escolhas, identificamos estas categorias de
-        fornecedores necessários para seu casamento:
+        fornecedores necessários para seu evento:
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>

@@ -60,7 +60,7 @@ export default function Step05Paleta({ onSelect, estadoAtual }) {
 
       <div>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', lineHeight: 'var(--leading-tight)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>
-          Escolha até 3 cores para o casamento
+          Escolha até 3 cores para o evento
         </h1>
         <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', color: 'var(--color-text-secondary)' }}>
           Sugerimos com base no estilo que você escolheu. Pode personalizar.

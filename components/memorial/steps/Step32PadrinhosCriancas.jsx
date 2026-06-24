@@ -26,7 +26,7 @@ const OPCOES = [
     {
       valor: 'sozinhos',
       label: 'Sozinhos',
-      subtexto: 'Entrada apenas dos noivos',
+      subtexto: 'Entrada apenas do casal',
       icone: 'user',
     },
 ];

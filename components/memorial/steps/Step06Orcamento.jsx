@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 
 const OPCOES = [
-  { valor: 'ate-20k', label: 'Até R$ 20 mil', desc: 'Casamento econômico' },
+  { valor: 'ate-20k', label: 'Até R$ 20 mil', desc: 'Evento econômico' },
   { valor: '20k-50k', label: 'R$ 20 mil a 50 mil', desc: 'Padrão brasileiro' },
   { valor: '50k-90k', label: 'R$ 50 mil a 90 mil', desc: 'Confortável' },
   { valor: '90k-150k', label: 'R$ 90 mil a 150 mil', desc: 'Premium' },

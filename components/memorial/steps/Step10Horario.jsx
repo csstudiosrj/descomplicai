@@ -1,4 +1,4 @@
-// Etapa de horário do casamento — com alerta para pôr do sol
+// Etapa de horário do evento — com alerta para pôr do sol
 // Dependências diretas: React, PropTypes, Card
 
 import React, { useState } from 'react';
@@ -29,7 +29,7 @@ export default function Step06Horario({ onSelect, estadoAtual }) {
   return (
     <div
       role="radiogroup"
-      aria-label="Em que horário será o casamento?"
+      aria-label="Em que horário será a celebração?"
       style={{
         maxWidth: '640px',
         margin: '0 auto',
@@ -48,7 +48,7 @@ export default function Step06Horario({ onSelect, estadoAtual }) {
 
       <div>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', lineHeight: 'var(--leading-tight)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>
-          Em que horário será o casamento?
+          Em que horário será a celebração?
         </h1>
       </div>
 

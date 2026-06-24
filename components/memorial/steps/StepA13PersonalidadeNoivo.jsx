@@ -1,4 +1,4 @@
-// StepA13PersonalidadeNoivo — Personalidade do noivo
+// StepA13PersonalidadeNoivo — Personalidade da pessoa 2
 // Dependências diretas: React, PropTypes, Card
 
 import React, { useState } from 'react';
@@ -29,11 +29,11 @@ export default function StepA13PersonalidadeNoivo({ onSelect, estadoAtual }) {
     }, 350);
   };
   return (
-    <div role="radiogroup" aria-label="Personalidade do noivo" style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', animation: 'fadeInUp 300ms ease-out' }}>
+    <div role="radiogroup" aria-label="Personalidade da pessoa 2" style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', animation: 'fadeInUp 300ms ease-out' }}>
       <style jsx>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>
-        Personalidade do noivo
+        Personalidade da pessoa 2
       </h1>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--space-4)' }}>
