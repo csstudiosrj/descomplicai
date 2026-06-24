@@ -1,12 +1,10 @@
 // Etapa 0 do memorial — coleta dos dados do casal (perfil)
-// Dependências diretas: React, PropTypes, Card, Icon
-// Linguagem adaptada conforme perfil do casal (nunca hardcoded)
+// Título SEMPRE neutro: a resposta do perfil é a própria pergunta
 
 import React from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
-import { adaptarFrase } from '../../../utils/linguagemCasal';
 
 const OPCOES = [
   { valor: 'noiva-noivo', label: 'Noiva e Noivo', icone: 'users', cor: 'var(--color-brand-lighter)' },
@@ -17,17 +15,11 @@ const OPCOES = [
 
 export default function Step00Casal({ onSelect, estadoAtual }) {
   const selecionado = estadoAtual?.perfilCasal;
-  const perfil = selecionado || 'nao-especificar';
-
-  // Título adapta conforme perfil já selecionado, ou neutro se ainda não escolheu
-  const titulo = selecionado
-    ? adaptarFrase('Quem são {casal}?', perfil)
-    : 'Quem está se casando?';
 
   return (
     <div
       role="radiogroup"
-      aria-label={titulo}
+      aria-label="Quem está se casando?"
       style={{
         maxWidth: '640px',
         margin: '0 auto',
@@ -46,7 +38,7 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
             marginBottom: 'var(--space-2)',
           }}
         >
-          {titulo}
+          Quem está se casando?
         </h1>
       </div>
 
