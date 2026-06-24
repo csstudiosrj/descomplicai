@@ -6,13 +6,13 @@ import Icon from '../../ui/Icon';
 
 const OPCOES = [
     {
-      valor: 'True',
+      valor: true,
       label: 'Sim',
       subtexto: 'Display visual de doces finos',
       icone: 'cake',
     },
     {
-      valor: 'False',
+      valor: false,
       label: 'Não',
       subtexto: 'Apenas bolo e mesa tradicional',
       icone: 'x',
@@ -56,7 +56,7 @@ export default function StepH4MesaDocesExposta({ onSelect, estadoAtual }) {
           const isSelected = selecionado === opcao.valor;
           return (
             <Card
-              key={opcao.valor}
+              key={String(opcao.valor)}
               interactive
               selected={isSelected}
               padding="lg"

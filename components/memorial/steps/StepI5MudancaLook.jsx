@@ -6,13 +6,13 @@ import Icon from '../../ui/Icon';
 
 const OPCOES = [
     {
-      valor: 'True',
+      valor: true,
       label: 'Sim',
       subtexto: 'Segundo vestido ou troca de acessórios',
       icone: 'refresh',
     },
     {
-      valor: 'False',
+      valor: false,
       label: 'Não',
       subtexto: 'Um único look para toda a festa',
       icone: 'x',
@@ -56,7 +56,7 @@ export default function StepI5MudancaLook({ onSelect, estadoAtual }) {
           const isSelected = selecionado === opcao.valor;
           return (
             <Card
-              key={opcao.valor}
+              key={String(opcao.valor)}
               interactive
               selected={isSelected}
               padding="lg"

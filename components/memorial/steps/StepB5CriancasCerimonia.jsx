@@ -6,13 +6,13 @@ import Icon from '../../ui/Icon';
 
 const OPCOES = [
     {
-      valor: 'True',
+      valor: true,
       label: 'Sim',
       subtexto: 'Daminhas, pajens, porta-alianças',
       icone: 'baby',
     },
     {
-      valor: 'False',
+      valor: false,
       label: 'Não',
       subtexto: 'Cerimônia apenas com adultos',
       icone: 'x',
@@ -56,7 +56,7 @@ export default function StepB5CriancasCerimonia({ onSelect, estadoAtual }) {
           const isSelected = selecionado === opcao.valor;
           return (
             <Card
-              key={opcao.valor}
+              key={String(opcao.valor)}
               interactive
               selected={isSelected}
               padding="lg"

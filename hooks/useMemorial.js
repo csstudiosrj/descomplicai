@@ -206,6 +206,10 @@ const ESTADO_INICIAL = {
   passaporteValido: '',
   visto: '',
   vacinas: '',
+  // Campos adicionados para consistência com gerador-tarefas.js
+  saveTheDateEnviado: false,
+  fotografoLuaDeMel: false,
+  transporteNoivosContratado: false,
 };
 
 export function useMemorial() {

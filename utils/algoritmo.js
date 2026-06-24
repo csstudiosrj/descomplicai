@@ -236,7 +236,7 @@ export function calcularProximaEtapa(estado, indiceAtual) {
   // Expansão D
   if (etapa.id === 'stepD1' && estado.flores !== true) return calcularProximaEtapa(estado, proximo);
   if (etapa.id === 'stepD2' && !estado.tipoIluminacao) return calcularProximaEtapa(estado, proximo);
-  if (etapa.id === 'stepD3' && estado.mobiliarioQual !== true) return calcularProximaEtapa(estado, proximo);
+  if (etapa.id === 'stepD3' && !estado.mobiliarioQual) return calcularProximaEtapa(estado, proximo);
 
   // Expansão N (antiga E - Documentação)
   if (etapa.id === 'stepE3' && estado.estadoCivilNoivo !== 'divorciado') return calcularProximaEtapa(estado, proximo);
@@ -304,7 +304,7 @@ export function calcularEtapasTotais(estado) {
     if (etapa.id === 'stepC15' && estado.coquetel !== true) continue;
     if (etapa.id === 'stepD1' && estado.flores !== true) continue;
     if (etapa.id === 'stepD2' && !estado.tipoIluminacao) continue;
-    if (etapa.id === 'stepD3' && estado.mobiliarioQual !== true) continue;
+    if (etapa.id === 'stepD3' && !estado.mobiliarioQual) continue;
     if (etapa.id === 'stepE3' && estado.estadoCivilNoivo !== 'divorciado') continue;
     if (etapa.id === 'stepE4' && estado.estadoCivilNoiva !== 'divorciado') continue;
     if (etapa.id === 'stepE5' && estado.estadoCivilNoivo !== 'viuvo') continue;

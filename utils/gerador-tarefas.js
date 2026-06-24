@@ -161,7 +161,7 @@ const REGRAS = [
 
   // --- CERIMÔNIA: Expansão ---
   {
-    condicao: (e) => e.criancasCerimonia === true || e.criancasCerimonia === 'sim',
+    condicao: (e) => e.criancasCerimonia === true,
     tarefa: {
       titulo: 'Definir papel das crianças na cerimônia',
       descricao: 'Daminhas, pajens, porta-alianças? Defina idades, roupas e ensaios.',
@@ -545,7 +545,7 @@ const REGRAS = [
 
   // --- ALIMENTAÇÃO E BEBIDAS: Expansão ---
   {
-    condicao: (e) => e.mesaFrios === true && e.mesaFriosContratada !== true,
+    condicao: (e) => e.mesaFrios === true,
     tarefa: {
       titulo: 'Contratar mesa de frios para coquetel',
       descricao: 'Defina variedade, quantidade por convidado e apresentação.',
@@ -591,7 +591,7 @@ const REGRAS = [
 
   // --- ENTRETENIMENTO: Expansão ---
   {
-    condicao: (e) => e.fogosSparklers === true && e.fogosContratados !== true,
+    condicao: (e) => e.fogosSparklers === true,
     tarefa: {
       titulo: 'Contratar fogos de artifício ou sparklers',
       descricao: 'Verifique permissão do local, seguro e horário permitido.',
@@ -602,7 +602,7 @@ const REGRAS = [
     },
   },
   {
-    condicao: (e) => e.mesaDocesExposta === true && e.mesaDocesExpostaContratada !== true,
+    condicao: (e) => e.mesaDocesExposta === true,
     tarefa: {
       titulo: 'Contratar mesa de doces exposta (display)',
       descricao: 'Doces finos, macarons, brigadeiros gourmet em apresentação visual impactante.',
@@ -613,7 +613,7 @@ const REGRAS = [
     },
   },
   {
-    condicao: (e) => e.aulaDanca === true && e.aulaDancaContratada !== true,
+    condicao: (e) => e.aulaDanca === true,
     tarefa: {
       titulo: 'Contratar aula de dança para os noivos',
       descricao: 'Inicie 3-6 meses antes. Escolha estilo (valsa, salsa, coreografia surpresa).',
@@ -637,7 +637,7 @@ const REGRAS = [
     },
   },
   {
-    condicao: (e) => Array.isArray(e.atividadesEntretenimento) && e.atividadesEntretenimento.includes('drone') && e.droneContratado !== true,
+    condicao: (e) => Array.isArray(e.atividadesEntretenimento) && e.atividadesEntretenimento.includes('drone'),
     tarefa: {
       titulo: 'Contratar serviço de drone',
       descricao: 'Verifique se o local permite voo de drone e contrate piloto licenciado.',
@@ -683,7 +683,7 @@ const REGRAS = [
     },
   },
   {
-    condicao: (e) => e.saveTheDate === true && e.saveTheDateEnviado !== true,
+    condicao: (e) => e.saveTheDate === 'sim' && e.saveTheDateEnviado !== true,
     tarefa: {
       titulo: 'Enviar save the date',
       descricao: 'Envie 8-10 meses antes para reservar a data na agenda dos convidados.',
@@ -695,7 +695,7 @@ const REGRAS = [
 
   // --- PAPELARIA: Lembrancinhas e Kit de Saída ---
   {
-    condicao: (e) => e.lembrancinhas !== true && e.lembrancinhas !== 'ja_tenho',
+    condicao: (e) => e.lembrancinhas === 'sim',
     tarefa: {
       titulo: 'Escolher e encomendar lembrancinhas',
       descricao: 'Defina quantidade, personalização e prazo de entrega.',
@@ -706,7 +706,7 @@ const REGRAS = [
     },
   },
   {
-    condicao: (e) => e.kitSaida !== true && e.kitSaida !== 'nao_vou_ter',
+    condicao: (e) => e.kitSaida === 'sim',
     tarefa: {
       titulo: 'Montar kit de saída para os noivos',
       descricao: 'Inclua trocas de roupa, tênis confortável, água, lanche e carregador.',
@@ -719,7 +719,7 @@ const REGRAS = [
 
   // --- VESTUÁRIO: Expansão ---
   {
-    condicao: (e) => e.aulasDanca === true && e.aulasDancaContratadas !== true,
+    condicao: (e) => e.aulasDanca === true,
     tarefa: {
       titulo: 'Contratar aulas de dança (noivos + padrinhos)',
       descricao: 'Aulas em grupo são divertidas e criam momento especial na festa.',
