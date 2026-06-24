@@ -214,7 +214,7 @@ export function calcularProximaEtapa(estado, indiceAtual) {
   if (etapa.id === 'stepA6' && !!estado.dataCasamento) return calcularProximaEtapa(estado, proximo);
 
   // Expansão B
-  if (etapa.id === 'stepB5' && (estado.criancas === false || estado.criancasCerimonia === false)) return calcularProximaEtapa(estado, proximo);
+  if (etapa.id === 'stepB5' && estado.criancas === false) return calcularProximaEtapa(estado, proximo);
   if (etapa.id === 'stepB6' && estado.tipoCerimonia === 'civil') return calcularProximaEtapa(estado, proximo);
   if (etapa.id === 'stepB7' && estado.tipoCerimonia === 'civil') return calcularProximaEtapa(estado, proximo);
   if (etapa.id === 'stepB9' && estado.tipoCerimonia !== 'catolica') return calcularProximaEtapa(estado, proximo);
@@ -286,7 +286,7 @@ export function calcularEtapasTotais(estado) {
     if (etapa.id === 'stepA4' && estado.criancas === false) continue;
     if (etapa.id === 'stepA5' && estado.padrinhosEscolhidos === false) continue;
     if (etapa.id === 'stepA6' && !!estado.dataCasamento) continue;
-    if (etapa.id === 'stepB5' && (estado.criancas === false || estado.criancasCerimonia === false)) continue;
+    if (etapa.id === 'stepB5' && estado.criancas === false) continue;
     if (etapa.id === 'stepB6' && estado.tipoCerimonia === 'civil') continue;
     if (etapa.id === 'stepB7' && estado.tipoCerimonia === 'civil') continue;
     if (etapa.id === 'stepB9' && estado.tipoCerimonia !== 'catolica') continue;

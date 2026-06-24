@@ -15,6 +15,16 @@ function calcularPrazo(dataEventoStr, diasAntes) {
  * Regras de tarefas. Cada regra:
  * { condicao: (estado) => boolean, tarefa: { titulo, descricao, categoria, subcategoria?, prazo, prioridade } }
  */
+/**
+ * Verifica se destino da lua de mel é internacional (não Brasil/nacional)
+ * Protege contra undefined, null ou string vazia
+ */
+function isDestinoInternacional(destino) {
+  if (!destino || typeof destino !== 'string') return false;
+  const d = destino.toLowerCase().trim();
+  return d !== '' && d !== 'brasil' && d !== 'nacional' && !d.includes('brasil');
+}
+
 const REGRAS = [
   // --- PERFIL: Crianças ---
   {
@@ -247,6 +257,17 @@ const REGRAS = [
   },
 
   // --- DOCUMENTAÇÃO: Financeiro e Cronograma (E10-E14) ---
+  {
+    condicao: (e) => !e.quemPaga,
+    tarefa: {
+      titulo: 'Definir quem paga o casamento',
+      descricao: 'Estabeleça a divisão de custos entre noivos, famílias ou outras fontes. Documente as responsabilidades para evitar conflitos.',
+      categoria: 'Documentação',
+      prazo: 270,
+      prioridade: 'obrigatoria',
+    },
+  },
+
   {
     condicao: (e) => e.quemPaga && !e.formaPagamento,
     tarefa: {
@@ -842,7 +863,7 @@ const REGRAS = [
     },
   },
   {
-    condicao: (e) => (e.luaDeMel === true || e.luaDeMel === 'sim') && e.destinoLuaDeMel && !e.destinoLuaDeMel.toLowerCase().includes('brasil') && e.destinoLuaDeMel.toLowerCase() !== 'nacional',
+    condicao: (e) => (e.luaDeMel === true || e.luaDeMel === 'sim') && isDestinoInternacional(e.destinoLuaDeMel),
     tarefa: {
       titulo: 'Verificar necessidade de visto para o destino da lua de mel',
       descricao: 'Consulte o consulado do país de destino com antecedência.',
@@ -862,7 +883,7 @@ const REGRAS = [
     },
   },
   {
-    condicao: (e) => (e.luaDeMel === true || e.luaDeMel === 'sim') && e.visto !== true && e.destinoLuaDeMel && !e.destinoLuaDeMel.toLowerCase().includes('brasil') && e.destinoLuaDeMel.toLowerCase() !== 'nacional',
+    condicao: (e) => (e.luaDeMel === true || e.luaDeMel === 'sim') && e.visto !== true && isDestinoInternacional(e.destinoLuaDeMel),
     tarefa: {
       titulo: 'Solicitar visto para o destino da lua de mel',
       descricao: 'Verifique prazo de processamento e documentação necessária.',
@@ -872,7 +893,7 @@ const REGRAS = [
     },
   },
   {
-    condicao: (e) => (e.luaDeMel === true || e.luaDeMel === 'sim') && e.vacinas !== true && e.destinoLuaDeMel && !e.destinoLuaDeMel.toLowerCase().includes('brasil') && e.destinoLuaDeMel.toLowerCase() !== 'nacional',
+    condicao: (e) => (e.luaDeMel === true || e.luaDeMel === 'sim') && e.vacinas !== true && isDestinoInternacional(e.destinoLuaDeMel),
     tarefa: {
       titulo: 'Verificar vacinas obrigatórias para o destino da lua de mel',
       descricao: 'Consulte o posto de saúde ou centro de vacinação internacional.',
