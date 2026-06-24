@@ -1,11 +1,10 @@
 // Icon.jsx — Descomplicaí Design System
-// 67 ícones SVG exclusivos, desenhados à mão
 // API: <Icon name="edit" size={20} color="#8B6F5E" className="" />
 // viewBox 24×24 · stroke-width 1.5 · strokeLinecap round · strokeLinejoin round · outline only
 
 const icons = {
 
-  // ─── EXISTENTES REDESENHADOS ───────────────────────────────────────────────
+  // ─── EXISTENTES ───────────────────────────────────────────────────────────
 
   home: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -181,12 +180,9 @@ const icons = {
 
   store: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      {/* fachada: vitrine + porta + janelas */}
-      <rect x="2" y="10" width="20" height="12" rx="1" />
-      <path d="M2 10l2-6h16l2 6" />
-      <rect x="4" y="12" width="6" height="5" rx="1" />
-      <rect x="9" y="15" width="6" height="7" rx="1" />
-      <rect x="14" y="12" width="6" height="5" rx="1" />
+      <path d="M3 9h18v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z" />
+      <path d="M3 9l2.5-6h13L21 9" />
+      <path d="M9 21v-6h6v6" />
     </g>
   ),
 
@@ -312,13 +308,10 @@ const icons = {
 
   fornecedores: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      {/* vitrine: fachada plana com grande janela, divisória e porta */}
-      <rect x="2" y="3" width="20" height="18" rx="2" />
-      <path d="M2 9h20" />
-      <path d="M2 14h20" />
-      <rect x="5" y="16" width="5" height="5" rx="1" />
-      <rect x="14" y="16" width="5" height="5" rx="1" />
-      <rect x="5" y="11" width="14" height="3" rx="0.5" />
+      <rect x="2" y="7" width="20" height="14" rx="2" />
+      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+      <path d="M12 12v4" />
+      <path d="M2 12h20" />
     </g>
   ),
 
@@ -326,10 +319,9 @@ const icons = {
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <rect x="2" y="5" width="20" height="16" rx="2" />
       <path d="M2 10h20" />
-      <path d="M12 5V3" />
-      <path d="M12 14v-2.5" />
-      <path d="M14.5 12a2.5 2.5 0 0 0-2.5-1.5A2 2 0 0 0 12 14.5a2 2 0 0 1 0 4 2.5 2.5 0 0 1-2.5-1.5" />
-      <path d="M12 18.5V21" />
+      <path d="M12 14v-1.5" />
+      <path d="M14 13a2 2 0 0 0-2-1.5A1.5 1.5 0 0 0 12 14.5a1.5 1.5 0 0 1 0 3A2 2 0 0 1 10 16" />
+      <path d="M12 17.5V19" />
     </g>
   ),
 
@@ -343,9 +335,7 @@ const icons = {
 
   mesas: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      {/* planta baixa: mesa oval central + 6 cadeiras ao redor */}
       <ellipse cx="12" cy="12" rx="5" ry="3.5" />
-      {/* cadeiras: pequenos retângulos ao redor da elipse */}
       <rect x="9.5" y="3" width="5" height="3" rx="1" />
       <rect x="9.5" y="18" width="5" height="3" rx="1" />
       <rect x="2" y="7" width="3" height="3" rx="1" />
@@ -367,21 +357,20 @@ const icons = {
 
   memorial: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      {/* vela com chama */}
-      <path d="M12 7c-1 0-1.5-1-1-2s1.5-2 1-3c-.5 1-1 2 0 3.5" />
-      <path d="M10 7h4v10a2 2 0 0 1-2 2 2 2 0 0 1-2-2V7z" />
-      <path d="M8 19h8" />
-      <path d="M9 10.5h6" />
-      <path d="M9 13.5h6" />
+      <path d="M12 2c0 0-1 1.5-1 3s1 2.5 1 2.5S13 6.5 13 5s-1-3-1-3z" />
+      <rect x="9" y="7" width="6" height="12" rx="1" />
+      <path d="M9 11h6" />
+      <path d="M9 14h6" />
+      <path d="M7 19h10" />
     </g>
   ),
 
   colaborador: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="8" r="3.5" />
-      <path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7" />
-      <path d="M18 3l2 2-2 2" />
-      <path d="M20 5h-3" />
+      <circle cx="12" cy="7" r="3.5" />
+      <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" />
+      <path d="M19 3l2 2-2 2" />
+      <path d="M21 5h-4" />
     </g>
   ),
 
@@ -405,7 +394,6 @@ const icons = {
 
   buffet: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      {/* cloche: cúpula suave + pega + prato */}
       <path d="M12 4c-1 0-1.5.5-1.5 1s.5.8 1.5.8 1.5-.3 1.5-.8S13 4 12 4z" />
       <path d="M4.5 14c0-4.1 3.4-8.2 7.5-8.2S19.5 9.9 19.5 14" />
       <path d="M3 14h18" />
@@ -426,29 +414,32 @@ const icons = {
 
   bolo: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2c-.5 0-1 .5-1 1s.5 1 1 1 1-.5 1-1-.5-1-1-1z" />
-      <path d="M12 4v3" />
-      <rect x="4" y="7" width="16" height="6" rx="1" />
-      <rect x="2" y="13" width="20" height="8" rx="1" />
-      <path d="M2 17h20" />
-      <path d="M7 13v8M12 13v8M17 13v8" />
+      <path d="M12 2c0 0-.8 1-.8 2s.8 1.5.8 1.5.8-.5.8-1.5S12 2 12 2z" />
+      <rect x="4" y="9" width="16" height="5" rx="1" />
+      <rect x="2" y="14" width="20" height="7" rx="1" />
+      <path d="M4 14v7M8 14v7M12 14v7M16 14v7M20 14v7" />
     </g>
   ),
 
   decoracao: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2l2.5 7H22l-6 4.5 2.5 7L12 17l-6.5 3.5 2.5-7L2 9h7.5L12 2z" />
+      <path d="M12 3a3 3 0 0 1 3 3c0 2-1.5 3-3 5-1.5-2-3-3-3-5a3 3 0 0 1 3-3z" />
+      <path d="M5 10c1 0 2 .5 3 1.5" />
+      <path d="M19 10c-1 0-2 .5-3 1.5" />
+      <path d="M7 14c-.5 2 0 4 2 5" />
+      <path d="M17 14c.5 2 0 4-2 5" />
+      <path d="M10 19c0 1 .9 2 2 2s2-1 2-2" />
     </g>
   ),
 
   flores: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="10" r="2.5" />
-      <path d="M12 7.5C12 5 10 3 8 4s-2 5 0 6" />
-      <path d="M12 7.5C12 5 14 3 16 4s2 5 0 6" />
-      <path d="M12 12.5C10 13 8 15.5 9.5 17S13 17.5 14 16" />
-      <path d="M12 12.5C14 13 16 15.5 14.5 17S11 17.5 10 16" />
-      <path d="M12 17v5" />
+      <circle cx="12" cy="12" r="2.5" />
+      <ellipse cx="12" cy="7" rx="2" ry="3" />
+      <ellipse cx="12" cy="17" rx="2" ry="3" />
+      <ellipse cx="7" cy="12" rx="3" ry="2" />
+      <ellipse cx="17" cy="12" rx="3" ry="2" />
+      <path d="M12 19v3" />
     </g>
   ),
 
@@ -462,7 +453,6 @@ const icons = {
 
   banda: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      {/* microfone */}
       <rect x="9" y="2" width="6" height="10" rx="3" />
       <path d="M5 10a7 7 0 0 0 14 0" />
       <path d="M12 17v4" />
@@ -472,7 +462,6 @@ const icons = {
 
   dj: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      {/* vinil/disco */}
       <circle cx="12" cy="12" r="9" />
       <circle cx="12" cy="12" r="4" />
       <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
@@ -482,36 +471,35 @@ const icons = {
 
   beleza: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      {/* tesoura */}
-      <circle cx="7" cy="7" r="3" />
-      <circle cx="7" cy="17" r="3" />
-      <path d="M9.5 9.5L20 20" />
-      <path d="M9.5 14.5L20 4" />
-      <path d="M20 4l-1 1M20 20l-1-1" />
+      <circle cx="6" cy="6" r="2.5" />
+      <circle cx="6" cy="18" r="2.5" />
+      <line x1="8.5" y1="8.5" x2="20" y2="20" />
+      <line x1="8.5" y1="15.5" x2="20" y2="4" />
+      <circle cx="20" cy="4" r="1" fill="currentColor" stroke="none" />
+      <circle cx="20" cy="20" r="1" fill="currentColor" stroke="none" />
     </g>
   ),
 
   vestuario: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 8l-4-5-4 3-4-3-4 5 3 1v12h10V9l3-1z" />
+      <path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46l-2 6h4.28l.9 11.5h10.4l.9-11.5h4.28l-2-6z" />
     </g>
   ),
 
   cerimonia: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      {/* arco com duas colunas */}
-      <path d="M4 20V8a8 8 0 0 1 16 0v12" />
-      <path d="M4 20h16" />
-      <path d="M4 8h16" />
+      <path d="M4 20V12a8 8 0 0 1 16 0v8" />
+      <path d="M2 20h20" />
+      <path d="M9 20v-5a3 3 0 0 1 6 0v5" />
     </g>
   ),
 
   celebrante: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="6" r="3" />
-      <path d="M8 9.5c-2 1-4 3-4 6h16c0-3-2-5-4-6" />
-      <path d="M9 21l3-5 3 5" />
-      <path d="M9 21h6" />
+      <path d="M6 21v-2a6 6 0 0 1 12 0v2" />
+      <path d="M12 13v3" />
+      <path d="M10 14l2-1 2 1" />
     </g>
   ),
 
@@ -536,9 +524,9 @@ const icons = {
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M14 2H6a1 1 0 0 0-1 1v18a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8L14 2z" />
       <path d="M14 2v6h6" />
-      <path d="M12 11l-3 8" />
-      <path d="M9 15h6" />
-      <path d="M15 11l-3 8" />
+      <path d="M8 13h8" />
+      <path d="M8 17h5" />
+      <path d="M10 9l1 2 2-4" />
     </g>
   ),
 
@@ -551,11 +539,10 @@ const icons = {
 
   animacaoInfantil: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      {/* balão de festa */}
       <ellipse cx="12" cy="9" rx="6" ry="7" />
-      <path d="M12 16c-.5 1-1 2-1 3" />
-      <path d="M11 19h2" />
-      <path d="M8 5C7 3.5 8 2 9.5 2" />
+      <path d="M12 16c-.3.8-.7 1.7-.8 2.5" />
+      <line x1="11" y1="18.5" x2="13" y2="18.5" />
+      <path d="M9 5.5C8 4 8.5 2.5 10 2" />
     </g>
   ),
 
