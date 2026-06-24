@@ -1,11 +1,11 @@
 /* BreathTransition.module.css
    Animação de respiro visual entre etapas do memorial
-   Agora mais perceptível: overlay mais opaco, scale maior, brilho sutil */
+   Efeito: overlay colorido faz fade suave (inspira → expira)
+   Duração: 400ms total (200ms subida + 200ms descida)
+   Sem scale/zoom — apenas luminosidade e cor */
 
 .wrapper {
   position: relative;
-  transition: transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform;
 }
 
 .overlay {
@@ -13,8 +13,13 @@
   inset: 0;
   z-index: var(--z-modal);
   pointer-events: none;
-  transition: opacity 110ms ease, backdrop-filter 110ms ease;
-  will-change: opacity, backdrop-filter;
+  opacity: 0;
+  transition: opacity 200ms ease-in-out;
+  will-change: opacity;
+}
+
+.overlayActive {
+  opacity: 0.20;
 }
 
 /* Texto exclusivo para leitores de tela */
@@ -32,13 +37,8 @@
 
 /* Respeita prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
-  .wrapper {
-    transition: none !important;
-    transform: none !important;
-  }
   .overlay {
     transition: none !important;
     opacity: 0 !important;
-    backdrop-filter: none !important;
   }
 }

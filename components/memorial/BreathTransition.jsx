@@ -1,8 +1,7 @@
 // components/memorial/BreathTransition.jsx
 // Animação de "respiro visual" entre etapas do questionário
-// Overlay: opacidade 0 → 0.22 → 0 em 220ms
-// Card selecionado: scale 1 → 1.035 → 1 em 220ms
-// Brilho sutil: backdrop-filter brightness(0.97)
+// O card clicado pulsa suavemente na cor escolhida antes de avançar
+// Sistema aguarda 400ms (respiro visual mais perceptível e elegante)
 // Respeita prefers-reduced-motion
 
 import React, { useState, useEffect } from 'react';
@@ -11,7 +10,7 @@ import styles from './BreathTransition.module.css';
 
 export default function BreathTransition({ ativa, cor, children }) {
   const [prefersReduced, setPrefersReduced] = useState(false);
-  const [animState, setAnimState] = useState('idle'); // idle | active | fading
+  const [fase, setFase] = useState('idle'); // idle | inhale | exhale
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -22,45 +21,42 @@ export default function BreathTransition({ ativa, cor, children }) {
   }, []);
 
   useEffect(() => {
-    if (!ativa || prefersReduced) return;
+    if (!ativa || prefersReduced) {
+      setFase('idle');
+      return;
+    }
 
-    setAnimState('active');
-    const fadeTimeout = setTimeout(() => setAnimState('fading'), 110);
-    const endTimeout = setTimeout(() => setAnimState('idle'), 220);
+    // Ciclo de respiração: inspira (200ms) → expira (200ms)
+    setFase('inhale');
+    const exhaleTimeout = setTimeout(() => setFase('exhale'), 200);
+    const idleTimeout = setTimeout(() => setFase('idle'), 400);
 
     return () => {
-      clearTimeout(fadeTimeout);
-      clearTimeout(endTimeout);
+      clearTimeout(exhaleTimeout);
+      clearTimeout(idleTimeout);
     };
   }, [ativa, prefersReduced]);
 
   if (prefersReduced) return <>{children}</>;
 
-  const overlayOpacity = animState === 'active' ? 0.22 : 0;
-  const wrapperTransform =
-    animState === 'active' || animState === 'fading' ? 'scale(1.035)' : 'scale(1)';
-  const backdropFilter = animState === 'active' ? 'brightness(0.97)' : 'brightness(1)';
+  const isBreathing = fase === 'inhale' || fase === 'exhale';
 
   return (
     <div
       className={styles.wrapper}
-      style={{ transform: wrapperTransform }}
       aria-live="polite"
       aria-atomic="true"
       role="status"
     >
       {children}
       <div className={styles.srOnly}>
-        {ativa ? 'Avançando para a próxima etapa...' : ''}
+        {isBreathing ? 'Avançando para a próxima etapa...' : ''}
       </div>
       <div
         aria-hidden="true"
-        className={styles.overlay}
+        className={`${styles.overlay} ${isBreathing ? styles.overlayActive : ''}`}
         style={{
           backgroundColor: cor || 'var(--color-brand)',
-          opacity: overlayOpacity,
-          backdropFilter: backdropFilter,
-          WebkitBackdropFilter: backdropFilter,
         }}
       />
     </div>

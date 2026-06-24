@@ -1,77 +1,49 @@
-# Instalação — Sprint 1: Respiro Visual + Acessibilidade + Ícones
+# Instalação — Respiro Visual + Linguagem Inclusiva
 
 ## Arquivos no pacote
 
-| Arquivo | Ação | Prioridade |
-|---------|------|------------|
-| `components/memorial/BreathTransition.jsx` | Substituir | P1 |
-| `components/memorial/BreathTransition.module.css` | Criar (novo) | P1 |
-| `components/memorial/MemorialOrchestrator.jsx` | Substituir | P1 |
-| `components/memorial/steps/Step01Modo.jsx` | Substituir | P1/P2 |
-| `styles/tokens.css` | Substituir | P2 |
-| `styles/globals.css` | Substituir | P2 |
-| `pages/_document.jsx` | Substituir | P2 |
+| Arquivo | Ação | O que resolve |
+|---------|------|---------------|
+| `utils/linguagemCasal.js` | Criar (novo) | Utilitário de linguagem inclusiva — nunca mais hardcode "noiva/noivo" |
+| `components/memorial/BreathTransition.jsx` | Substituir | Respiro redesenhado: fade suave de cor, sem zoom |
+| `components/memorial/BreathTransition.module.css` | Substituir | CSS com animação de respiração (inspira → expira) |
+| `components/memorial/steps/Step00Casal.jsx` | Substituir | Título adapta conforme perfil do casal |
+| `components/memorial/steps/Step02NomeCasal.jsx` | Substituir | Placeholders dos inputs adaptam conforme gênero |
 
-## Comandos para aplicar
+## Comandos
 
 ```bash
 cd ~/descomplicai
-unzip -o sprint1-acessibilidade-respiro.zip
+unzip -o sprint1-respiro-linguagem.zip
 ```
 
 ## O que mudou
 
-### Prioridade 1 — Respiro Visual
-- **BreathTransition** agora usa CSS Module (não mais inline styles)
-- Adicionado `aria-live="polite"`, `role="status"`, texto `.sr-only` para leitores de tela
-- **MemorialOrchestrator** passa a cor do card selecionado para o BreathTransition
-- **Step01Modo** demonstra como passar a cor: `onSelect(campo, valor, cor)`
-- `handleSelect` aceita terceiro parâmetro opcional `cor`
+### Respiro visual — agora elegante
+- ❌ **Removido:** scale/zoom mecânico (parecia PowerPoint)
+- ✅ **Novo:** overlay colorido faz fade suave — opacidade 0 → 0.20 → 0 em 400ms
+- Ciclo: inspira (200ms) → expira (200ms) — como um respirar real
+- Sem distorção de layout, sem zoom abrupto
 
-### Prioridade 2 — Acessibilidade
-- **VLibras removido** — script do gov federal nunca funcionou. Comentário explicativo no `_document.jsx`
-- **Skip-link** adicionado — teclado pode pular para conteúdo principal
-- **Focus-visible** — outline visível só para navegação por teclado
-- **`.sr-only`** — classe utilitária para texto exclusivo de leitores de tela
-- **`tokens.css`** — adicionado `@media (prefers-reduced-motion: reduce)` e `@media (prefers-contrast: high)`
-- **`globals.css`** — regras de acessibilidade globais (focus, skip-link, reduced-motion)
-- **Step01Modo** — `aria-label` descritivo no Card, `role="radio"`, `aria-checked`
+### Linguagem inclusiva — zero hardcode
+- `utils/linguagemCasal.js` centraliza todos os termos
+- Suporta: `noiva-noivo`, `duas-noivas`, `dois-noivos`, `nao-especificar`
+- Termos disponíveis: `casal`, `pessoa1`, `pessoa2`, `pronome`, `possessivo`, `artigo`, `chamada`, `genero1`, `genero2`
+- `adaptarFrase('Quem são {casal}?', 'duas-noivas')` → `"Quem são as noivas?"`
 
-### Prioridade 3 — Ícones faltantes (especificação para o Claude)
+### Step00Casal
+- Título muda conforme perfil: "Quem está se casando?" (neutro) → "Quem são as noivas?" (duas noivas)
+- Placeholder dos inputs adapta: "Ex: Ana" (feminino) / "Ex: Pedro" (masculino)
 
-Adicione ao `components/ui/Icon.jsx` quando o Claude desenhar:
+### Step02NomeCasal
+- Labels dos inputs permanecem neutras ("primeira pessoa" / "segunda pessoa")
+- Placeholders adaptam conforme gênero do perfil
 
+## Próximos passos
+
+Replicar o padrão nos demais steps quando fizer a auditoria completa de hardcode:
 ```javascript
-rings: (
-  <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <ellipse cx="9" cy="12" rx="4" ry="4.5" transform="rotate(-30 9 12)" />
-    <ellipse cx="15" cy="12" rx="4" ry="4.5" transform="rotate(30 15 12)" />
-  </g>
-),
-
-flower: (
-  <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="10" r="2" />
-    <path d="M12 6c1.5-2 3-2 4.5 0s0 4-4.5 4" />
-    <path d="M12 6c-1.5-2-3-2-4.5 0s0 4 4.5 4" />
-    <path d="M12 14c1.5 2 3 2 4.5 0s0-4-4.5-4" />
-    <path d="M12 14c-1.5 2-3 2-4.5 0s0-4 4.5-4" />
-    <path d="M12 14v6" />
-  </g>
-),
-
-sparkle: (
-  <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
-    <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
-  </g>
-),
+import { adaptarFrase } from '../../../utils/linguagemCasal';
+// ...
+const titulo = adaptarFrase('Como {pronomeCap} preferem planejar?', perfil);
 ```
-
-**Nota:** O `sparkle` já é referenciado no Step01Modo. Atualmente o Icon.jsx mostra `null` em dev (warning no console). Quando o ícone for adicionado, renderiza automaticamente.
-
-## Próximos passos (não incluídos neste pacote)
-
-1. **Replicar o padrão ARIA nos demais steps** — cada step deve passar `cor` no `onSelect` e ter `aria-label` nos cards
-2. **Reimplementar VLibras** — quando houver uma solução estável (widget npm ou iframe)
-3. **Adicionar ícones `rings`, `flower`, `sparkle`** ao `Icon.jsx` via Claude
