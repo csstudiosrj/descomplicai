@@ -269,6 +269,37 @@ const REGRAS = [
   },
 
   {
+    condicao: (e) => !e.cronogramaDia,
+    tarefa: {
+      titulo: 'Montar cronograma do dia do casamento',
+      descricao: 'Elabore um cronograma detalhado do dia do casamento com horários de chegada dos fornecedores, making of, cerimônia, coquetel, festa e saída. Compartilhe com cerimonialista e fornecedores.',
+      categoria: 'Planejamento',
+      prazo: 30,
+      prioridade: 'obrigatoria',
+    },
+  },
+  {
+    condicao: (e) => !e.horarioMakingOfNoiva,
+    tarefa: {
+      titulo: 'Definir horário do making of da noiva',
+      descricao: 'Estabeleça o horário de início do making of da noiva considerando o horário da cerimônia, tempo de maquiagem, cabelo e fotos. Reserve buffer para imprevistos.',
+      categoria: 'Planejamento',
+      prazo: 60,
+      prioridade: 'recomendada',
+    },
+  },
+  {
+    condicao: (e) => !e.horarioMakingOfNoivo,
+    tarefa: {
+      titulo: 'Definir horário do making of do noivo',
+      descricao: 'Estabeleça o horário de início do making of do noivo considerando o horário da cerimônia, tempo de barbearia/arrumação e fotos. Coordene com o horário da noiva.',
+      categoria: 'Planejamento',
+      prazo: 60,
+      prioridade: 'recomendada',
+    },
+  },
+
+  {
     condicao: (e) => e.quemPaga && !e.formaPagamento,
     tarefa: {
       titulo: 'Definir forma de pagamento dos fornecedores',
