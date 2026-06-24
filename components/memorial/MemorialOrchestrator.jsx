@@ -1,5 +1,5 @@
 // components/memorial/MemorialOrchestrator.jsx
-// AJUSTADO: delay de 500ms para o respiro visual ser perceptível
+// HOTFIX: corrigido typo salvandoAgoro -> salvandoAgora
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -238,7 +238,6 @@ export default function MemorialOrchestrator() {
 
     const novoEstado = { ...estado, [campo]: valor };
 
-    // Aguarda 500ms para o respiro visual ser perceptível
     setTimeout(() => {
       const proxima = calcularProximaEtapa(novoEstado, estado.etapaAtual);
       const etapaId = getEtapaPorIndice(proxima)?.id;
@@ -309,7 +308,7 @@ export default function MemorialOrchestrator() {
     <BreathTransition ativa={transicionando} cor={corTransicao || 'var(--color-brand-lighter)'}>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', backgroundColor: 'var(--color-off-white)' }}>
         <ProgressBar progress={progress} blockName={blockName} />
-        {salvandoAgoro && (
+        {salvandoAgora && (
           <div style={{ position: 'fixed', top: '4px', right: 'var(--space-4)', zIndex: 'var(--z-sticky)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-brand)', animation: 'pulse 1.5s ease-in-out infinite' }} />
             <style jsx>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
