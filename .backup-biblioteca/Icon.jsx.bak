@@ -251,7 +251,7 @@ const icons = {
   warning: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="9" />
-      <path d="M12 8v4" />
+      <path d="M12 8v5" />
       <circle cx="12" cy="16.5" r="0.75" fill="currentColor" stroke="none" />
     </g>
   ),
@@ -750,7 +750,7 @@ const icons = {
     </g>
   ),
 
-  // ─── FUNIL KANBAN ────────────────────────────────────────────────────────
+  // ─── NOVOS: FUNIL KANBAN ─────────────────────────────────────────────────
 
   userPlus: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -771,24 +771,6 @@ const icons = {
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="3" width="6" height="18" rx="2" />
       <rect x="15" y="3" width="6" height="18" rx="2" />
-    </g>
-  ),
-
-  // ─── BIBLIOTECA ──────────────────────────────────────────────────────────
-
-  template: (
-    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4" y="3" width="16" height="18" rx="2" />
-      <path d="M8 3v18" />
-      <path d="M12 8h5M12 12h5M12 16h3" />
-    </g>
-  ),
-
-  bookOpen: (
-    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 6s2-2 5-2 5 2 5 2v12s-2-2-5-2-5 2-5 2V6z" />
-      <path d="M12 6s2-2 5-2 5 2 5 2v12s-2-2-5-2-5 2-5 2V6z" />
-      <path d="M12 6v12" />
     </g>
   ),
 

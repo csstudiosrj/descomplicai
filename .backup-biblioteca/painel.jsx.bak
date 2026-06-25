@@ -10,9 +10,7 @@ export default function PainelCerimonialista() {
   const router = useRouter();
   const { user, loading, cerimonialista, isCerimonialista, signOut } = useAuth();
   const [leadsCount, setLeadsCount] = useState(0);
-  const [modelosCount, setModelosCount] = useState(0);
   const [leadsLoading, setLeadsLoading] = useState(true);
-  const [modelosLoading, setModelosLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -21,34 +19,25 @@ export default function PainelCerimonialista() {
   }, [loading, user, router]);
 
   useEffect(() => {
-    async function buscarDados() {
+    async function buscarLeads() {
       if (!cerimonialista?.id) {
         setLeadsLoading(false);
-        setModelosLoading(false);
         return;
       }
+      const { count, error } = await supabase
+        .from('cerimonialista_leads')
+        .select('*', { count: 'exact', head: true })
+        .eq('cerimonialista_id', cerimonialista.id)
+        .neq('estagio', 'descartado');
 
-      const [leadsRes, modelosRes] = await Promise.all([
-        supabase
-          .from('cerimonialista_leads')
-          .select('*', { count: 'exact', head: true })
-          .eq('cerimonialista_id', cerimonialista.id)
-          .neq('estagio', 'descartado'),
-        supabase
-          .from('cerimonialista_modelos')
-          .select('*', { count: 'exact', head: true })
-          .eq('cerimonialista_id', cerimonialista.id),
-      ]);
-
-      if (!leadsRes.error) setLeadsCount(leadsRes.count || 0);
-      if (!modelosRes.error) setModelosCount(modelosRes.count || 0);
-
+      if (!error) {
+        setLeadsCount(count || 0);
+      }
       setLeadsLoading(false);
-      setModelosLoading(false);
     }
 
     if (isCerimonialista && cerimonialista) {
-      buscarDados();
+      buscarLeads();
     }
   }, [isCerimonialista, cerimonialista]);
 
@@ -226,41 +215,6 @@ export default function PainelCerimonialista() {
               </div>
               <Button variant="secondary" size="sm" fullWidth onClick={() => router.push('/cerimonialista/funil')}>
                 Ver funil
-              </Button>
-            </div>
-
-            {/* Card Biblioteca */}
-            <div
-              style={{
-                backgroundColor: 'var(--color-surface)',
-                borderRadius: 'var(--radius-lg)',
-                padding: 'var(--space-5)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
-                <div
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--color-info-light)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Icon name="bookOpen" size={20} color="var(--color-info)" />
-                </div>
-                <div>
-                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Modelos salvos</p>
-                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)' }}>
-                    {modelosLoading ? '...' : modelosCount}
-                  </p>
-                </div>
-              </div>
-              <Button variant="secondary" size="sm" fullWidth onClick={() => router.push('/cerimonialista/biblioteca')}>
-                Ver biblioteca
               </Button>
             </div>
 
