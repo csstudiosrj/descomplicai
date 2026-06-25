@@ -929,6 +929,25 @@ const icons = {
     </g>
   ),
 
+  mirror: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="8" height="16" rx="2" />
+      <rect x="13" y="4" width="8" height="16" rx="2" />
+      <path d="M7 8v8M17 8v8" />
+      <circle cx="7" cy="10" r="1" fill="currentColor" stroke="none" />
+      <circle cx="17" cy="14" r="1" fill="currentColor" stroke="none" />
+    </g>
+  ),
+
+  share: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <path d="M8.5 10.5l7-3.5M8.5 13.5l7 3.5" />
+    </g>
+  ),
+
 };
 
 export default function Icon({ name, size = 24, color = 'currentColor', className = '' }) {
