@@ -1,45 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
 import Icon from '../../components/ui/Icon';
 import Button from '../../components/ui/Button';
-import { supabase } from '../../lib/supabase';
 
 export default function PainelCerimonialista() {
   const router = useRouter();
   const { user, loading, cerimonialista, isCerimonialista, signOut } = useAuth();
-  const [leadsCount, setLeadsCount] = useState(0);
-  const [leadsLoading, setLeadsLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
     }
   }, [loading, user, router]);
-
-  useEffect(() => {
-    async function buscarLeads() {
-      if (!cerimonialista?.id) {
-        setLeadsLoading(false);
-        return;
-      }
-      const { count, error } = await supabase
-        .from('cerimonialista_leads')
-        .select('*', { count: 'exact', head: true })
-        .eq('cerimonialista_id', cerimonialista.id)
-        .neq('estagio', 'descartado');
-
-      if (!error) {
-        setLeadsCount(count || 0);
-      }
-      setLeadsLoading(false);
-    }
-
-    if (isCerimonialista && cerimonialista) {
-      buscarLeads();
-    }
-  }, [isCerimonialista, cerimonialista]);
 
   if (loading) {
     return (
@@ -208,9 +182,7 @@ export default function PainelCerimonialista() {
                 </div>
                 <div>
                   <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Leads no funil</p>
-                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)' }}>
-                    {leadsLoading ? '...' : leadsCount}
-                  </p>
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)' }}>0</p>
                 </div>
               </div>
               <Button variant="secondary" size="sm" fullWidth onClick={() => router.push('/cerimonialista/funil')}>
