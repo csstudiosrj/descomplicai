@@ -130,7 +130,7 @@ export default function PainelCerimonialista() {
             Acesso restrito
           </h2>
           <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)' }}>
-            Esta área é exclusiva para cerimonialistas.
+            Esta area e exclusiva para cerimonialistas.
           </p>
           <Button variant="primary" onClick={() => router.push('/painel')} style={{ marginTop: 'var(--space-6)' }}>
             Ir para o painel do casal
@@ -159,7 +159,6 @@ export default function PainelCerimonialista() {
       </Head>
 
       <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-off-white)' }}>
-        {/* Header */}
         <header
           style={{
             backgroundColor: 'var(--color-surface)',
@@ -199,7 +198,7 @@ export default function PainelCerimonialista() {
               }}
             >
               <Icon name="shield" size={14} />
-              Trial — {diasRestantes()} dias grátis
+              Trial — {diasRestantes()} dias gratis
             </div>
           </div>
           <button
@@ -217,7 +216,6 @@ export default function PainelCerimonialista() {
           </button>
         </header>
 
-        {/* Conteúdo */}
         <main style={{ padding: 'var(--space-5)', maxWidth: '960px', margin: '0 auto' }}>
           <div
             style={{
@@ -226,7 +224,40 @@ export default function PainelCerimonialista() {
               gap: 'var(--space-4)',
             }}
           >
-            {/* Card Eventos Ativos */}
+            <div
+              style={{
+                backgroundColor: 'var(--color-surface)',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-5)',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+                <div
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'var(--color-brand-lighter)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Icon name="user" size={20} color="var(--color-brand)" />
+                </div>
+                <div>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Meu perfil</p>
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)' }}>
+                    Dados
+                  </p>
+                </div>
+              </div>
+              <Button variant="secondary" size="sm" fullWidth onClick={() => router.push('/cerimonialista/perfil')}>
+                Editar perfil
+              </Button>
+            </div>
+
             <div
               style={{
                 backgroundColor: 'var(--color-surface)',
@@ -261,7 +292,6 @@ export default function PainelCerimonialista() {
               </Button>
             </div>
 
-            {/* Card Leads */}
             <div
               style={{
                 backgroundColor: 'var(--color-surface)',
@@ -296,7 +326,6 @@ export default function PainelCerimonialista() {
               </Button>
             </div>
 
-            {/* Card Biblioteca */}
             <div
               style={{
                 backgroundColor: 'var(--color-surface)',
@@ -331,7 +360,6 @@ export default function PainelCerimonialista() {
               </Button>
             </div>
 
-            {/* Card Financeiro */}
             <div
               style={{
                 backgroundColor: 'var(--color-surface)',
@@ -366,7 +394,6 @@ export default function PainelCerimonialista() {
               </Button>
             </div>
 
-            {/* Card Equipe */}
             <div
               style={{
                 backgroundColor: 'var(--color-surface)',
@@ -401,7 +428,6 @@ export default function PainelCerimonialista() {
               </Button>
             </div>
 
-            {/* Card Convites */}
             <div
               style={{
                 backgroundColor: 'var(--color-surface)',
@@ -436,7 +462,6 @@ export default function PainelCerimonialista() {
               </Button>
             </div>
 
-            {/* Card Chat */}
             <div
               style={{
                 backgroundColor: 'var(--color-surface)',
@@ -465,7 +490,7 @@ export default function PainelCerimonialista() {
                     padding: '0 6px',
                     zIndex: 2,
                   }}
-                  aria-label={`${mensagensNaoLidas} mensagens não lidas`}
+                  aria-label={`${mensagensNaoLidas} mensagens nao lidas`}
                 >
                   {mensagensNaoLidas > 99 ? '99+' : mensagensNaoLidas}
                 </span>
@@ -500,7 +525,6 @@ export default function PainelCerimonialista() {
               </Button>
             </div>
 
-            {/* Card Roteiro do Evento */}
             <div
               style={{
                 backgroundColor: 'var(--color-surface)',
@@ -535,7 +559,6 @@ export default function PainelCerimonialista() {
               </Button>
             </div>
 
-            {/* NOVO: Card Eventos dos Casais */}
             <div
               style={{
                 backgroundColor: 'var(--color-surface)',
@@ -580,7 +603,7 @@ export default function PainelCerimonialista() {
                   router.push('/cerimonialista/eventos');
                 }}
               >
-                Ver painéis espelhados
+                Ver paineis espelhados
               </Button>
             </div>
           </div>
