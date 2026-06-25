@@ -1,40 +1,77 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import Icon from '../ui/Icon';
 import ChatMensagem from './ChatMensagem';
 import ChatInput from './ChatInput';
 
 export default function ChatInterface({ eventoId, modo = 'casal' }) {
-  const { user } = useAuth();
+  const { user, supabase } = useAuth();
   const [mensagens, setMensagens] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [outroNome, setOutroNome] = useState('');
-  const [outroOnline, setOutroOnline] = useState(false);
+  const [erro, setErro] = useState(null);
   const scrollRef = useRef(null);
-  const containerRef = useRef(null);
+  const pollingRef = useRef(null);
+  const ultimoIdRef = useRef(null);
 
-  // ─── Carregar mensagens ─────────────────────────────────────
+  // ─── Obter token da sessão ────────────────────────────────
+  const getToken = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  }, [supabase]);
+
+  // ─── Carregar mensagens via API ───────────────────────────
+  const carregarMensagens = useCallback(async (silencioso = false) => {
+    if (!eventoId) return;
+    if (!silencioso) setCarregando(true);
+    setErro(null);
+
+    try {
+      const token = await getToken();
+      if (!token) {
+        setErro('Sessão expirada. Faça login novamente.');
+        return;
+      }
+
+      const res = await fetch(`/api/mensagens/listar?evento_id=${eventoId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErro(data.erro || 'Erro ao carregar mensagens');
+        return;
+      }
+
+      const lista = data.mensagens || [];
+      setMensagens((prev) => {
+        // Preservar estado de lida localmente se já existir
+        const mapa = new Map(prev.map((m) => [m.id, m]));
+        const merged = lista.map((m) => ({
+          ...m,
+          lida: mapa.has(m.id) ? mapa.get(m.id).lida : m.lida,
+        }));
+        return merged;
+      });
+
+      if (lista.length > 0) {
+        ultimoIdRef.current = lista[lista.length - 1].id;
+      }
+    } catch (err) {
+      console.error('[Chat] erro ao carregar:', err);
+      setErro('Erro de conexão. Tentando novamente...');
+    } finally {
+      if (!silencioso) setCarregando(false);
+    }
+  }, [eventoId, getToken]);
+
+  // ─── Buscar nome do outro participante ────────────────────
   useEffect(() => {
     if (!eventoId) return;
 
-    async function carregar() {
-      setCarregando(true);
-
-      const { data, error } = await supabase
-        .from('mensagens')
-        .select('*')
-        .eq('evento_id', eventoId)
-        .order('criado_em', { ascending: true });
-
-      if (error) {
-        console.error('[Chat] erro ao carregar mensagens:', error);
-      } else {
-        setMensagens(data || []);
-      }
-
-      // Buscar nome do outro participante
+    async function buscarNome() {
       const { data: eventoData } = await supabase
         .from('eventos')
         .select('cerimonialista_id, usuario_id, nome_evento')
@@ -53,14 +90,30 @@ export default function ChatInterface({ eventoId, modo = 'casal' }) {
           setOutroNome(eventoData.nome_evento || 'Casal');
         }
       }
-
-      setCarregando(false);
     }
 
-    carregar();
-  }, [eventoId, modo]);
+    buscarNome();
+  }, [eventoId, modo, supabase]);
 
-  // ─── Marcar mensagens como lidas ────────────────────────────
+  // ─── Carregamento inicial ─────────────────────────────────
+  useEffect(() => {
+    carregarMensagens(false);
+  }, [carregarMensagens]);
+
+  // ─── Polling a cada 5 segundos ────────────────────────────
+  useEffect(() => {
+    if (!eventoId) return;
+
+    pollingRef.current = setInterval(() => {
+      carregarMensagens(true);
+    }, 5000);
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, [eventoId, carregarMensagens]);
+
+  // ─── Marcar mensagens como lidas ao abrir ─────────────────
   useEffect(() => {
     if (!eventoId || !user?.id || mensagens.length === 0) return;
 
@@ -71,87 +124,86 @@ export default function ChatInterface({ eventoId, modo = 'casal' }) {
     if (naoLidas.length === 0) return;
 
     async function marcarLidas() {
-      const ids = naoLidas.map((m) => m.id);
-      await supabase
-        .from('mensagens')
-        .update({ lida: true })
-        .in('id', ids);
+      try {
+        const token = await getToken();
+        if (!token) return;
+
+        await fetch('/api/mensagens/lida', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ evento_id: eventoId }),
+        });
+
+        // Atualizar estado local imediatamente
+        setMensagens((prev) =>
+          prev.map((m) =>
+            m.remetente_id !== user.id && !m.lida ? { ...m, lida: true } : m
+          )
+        );
+      } catch (err) {
+        console.error('[Chat] erro ao marcar como lida:', err);
+      }
     }
 
     marcarLidas();
-  }, [mensagens, eventoId, user]);
+  }, [mensagens, eventoId, user, getToken]);
 
-  // ─── Real-time subscription ───────────────────────────────
-  useEffect(() => {
-    if (!eventoId) return;
-
-    const canal = supabase
-      .channel(`chat-${eventoId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'mensagens',
-          filter: `evento_id=eq.${eventoId}`,
-        },
-        (payload) => {
-          setMensagens((prev) => {
-            if (prev.some((m) => m.id === payload.new.id)) return prev;
-            return [...prev, payload.new];
-          });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'mensagens',
-          filter: `evento_id=eq.${eventoId}`,
-        },
-        (payload) => {
-          setMensagens((prev) =>
-            prev.map((m) => (m.id === payload.new.id ? payload.new : m))
-          );
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(canal);
-    };
-  }, [eventoId]);
-
-  // ─── Auto-scroll ────────────────────────────────────────────
+  // ─── Auto-scroll ──────────────────────────────────────────
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [mensagens]);
 
-  // ─── Enviar mensagem ────────────────────────────────────────
+  // ─── Enviar mensagem via API ──────────────────────────────
   const enviar = async (conteudo) => {
     if (!user?.id || !eventoId || enviando) return;
 
     setEnviando(true);
+    setErro(null);
 
-    const { error } = await supabase.from('mensagens').insert({
-      evento_id: eventoId,
-      remetente_id: user.id,
-      remetente_tipo: modo,
-      conteudo,
-      lida: false,
-    });
+    try {
+      const token = await getToken();
+      if (!token) {
+        setErro('Sessão expirada. Faça login novamente.');
+        setEnviando(false);
+        return;
+      }
 
-    if (error) {
-      console.error('[Chat] erro ao enviar:', error);
+      const res = await fetch('/api/mensagens/enviar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ evento_id: eventoId, conteudo }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErro(data.erro || 'Erro ao enviar mensagem');
+        setEnviando(false);
+        return;
+      }
+
+      // Adicionar mensagem localmente para feedback imediato
+      if (data.mensagem) {
+        setMensagens((prev) => {
+          if (prev.some((m) => m.id === data.mensagem.id)) return prev;
+          return [...prev, data.mensagem];
+        });
+      }
+    } catch (err) {
+      console.error('[Chat] erro ao enviar:', err);
+      setErro('Erro de conexão ao enviar mensagem');
+    } finally {
+      setEnviando(false);
     }
-
-    setEnviando(false);
   };
-
-  const isMe = (msg) => msg.remetente_id === user?.id;
 
   return (
     <div
@@ -207,17 +259,34 @@ export default function ChatInterface({ eventoId, modo = 'casal' }) {
           >
             {outroNome || 'Conversa'}
           </h2>
-          <span
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 'var(--text-xs)',
-              color: outroOnline ? 'var(--color-success)' : 'var(--color-text-muted)',
-            }}
-          >
-            {outroOnline ? 'Online' : ''}
-          </span>
         </div>
       </header>
+
+      {/* Aviso de segurança */}
+      <div
+        style={{
+          background: 'var(--color-warning-light)',
+          borderBottom: '1px solid var(--color-border)',
+          padding: 'var(--space-2) var(--space-4)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-2)',
+          flexShrink: 0,
+        }}
+        role="alert"
+      >
+        <Icon name="shield" size={16} color="var(--color-warning)" />
+        <span
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-xs)',
+            color: 'var(--color-warning)',
+            fontWeight: 'var(--font-medium)',
+          }}
+        >
+          Não compartilhe senhas ou dados bancários por aqui.
+        </span>
+      </div>
 
       {/* Área de mensagens */}
       <div
@@ -248,7 +317,25 @@ export default function ChatInterface({ eventoId, modo = 'casal' }) {
           </div>
         )}
 
-        {!carregando && mensagens.length === 0 && (
+        {erro && (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: 'var(--space-4)',
+              color: 'var(--color-danger)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-sm)',
+              background: 'var(--color-danger-light)',
+              margin: 'var(--space-4)',
+              borderRadius: 'var(--radius-md)',
+            }}
+            role="alert"
+          >
+            {erro}
+          </div>
+        )}
+
+        {!carregando && mensagens.length === 0 && !erro && (
           <div
             style={{
               flex: 1,
@@ -335,7 +422,7 @@ export default function ChatInterface({ eventoId, modo = 'casal' }) {
                     </span>
                   </div>
                 )}
-                <ChatMensagem mensagem={msg} isMe={isMe(msg)} />
+                <ChatMensagem mensagem={msg} modo={modo} />
               </React.Fragment>
             );
           })}

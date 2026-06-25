@@ -1,7 +1,7 @@
 import React from 'react';
 import Icon from '../ui/Icon';
 
-export default function ChatMensagem({ mensagem, isMe }) {
+export default function ChatMensagem({ mensagem, modo }) {
   const hora = new Date(mensagem.criado_em).toLocaleTimeString('pt-BR', {
     hour: '2-digit',
     minute: '2-digit',
@@ -24,35 +24,43 @@ export default function ChatMensagem({ mensagem, isMe }) {
     });
   }
 
+  // Posicionamento fixo: casal sempre à esquerda, cerimonialista sempre à direita
+  const isCasal = mensagem.remetente_tipo === 'casal';
+  const alinhamento = isCasal ? 'flex-start' : 'flex-end';
+  const bg = isCasal ? 'var(--color-white)' : 'var(--color-brand)';
+  const cor = isCasal ? 'var(--color-text-primary)' : 'var(--color-white)';
+  const borda = isCasal ? '1px solid var(--color-border)' : 'none';
+  const borderRadius = isCasal
+    ? 'var(--radius-md) var(--radius-md) var(--radius-md) 2px'
+    : 'var(--radius-md) var(--radius-md) 2px var(--radius-md)';
+
   return (
     <div
       style={{
         display: 'flex',
-        justifyContent: isMe ? 'flex-end' : 'flex-start',
+        justifyContent: alinhamento,
         padding: 'var(--space-2) var(--space-4)',
       }}
       role="listitem"
-      aria-label={isMe ? 'Mensagem enviada por você' : 'Mensagem recebida'}
+      aria-label={isCasal ? 'Mensagem do casal' : 'Mensagem do cerimonialista'}
     >
       <div
         style={{
           maxWidth: '75%',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: isMe ? 'flex-end' : 'flex-start',
+          alignItems: isCasal ? 'flex-start' : 'flex-end',
           gap: '4px',
         }}
       >
         <div
           style={{
-            background: isMe ? 'var(--color-brand)' : 'var(--color-white)',
-            color: isMe ? 'var(--color-white)' : 'var(--color-text-primary)',
-            borderRadius: isMe
-              ? 'var(--radius-md) var(--radius-md) 2px var(--radius-md)'
-              : 'var(--radius-md) var(--radius-md) var(--radius-md) 2px',
+            background: bg,
+            color: cor,
+            borderRadius: borderRadius,
             padding: 'var(--space-3) var(--space-4)',
             boxShadow: 'var(--shadow-sm)',
-            border: isMe ? 'none' : '1px solid var(--color-border)',
+            border: borda,
             wordBreak: 'break-word',
             fontFamily: 'var(--font-body)',
             fontSize: 'var(--text-sm)',
@@ -74,19 +82,19 @@ export default function ChatMensagem({ mensagem, isMe }) {
         >
           {labelData && <span>{labelData}</span>}
           <span>{hora}</span>
-          {isMe && (
+          {!isCasal && (
             <span
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                color: mensagem.lida ? 'var(--color-info)' : 'var(--color-text-muted)',
+                color: mensagem.lida ? 'var(--color-info-light)' : 'var(--color-text-muted)',
               }}
               aria-label={mensagem.lida ? 'Mensagem lida' : 'Mensagem enviada'}
             >
               <Icon
                 name={mensagem.lida ? 'checkDouble' : 'check'}
                 size={14}
-                color={mensagem.lida ? 'var(--color-info)' : 'var(--color-text-muted)'}
+                color={mensagem.lida ? 'var(--color-info-light)' : 'var(--color-text-muted)'}
               />
             </span>
           )}
