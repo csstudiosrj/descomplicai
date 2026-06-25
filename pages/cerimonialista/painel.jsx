@@ -14,11 +14,15 @@ export default function PainelCerimonialista() {
   const [saldoFinanceiro, setSaldoFinanceiro] = useState(0);
   const [assistentesCount, setAssistentesCount] = useState(0);
   const [convitesPendentes, setConvitesPendentes] = useState(0);
+  const [eventosAtivos, setEventosAtivos] = useState(0);
+  const [mensagensNaoLidas, setMensagensNaoLidas] = useState(0);
   const [leadsLoading, setLeadsLoading] = useState(true);
   const [modelosLoading, setModelosLoading] = useState(true);
   const [financeiroLoading, setFinanceiroLoading] = useState(true);
   const [assistentesLoading, setAssistentesLoading] = useState(true);
   const [convitesLoading, setConvitesLoading] = useState(true);
+  const [eventosLoading, setEventosLoading] = useState(true);
+  const [mensagensLoading, setMensagensLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -34,10 +38,12 @@ export default function PainelCerimonialista() {
         setFinanceiroLoading(false);
         setAssistentesLoading(false);
         setConvitesLoading(false);
+        setEventosLoading(false);
+        setMensagensLoading(false);
         return;
       }
 
-      const [leadsRes, modelosRes, finRes, assistRes, convitesRes] = await Promise.all([
+      const [leadsRes, modelosRes, finRes, assistRes, convitesRes, eventosRes] = await Promise.all([
         supabase
           .from('cerimonialista_leads')
           .select('*', { count: 'exact', head: true })
@@ -62,6 +68,11 @@ export default function PainelCerimonialista() {
           .eq('cerimonialista_id', cerimonialista.id)
           .eq('estagio', 'contratado')
           .is('convertido_evento_id', null),
+        supabase
+          .from('eventos')
+          .select('id')
+          .eq('cerimonialista_id', cerimonialista.id)
+          .eq('casal_confirmado', true),
       ]);
 
       if (!leadsRes.error) setLeadsCount(leadsRes.count || 0);
@@ -75,18 +86,33 @@ export default function PainelCerimonialista() {
 
       if (!assistRes.error) setAssistentesCount(assistRes.count || 0);
       if (!convitesRes.error) setConvitesPendentes(convitesRes.count || 0);
+      if (!eventosRes.error) setEventosAtivos(eventosRes.data?.length || 0);
+
+      // NOVO: Conta mensagens não lidas de todos os eventos do cerimonialista
+      if (eventosRes.data && eventosRes.data.length > 0) {
+        const eventoIds = eventosRes.data.map((e) => e.id);
+        const { count } = await supabase
+          .from('mensagens')
+          .select('*', { count: 'exact', head: true })
+          .in('evento_id', eventoIds)
+          .eq('lida', false)
+          .neq('remetente_id', user.id);
+        setMensagensNaoLidas(count || 0);
+      }
 
       setLeadsLoading(false);
       setModelosLoading(false);
       setFinanceiroLoading(false);
       setAssistentesLoading(false);
       setConvitesLoading(false);
+      setEventosLoading(false);
+      setMensagensLoading(false);
     }
 
     if (isCerimonialista && cerimonialista) {
       buscarDados();
     }
-  }, [isCerimonialista, cerimonialista]);
+  }, [isCerimonialista, cerimonialista, user]);
 
   if (loading) {
     return (
@@ -226,7 +252,9 @@ export default function PainelCerimonialista() {
                 </div>
                 <div>
                   <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Eventos ativos</p>
-                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)' }}>0</p>
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)' }}>
+                    {eventosLoading ? '...' : eventosAtivos}
+                  </p>
                 </div>
               </div>
               <Button variant="secondary" size="sm" fullWidth disabled>
@@ -406,6 +434,70 @@ export default function PainelCerimonialista() {
               </div>
               <Button variant="secondary" size="sm" fullWidth onClick={() => router.push('/cerimonialista/convites')}>
                 Gerenciar convites
+              </Button>
+            </div>
+
+            {/* NOVO: Card Chat */}
+            <div
+              style={{
+                backgroundColor: 'var(--color-surface)',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-5)',
+                border: '1px solid var(--color-border)',
+                position: 'relative',
+              }}
+            >
+              {mensagensNaoLidas > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
+                    background: 'var(--color-danger)',
+                    color: 'var(--color-white)',
+                    fontSize: 'var(--text-xs)',
+                    fontWeight: 'var(--font-bold)',
+                    minWidth: '20px',
+                    height: '20px',
+                    borderRadius: 'var(--radius-full)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0 6px',
+                    zIndex: 2,
+                  }}
+                  aria-label={`${mensagensNaoLidas} mensagens não lidas`}
+                >
+                  {mensagensNaoLidas > 99 ? '99+' : mensagensNaoLidas}
+                </span>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+                <div
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'var(--color-brand-lighter)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Icon name="chat" size={20} color="var(--color-brand)" />
+                </div>
+                <div>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+                    {mensagensNaoLidas > 0
+                      ? `${mensagensNaoLidas} mensagem${mensagensNaoLidas > 1 ? 's' : ''} nova${mensagensNaoLidas > 1 ? 's' : ''}`
+                      : 'Chat com casais'}
+                  </p>
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)' }}>
+                    {mensagensLoading ? '...' : (mensagensNaoLidas > 0 ? mensagensNaoLidas : 'Tudo lido')}
+                  </p>
+                </div>
+              </div>
+              <Button variant="secondary" size="sm" fullWidth onClick={() => router.push('/cerimonialista/chat')}>
+                Abrir chat
               </Button>
             </div>
 

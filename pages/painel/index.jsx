@@ -34,6 +34,9 @@ function PainelContent() {
   // NOVO: status do memorial para alerta inteligente
   const [memorialStatus, setMemorialStatus] = useState({ temMemorial: false, temEstado: false });
 
+  // NOVO: contador de mensagens não lidas do cerimonialista
+  const [mensagensNaoLidas, setMensagensNaoLidas] = useState(0);
+
   // Modal de orçamento (legado, via ícone no card financeiro)
   const [modalOrcamentoAberto, setModalOrcamentoAberto] = useState(false);
   const [valorOrcamento, setValorOrcamento] = useState(0);
@@ -86,6 +89,17 @@ function PainelContent() {
     // Só importa pre-fornecedores se tiver estado estruturado
     if (temEstado) {
       await importarPreFornecedores(eventoId, supabase, user.id);
+    }
+
+    // --- NOVO: Conta mensagens não lidas do cerimonialista ---
+    if (evento.cerimonialista_id) {
+      const { count } = await supabase
+        .from('mensagens')
+        .select('*', { count: 'exact', head: true })
+        .eq('evento_id', eventoId)
+        .eq('lida', false)
+        .neq('remetente_id', user.id);
+      setMensagensNaoLidas(count || 0);
     }
 
     const { data: fornData } = await supabase
@@ -418,6 +432,47 @@ function PainelContent() {
                 <div style={styles.cardRapidoInfo}>
                   <span style={styles.cardRapidoNumero}>{convidados.confirmados}<span style={styles.cardRapidoDe}> de </span>{convidados.total}</span>
                   <span style={styles.cardRapidoLabel}>Convidados confirmados</span>
+                </div>
+              </button>
+
+              {/* NOVO: Card de Chat */}
+              <button onClick={() => router.push('/painel/chat')} style={{ ...styles.cardRapido, position: 'relative' }}>
+                {mensagensNaoLidas > 0 && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '-6px',
+                      right: '-6px',
+                      background: 'var(--color-danger)',
+                      color: 'var(--color-white)',
+                      fontSize: 'var(--text-xs)',
+                      fontWeight: 'var(--font-bold)',
+                      minWidth: '20px',
+                      height: '20px',
+                      borderRadius: 'var(--radius-full)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 6px',
+                      zIndex: 2,
+                    }}
+                    aria-label={`${mensagensNaoLidas} mensagens não lidas`}
+                  >
+                    {mensagensNaoLidas > 99 ? '99+' : mensagensNaoLidas}
+                  </span>
+                )}
+                <div style={styles.cardRapidoIcone}>
+                  <Icon name="chat" size={24} color="var(--color-brand)" />
+                </div>
+                <div style={styles.cardRapidoInfo}>
+                  <span style={styles.cardRapidoNumero}>
+                    {evento?.cerimonialista_id ? 'Chat ativo' : 'Sem cerimonialista'}
+                  </span>
+                  <span style={styles.cardRapidoLabel}>
+                    {mensagensNaoLidas > 0
+                      ? `${mensagensNaoLidas} mensagem${mensagensNaoLidas > 1 ? 's' : ''} nova${mensagensNaoLidas > 1 ? 's' : ''}`
+                      : 'Converse com seu cerimonialista'}
+                  </span>
                 </div>
               </button>
 
