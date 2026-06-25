@@ -11,10 +11,8 @@ export default function PainelCerimonialista() {
   const { user, loading, cerimonialista, isCerimonialista, signOut } = useAuth();
   const [leadsCount, setLeadsCount] = useState(0);
   const [modelosCount, setModelosCount] = useState(0);
-  const [saldoFinanceiro, setSaldoFinanceiro] = useState(0);
   const [leadsLoading, setLeadsLoading] = useState(true);
   const [modelosLoading, setModelosLoading] = useState(true);
-  const [financeiroLoading, setFinanceiroLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -27,11 +25,10 @@ export default function PainelCerimonialista() {
       if (!cerimonialista?.id) {
         setLeadsLoading(false);
         setModelosLoading(false);
-        setFinanceiroLoading(false);
         return;
       }
 
-      const [leadsRes, modelosRes, finRes] = await Promise.all([
+      const [leadsRes, modelosRes] = await Promise.all([
         supabase
           .from('cerimonialista_leads')
           .select('*', { count: 'exact', head: true })
@@ -41,24 +38,13 @@ export default function PainelCerimonialista() {
           .from('cerimonialista_modelos')
           .select('*', { count: 'exact', head: true })
           .eq('cerimonialista_id', cerimonialista.id),
-        supabase
-          .from('cerimonialista_financeiro')
-          .select('tipo, valor')
-          .eq('cerimonialista_id', cerimonialista.id),
       ]);
 
       if (!leadsRes.error) setLeadsCount(leadsRes.count || 0);
       if (!modelosRes.error) setModelosCount(modelosRes.count || 0);
 
-      if (!finRes.error && finRes.data) {
-        const receitas = finRes.data.filter((f) => f.tipo === 'receita').reduce((s, f) => s + (f.valor || 0), 0);
-        const despesas = finRes.data.filter((f) => f.tipo === 'despesa').reduce((s, f) => s + (f.valor || 0), 0);
-        setSaldoFinanceiro(receitas - despesas);
-      }
-
       setLeadsLoading(false);
       setModelosLoading(false);
-      setFinanceiroLoading(false);
     }
 
     if (isCerimonialista && cerimonialista) {
@@ -99,10 +85,6 @@ export default function PainelCerimonialista() {
     const hoje = new Date();
     const diff = Math.ceil((inicio.getTime() + 15 * 24 * 60 * 60 * 1000 - hoje.getTime()) / (1000 * 60 * 60 * 24));
     return Math.max(0, diff);
-  };
-
-  const formatarValor = (valor) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
   };
 
   return (
@@ -279,41 +261,6 @@ export default function PainelCerimonialista() {
               </div>
               <Button variant="secondary" size="sm" fullWidth onClick={() => router.push('/cerimonialista/biblioteca')}>
                 Ver biblioteca
-              </Button>
-            </div>
-
-            {/* Card Financeiro */}
-            <div
-              style={{
-                backgroundColor: 'var(--color-surface)',
-                borderRadius: 'var(--radius-lg)',
-                padding: 'var(--space-5)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
-                <div
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--color-success-light)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Icon name="wallet" size={20} color="var(--color-success)" />
-                </div>
-                <div>
-                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Saldo</p>
-                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)' }}>
-                    {financeiroLoading ? '...' : formatarValor(saldoFinanceiro)}
-                  </p>
-                </div>
-              </div>
-              <Button variant="secondary" size="sm" fullWidth onClick={() => router.push('/cerimonialista/financeiro')}>
-                Ver financeiro
               </Button>
             </div>
 
