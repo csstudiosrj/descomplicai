@@ -12,11 +12,9 @@ export default function PainelCerimonialista() {
   const [leadsCount, setLeadsCount] = useState(0);
   const [modelosCount, setModelosCount] = useState(0);
   const [saldoFinanceiro, setSaldoFinanceiro] = useState(0);
-  const [assistentesCount, setAssistentesCount] = useState(0);
   const [leadsLoading, setLeadsLoading] = useState(true);
   const [modelosLoading, setModelosLoading] = useState(true);
   const [financeiroLoading, setFinanceiroLoading] = useState(true);
-  const [assistentesLoading, setAssistentesLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -30,11 +28,10 @@ export default function PainelCerimonialista() {
         setLeadsLoading(false);
         setModelosLoading(false);
         setFinanceiroLoading(false);
-        setAssistentesLoading(false);
         return;
       }
 
-      const [leadsRes, modelosRes, finRes, assistRes] = await Promise.all([
+      const [leadsRes, modelosRes, finRes] = await Promise.all([
         supabase
           .from('cerimonialista_leads')
           .select('*', { count: 'exact', head: true })
@@ -48,11 +45,6 @@ export default function PainelCerimonialista() {
           .from('cerimonialista_financeiro')
           .select('tipo, valor')
           .eq('cerimonialista_id', cerimonialista.id),
-        supabase
-          .from('cerimonialista_assistentes')
-          .select('*', { count: 'exact', head: true })
-          .eq('cerimonialista_id', cerimonialista.id)
-          .eq('ativo', true),
       ]);
 
       if (!leadsRes.error) setLeadsCount(leadsRes.count || 0);
@@ -64,12 +56,9 @@ export default function PainelCerimonialista() {
         setSaldoFinanceiro(receitas - despesas);
       }
 
-      if (!assistRes.error) setAssistentesCount(assistRes.count || 0);
-
       setLeadsLoading(false);
       setModelosLoading(false);
       setFinanceiroLoading(false);
-      setAssistentesLoading(false);
     }
 
     if (isCerimonialista && cerimonialista) {
@@ -325,41 +314,6 @@ export default function PainelCerimonialista() {
               </div>
               <Button variant="secondary" size="sm" fullWidth onClick={() => router.push('/cerimonialista/financeiro')}>
                 Ver financeiro
-              </Button>
-            </div>
-
-            {/* Card Equipe */}
-            <div
-              style={{
-                backgroundColor: 'var(--color-surface)',
-                borderRadius: 'var(--radius-lg)',
-                padding: 'var(--space-5)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
-                <div
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--color-brand-lighter)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Icon name="users" size={20} color="var(--color-brand)" />
-                </div>
-                <div>
-                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Equipe ativa</p>
-                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)' }}>
-                    {assistentesLoading ? '...' : assistentesCount}
-                  </p>
-                </div>
-              </div>
-              <Button variant="secondary" size="sm" fullWidth onClick={() => router.push('/cerimonialista/assistentes')}>
-                Gerenciar equipe
               </Button>
             </div>
 
