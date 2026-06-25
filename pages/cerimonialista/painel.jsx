@@ -88,7 +88,6 @@ export default function PainelCerimonialista() {
       if (!convitesRes.error) setConvitesPendentes(convitesRes.count || 0);
       if (!eventosRes.error) setEventosAtivos(eventosRes.data?.length || 0);
 
-      // NOVO: Conta mensagens não lidas de todos os eventos do cerimonialista
       if (eventosRes.data && eventosRes.data.length > 0) {
         const eventoIds = eventosRes.data.map((e) => e.id);
         const { count } = await supabase
@@ -437,7 +436,7 @@ export default function PainelCerimonialista() {
               </Button>
             </div>
 
-            {/* NOVO: Card Chat */}
+            {/* Card Chat */}
             <div
               style={{
                 backgroundColor: 'var(--color-surface)',
@@ -536,8 +535,7 @@ export default function PainelCerimonialista() {
               </Button>
             </div>
 
-            {/* Card Próximos Eventos */}
-
+            {/* NOVO: Card Eventos dos Casais */}
             <div
               style={{
                 backgroundColor: 'var(--color-surface)',
@@ -545,30 +543,45 @@ export default function PainelCerimonialista() {
                 padding: 'var(--space-5)',
                 border: '1px solid var(--color-border)',
                 gridColumn: '1 / -1',
+                cursor: 'pointer',
               }}
+              onClick={() => router.push('/cerimonialista/eventos')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && router.push('/cerimonialista/eventos')}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
                 <div
                   style={{
                     width: '40px',
                     height: '40px',
                     borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--color-warning-light)',
+                    backgroundColor: 'var(--color-brand-light)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <Icon name="clock" size={20} color="var(--color-warning)" />
+                  <Icon name="mirror" size={20} color="var(--color-brand)" />
                 </div>
                 <div>
-                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Próximos eventos</p>
-                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)' }}>Nenhum ainda</p>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Eventos dos casais</p>
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)' }}>
+                    {eventosLoading ? '...' : eventosAtivos}
+                  </p>
                 </div>
               </div>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-                Seus eventos agendados aparecerão aqui.
-              </p>
+              <Button
+                variant="secondary"
+                size="sm"
+                fullWidth
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push('/cerimonialista/eventos');
+                }}
+              >
+                Ver painéis espelhados
+              </Button>
             </div>
           </div>
         </main>

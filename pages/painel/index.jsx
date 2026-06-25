@@ -7,6 +7,7 @@ import NavCards from '../../components/painel/NavCards';
 import AlertCards from '../../components/painel/AlertCards';
 import Icon from '../../components/ui/Icon';
 import InputMoeda from '../../components/ui/InputMoeda';
+import PermissoesPainel from '../../components/cerimonialista/PermissoesPainel';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import { importarPreFornecedores } from '../../utils/preFornecedores';
@@ -31,18 +32,13 @@ function PainelContent() {
   const [tarefas, setTarefas] = useState({ total: 0, concluidas: 0, urgentes: [] });
   const [alertas, setAlertas] = useState([]);
 
-  // NOVO: status do memorial para alerta inteligente
   const [memorialStatus, setMemorialStatus] = useState({ temMemorial: false, temEstado: false });
-
-  // NOVO: contador de mensagens não lidas do cerimonialista
   const [mensagensNaoLidas, setMensagensNaoLidas] = useState(0);
 
-  // Modal de orçamento (legado, via ícone no card financeiro)
   const [modalOrcamentoAberto, setModalOrcamentoAberto] = useState(false);
   const [valorOrcamento, setValorOrcamento] = useState(0);
   const [salvandoOrcamento, setSalvandoOrcamento] = useState(false);
 
-  // Modal de edição do evento
   const [modalEventoAberto, setModalEventoAberto] = useState(false);
   const [formEvento, setFormEvento] = useState({ nome_evento: '', data_evento: '', orcamento: 0 });
   const [salvandoEvento, setSalvandoEvento] = useState(false);
@@ -73,7 +69,6 @@ function PainelContent() {
     setLoading(true);
     const eventoId = evento.id;
 
-    // --- NOVO: Verifica memorial do evento ---
     const { data: memorialData } = await supabase
       .from('memoriais')
       .select('id, estado')
@@ -86,12 +81,10 @@ function PainelContent() {
     const temEstado = temMemorial && !!memorialData.estado;
     setMemorialStatus({ temMemorial, temEstado });
 
-    // Só importa pre-fornecedores se tiver estado estruturado
     if (temEstado) {
       await importarPreFornecedores(eventoId, supabase, user.id);
     }
 
-    // --- NOVO: Conta mensagens não lidas do cerimonialista ---
     if (evento.cerimonialista_id) {
       const { count } = await supabase
         .from('mensagens')
@@ -173,7 +166,6 @@ function PainelContent() {
 
     const alertasLista = [];
 
-    // NOVO: Alerta memorial não preenchido
     if (!temEstado) {
       alertasLista.push({
         tipo: 'urgente',
@@ -185,7 +177,6 @@ function PainelContent() {
       });
     }
 
-    // Alerta: dados do evento incompletos
     const dadosIncompletos = !evento?.data_evento || !evento?.orcamento || !evento?.nome_evento;
     if (dadosIncompletos) {
       const faltando = [];
@@ -380,6 +371,27 @@ function PainelContent() {
             </div>
           </section>
 
+          {/* NOVO: Acesso do cerimonialista */}
+          {evento?.cerimonialista_id && (
+            <section style={styles.meuCasamentoSection}>
+              <div style={styles.meuCasamentoHeader}>
+                <div style={styles.meuCasamentoIcone}>
+                  <Icon name="share" size={20} color="var(--color-brand)" />
+                </div>
+                <div style={styles.meuCasamentoTituloWrap}>
+                  <h2 style={styles.meuCasamentoTitulo}>Acesso do cerimonialista</h2>
+                  <p style={styles.meuCasamentoSubtitulo}>
+                    Controle o que seu cerimonialista pode ver e editar no seu evento
+                  </p>
+                </div>
+              </div>
+              <PermissoesPainel
+                eventoId={evento.id}
+                cerimonialistaId={evento.cerimonialista_id}
+              />
+            </section>
+          )}
+
           {/* Progresso */}
           <section style={styles.progressoSection}>
             <div style={styles.progressoHeader}>
@@ -435,7 +447,6 @@ function PainelContent() {
                 </div>
               </button>
 
-              {/* NOVO: Card de Chat */}
               <button onClick={() => router.push('/painel/chat')} style={{ ...styles.cardRapido, position: 'relative' }}>
                 {mensagensNaoLidas > 0 && (
                   <span
@@ -517,7 +528,7 @@ function PainelContent() {
         </main>
       </div>
 
-      {/* Modal de orçamento (legado) */}
+      {/* Modal de orçamento */}
       {modalOrcamentoAberto && (
         <div style={styles.modalOverlay} onClick={() => setModalOrcamentoAberto(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -592,7 +603,6 @@ const styles = {
   readOnlyBanner: { background: 'var(--color-warning-light)', border: '1px solid var(--color-warning)', borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)', textAlign: 'center' },
   readOnlyText: { fontSize: 'var(--text-sm)', color: 'var(--color-warning)', fontFamily: 'var(--font-body)' },
 
-  // Meu Casamento
   meuCasamentoSection: { background: 'var(--color-white)', borderRadius: 'var(--radius-md)', padding: 'var(--space-5)', border: '1px solid var(--color-border)' },
   meuCasamentoHeader: { display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' },
   meuCasamentoIcone: { width: '40px', height: '40px', borderRadius: 'var(--radius-sm)', background: 'var(--color-off-white)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
@@ -606,7 +616,6 @@ const styles = {
   meuCasamentoValor: { fontSize: 'var(--text-base)', color: 'var(--color-text-primary)', fontWeight: 'var(--font-semibold)' },
   valorVazio: { color: 'var(--color-text-muted)', fontStyle: 'italic' },
 
-  // Progresso
   progressoSection: { background: 'var(--color-white)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', border: '1px solid var(--color-border)' },
   progressoHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' },
   progressoLabel: { fontFamily: 'var(--font-display)', fontSize: 'var(--text-base)', color: 'var(--color-text-primary)', fontWeight: 'var(--font-semibold)' },
@@ -614,7 +623,6 @@ const styles = {
   progressoBarraBg: { width: '100%', height: '8px', background: 'var(--color-surface)', borderRadius: 'var(--radius-full)', overflow: 'hidden' },
   progressoBarraFill: { height: '100%', background: 'var(--color-brand)', borderRadius: 'var(--radius-full)', transition: 'width 500ms ease' },
 
-  // Cards
   cardsSection: {},
   sectionTitle: { fontFamily: 'var(--font-display)', fontSize: 'var(--text-lg)', color: 'var(--color-brand)', fontWeight: 'var(--font-normal)', marginBottom: 'var(--space-3)' },
   cardsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--space-3)' },
@@ -626,10 +634,8 @@ const styles = {
   cardRapidoDe: { fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', fontWeight: 'var(--font-normal)' },
   cardRapidoLabel: { fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' },
 
-  // Navegação
   navSection: {},
 
-  // Próximas ações
   proximasSection: { background: 'var(--color-white)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', border: '1px solid var(--color-border)' },
   proximasLista: { display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' },
   proximaItem: { padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-sm)', background: 'var(--color-off-white)', borderLeftWidth: '3px', borderLeftStyle: 'solid' },
@@ -639,7 +645,6 @@ const styles = {
   proximaCategoria: { fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' },
   verTodas: { marginTop: 'var(--space-3)', background: 'none', border: 'none', color: 'var(--color-brand)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-semibold)', cursor: 'pointer', padding: '0', textAlign: 'left' },
 
-  // Modais
   modalOverlay: { position: 'fixed', inset: 0, background: 'var(--color-overlay)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 'var(--z-modal)', padding: 'var(--space-4)' },
   modal: { background: 'var(--color-white)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-6)', width: '100%', maxWidth: '400px', boxShadow: 'var(--shadow-xl)' },
   modalTitle: { fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)', color: 'var(--color-brand)', marginBottom: '6px' },
