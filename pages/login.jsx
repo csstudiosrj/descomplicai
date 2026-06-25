@@ -8,21 +8,23 @@ import Button from '../components/ui/Button';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, carregando, supabase } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
 
-  const redirect = router.query.redirect || '/memorial';
+  const redirect = router.query.redirect || '/painel';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErro('');
     setEnviando(true);
+
     const { data, error } = await login(email, senha);
-    setEnviando(false);
+
     if (error) {
+      setEnviando(false);
       if (error.message.includes('Invalid login credentials')) {
         setErro('Email ou senha incorretos.');
       } else if (error.message.includes('Email not confirmed')) {
@@ -30,18 +32,55 @@ export default function LoginPage() {
       } else {
         setErro(error.message || 'Erro ao fazer login.');
       }
-    } else if (data?.session?.user) {
-      const { data: cerimData } = await supabase
-        .from('cerimonialistas')
-        .select('id')
-        .eq('usuario_id', data.session.user.id)
-        .single();
+      return;
+    }
 
-      if (cerimData) {
+    if (!data?.session?.user) {
+      setEnviando(false);
+      setErro('Erro ao fazer login.');
+      return;
+    }
+
+    const userId = data.session.user.id;
+
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const supabaseClient = createClient(supabaseUrl, supabaseKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+
+      const [cerimRes, fornRes] = await Promise.all([
+        supabaseClient
+          .from('cerimonialistas')
+          .select('id')
+          .eq('usuario_id', userId)
+          .single(),
+        supabaseClient
+          .from('fornecedores')
+          .select('id')
+          .eq('usuario_id', userId)
+          .single(),
+      ]);
+
+      setEnviando(false);
+
+      if (!cerimRes.error && cerimRes.data) {
         router.push('/cerimonialista/painel');
-      } else {
-        router.push(redirect);
+        return;
       }
+
+      if (!fornRes.error && fornRes.data) {
+        router.push('/fornecedor/painel');
+        return;
+      }
+
+      router.push(redirect);
+    } catch (err) {
+      setEnviando(false);
+      console.error('[login] erro ao detectar tipo:', err);
+      router.push(redirect);
     }
   };
 
@@ -67,7 +106,7 @@ export default function LoginPage() {
               <div role="alert" style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-danger-light)', color: 'var(--color-danger)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)' }}>{erro}</div>
             )}
 
-            <Button type="submit" variant="primary" size="lg" fullWidth loading={enviando || carregando}>Entrar</Button>
+            <Button type="submit" variant="primary" size="lg" fullWidth loading={enviando}>Entrar</Button>
           </form>
 
           <p style={{ textAlign: 'center', marginTop: 'var(--space-6)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>

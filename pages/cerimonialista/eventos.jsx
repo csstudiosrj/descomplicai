@@ -4,6 +4,8 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
 import Icon from '../../components/ui/Icon';
 import Button from '../../components/ui/Button';
+import Input from '../../components/ui/Input';
+import Modal from '../../components/ui/Modal';
 import { supabase } from '../../lib/supabase';
 
 export default function EventosCerimonialista() {
@@ -12,6 +14,9 @@ export default function EventosCerimonialista() {
   const [eventos, setEventos] = useState([]);
   const [eventosLoading, setEventosLoading] = useState(true);
   const [mensagensPorEvento, setMensagensPorEvento] = useState({});
+  const [modalNovo, setModalNovo] = useState(false);
+  const [criando, setCriando] = useState(false);
+  const [novoEvento, setNovoEvento] = useState({ nome_casal: '', data_evento: '', email_casal: '' });
 
   useEffect(() => {
     if (!loading && !user) {
@@ -28,17 +33,16 @@ export default function EventosCerimonialista() {
 
       const { data, error } = await supabase
         .from('eventos')
-        .select('id, nome_evento, data_evento, orcamento, casal_confirmado, memorial_concluido, usuario_id')
+        .select('id, nome_evento, data_evento, orcamento, casal_confirmado, memorial_concluido, usuario_id, criado_por, convite_revogado')
         .eq('cerimonialista_id', cerimonialista.id)
-        .eq('casal_confirmado', true)
         .order('data_evento', { ascending: true });
 
       if (!error && data) {
         setEventos(data);
 
-        // Busca mensagens não lidas por evento
-        if (data.length > 0) {
-          const eventoIds = data.map((e) => e.id);
+        const confirmados = data.filter((e) => e.casal_confirmado);
+        if (confirmados.length > 0) {
+          const eventoIds = confirmados.map((e) => e.id);
           const { data: msgData } = await supabase
             .from('mensagens')
             .select('evento_id, lida, remetente_id')
@@ -62,6 +66,38 @@ export default function EventosCerimonialista() {
       buscarEventos();
     }
   }, [isCerimonialista, cerimonialista, user]);
+
+  const handleCriarEvento = async () => {
+    if (!novoEvento.nome_casal.trim() || !novoEvento.data_evento) {
+      return;
+    }
+    setCriando(true);
+    try {
+      const { data, error } = await supabase
+        .from('eventos')
+        .insert({
+          cerimonialista_id: cerimonialista.id,
+          criado_por: 'cerimonialista',
+          nome_evento: novoEvento.nome_casal.trim(),
+          data_evento: novoEvento.data_evento,
+          casal_confirmado: false,
+          convite_revogado: false,
+          status: 'rascunho',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setEventos([...eventos, data]);
+      setModalNovo(false);
+      setNovoEvento({ nome_casal: '', data_evento: '', email_casal: '' });
+    } catch (err) {
+      console.error('[eventos] erro ao criar:', err);
+    } finally {
+      setCriando(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -108,7 +144,6 @@ export default function EventosCerimonialista() {
       </Head>
 
       <div style={styles.page}>
-        {/* Header */}
         <header style={styles.header}>
           <div style={styles.headerLeft}>
             <button
@@ -120,37 +155,65 @@ export default function EventosCerimonialista() {
             </button>
             <h1 style={styles.headerTitulo}>Meus Eventos</h1>
           </div>
-          <button onClick={signOut} style={styles.btnSair} aria-label="Sair">
-            <Icon name="logout" size={22} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+            <Button variant="primary" size="sm" onClick={() => setModalNovo(true)}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <Icon name="plus" size={16} />
+                Novo evento
+              </span>
+            </Button>
+            <button onClick={signOut} style={styles.btnSair} aria-label="Sair">
+              <Icon name="logout" size={22} />
+            </button>
+          </div>
         </header>
 
-        {/* Conteúdo */}
         <main style={styles.main}>
           {eventosLoading ? (
             <p style={styles.loadingText}>Carregando eventos...</p>
           ) : eventos.length === 0 ? (
             <div style={styles.emptyState}>
               <Icon name="calendar" size={48} color="var(--color-text-muted)" />
-              <h2 style={styles.emptyTitulo}>Nenhum evento ativo</h2>
+              <h2 style={styles.emptyTitulo}>Nenhum evento</h2>
               <p style={styles.emptyDesc}>
-                Quando um casal confirmar seu convite, o evento aparecerá aqui.
+                Crie um evento ou aguarde um casal confirmar seu convite.
               </p>
+              <Button variant="primary" onClick={() => setModalNovo(true)} style={{ marginTop: 'var(--space-6)' }}>
+                Criar evento
+              </Button>
             </div>
           ) : (
             <div style={styles.lista}>
               {eventos.map((evento) => {
                 const dias = calcularDiasRestantes(evento.data_evento);
                 const naoLidas = mensagensPorEvento[evento.id] || 0;
+                const pendente = !evento.casal_confirmado;
 
                 return (
                   <div
                     key={evento.id}
-                    style={styles.card}
-                    onClick={() => router.push(`/cerimonialista/espelho/${evento.id}`)}
+                    style={{
+                      ...styles.card,
+                      opacity: pendente ? 0.85 : 1,
+                    }}
+                    onClick={() => {
+                      if (pendente) {
+                        router.push(`/cerimonialista/convites`);
+                      } else {
+                        router.push(`/cerimonialista/espelho/${evento.id}`);
+                      }
+                    }}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && router.push(`/cerimonialista/espelho/${evento.id}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        if (pendente) {
+                          router.push(`/cerimonialista/convites`);
+                        } else {
+                          router.push(`/cerimonialista/espelho/${evento.id}`);
+                        }
+                      }
+                    }}
                   >
                     <div style={styles.cardHeader}>
                       <div style={styles.cardIcone}>
@@ -160,15 +223,33 @@ export default function EventosCerimonialista() {
                         <h3 style={styles.cardTitulo}>{evento.nome_evento || 'Evento sem nome'}</h3>
                         <p style={styles.cardData}>{formatarData(evento.data_evento)}</p>
                       </div>
-                      {naoLidas > 0 && (
-                        <span style={styles.badgeMensagens} aria-label={`${naoLidas} mensagens não lidas`}>
-                          {naoLidas > 99 ? '99+' : naoLidas}
-                        </span>
-                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                        {pendente && (
+                          <span
+                            style={{
+                              padding: 'var(--space-1) var(--space-2)',
+                              borderRadius: 'var(--radius-full)',
+                              backgroundColor: 'var(--color-warning-light)',
+                              color: 'var(--color-warning)',
+                              fontFamily: 'var(--font-body)',
+                              fontSize: 'var(--text-xs)',
+                              fontWeight: 'var(--font-medium)',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            Aguardando casal
+                          </span>
+                        )}
+                        {naoLidas > 0 && (
+                          <span style={styles.badgeMensagens} aria-label={`${naoLidas} mensagens não lidas`}>
+                            {naoLidas > 99 ? '99+' : naoLidas}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div style={styles.cardBody}>
-                      {dias !== null && (
+                      {dias !== null && !pendente && (
                         <div style={styles.diasBadge(dias)}>
                           <Icon name="clock" size={14} />
                           <span>
@@ -178,6 +259,26 @@ export default function EventosCerimonialista() {
                               ? 'Hoje é o grande dia'
                               : `${dias} dias restantes`}
                           </span>
+                        </div>
+                      )}
+                      {pendente && (
+                        <div
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: 'var(--space-2) var(--space-3)',
+                            borderRadius: 'var(--radius-full)',
+                            backgroundColor: 'var(--color-info-light)',
+                            color: 'var(--color-info)',
+                            fontFamily: 'var(--font-body)',
+                            fontSize: 'var(--text-sm)',
+                            fontWeight: 'var(--font-medium)',
+                            alignSelf: 'flex-start',
+                          }}
+                        >
+                          <Icon name="mailOpen" size={14} />
+                          <span>Convite: /convite/{evento.id}</span>
                         </div>
                       )}
                       <div style={styles.cardMeta}>
@@ -198,8 +299,8 @@ export default function EventosCerimonialista() {
 
                     <div style={styles.cardFooter}>
                       <span style={styles.verEspelho}>
-                        <Icon name="arrowRight" size={14} />
-                        Acessar painel espelhado
+                        <Icon name={pendente ? "send" : "arrowRight"} size={14} />
+                        {pendente ? 'Gerenciar convite' : 'Acessar painel espelhado'}
                       </span>
                     </div>
                   </div>
@@ -209,6 +310,43 @@ export default function EventosCerimonialista() {
           )}
         </main>
       </div>
+
+      {/* Modal Novo Evento */}
+      {modalNovo && (
+        <Modal onClose={() => setModalNovo(false)} title="Novo evento">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <Input
+              label="Nome do casal"
+              value={novoEvento.nome_casal}
+              onChange={(e) => setNovoEvento({ ...novoEvento, nome_casal: e.target.value })}
+              placeholder="Ex: Maria e João"
+              required
+            />
+            <Input
+              label="Data prevista"
+              type="date"
+              value={novoEvento.data_evento}
+              onChange={(e) => setNovoEvento({ ...novoEvento, data_evento: e.target.value })}
+              required
+            />
+            <Input
+              label="Email do casal (opcional)"
+              type="email"
+              value={novoEvento.email_casal}
+              onChange={(e) => setNovoEvento({ ...novoEvento, email_casal: e.target.value })}
+              placeholder="casal@email.com"
+            />
+            <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end', marginTop: 'var(--space-2)' }}>
+              <Button variant="secondary" onClick={() => setModalNovo(false)}>
+                Cancelar
+              </Button>
+              <Button variant="primary" onClick={handleCriarEvento} disabled={criando || !novoEvento.nome_casal.trim() || !novoEvento.data_evento}>
+                {criando ? 'Criando...' : 'Criar evento'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }
