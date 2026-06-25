@@ -10,8 +10,8 @@ import { supabase } from '../../lib/supabase';
 export default function ConvitesCerimonialista() {
   const router = useRouter();
   const { user, loading, cerimonialista, isCerimonialista } = useAuth();
-  const [leads, setLeads] = useState([]);
-  const [leadsLoading, setLeadsLoading] = useState(true);
+  const [eventos, setEventos] = useState([]);
+  const [eventosLoading, setEventosLoading] = useState(true);
   const [toast, setToast] = useState(null);
 
   const showToast = useCallback((message, type = 'success') => {
@@ -19,21 +19,22 @@ export default function ConvitesCerimonialista() {
     setTimeout(() => setToast(null), 3000);
   }, []);
 
-  const buscarLeads = useCallback(async () => {
+  const buscarEventos = useCallback(async () => {
     if (!cerimonialista?.id) return;
-    setLeadsLoading(true);
+    setEventosLoading(true);
     const { data, error } = await supabase
-      .from('cerimonialista_leads')
-      .select('*')
+      .from('eventos')
+      .select('id, nome_evento, data_evento, cidade, cerimonialista_id, casal_confirmado, convite_revogado, criado_por')
       .eq('cerimonialista_id', cerimonialista.id)
-      .eq('estagio', 'contratado')
-      .is('convertido_evento_id', null)
+      .eq('criado_por', 'cerimonialista')
+      .eq('casal_confirmado', false)
+      .eq('convite_revogado', false)
       .order('criado_em', { ascending: false });
 
     if (!error && data) {
-      setLeads(data);
+      setEventos(data);
     }
-    setLeadsLoading(false);
+    setEventosLoading(false);
   }, [cerimonialista]);
 
   useEffect(() => {
@@ -44,13 +45,13 @@ export default function ConvitesCerimonialista() {
 
   useEffect(() => {
     if (isCerimonialista && cerimonialista) {
-      buscarLeads();
+      buscarEventos();
     }
-  }, [isCerimonialista, cerimonialista, buscarLeads]);
+  }, [isCerimonialista, cerimonialista, buscarEventos]);
 
-  const handleGerarLink = (lead) => {
+  const handleGerarLink = (evento) => {
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-    const link = `${baseUrl}/convite/${lead.id}`;
+    const link = `${baseUrl}/convite/${evento.id}`;
     navigator.clipboard.writeText(link).then(() => {
       showToast('Link copiado para a área de transferência');
     }).catch(() => {
@@ -92,7 +93,6 @@ export default function ConvitesCerimonialista() {
       </Head>
 
       <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-off-white)' }}>
-        {/* Header */}
         <header
           style={{
             backgroundColor: 'var(--color-surface)',
@@ -135,19 +135,18 @@ export default function ConvitesCerimonialista() {
                 Convites
               </h1>
               <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-                Leads contratados aguardando confirmação do casal
+                Eventos aguardando confirmação do casal
               </p>
             </div>
           </div>
         </header>
 
-        {/* Conteúdo */}
         <main style={{ padding: 'var(--space-5)', maxWidth: '960px', margin: '0 auto' }}>
-          {leadsLoading ? (
+          {eventosLoading ? (
             <div style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
               <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando convites...</p>
             </div>
-          ) : leads.length === 0 ? (
+          ) : eventos.length === 0 ? (
             <div
               style={{
                 textAlign: 'center',
@@ -169,7 +168,7 @@ export default function ConvitesCerimonialista() {
                 Nenhum convite pendente
               </h3>
               <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)' }}>
-                Mova um lead para "Contratado" no funil para gerar um convite.
+                Converta um lead em evento no funil para gerar um convite.
               </p>
               <Button variant="secondary" onClick={() => router.push('/cerimonialista/funil')} style={{ marginTop: 'var(--space-6)' }}>
                 Ir para o funil
@@ -183,10 +182,10 @@ export default function ConvitesCerimonialista() {
                 gap: 'var(--space-4)',
               }}
             >
-              {leads.map((lead) => (
+              {eventos.map((evento) => (
                 <ConviteCard
-                  key={lead.id}
-                  lead={lead}
+                  key={evento.id}
+                  evento={evento}
                   onGerarLink={handleGerarLink}
                 />
               ))}
@@ -195,7 +194,6 @@ export default function ConvitesCerimonialista() {
         </main>
       </div>
 
-      {/* Toast */}
       {toast && (
         <div
           role="status"

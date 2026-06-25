@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import Icon from '../../components/ui/Icon';
-import Button from '../../components/ui/Button';
-import { supabase } from '../../lib/supabase';
+import Icon from '../../../components/ui/Icon';
+import Button from '../../../components/ui/Button';
+import { supabase } from '../../../lib/supabase';
 
-export default function PaginaConvite() {
+export default function PaginaConviteLead() {
   const router = useRouter();
   const { leadId } = router.query;
   const [lead, setLead] = useState(null);
@@ -20,7 +20,6 @@ export default function PaginaConvite() {
 
     async function buscarDados() {
       try {
-        // Buscar lead (endpoint público da API)
         const res = await fetch(`/api/cerimonialista/convites?leadId=${leadId}`);
         const data = await res.json();
 
@@ -45,16 +44,13 @@ export default function PaginaConvite() {
   const handleAceitar = async () => {
     setAceitando(true);
     try {
-      // Verificar se o usuário está logado
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {
-        // Redirecionar para login com redirect de volta
-        router.push(`/login?redirect=${encodeURIComponent(`/convite/${leadId}`)}`);
+        router.push(`/login?redirect=${encodeURIComponent(`/convite/lead/${leadId}`)}`);
         return;
       }
 
-      // Criar evento vinculado
       const res = await fetch('/api/cerimonialista/convites', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

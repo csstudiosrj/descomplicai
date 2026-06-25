@@ -8,12 +8,7 @@ function formatarData(dataStr) {
   return data.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function formatarValor(valor) {
-  if (!valor) return null;
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
-}
-
-export default function ConviteCard({ lead, onGerarLink }) {
+export default function ConviteCard({ evento, onGerarLink }) {
   return (
     <div
       style={{
@@ -26,7 +21,6 @@ export default function ConviteCard({ lead, onGerarLink }) {
         gap: 'var(--space-3)',
       }}
     >
-      {/* Topo: nome + badge */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-2)' }}>
         <h3
           style={{
@@ -38,7 +32,7 @@ export default function ConviteCard({ lead, onGerarLink }) {
             flex: 1,
           }}
         >
-          {lead.nome_lead}
+          {evento.nome_evento || 'Evento sem nome'}
         </h3>
         <span
           style={{
@@ -52,49 +46,31 @@ export default function ConviteCard({ lead, onGerarLink }) {
             whiteSpace: 'nowrap',
           }}
         >
-          Contratado
+          Pendente
         </span>
       </div>
 
-      {/* Info */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-        {lead.tipo_evento && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <Icon name="tag" size={14} color="var(--color-text-muted)" />
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
-              {lead.tipo_evento}
-            </span>
-          </div>
-        )}
-        {lead.data_prevista && (
+        {evento.data_evento && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
             <Icon name="calendar" size={14} color="var(--color-text-muted)" />
             <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
-              {formatarData(lead.data_prevista)}
+              {formatarData(evento.data_evento)}
             </span>
           </div>
         )}
-        {lead.valor_proposta && (
+        {evento.cidade && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <Icon name="dollar" size={14} color="var(--color-text-muted)" />
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-medium)' }}>
-              {formatarValor(lead.valor_proposta)}
-            </span>
-          </div>
-        )}
-        {lead.email && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <Icon name="mail" size={14} color="var(--color-text-muted)" />
+            <Icon name="mapPin" size={14} color="var(--color-text-muted)" />
             <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
-              {lead.email}
+              {evento.cidade}
             </span>
           </div>
         )}
       </div>
 
-      {/* Ação */}
       <div style={{ marginTop: 'auto', paddingTop: 'var(--space-3)' }}>
-        <Button variant="primary" size="sm" fullWidth onClick={() => onGerarLink(lead)}>
+        <Button variant="primary" size="sm" fullWidth onClick={() => onGerarLink(evento)}>
           <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)' }}>
             <Icon name="send" size={16} />
             Copiar link de convite

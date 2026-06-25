@@ -24,7 +24,6 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Token inválido' });
   }
 
-  // Buscar cerimonialista do usuário autenticado
   const { data: cerimonialista, error: cerimError } = await supabase
     .from('cerimonialistas')
     .select('id')
@@ -95,10 +94,9 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: 'ID do lead é obrigatório' });
         }
 
-        // Verificar se o lead pertence ao cerimonialista
         const { data: existing, error: checkError } = await supabase
           .from('cerimonialista_leads')
-          .select('id')
+          .select('*')
           .eq('id', id)
           .eq('cerimonialista_id', cerimonialistaId)
           .single();
@@ -119,6 +117,49 @@ export default async function handler(req, res) {
         if (updates.notas !== undefined) cleanUpdates.notas = updates.notas?.trim() || null;
         cleanUpdates.atualizado_em = new Date().toISOString();
 
+        let eventoCriado = null;
+        if (cleanUpdates.estagio === 'contratado' && !existing.convertido_evento_id) {
+          const { data: novoEvento, error: eventoError } = await supabase
+            .from('eventos')
+            .insert({
+              cerimonialista_id: cerimonialistaId,
+              criado_por: 'cerimonialista',
+              nome_evento: cleanUpdates.nome_lead || existing.nome_lead,
+              data_evento: cleanUpdates.data_prevista || existing.data_prevista,
+              orcamento: cleanUpdates.valor_proposta || existing.valor_proposta || 0,
+              status: 'rascunho',
+              casal_confirmado: false,
+              convite_revogado: false,
+            })
+            .select()
+            .single();
+
+          if (eventoError) {
+            console.error('[leads] erro ao criar evento:', eventoError);
+            return res.status(500).json({ error: 'Erro ao criar evento para o lead' });
+          }
+
+          eventoCriado = novoEvento;
+          cleanUpdates.convertido_evento_id = novoEvento.id;
+
+          try {
+            const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://descomplicai.vercel.app';
+            const linkConvite = `${baseUrl}/convite/${novoEvento.id}`;
+
+            await supabase
+              .from('notificacoes')
+              .insert({
+                usuario_id: user.id,
+                tipo: 'convite_enviado',
+                mensagem: `Convite enviado para ${existing.nome_lead}: ${linkConvite}`,
+                lida: true,
+                criado_em: new Date().toISOString(),
+              });
+          } catch (emailErr) {
+            console.log('[leads] notificação de email não registrada:', emailErr.message);
+          }
+        }
+
         const { data, error } = await supabase
           .from('cerimonialista_leads')
           .update(cleanUpdates)
@@ -127,7 +168,7 @@ export default async function handler(req, res) {
           .single();
 
         if (error) throw error;
-        return res.status(200).json({ lead: data });
+        return res.status(200).json({ lead: data, evento: eventoCriado });
       }
 
       case 'DELETE': {
