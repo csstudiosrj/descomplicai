@@ -13,12 +13,10 @@ export default function PainelCerimonialista() {
   const [modelosCount, setModelosCount] = useState(0);
   const [saldoFinanceiro, setSaldoFinanceiro] = useState(0);
   const [assistentesCount, setAssistentesCount] = useState(0);
-  const [convitesPendentes, setConvitesPendentes] = useState(0);
   const [leadsLoading, setLeadsLoading] = useState(true);
   const [modelosLoading, setModelosLoading] = useState(true);
   const [financeiroLoading, setFinanceiroLoading] = useState(true);
   const [assistentesLoading, setAssistentesLoading] = useState(true);
-  const [convitesLoading, setConvitesLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -33,11 +31,10 @@ export default function PainelCerimonialista() {
         setModelosLoading(false);
         setFinanceiroLoading(false);
         setAssistentesLoading(false);
-        setConvitesLoading(false);
         return;
       }
 
-      const [leadsRes, modelosRes, finRes, assistRes, convitesRes] = await Promise.all([
+      const [leadsRes, modelosRes, finRes, assistRes] = await Promise.all([
         supabase
           .from('cerimonialista_leads')
           .select('*', { count: 'exact', head: true })
@@ -56,12 +53,6 @@ export default function PainelCerimonialista() {
           .select('*', { count: 'exact', head: true })
           .eq('cerimonialista_id', cerimonialista.id)
           .eq('ativo', true),
-        supabase
-          .from('cerimonialista_leads')
-          .select('*', { count: 'exact', head: true })
-          .eq('cerimonialista_id', cerimonialista.id)
-          .eq('estagio', 'contratado')
-          .is('convertido_evento_id', null),
       ]);
 
       if (!leadsRes.error) setLeadsCount(leadsRes.count || 0);
@@ -74,13 +65,11 @@ export default function PainelCerimonialista() {
       }
 
       if (!assistRes.error) setAssistentesCount(assistRes.count || 0);
-      if (!convitesRes.error) setConvitesPendentes(convitesRes.count || 0);
 
       setLeadsLoading(false);
       setModelosLoading(false);
       setFinanceiroLoading(false);
       setAssistentesLoading(false);
-      setConvitesLoading(false);
     }
 
     if (isCerimonialista && cerimonialista) {
@@ -371,41 +360,6 @@ export default function PainelCerimonialista() {
               </div>
               <Button variant="secondary" size="sm" fullWidth onClick={() => router.push('/cerimonialista/assistentes')}>
                 Gerenciar equipe
-              </Button>
-            </div>
-
-            {/* Card Convites */}
-            <div
-              style={{
-                backgroundColor: 'var(--color-surface)',
-                borderRadius: 'var(--radius-lg)',
-                padding: 'var(--space-5)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
-                <div
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--color-warning-light)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Icon name="mailOpen" size={20} color="var(--color-warning)" />
-                </div>
-                <div>
-                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Convites pendentes</p>
-                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)' }}>
-                    {convitesLoading ? '...' : convitesPendentes}
-                  </p>
-                </div>
-              </div>
-              <Button variant="secondary" size="sm" fullWidth onClick={() => router.push('/cerimonialista/convites')}>
-                Gerenciar convites
               </Button>
             </div>
 
