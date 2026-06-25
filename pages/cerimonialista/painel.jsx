@@ -501,7 +501,43 @@ export default function PainelCerimonialista() {
               </Button>
             </div>
 
+            {/* Card Roteiro do Evento */}
+            <div
+              style={{
+                backgroundColor: 'var(--color-surface)',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-5)',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+                <div
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'var(--color-info-light)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Icon name="timeline" size={20} color="var(--color-info)" />
+                </div>
+                <div>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Roteiro do evento</p>
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)' }}>
+                    Timeline
+                  </p>
+                </div>
+              </div>
+              <Button variant="secondary" size="sm" fullWidth onClick={() => router.push('/cerimonialista/roteiro')}>
+                Gerenciar roteiro
+              </Button>
+            </div>
+
             {/* Card Próximos Eventos */}
+
             <div
               style={{
                 backgroundColor: 'var(--color-surface)',

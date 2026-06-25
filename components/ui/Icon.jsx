@@ -891,6 +891,38 @@ const icons = {
 
   // ─── UTILITÁRIOS ─────────────────────────────────────────────────────────
 
+  // ─── ROTEIRO ───────────────────────────────────────────────────────────
+
+  timeline: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2v20" />
+      <circle cx="12" cy="7" r="2" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="17" r="2" fill="currentColor" stroke="none" />
+      <path d="M8 7H4M20 7h-4" />
+      <path d="M8 12H4M20 12h-4" />
+      <path d="M8 17H4M20 17h-4" />
+    </g>
+  ),
+
+  play: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M10 8l6 4-6 4V8z" fill="currentColor" stroke="none" />
+    </g>
+  ),
+
+  move: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 9l-3 3 3 3" />
+      <path d="M9 5l3-3 3 3" />
+      <path d="M19 9l3 3-3 3" />
+      <path d="M9 19l3 3 3-3" />
+      <path d="M2 12h20" />
+      <path d="M12 2v20" />
+    </g>
+  ),
+
   square: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="3" width="18" height="18" rx="2" />
