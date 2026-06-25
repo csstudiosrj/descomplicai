@@ -435,7 +435,7 @@ const icons = {
   flores: (
     <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="2.5" />
-      <ellipse cx="12" cy="7" rx="2" ry="3" />
+      <ellipse cx="12" cy="5.5" rx="2" ry="3" />
       <ellipse cx="12" cy="17" rx="2" ry="3" />
       <ellipse cx="7" cy="12" rx="3" ry="2" />
       <ellipse cx="17" cy="12" rx="3" ry="2" />
@@ -684,6 +684,69 @@ const icons = {
   starFill: (
     <g fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+    </g>
+  ),
+
+  // ─── CERIMONIALISTA ─────────────────────────────────────────────────────
+
+  briefcase: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="8" width="18" height="12" rx="2" />
+      <path d="M8 8V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3" />
+      <path d="M12 13v3" />
+    </g>
+  ),
+
+  mapPin: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2C8.7 2 6 4.7 6 8c0 5.2 6 13 6 13s6-7.8 6-13c0-3.3-2.7-6-6-6z" />
+      <circle cx="12" cy="8" r="2.5" />
+    </g>
+  ),
+
+  building: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M9 21V3" />
+      <path d="M15 21V3" />
+      <path d="M9 8h6" />
+      <path d="M9 13h6" />
+    </g>
+  ),
+
+  user: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="7" r="4" />
+      <path d="M5 21c0-4 3.5-7 7-7s7 3 7 7" />
+    </g>
+  ),
+
+  lock: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      <circle cx="12" cy="16" r="1" fill="currentColor" stroke="none" />
+    </g>
+  ),
+
+  shield: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2l8 3v6c0 5-3.5 9-8 11C7.5 20 4 16 4 11V5l8-3z" />
+      <path d="M9 12l2 2 4-4" />
+    </g>
+  ),
+
+  trendingUp: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 17l6-6 4 4 8-8" />
+      <path d="M14 7h7v7" />
+    </g>
+  ),
+
+  award: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="6" />
+      <path d="M8 14l-2 8 6-2 6 2-2-8" />
     </g>
   ),
 

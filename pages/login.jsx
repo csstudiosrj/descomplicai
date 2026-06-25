@@ -1,4 +1,3 @@
-// pages/login.jsx
 import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -9,7 +8,7 @@ import Button from '../components/ui/Button';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, carregando } = useAuth();
+  const { login, carregando, supabase } = useAuth();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
@@ -21,7 +20,7 @@ export default function LoginPage() {
     e.preventDefault();
     setErro('');
     setEnviando(true);
-    const { error } = await login(email, senha);
+    const { data, error } = await login(email, senha);
     setEnviando(false);
     if (error) {
       if (error.message.includes('Invalid login credentials')) {
@@ -31,8 +30,18 @@ export default function LoginPage() {
       } else {
         setErro(error.message || 'Erro ao fazer login.');
       }
-    } else {
-      router.push(redirect);
+    } else if (data?.session?.user) {
+      const { data: cerimData } = await supabase
+        .from('cerimonialistas')
+        .select('id')
+        .eq('usuario_id', data.session.user.id)
+        .single();
+
+      if (cerimData) {
+        router.push('/cerimonialista/painel');
+      } else {
+        router.push(redirect);
+      }
     }
   };
 
@@ -65,6 +74,12 @@ export default function LoginPage() {
             Ainda não tem conta?{' '}
             <Link href={`/cadastro?redirect=${encodeURIComponent(redirect)}`} legacyBehavior>
               <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Cadastre-se</a>
+            </Link>
+          </p>
+
+          <p style={{ textAlign: 'center', marginTop: 'var(--space-4)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+            <Link href="/cerimonialista/cadastro" legacyBehavior>
+              <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Sou cerimonialista</a>
             </Link>
           </p>
         </div>

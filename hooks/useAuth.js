@@ -6,6 +6,8 @@ export function useAuth() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [evento, setEvento] = useState(null);
+  const [cerimonialista, setCerimonialista] = useState(null);
+  const [isCerimonialista, setIsCerimonialista] = useState(false);
 
   useEffect(() => {
     const getSession = async () => {
@@ -13,7 +15,10 @@ export function useAuth() {
         const { data: { session } } = await supabase.auth.getSession();
         setUser(session?.user ?? null);
         if (session?.user) {
-          await buscarEvento(session.user.id);
+          await Promise.all([
+            buscarEvento(session.user.id),
+            buscarCerimonialista(session.user.id),
+          ]);
         }
       } catch (err) {
         console.error('useAuth: erro ao buscar sessão:', err);
@@ -26,9 +31,14 @@ export function useAuth() {
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        buscarEvento(session.user.id);
+        Promise.all([
+          buscarEvento(session.user.id),
+          buscarCerimonialista(session.user.id),
+        ]);
       } else {
         setEvento(null);
+        setCerimonialista(null);
+        setIsCerimonialista(false);
       }
     });
 
@@ -51,15 +61,44 @@ export function useAuth() {
       }
 
       if (data && data.length > 0) {
-        console.log('useAuth: evento encontrado:', data[0].id, 'plano:', data[0].plano, 'expira:', data[0].acesso_expira_em);
         setEvento(data[0]);
       } else {
-        console.log('useAuth: nenhum evento encontrado para usuario_id:', userId);
         setEvento(null);
       }
     } catch (err) {
       console.error('useAuth: exceção ao buscar evento:', err);
       setEvento(null);
+    }
+  }, []);
+
+  const buscarCerimonialista = useCallback(async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from('cerimonialistas')
+        .select('*')
+        .eq('usuario_id', userId)
+        .single();
+
+      if (error) {
+        if (error.code !== 'PGRST116') {
+          console.error('useAuth: erro ao buscar cerimonialista:', error);
+        }
+        setCerimonialista(null);
+        setIsCerimonialista(false);
+        return;
+      }
+
+      if (data) {
+        setCerimonialista(data);
+        setIsCerimonialista(true);
+      } else {
+        setCerimonialista(null);
+        setIsCerimonialista(false);
+      }
+    } catch (err) {
+      console.error('useAuth: exceção ao buscar cerimonialista:', err);
+      setCerimonialista(null);
+      setIsCerimonialista(false);
     }
   }, []);
 
@@ -75,11 +114,24 @@ export function useAuth() {
     await supabase.auth.signOut();
     setUser(null);
     setEvento(null);
+    setCerimonialista(null);
+    setIsCerimonialista(false);
   }, []);
 
   const hasAccess = temAcessoPainel(evento);
 
-  return { user, evento, loading, carregando: loading, hasAccess, login, signOut, supabase };
+  return {
+    user,
+    evento,
+    loading,
+    carregando: loading,
+    hasAccess,
+    login,
+    signOut,
+    supabase,
+    cerimonialista,
+    isCerimonialista,
+  };
 }
 
 export { supabase };
