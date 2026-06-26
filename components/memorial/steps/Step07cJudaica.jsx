@@ -41,7 +41,7 @@ export default function Step07cJudaica({ onSelect }) {
       </div>
 
       <button
-        onClick={handleConfirmar}
+        aria-label="Confirmar resposta" onClick={handleConfirmar}
         style={{
           alignSelf: 'flex-start',
           padding: 'var(--space-3) var(--space-6)',

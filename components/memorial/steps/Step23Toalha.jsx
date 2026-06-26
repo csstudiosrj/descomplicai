@@ -38,7 +38,7 @@ export default function Step23Toalha({ onSelect, estadoAtual }) {
           </button>
         ))}
       </div>
-      <button onClick={handleConfirmar} style={{ alignSelf: 'flex-start', padding: 'var(--space-3) var(--space-6)', borderRadius: 'var(--radius-md)', border: 'none', backgroundColor: 'var(--color-brand)', color: 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}>Confirmar</button>
+      <button aria-label="Confirmar resposta" onClick={handleConfirmar} style={{ alignSelf: 'flex-start', padding: 'var(--space-3) var(--space-6)', borderRadius: 'var(--radius-md)', border: 'none', backgroundColor: 'var(--color-brand)', color: 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}>Confirmar</button>
     </div>
   );
 }

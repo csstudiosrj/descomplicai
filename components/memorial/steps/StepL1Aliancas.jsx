@@ -39,6 +39,12 @@ export default function StepL1Aliancas({ onSelect, estadoAtual }) {
       setCardPulsando(null);
     }, 350);
   };
+  const handleKeyDown = (e, opcao) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleCardClick(opcao);
+    }
+  };
   return (
     <div
       role="radiogroup"

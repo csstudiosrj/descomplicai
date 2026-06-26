@@ -40,7 +40,7 @@ export default function StepA6DataPrevista({ onSelect, estadoAtual }) {
           }}
         />
         <button
-          onClick={handleConfirmar}
+          aria-label="Confirmar resposta" onClick={handleConfirmar}
           disabled={!valor}
           style={{
             alignSelf: 'flex-start',

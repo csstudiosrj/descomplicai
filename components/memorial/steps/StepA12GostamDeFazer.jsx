@@ -69,7 +69,7 @@ export default function StepA12GostamDeFazer({ onSelect, estadoAtual }) {
       </div>
 
       <button
-        onClick={handleConfirmar}
+        aria-label="Confirmar resposta" onClick={handleConfirmar}
         disabled={selecionadas.length === 0}
         style={{
           alignSelf: 'flex-start',

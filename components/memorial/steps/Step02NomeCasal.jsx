@@ -156,7 +156,7 @@ export default function Step02NomeCasal({ onSelect, estadoAtual }) {
         </div>
 
         <button
-          onClick={handleConfirmar}
+          aria-label="Confirmar resposta" onClick={handleConfirmar}
           disabled={!podeConfirmar}
           style={{
             width: '100%',

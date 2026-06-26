@@ -45,7 +45,7 @@ export default function Step11PlanoChuva({ onSelect, estadoAtual }) {
       )}
 
       <button
-        onClick={handleConfirmar}
+        aria-label="Confirmar resposta" onClick={handleConfirmar}
         disabled={!plano}
         style={{
           alignSelf: 'flex-start',

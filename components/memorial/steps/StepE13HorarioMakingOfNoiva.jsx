@@ -33,7 +33,7 @@ export default function StepE13HorarioMakingOfNoiva({ onSelect, estadoAtual }) {
       </div>
 
       <button
-        onClick={handleConfirmar}
+        aria-label="Confirmar resposta" onClick={handleConfirmar}
         disabled={!podeAvancar}
         style={{
           alignSelf: 'flex-start',

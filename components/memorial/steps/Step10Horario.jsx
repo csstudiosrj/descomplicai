@@ -26,6 +26,12 @@ export default function Step06Horario({ onSelect, estadoAtual }) {
   };
   const mostrarAlerta = selecionado === 'por-do-sol';
 
+  const handleKeyDown = (e, opcao) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleCardClick(opcao);
+    }
+  };
   return (
     <div
       role="radiogroup"

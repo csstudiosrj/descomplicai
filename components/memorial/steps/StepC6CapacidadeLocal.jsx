@@ -42,7 +42,7 @@ export default function StepC6CapacidadeLocal({ onSelect, estadoAtual }) {
           }}
         />
         <button
-          onClick={handleConfirmar}
+          aria-label="Confirmar resposta" onClick={handleConfirmar}
           disabled={valor === ''}
           style={{
             alignSelf: 'flex-start',

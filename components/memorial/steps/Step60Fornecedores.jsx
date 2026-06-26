@@ -132,7 +132,7 @@ export default function Step60Fornecedores({ onConcluir, estadoAtual }) {
 
       <button
         type="button"
-        onClick={handleConfirmar}
+        aria-label="Confirmar resposta" onClick={handleConfirmar}
         style={{
           alignSelf: 'flex-start',
           padding: 'var(--space-4) var(--space-8)',

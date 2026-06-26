@@ -23,6 +23,12 @@ export default function Step30Entrada({ onSelect, estadoAtual }) {
       setCardPulsando(null);
     }, 350);
   };
+  const handleKeyDown = (e, opcao) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleCardClick(opcao);
+    }
+  };
   return (
     <div role="radiogroup" aria-label={`Como será a entrada de ${termos.pessoa1} e ${termos.pessoa2}?`} style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', animation: 'fadeInUp 300ms ease-out' }}>
       <style jsx>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
@@ -43,7 +49,7 @@ export default function Step30Entrada({ onSelect, estadoAtual }) {
         borderRadius: 'var(--radius-lg)',
       }}
     >
-      <Card key={opcao.valor} interactive selected={isSelected} padding="lg" onClick={() => handleCardClick(opcao)} role="radio" aria-checked={isSelected} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect('entradaNoivos', opcao.valor); } }}>
+      <Card key={opcao.valor} interactive selected={isSelected} padding="lg" onClick={() => handleCardClick(opcao)} role="radio" aria-checked={isSelected} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(opcao); } }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                 <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', backgroundColor: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isSelected ? 'var(--color-brand)' : 'var(--color-text-muted)', flexShrink: 0 }}>
                   <Icon name={opcao.icone} size={24} ariaHidden={true} />

@@ -30,7 +30,7 @@ export default function StepA16RestricaoCultural({ onSelect, estadoAtual }) {
       </div>
 
       <button
-        onClick={handleConfirmar}
+        aria-label="Confirmar resposta" onClick={handleConfirmar}
         disabled={!podeAvancar}
         style={{
           alignSelf: 'flex-start',

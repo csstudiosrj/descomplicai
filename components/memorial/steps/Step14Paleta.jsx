@@ -178,7 +178,7 @@ export default function Step05Paleta({ onSelect, estadoAtual }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
         <button
-          onClick={handleConfirmar}
+          aria-label="Confirmar resposta" onClick={handleConfirmar}
           disabled={selecionadas.length === 0}
           style={{
             alignSelf: 'flex-start',

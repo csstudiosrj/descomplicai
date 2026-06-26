@@ -115,7 +115,7 @@ export default function Step03Data({ onSelect, estadoAtual }) {
       )}
 
       <button
-        onClick={handleConfirmar}
+        aria-label="Confirmar resposta" onClick={handleConfirmar}
         disabled={!dataValida}
         style={{
           alignSelf: 'flex-start',

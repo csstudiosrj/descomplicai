@@ -175,7 +175,7 @@ export default function Step07dSimbolica({ onSelect, estadoAtual }) {
       </div>
 
       <button
-        onClick={handleConfirmar}
+        aria-label="Confirmar resposta" onClick={handleConfirmar}
         disabled={selecionados.length === 0}
         style={{
           alignSelf: 'flex-start',

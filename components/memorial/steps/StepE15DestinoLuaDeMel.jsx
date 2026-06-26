@@ -30,7 +30,7 @@ export default function StepE15DestinoLuaDeMel({ onSelect, estadoAtual }) {
       </div>
 
       <button
-        onClick={handleConfirmar}
+        aria-label="Confirmar resposta" onClick={handleConfirmar}
         disabled={!podeAvancar}
         style={{
           alignSelf: 'flex-start',

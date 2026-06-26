@@ -35,6 +35,12 @@ export default function Step03Local({ onSelect, estadoAtual }) {
   };
   const mostrarAviso = selecionado && LOCAIS_EXTERNOS.includes(selecionado);
 
+  const handleKeyDown = (e, opcao) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleCardClick(opcao);
+    }
+  };
   return (
     <div
       role="radiogroup"

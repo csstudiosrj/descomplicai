@@ -122,7 +122,7 @@ export default function Step04Estilo({ onSelect, estadoAtual }) {
       )}
 
       <button
-        onClick={handleConfirmar}
+        aria-label="Confirmar resposta" onClick={handleConfirmar}
         disabled={!selecionado}
         style={{
           alignSelf: 'flex-start',

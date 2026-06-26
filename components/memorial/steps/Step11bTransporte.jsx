@@ -45,7 +45,7 @@ export default function Step11bTransporte({ onSelect, estadoAtual }) {
       )}
 
       <button
-        onClick={handleConfirmar}
+        aria-label="Confirmar resposta" onClick={handleConfirmar}
         disabled={!transporte}
         style={{
           alignSelf: 'flex-start',

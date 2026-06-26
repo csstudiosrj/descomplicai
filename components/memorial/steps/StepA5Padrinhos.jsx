@@ -127,7 +127,7 @@ export default function StepA5Padrinhos({ onSelect, estadoAtual }) {
 
       {escolhidos === true && (
         <button
-          onClick={handleConfirmar}
+          aria-label="Confirmar resposta" onClick={handleConfirmar}
           disabled={quantos === ''}
           style={{
             alignSelf: 'flex-start',

@@ -73,7 +73,7 @@ export default function Step15Tom({ onSelect, estadoAtual }) {
       )}
 
       <button
-        onClick={handleConfirmar}
+        aria-label="Confirmar resposta" onClick={handleConfirmar}
         disabled={selecionados.length === 0}
         style={{
           alignSelf: 'flex-start',
