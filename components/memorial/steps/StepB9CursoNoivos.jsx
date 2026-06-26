@@ -1,4 +1,4 @@
-// StepB9CursoNoivos — Já fez curso de noivos?
+// StepB9CursoNoivos — {`Já fez curso de ${termos.pessoa1} e ${termos.pessoa2}?`}
 // Dependências diretas: React, PropTypes, Card
 
 import React, { useState } from 'react';
@@ -33,7 +33,7 @@ export default function StepB9CursoNoivos({ onSelect, estadoAtual }) {
       <style jsx>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>
-        Já fez curso de noivos?
+        {`Já fez curso de ${termos.pessoa1} e ${termos.pessoa2}?`}
       </h1>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--space-4)' }}>

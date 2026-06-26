@@ -1,4 +1,4 @@
-// StepE9DocumentacaoEstrangeiro — Documentação para casamento no Brasil está em dia?
+// StepE9DocumentacaoEstrangeiro — {`Documentação para ${termos.celebracao} no Brasil está em dia?`}
 // Dependências diretas: React, PropTypes, Card
 
 import React, { useState } from 'react';
@@ -29,7 +29,7 @@ export default function StepE9DocumentacaoEstrangeiro({ onSelect, estadoAtual })
       <style jsx>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>
-        Documentação para casamento no Brasil está em dia?
+        {`Documentação para ${termos.celebracao} no Brasil está em dia?`}
       </h1>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--space-4)' }}>

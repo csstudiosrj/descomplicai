@@ -38,7 +38,7 @@ export default function StepI5MudancaLook({ onSelect, estadoAtual }) {
   return (
     <div
       role="radiogroup"
-      aria-label="A noiva fará mudança de look?"
+      aria-label={`${termos.pessoa1} fará mudança de look?`}
       style={{
         maxWidth: '640px',
         margin: '0 auto',
@@ -60,7 +60,7 @@ export default function StepI5MudancaLook({ onSelect, estadoAtual }) {
           Mudança de look
         </h1>
         <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
-          A noiva fará mudança de look?
+          {`${termos.pessoa1} fará mudança de look?`}
         </p>
       </div>
 

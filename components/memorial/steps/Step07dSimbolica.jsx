@@ -41,7 +41,7 @@ const RITUAIS = [
   },
   {
     nome: 'Escrita de votos',
-    desc: 'O casal lê votos pessoais escritos por eles mesmos.',
+    desc: '${termos.pessoa1} e ${termos.pessoa2} leem votos pessoais escritos por eles mesmos.',
   },
 ];
 

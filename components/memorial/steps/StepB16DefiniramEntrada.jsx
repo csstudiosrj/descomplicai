@@ -1,4 +1,4 @@
-// StepB16DefiniramEntrada — Já definiu a entrada dos noivos?
+// StepB16DefiniramEntrada — {`Já definiu a entrada de ${termos.pessoa1} e ${termos.pessoa2}?`}
 // Dependências diretas: React, PropTypes, Input
 
 import React, { useState } from 'react';
@@ -19,7 +19,7 @@ export default function StepB16DefiniramEntrada({ onSelect, estadoAtual }) {
       <style jsx>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>
-        Já definiu a entrada dos noivos?
+        {`Já definiu a entrada de ${termos.pessoa1} e ${termos.pessoa2}?`}
       </h1>
       <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
         Descreva como será a entrada (opcional).
