@@ -9,7 +9,7 @@ const OPCOES = [
     {
       valor: 'sim',
       label: 'Sim',
-      subtexto: 'Carro decorado para os noivos',
+      subtexto: `{`Carro decorado para os ${termos.pessoa1} e ${termos.pessoa2}`}`,
       icone: 'car',
     },
     {
@@ -64,7 +64,7 @@ export default function StepL4CarroNoivos({ onSelect, estadoAtual }) {
 
       <div>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', lineHeight: 'var(--leading-tight)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>
-          Carro dos noivos
+          {`Carro dos ${termos.pessoa1} e ${termos.pessoa2}`}
         </h1>
         <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
           Terão carro exclusivo?

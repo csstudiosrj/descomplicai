@@ -1,4 +1,4 @@
-// StepE14HorarioMakingOfNoivo — Horário do making of do noivo
+// StepE14HorarioMakingOfNoivo — {`Horário do making of do ${termos.pessoa2}`}
 // Dependências diretas: React, PropTypes, Input
 
 import React, { useState } from 'react';
@@ -22,7 +22,7 @@ export default function StepE14HorarioMakingOfNoivo({ onSelect, estadoAtual }) {
       <style jsx>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>
-        Horário do making of do noivo
+        {`Horário do making of do ${termos.pessoa2}`}
       </h1>
       <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
         Que horas começa a preparação?

@@ -18,7 +18,6 @@ export default function StepE5CertidaoObitoNoivo({ onSelect, estadoAtual }) {
 
   const selecionado = estadoAtual?.certidaoObitoNoivo;
 
-
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
     setCardPulsando(opcao.valor);
@@ -28,7 +27,7 @@ export default function StepE5CertidaoObitoNoivo({ onSelect, estadoAtual }) {
     }, 350);
   };
   return (
-    <div role="radiogroup" aria-label="Certidão de óbito do noivo" style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', animation: 'fadeInUp 300ms ease-out' }}>
+    <div role="radiogroup" aria-label={`Certidão de óbito do(a) ${termos.pessoa2}`} style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', animation: 'fadeInUp 300ms ease-out' }}>
       <style jsx>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>
