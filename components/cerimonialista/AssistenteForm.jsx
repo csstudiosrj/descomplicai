@@ -63,7 +63,7 @@ export default function AssistenteForm({ assistente, cerimonialistaId, acessos, 
         error = updError;
       } else {
         // Para criar, usamos a API que lida com criação do usuário Auth
-        const res = await fetch('/api/cerimonialista/assistentes', {
+        const res = await fetch('/api/cerimonialista/assistentes/convidar', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

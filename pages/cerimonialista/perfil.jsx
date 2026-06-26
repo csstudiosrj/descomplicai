@@ -124,7 +124,7 @@ export default function PerfilCerimonialista() {
     setConvidando(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/cerimonialista/assistentes', {
+      const res = await fetch('/api/cerimonialista/assistentes/convidar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -155,7 +155,7 @@ export default function PerfilCerimonialista() {
   const handleRemoverAssistente = async (id) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/cerimonialista/assistentes', {
+      const res = await fetch('/api/cerimonialista/assistentes/deletar', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
