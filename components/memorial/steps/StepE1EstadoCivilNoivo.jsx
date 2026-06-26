@@ -4,15 +4,18 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
+import { getTermos } from '../../../utils/linguagemCasal';
 
 const OPCOES = [
   { valor: "solteiro", label: "Solteiro", desc: "Nunca casou no civil" },
-  { valor: "divorciado", label: "Divorciado", desc: "Já teve casamento civil anterior" },
+  { valor: "divorciado", label: "Divorciado", desc: "Já teve evento civil anterior" },
   { valor: "viuvo", label: "Viúvo", desc: "Cônjuge anterior faleceu" }
 ];
 
 export default function StepE1EstadoCivilNoivo({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
+  const perfil = estadoAtual?.perfilCasal || 'nao-especificar';
+  const termos = getTermos(perfil);
 
   const selecionado = estadoAtual?.estadoCivilNoivo;
 

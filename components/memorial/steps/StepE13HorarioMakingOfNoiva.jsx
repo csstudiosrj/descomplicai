@@ -1,12 +1,15 @@
-// StepE13HorarioMakingOfNoiva — Horário do making of da noiva
+// StepE13HorarioMakingOfNoiva — Horário do making of da 
 // Dependências diretas: React, PropTypes, Input
 
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Input from '../../ui/Input';
+import { getTermos } from '../../../utils/linguagemCasal';
 
 export default function StepE13HorarioMakingOfNoiva({ onSelect, estadoAtual }) {
   const [valor, setValor] = useState(estadoAtual?.horarioMakingOfNoiva || '');
+  const perfil = estadoAtual?.perfilCasal || 'nao-especificar';
+  const termos = getTermos(perfil);
 
   const handleConfirmar = () => {
     onSelect('horarioMakingOfNoiva', valor.trim());
@@ -19,7 +22,7 @@ export default function StepE13HorarioMakingOfNoiva({ onSelect, estadoAtual }) {
       <style jsx>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>
-        Horário do making of da noiva
+        Horário do making of da 
       </h1>
       <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
         Que horas começa a preparação?

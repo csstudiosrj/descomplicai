@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
+import { getTermos } from '../../../utils/linguagemCasal';
 
 const OPCOES = [
   { valor: 'noiva-noivo', label: 'Noiva e Noivo', icone: 'heart', cor: 'var(--color-info-light)' },
@@ -15,6 +16,8 @@ const OPCOES = [
 
 export default function Step00Casal({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
+  const perfil = estadoAtual?.perfilCasal || 'nao-especificar';
+  const termos = getTermos(perfil);
 
   const selecionado = estadoAtual?.perfilCasal;
 
