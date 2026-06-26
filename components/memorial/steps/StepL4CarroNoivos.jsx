@@ -9,7 +9,7 @@ const OPCOES = [
     {
       valor: 'sim',
       label: 'Sim',
-      subtexto: `{`Carro decorado para os ${termos.pessoa1} e ${termos.pessoa2}`}`,
+      subtexto: `Carro decorado para os ${termos.pessoa1} e ${termos.pessoa2}`,
       icone: 'car',
     },
     {
