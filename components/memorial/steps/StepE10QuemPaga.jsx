@@ -1,4 +1,4 @@
-// StepE10QuemPaga — Quem está pagando o evento?
+// StepE10QuemPaga — Quem está pagando o {termos.celebracao}?
 // Dependências diretas: React, PropTypes, Card
 
 import React, { useState } from 'react';

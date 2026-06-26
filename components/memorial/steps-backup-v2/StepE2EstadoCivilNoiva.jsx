@@ -1,4 +1,4 @@
-// StepE4CertidaoDivorcioNoiva — Certidão de {termos.celebracao} anterior com averbação de divórcio?
+// StepE2EstadoCivilNoiva — Qual o estado civil da ?
 // Dependências diretas: React, PropTypes, Card
 
 import React, { useState } from 'react';
@@ -7,16 +7,17 @@ import Card from '../../ui/Card';
 import { getTermos } from '../../../utils/linguagemCasal';
 
 const OPCOES = [
-  { valor: "sim", label: "Sim", desc: "Já tenho a certidão com averbação" },
-  { valor: "nao", label: "Não", desc: "Ainda não solicitei" }
+  { valor: "solteiro", label: "Solteira", desc: "Nunca casou no civil" },
+  { valor: "divorciado", label: "Divorciada", desc: "Já teve evento civil anterior" },
+  { valor: "viuvo", label: "Viúva", desc: "Cônjuge anterior faleceu" }
 ];
 
-export default function StepE4CertidaoDivorcioNoiva({ onSelect, estadoAtual }) {
+export default function StepE2EstadoCivilNoiva({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
   const perfil = estadoAtual?.perfilCasal || 'nao-especificar';
   const termos = getTermos(perfil);
 
-  const selecionado = estadoAtual?.certidaoDivorcioNoiva;
+  const selecionado = estadoAtual?.estadoCivilNoiva;
 
 
   const handleCardClick = (opcao) => {
@@ -32,7 +33,7 @@ export default function StepE4CertidaoDivorcioNoiva({ onSelect, estadoAtual }) {
       <style jsx>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>
-        Certidão de evento anterior com averbação de divórcio?
+        Qual o estado civil da ?
       </h1>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--space-4)' }}>
@@ -48,7 +49,7 @@ export default function StepE4CertidaoDivorcioNoiva({ onSelect, estadoAtual }) {
         borderRadius: 'var(--radius-lg)',
       }}
     >
-      <Card key={o.valor} interactive selected={isSelected} padding="lg" onClick={() => onSelect('certidaoDivorcioNoiva', o.valor)} role="radio" aria-checked={isSelected} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect('certidaoDivorcioNoiva', o.valor); } }}>
+      <Card key={o.valor} interactive selected={isSelected} padding="lg" onClick={() => onSelect('estadoCivilNoiva', o.valor)} role="radio" aria-checked={isSelected} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect('estadoCivilNoiva', o.valor); } }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                 <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }}>{o.label}</span>
                 {o.desc && <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>{o.desc}</span>}
@@ -62,9 +63,9 @@ export default function StepE4CertidaoDivorcioNoiva({ onSelect, estadoAtual }) {
   );
 }
 
-StepE4CertidaoDivorcioNoiva.propTypes = {
+StepE2EstadoCivilNoiva.propTypes = {
   onSelect: PropTypes.func.isRequired,
   estadoAtual: PropTypes.object,
 };
 
-export { StepE4CertidaoDivorcioNoiva };
+export { StepE2EstadoCivilNoiva };

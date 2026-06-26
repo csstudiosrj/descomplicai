@@ -1,4 +1,4 @@
-// StepE3CertidaoDivorcioNoivo — Certidão de evento anterior com averbação de divórcio?
+// StepE3CertidaoDivorcioNoivo — Certidão de {termos.celebracao} anterior com averbação de divórcio?
 // Dependências diretas: React, PropTypes, Card
 
 import React, { useState } from 'react';

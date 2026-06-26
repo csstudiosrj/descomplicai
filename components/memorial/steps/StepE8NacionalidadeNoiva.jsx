@@ -1,4 +1,4 @@
-// StepE8NacionalidadeNoiva — Qual a nacionalidade da ?
+// StepE8NacionalidadeNoiva — Qual a nacionalidade da {termos.pessoa1}?
 // Dependências diretas: React, PropTypes, Card
 
 import React, { useState } from 'react';
@@ -32,7 +32,7 @@ export default function StepE8NacionalidadeNoiva({ onSelect, estadoAtual }) {
       <style jsx>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>
-        Qual a nacionalidade da ?
+        {`Qual a nacionalidade da ${termos.pessoa1}?`}
       </h1>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--space-4)' }}>

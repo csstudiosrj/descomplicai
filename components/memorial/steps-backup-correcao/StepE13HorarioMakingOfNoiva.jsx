@@ -1,4 +1,4 @@
-// StepE13HorarioMakingOfNoiva — Horário do making of da {termos.pessoa1}
+// StepE13HorarioMakingOfNoiva — Horário do making of da 
 // Dependências diretas: React, PropTypes, Input
 
 import React, { useState } from 'react';

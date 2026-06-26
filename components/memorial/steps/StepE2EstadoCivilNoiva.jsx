@@ -1,4 +1,4 @@
-// StepE2EstadoCivilNoiva — Qual o estado civil da ?
+// StepE2EstadoCivilNoiva — Qual o estado civil da {termos.pessoa1}?
 // Dependências diretas: React, PropTypes, Card
 
 import React, { useState } from 'react';
@@ -8,7 +8,7 @@ import { getTermos } from '../../../utils/linguagemCasal';
 
 const OPCOES = [
   { valor: "solteiro", label: "Solteira", desc: "Nunca casou no civil" },
-  { valor: "divorciado", label: "Divorciada", desc: "Já teve evento civil anterior" },
+  { valor: "divorciado", label: "Divorciada", desc: "{`Já teve ${termos.celebracao} civil anterior`}" },
   { valor: "viuvo", label: "Viúva", desc: "Cônjuge anterior faleceu" }
 ];
 
@@ -29,11 +29,11 @@ export default function StepE2EstadoCivilNoiva({ onSelect, estadoAtual }) {
     }, 350);
   };
   return (
-    <div role="radiogroup" aria-label="Escolha uma opção" style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', animation: 'fadeInUp 300ms ease-out' }}>
+    <div role="radiogroup" aria-label={`Estado civil da ${termos.pessoa1}`} style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', animation: 'fadeInUp 300ms ease-out' }}>
       <style jsx>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>
-        Qual o estado civil da ?
+        {`Qual o estado civil da ${termos.pessoa1}?`}
       </h1>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--space-4)' }}>
