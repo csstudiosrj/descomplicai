@@ -7,17 +7,19 @@ import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
 import { getTermos } from '../../../utils/linguagemCasal';
 
-const OPCOES = [
-  { valor: 'noiva-noivo', label: `${termos.pessoa1} e ${termos.pessoa2}`, icone: 'heart', cor: 'var(--color-info-light)' },
-  { valor: 'duas-noivas', label: `Duas ${termos.pessoa1}s`, icone: 'users', cor: 'var(--color-brand-lighter)' },
-  { valor: 'dois-noivos', label: `Dois ${termos.pessoa2}s`, icone: 'users', cor: 'var(--color-brand-lighter)' },
-  { valor: 'nao-especificar', label: 'Prefiro não especificar', icone: 'heart', cor: 'var(--color-info-light)' },
-];
+
 
 export default function Step00Casal({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
   const perfil = estadoAtual?.perfilCasal || 'nao-especificar';
   const termos = getTermos(perfil);
+
+  const OPCOES = [
+    { valor: 'noiva-noivo', label: `${termos.pessoa1} e ${termos.pessoa2}`, icone: 'heart', cor: 'var(--color-info-light)' },
+    { valor: 'duas-noivas', label: `Duas ${termos.pessoa1}s`, icone: 'users', cor: 'var(--color-brand-lighter)' },
+    { valor: 'dois-noivos', label: `Dois ${termos.pessoa2}s`, icone: 'users', cor: 'var(--color-brand-lighter)' },
+    { valor: 'nao-especificar', label: 'Prefiro não especificar', icone: 'heart', cor: 'var(--color-info-light)' },
+  ];
 
   const selecionado = estadoAtual?.perfilCasal;
 
