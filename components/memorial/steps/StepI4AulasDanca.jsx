@@ -14,7 +14,7 @@ const OPCOES = [
     {
       valor: false,
       label: 'Não',
-      subtexto: 'Apenas os noivos',
+      subtexto: `Apenas ${termos.pessoa1} e ${termos.pessoa2}`,
       icone: 'x',
     },
 ];
@@ -23,7 +23,6 @@ export default function StepI4AulasDanca({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
 
   const selecionado = estadoAtual?.aulasDanca;
-
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;

@@ -6,21 +6,20 @@ import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import { getTermos } from '../../../utils/linguagemCasal';
 
-const OPCOES = [
-  { valor: "noivos", label: "Noivos", desc: "Nós pagamos tudo" },
-  { valor: "pais_noiva", label: {}, desc: {} },
-  { valor: "pais_noivo", label: "Pais do noivo", desc: "Família do noivo assume" },
-  { valor: "ambos_pais", label: "Ambos os pais", desc: "As duas famílias dividem" },
-  { valor: "outros", label: "Outros", desc: "Outra combinação" }
-];
-
 export default function StepE10QuemPaga({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
   const perfil = estadoAtual?.perfilCasal || 'nao-especificar';
   const termos = getTermos(perfil);
 
-  const selecionado = estadoAtual?.quemPaga;
+  const OPCOES = [
+    { valor: "noivos", label: `${termos.pessoa1} e ${termos.pessoa2}`, desc: `Nós pagamos tudo` },
+    { valor: "pais_noiva", label: `Pais do ${termos.pessoa1}`, desc: `Família do ${termos.pessoa1} assume` },
+    { valor: "pais_noivo", label: `Pais do ${termos.pessoa2}`, desc: `Família do ${termos.pessoa2} assume` },
+    { valor: "ambos_pais", label: "Ambos os pais", desc: "As duas famílias dividem" },
+    { valor: "outros", label: "Outros", desc: "Outra combinação" }
+  ];
 
+  const selecionado = estadoAtual?.quemPaga;
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;

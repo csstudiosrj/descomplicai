@@ -26,7 +26,7 @@ const OPCOES = [
     {
       valor: 'sozinhos',
       label: 'Sozinhos',
-      subtexto: 'Entrada apenas do casal',
+      subtexto: `Entrada apenas de ${termos.pessoa1} e ${termos.pessoa2}`,
       icone: 'user',
     },
 ];
@@ -35,7 +35,6 @@ export default function Step32PadrinhosCriancas({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
 
   const selecionado = estadoAtual?.papeisCriancas;
-
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;

@@ -8,7 +8,7 @@ const OPCOES = [
     {
       valor: true,
       label: 'Sim',
-      subtexto: 'Aulas particulares para os noivos',
+      subtexto: `Aulas particulares para ${termos.pessoa1} e ${termos.pessoa2}`,
       icone: 'music',
     },
     {
@@ -23,7 +23,6 @@ export default function StepH5AulaDanca({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
 
   const selecionado = estadoAtual?.aulaDanca;
-
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;

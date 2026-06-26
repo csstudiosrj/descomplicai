@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
+import { getTermos } from '../../../utils/linguagemCasal';
 
 const OPCOES = [
     {
@@ -20,10 +21,11 @@ const OPCOES = [
 ];
 
 export default function StepI5MudancaLook({ onSelect, estadoAtual }) {
+  const perfil = estadoAtual?.perfilCasal || 'nao-especificar';
+  const termos = getTermos(perfil);
   const [cardPulsando, setCardPulsando] = React.useState(null);
 
   const selecionado = estadoAtual?.mudancaLook;
-
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;

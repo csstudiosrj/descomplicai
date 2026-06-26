@@ -26,7 +26,7 @@ export default function StepA15TradicaoFamiliar({ onSelect, estadoAtual }) {
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-        <Input label="Tradição" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="Ex: Todo casamento na família tem churrasco no dia seguinte"  />
+        <Input label="Tradição" value={valor} onChange={(e) => setValor(e.target.value)} placeholder={`Ex: Todo ${termos.celebracao} na família tem churrasco no dia seguinte`}  />
       </div>
 
       <button

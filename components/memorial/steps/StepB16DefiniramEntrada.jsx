@@ -26,7 +26,7 @@ export default function StepB16DefiniramEntrada({ onSelect, estadoAtual }) {
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-        <Input label="Entrada" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="Ex: Noiva com o pai, noivo já no altar"  />
+        <Input label="Entrada" value={valor} onChange={(e) => setValor(e.target.value)} placeholder={`Ex: ${termos.pessoa1} com o pai, ${termos.pessoa2} já no altar`}  />
       </div>
 
       <button

@@ -8,7 +8,7 @@ const OPCOES = [
     {
       valor: true,
       label: 'Sim',
-      subtexto: 'Ensaio pós-casamento no destino',
+      subtexto: `Ensaio pós-${termos.celebracao} no destino`,
       icone: 'camera',
     },
     {
@@ -23,7 +23,6 @@ export default function StepM2FotosLuaDeMel({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
 
   const selecionado = estadoAtual?.fotosLuaDeMel;
-
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;

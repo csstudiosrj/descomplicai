@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 const RITUAIS = [
   {
     nome: 'Areia',
-    desc: 'O casal despeja areia colorida em um recipiente, simbolizando a união indivisível.',
+    desc: '${termos.pessoa1} e ${termos.pessoa2} despejam areia colorida em um recipiente, simbolizando a união indivisível.',
   },
   {
     nome: 'Vela',
@@ -13,7 +13,7 @@ const RITUAIS = [
   },
   {
     nome: 'Vinho',
-    desc: 'O casal bebe do mesmo cálice, selando a partilha da vida.',
+    desc: '${termos.pessoa1} e ${termos.pessoa2} bebem do mesmo cálice, selando a partilha da vida.',
   },
   {
     nome: 'Rosas',
@@ -25,11 +25,11 @@ const RITUAIS = [
   },
   {
     nome: 'Árvore',
-    desc: 'O casal planta uma muda ou regam uma árvore, representando o crescimento do amor.',
+    desc: '${termos.pessoa1} e ${termos.pessoa2} plantam uma muda ou regam uma árvore, representando o crescimento do amor.',
   },
   {
     nome: 'Pétalas',
-    desc: 'Convidados jogam pétalas sobre o casal, abençoando a união.',
+    desc: 'Convidados jogam pétalas sobre ${termos.pessoa1} e ${termos.pessoa2}, abençoando a união.',
   },
   {
     nome: 'Balões',
@@ -37,7 +37,7 @@ const RITUAIS = [
   },
   {
     nome: 'Lágrimas de alegria',
-    desc: 'O casal oferece lenços ou frascos para guardar as lágrimas de felicidade.',
+    desc: '${termos.pessoa1} e ${termos.pessoa2} oferecem lenços ou frascos para guardar as lágrimas de felicidade.',
   },
   {
     nome: 'Escrita de votos',
