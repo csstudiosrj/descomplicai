@@ -1,5 +1,5 @@
 // Cadastro de novo fornecedor no sistema
-// Dependencias diretas: React, next/head, next/router, Input, Button, Icon
+// Dependências diretas: React, next/head, next/router, Input, Button, Icon
 
 import React, { useState } from 'react';
 import Head from 'next/head';
@@ -8,7 +8,6 @@ import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/ui/Icon';
 import { supabase } from '../../lib/supabase';
-import { SUBCATEGORIAS_FLAT } from '../../utils/catalogoFornecedores';
 
 export default function FornecedorCadastroPage() {
   const router = useRouter();
@@ -26,16 +25,10 @@ export default function FornecedorCadastroPage() {
     setLoading(true);
     setErro('');
 
-    if (!categoria) {
-      setErro('Selecione uma categoria do catalogo.');
-      setLoading(false);
-      return;
-    }
-
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        setErro('Voce precisa estar logado para se cadastrar como fornecedor.');
+        setErro('Você precisa estar logado para se cadastrar como fornecedor.');
         setLoading(false);
         return;
       }
@@ -64,6 +57,7 @@ export default function FornecedorCadastroPage() {
       if (plano === 'gratuito') {
         router.push('/fornecedor/painel');
       } else {
+        // TODO: redirecionar para checkout MP quando aprovado
         router.push('/fornecedor/painel');
       }
     } catch (err) {
@@ -74,30 +68,9 @@ export default function FornecedorCadastroPage() {
     }
   };
 
-  const labelStyle = {
-    fontFamily: 'var(--font-body)',
-    fontSize: 'var(--text-sm)',
-    color: 'var(--color-text-secondary)',
-    marginBottom: 'var(--space-2)',
-    fontWeight: 'var(--font-medium)',
-    display: 'block'
-  };
-
-  const selectStyle = {
-    width: '100%',
-    padding: 'var(--space-3)',
-    borderRadius: 'var(--radius-md)',
-    border: '1px solid var(--color-border)',
-    fontFamily: 'var(--font-body)',
-    fontSize: 'var(--text-sm)',
-    color: 'var(--color-text-primary)',
-    backgroundColor: 'var(--color-white)',
-    outline: 'none'
-  };
-
   return (
     <>
-      <Head><title>Cadastro de Fornecedor — Descomplicai</title></Head>
+      <Head><title>Cadastro de Fornecedor — Descomplicaí</title></Head>
       <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-4)', backgroundColor: 'var(--color-off-white)' }}>
         <div style={{ width: '100%', maxWidth: '480px' }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)', textAlign: 'center' }}>
@@ -116,26 +89,8 @@ export default function FornecedorCadastroPage() {
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
               <Input label="Nome da empresa" value={nome} onChange={(e) => setNome(e.target.value)} required />
               <Input label="E-mail comercial" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-
-              <div>
-                <label htmlFor="categoria" style={labelStyle}>Categoria de servico</label>
-                <select
-                  id="categoria"
-                  value={categoria}
-                  onChange={(e) => setCategoria(e.target.value)}
-                  required
-                  style={selectStyle}
-                >
-                  <option value="">Selecione uma categoria...</option>
-                  {SUBCATEGORIAS_FLAT.map((sub) => (
-                    <option key={sub.id} value={sub.id}>
-                      {sub.categoriaPrincipalLabel} — {sub.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <Input label="Cidade de atuacao" value={cidade} onChange={(e) => setCidade(e.target.value)} required />
+              <Input label="Categoria (ex: Buffet, Fotografia)" value={categoria} onChange={(e) => setCategoria(e.target.value)} required />
+              <Input label="Cidade de atuação" value={cidade} onChange={(e) => setCidade(e.target.value)} required />
 
               <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
                 <legend style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-3)', fontWeight: 'var(--font-medium)' }}>
@@ -143,8 +98,8 @@ export default function FornecedorCadastroPage() {
                 </legend>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                   {[
-                    { value: 'gratuito', label: 'Gratuito', desc: 'Perfil invisivel nas buscas — sem custo' },
-                    { value: 'basico', label: 'Basico — R$ 19,90/mes', desc: 'Perfil ativo e visivel para casais' },
+                    { value: 'gratuito', label: 'Gratuito', desc: 'Perfil invisível nas buscas — sem custo' },
+                    { value: 'basico', label: 'Básico — R$ 19,90/mês', desc: 'Perfil ativo e visível para casais' },
                     { value: 'premium', label: 'Premium', desc: 'Destaque nas buscas + prioridade nos leads' }
                   ].map((p) => (
                     <label

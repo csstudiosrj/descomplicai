@@ -1,5 +1,7 @@
+// GET /api/fornecedores/metricas
+// Retorna métricas dos últimos 30 dias + gráfico + status da assinatura
+
 import { createClient } from '@supabase/supabase-js';
-import { getLabelSubcategoria } from '../../../utils/catalogoFornecedores';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -76,8 +78,7 @@ export default async function handler(req, res) {
         plano: fornecedor.plano,
         ativo: fornecedor.ativo,
         cidade: fornecedor.cidade,
-        categoria: fornecedor.categoria,
-        categoriaLabel: getLabelSubcategoria(fornecedor.categoria)
+        categoria: fornecedor.categoria
       },
       metricas: {
         visualizacoes: fornecedor.visualizacoes,

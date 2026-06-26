@@ -1,6 +1,5 @@
 import React from 'react';
 import Icon from '../ui/Icon';
-import { getLabelSubcategoria } from '../../utils/catalogoFornecedores';
 
 function formatarValor(valor) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
@@ -28,7 +27,7 @@ export default function FinanceiroLista({ lancamentos, loading, tipos, categoria
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
-        <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando lancamentos...</p>
+        <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando lançamentos...</p>
       </div>
     );
   }
@@ -53,10 +52,10 @@ export default function FinanceiroLista({ lancamentos, loading, tipos, categoria
             marginTop: 'var(--space-4)',
           }}
         >
-          Nenhum lancamento
+          Nenhum lançamento
         </h3>
         <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)' }}>
-          Crie seu primeiro lancamento para comecar.
+          Crie seu primeiro lançamento para começar.
         </p>
       </div>
     );
@@ -70,6 +69,7 @@ export default function FinanceiroLista({ lancamentos, loading, tipos, categoria
         const totalMes = items.reduce((s, l) => s + (l.valor || 0), 0);
         return (
           <div key={chave}>
+            {/* Cabeçalho do mês */}
             <div
               style={{
                 display: 'flex',
@@ -104,10 +104,11 @@ export default function FinanceiroLista({ lancamentos, loading, tipos, categoria
               </span>
             </div>
 
+            {/* Itens */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               {items.map((l) => {
                 const tipoInfo = tipos.find((t) => t.id === l.tipo) || tipos[0];
-                const catLabel = getLabelSubcategoria(l.categoria) || '—';
+                const catLabel = categorias[l.tipo]?.find((c) => c.id === l.categoria)?.label || l.categoria || '—';
 
                 return (
                   <div
@@ -123,6 +124,7 @@ export default function FinanceiroLista({ lancamentos, loading, tipos, categoria
                       flexWrap: 'wrap',
                     }}
                   >
+                    {/* Toggle pago */}
                     <button
                       onClick={() => onTogglePago(l.id, l.pago)}
                       style={{
@@ -141,6 +143,7 @@ export default function FinanceiroLista({ lancamentos, loading, tipos, categoria
                       <Icon name={l.pago ? 'checkSquare' : 'square'} size={20} />
                     </button>
 
+                    {/* Info */}
                     <div style={{ flex: 1, minWidth: '200px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-1)' }}>
                         <span
@@ -169,13 +172,14 @@ export default function FinanceiroLista({ lancamentos, loading, tipos, categoria
                           wordBreak: 'break-word',
                         }}
                       >
-                        {l.descricao || 'Sem descricao'}
+                        {l.descricao || 'Sem descrição'}
                       </p>
                       <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)' }}>
                         Vencimento: {formatarData(l.data_vencimento)}
                       </p>
                     </div>
 
+                    {/* Valor + ações */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexShrink: 0 }}>
                       <span
                         style={{

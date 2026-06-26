@@ -1,17 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { SUBCATEGORIAS_FLAT } from '../../../utils/catalogoFornecedores';
-
-const CATEGORIAS_VALIDAS = new Set(SUBCATEGORIAS_FLAT.map(s => s.id));
-
-function validarCategoria(categoria) {
-  if (!categoria) return null;
-  const limpa = categoria.trim();
-  if (!limpa) return null;
-  if (!CATEGORIAS_VALIDAS.has(limpa)) {
-    return { erro: `Categoria invalida: "${limpa}"` };
-  }
-  return limpa;
-}
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -20,17 +7,12 @@ const supabase = createClient(
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ erro: 'Metodo nao permitido' });
+    return res.status(405).json({ erro: 'Método não permitido' });
   }
 
   const { evento_id, fornecedor_id, pdf_url, categoria, conteudo } = req.body;
   if (!evento_id || !fornecedor_id || !pdf_url) {
     return res.status(400).json({ erro: 'Dados incompletos (evento_id, fornecedor_id, pdf_url)' });
-  }
-
-  const catValidada = validarCategoria(categoria);
-  if (catValidada && typeof catValidada === 'object' && catValidada.erro) {
-    return res.status(400).json({ erro: catValidada.erro });
   }
 
   try {
@@ -40,7 +22,7 @@ export default async function handler(req, res) {
         evento_id,
         fornecedor_id,
         tipo: 'upload_fornecedor',
-        categoria: catValidada,
+        categoria: categoria || null,
         status: 'enviado',
         conteudo: conteudo || null,
         pdf_url,

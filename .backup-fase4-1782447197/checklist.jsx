@@ -6,7 +6,8 @@ import TarefaItem from '../../components/checklist/TarefaItem';
 import Icon from '../../components/ui/Icon';
 import Toast from '../../components/ui/Toast';
 import { useAuth } from '../../hooks/useAuth';
-import { SUBCATEGORIAS_FLAT } from '../../utils/catalogoFornecedores';
+
+const CATEGORIAS_TAREFA = ['Fornecedores', 'Financeiro', 'Documentação', 'Decoração', 'Vestuário', 'Convidados', 'Outros'];
 
 export default function ChecklistPage({ readOnly }) {
   return (
@@ -56,7 +57,7 @@ function ChecklistContent({ readOnly }) {
         buscar();
       }
     } catch (err) {
-      console.error('Erro ao gerar tarefas padrao:', err);
+      console.error('Erro ao gerar tarefas padrão:', err);
     }
   };
 
@@ -105,14 +106,14 @@ function ChecklistContent({ readOnly }) {
   const excluir = async (id) => {
     if (readOnly || !confirm('Excluir tarefa?')) return;
     await supabase.from('tarefas').delete().eq('id', id);
-    mostrarToast('Tarefa excluida', 'info');
+    mostrarToast('Tarefa excluída', 'info');
     buscar();
   };
 
   const toggle = async (id, concluida) => {
     if (readOnly) return;
     await supabase.from('tarefas').update({ concluida: !concluida }).eq('id', id);
-    mostrarToast(!concluida ? 'Tarefa concluida' : 'Tarefa reaberta');
+    mostrarToast(!concluida ? 'Tarefa concluída' : 'Tarefa reaberta');
     buscar();
   };
 
@@ -273,7 +274,7 @@ function ChecklistContent({ readOnly }) {
 
   return (
     <>
-      <Head><title>Checklist | descomplicai</title></Head>
+      <Head><title>Checklist | descomplicaí</title></Head>
       <div style={{ minHeight: '100vh', background: 'var(--color-off-white)', paddingTop: 52 }}>
         <HeaderPainel nomeCasal={nomeCasal} dataEvento={evento?.data_evento} />
         <main style={{ maxWidth: 960, margin: '0 auto', padding: 'var(--space-6) var(--space-4) var(--space-12)' }}>
@@ -339,7 +340,7 @@ function ChecklistContent({ readOnly }) {
           }}>
             {[
               { label: 'Total de tarefas', valor: resumo.total, cor: 'var(--color-brand)' },
-              { label: 'Concluidas', valor: `${resumo.concluidas} (${resumo.pct}%)`, cor: 'var(--color-success)' },
+              { label: 'Concluídas', valor: `${resumo.concluidas} (${resumo.pct}%)`, cor: 'var(--color-success)' },
               { label: 'Pendentes', valor: resumo.pendentes, cor: 'var(--color-info)' },
               { label: 'Atrasadas', valor: resumo.atrasadas, cor: 'var(--color-danger)' },
             ].map(({ label, valor, cor }) => (
@@ -371,7 +372,7 @@ function ChecklistContent({ readOnly }) {
                 display: 'flex', justifyContent: 'space-between',
                 fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-3)',
               }}>
-                <span>Progresso de conclusao</span>
+                <span>Progresso de conclusão</span>
                 <span style={{ fontWeight: 'var(--font-semibold)', color: 'var(--color-brand)' }}>
                   {resumo.pct}%
                 </span>
@@ -404,9 +405,9 @@ function ChecklistContent({ readOnly }) {
               {[
                 { id: 'todas', label: 'Todas' },
                 { id: 'pendentes', label: 'Pendentes' },
-                { id: 'concluidas', label: 'Concluidas' },
+                { id: 'concluidas', label: 'Concluídas' },
                 { id: 'urgentes', label: 'Urgentes' },
-                { id: 'proximos30', label: 'Proximos 30 dias' },
+                { id: 'proximos30', label: 'Próximos 30 dias' },
               ].map(({ id, label }) => (
                 <button
                   key={id}
@@ -435,8 +436,8 @@ function ChecklistContent({ readOnly }) {
                 }}
               >
                 <option value="todas">Todas as categorias</option>
-                {SUBCATEGORIAS_FLAT.map((sub) => (
-                  <option key={sub.id} value={sub.id}>{sub.categoriaPrincipalLabel} — {sub.label}</option>
+                {CATEGORIAS_TAREFA.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
             </div>
@@ -487,9 +488,9 @@ function ChecklistContent({ readOnly }) {
             <>
               {renderGrupo('atrasadas', 'Atrasadas', 'var(--color-danger)', grupos.atrasadas)}
               {renderGrupo('urgentes', 'Urgentes', 'var(--color-warning)', grupos.urgentes)}
-              {renderGrupo('proximos30', 'Proximos 30 dias', 'var(--color-info)', grupos.proximos30)}
+              {renderGrupo('proximos30', 'Próximos 30 dias', 'var(--color-info)', grupos.proximos30)}
               {renderGrupo('futuros', 'Futuros', 'var(--color-border-strong)', grupos.futuros, true)}
-              {renderGrupo('concluidas', 'Concluidas', 'var(--color-success)', grupos.concluidas, true)}
+              {renderGrupo('concluidas', 'Concluídas', 'var(--color-success)', grupos.concluidas, true)}
             </>
           )}
 
@@ -547,11 +548,11 @@ function ChecklistContent({ readOnly }) {
                 display: 'block', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-medium)',
                 color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)',
               }}>
-                Titulo *
+                Título *
               </label>
               <input
                 type="text"
-                placeholder="Ex: Contratar fotografo"
+                placeholder="Ex: Contratar fotógrafo"
                 value={form.titulo || ''}
                 onChange={e => setForm({ ...form, titulo: e.target.value })}
                 style={{
@@ -568,7 +569,7 @@ function ChecklistContent({ readOnly }) {
                 display: 'block', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-medium)',
                 color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)',
               }}>
-                Descricao
+                Descrição
               </label>
               <textarea
                 placeholder="Detalhes adicionais..."
@@ -622,8 +623,8 @@ function ChecklistContent({ readOnly }) {
                 }}
               >
                 <option value="">Selecione...</option>
-                {SUBCATEGORIAS_FLAT.map((sub) => (
-                  <option key={sub.id} value={sub.id}>{sub.categoriaPrincipalLabel} — {sub.label}</option>
+                {CATEGORIAS_TAREFA.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
             </div>
@@ -639,7 +640,7 @@ function ChecklistContent({ readOnly }) {
                   onChange={e => setForm({ ...form, concluida: e.target.checked })}
                   style={{ width: 16, height: 16, cursor: 'pointer' }}
                 />
-                Tarefa concluida
+                Tarefa concluída
               </label>
             )}
 

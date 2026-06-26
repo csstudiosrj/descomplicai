@@ -47,7 +47,7 @@ function getCategoriaPrincipal(subcategoria) {
       lembrancinhas: 'papelaria_detalhes',
       kit_saida: 'papelaria_detalhes',
     };
-    return mapa[subcategoria] || 'outro';
+    return mapa[subcategoria] || 'Outros';
   }
   
   /**

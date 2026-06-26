@@ -1,5 +1,7 @@
+// GET /api/fornecedores/avaliacoes
+// Retorna avaliações do fornecedor logado + média da categoria
+
 import { createClient } from '@supabase/supabase-js';
-import { getLabelSubcategoria } from '../../../utils/catalogoFornecedores';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -54,8 +56,7 @@ export default async function handler(req, res) {
       avaliacoes: avaliacoes || [],
       mediaFornecedor: Number(fornecedor.avaliacao_media) || 0,
       totalAvaliacoes: fornecedor.total_avaliacoes,
-      mediaCategoria: mediaCat,
-      categoriaLabel: getLabelSubcategoria(fornecedor.categoria)
+      mediaCategoria: mediaCat
     });
   } catch (err) {
     console.error('[API avaliacoes] erro:', err);

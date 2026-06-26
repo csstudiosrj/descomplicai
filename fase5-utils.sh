@@ -1,3 +1,21 @@
+#!/bin/bash
+# ============================================================
+# FASE 5: Utils — tarefasPadrao + gerador-financeiro
+# ============================================================
+
+PROJECT_DIR="."
+BACKUP_DIR="$PROJECT_DIR/.backup-fase5-$(date +%s)"
+mkdir -p "$BACKUP_DIR"
+
+cp "$PROJECT_DIR/utils/tarefasPadrao.js" "$BACKUP_DIR/"
+cp "$PROJECT_DIR/utils/gerador-financeiro.js" "$BACKUP_DIR/"
+
+echo "Backup em: $BACKUP_DIR"
+
+# ============================================================
+# 1. utils/tarefasPadrao.js — mapear categorias para IDs do catálogo
+# ============================================================
+cat > "$PROJECT_DIR/utils/tarefasPadrao.js" << 'EOF_TAREFAS'
 import { SUBCATEGORIAS_FLAT } from './catalogoFornecedores';
 
 // Mapeamento de categorias legadas para IDs do catálogo
@@ -110,3 +128,26 @@ export const TAREFAS_PADRAO = [
   { titulo: 'Verificar chegada dos fornecedores', descricao: 'Cerimonial confirma horario de montagem de cada equipe.', categoria: normalizarCategoriaTarefa('Fornecedores'), diasAntes: 0 },
   { titulo: 'Revisar cronograma do dia', descricao: 'Ultima leitura do timeline com cerimonial.', categoria: normalizarCategoriaTarefa('Outros'), diasAntes: 0 },
 ];
+EOF_TAREFAS
+
+echo "[1/2] tarefasPadrao.js atualizado"
+
+# ============================================================
+# 2. utils/gerador-financeiro.js — 'Outros' → 'outro'
+# ============================================================
+sed -i "s/return mapa\[subcategoria\] || 'Outros';/return mapa[subcategoria] || 'outro';/" "$PROJECT_DIR/utils/gerador-financeiro.js"
+
+echo "[2/2] gerador-financeiro.js atualizado ('Outros' → 'outro')"
+
+echo ""
+echo "═══════════════════════════════════════════════════════"
+echo "  FASE 5 CONCLUIDA"
+echo "═══════════════════════════════════════════════════════"
+echo ""
+echo "Mudancas:"
+echo "  - tarefasPadrao.js: categorias legadas → IDs do catalogo (fallback 'outro')"
+echo "  - gerador-financeiro.js: 'Outros' → 'outro' (padrao lowercase)"
+echo ""
+echo "Backup em: $BACKUP_DIR"
+echo ""
+echo "PROXIMO PASSO: commit/push para Vercel"

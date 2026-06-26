@@ -2,10 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
-import { getLabelSubcategoria } from '../../utils/catalogoFornecedores';
 
 function calcularIndicador(prazo, concluida) {
-  if (concluida) return { cor: 'var(--color-success)', label: 'Concluida' };
+  if (concluida) return { cor: 'var(--color-success)', label: 'Concluída' };
   if (!prazo) return { cor: 'var(--color-border-strong)', label: 'Sem prazo' };
   
   const hoje = new Date();
@@ -32,6 +31,7 @@ export default function TarefaItem({ tarefa, onToggle, onClick }) {
   return (
     <Card variant={concluida ? 'flat' : 'default'} padding="md" interactive onClick={onClick}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+        {/* Indicador lateral */}
         <div style={{
           width: 3,
           height: 40,
@@ -40,11 +40,12 @@ export default function TarefaItem({ tarefa, onToggle, onClick }) {
           flexShrink: 0,
         }} />
 
+        {/* Checkbox */}
         <button
           onClick={(e) => { e.stopPropagation(); onToggle?.(id); }}
           aria-checked={concluida}
           role="checkbox"
-          aria-label={concluida ? 'Marcar como pendente' : 'Marcar como concluida'}
+          aria-label={concluida ? 'Marcar como pendente' : 'Marcar como concluída'}
           style={{
             width: 24,
             height: 24,
@@ -66,6 +67,7 @@ export default function TarefaItem({ tarefa, onToggle, onClick }) {
           )}
         </button>
 
+        {/* Conteúdo */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             fontFamily: 'var(--font-body)',
@@ -97,7 +99,7 @@ export default function TarefaItem({ tarefa, onToggle, onClick }) {
             flexWrap: 'wrap',
           }}>
             {categoria && (
-              <Badge variant="default" size="sm">{getLabelSubcategoria(categoria)}</Badge>
+              <Badge variant="default" size="sm">{categoria}</Badge>
             )}
             {prazoFormatado && (
               <span style={{

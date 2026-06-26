@@ -1,45 +1,26 @@
 import { createClient } from '@supabase/supabase-js';
 import { gerarTarefasContextualizadas } from '../../../utils/gerador-tarefas';
 import { TAREFAS_PADRAO } from '../../../utils/tarefasPadrao';
-import { SUBCATEGORIAS_FLAT, CATALOGO_FORNECEDORES } from '../../../utils/catalogoFornecedores';
-
-const CATEGORIAS_VALIDAS = new Set(SUBCATEGORIAS_FLAT.map(s => s.id));
-const CATEGORIAS_PRINCIPAIS_VALIDAS = new Set(CATALOGO_FORNECEDORES.map(c => c.id));
-
-function normalizarCategoria(categoria) {
-  if (!categoria) return null;
-  const limpa = String(categoria).trim();
-  if (!limpa) return null;
-  if (CATEGORIAS_VALIDAS.has(limpa)) return limpa;
-  return 'outro';
-}
-
-function normalizarCategoriaPrincipal(categoriaPrincipal) {
-  if (!categoriaPrincipal) return null;
-  const limpa = String(categoriaPrincipal).trim();
-  if (!limpa) return null;
-  if (CATEGORIAS_PRINCIPAIS_VALIDAS.has(limpa)) return limpa;
-  return 'outro';
-}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ erro: 'Metodo nao permitido' });
+    return res.status(405).json({ erro: 'Método não permitido' });
   }
 
   const { evento_id, data_evento, usuario_id, forcar_regeneracao } = req.body;
 
   if (!evento_id || !data_evento) {
-    return res.status(400).json({ erro: 'evento_id e data_evento sao obrigatorios' });
+    return res.status(400).json({ erro: 'evento_id e data_evento são obrigatórios' });
   }
 
   const key = serviceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const supabase = createClient(supabaseUrl, key);
 
   try {
+    // 1. Resolve usuario_id se não veio no body
     let uid = usuario_id;
     if (!uid) {
       const { data: evt } = await supabase
@@ -50,9 +31,10 @@ export default async function handler(req, res) {
       uid = evt?.usuario_id;
     }
     if (!uid) {
-      return res.status(400).json({ erro: 'usuario_id nao encontrado' });
+      return res.status(400).json({ erro: 'usuario_id não encontrado' });
     }
 
+    // 2. Se NÃO for forçado, verifica se já existem tarefas auto-geradas
     if (!forcar_regeneracao) {
       const { data: existentes, error: errCheck } = await supabase
         .from('tarefas')
@@ -63,10 +45,11 @@ export default async function handler(req, res) {
 
       if (errCheck) throw errCheck;
       if (existentes && existentes.length > 0) {
-        return res.status(200).json({ sucesso: true, criadas: 0, mensagem: 'Tarefas ja existem' });
+        return res.status(200).json({ sucesso: true, criadas: 0, mensagem: 'Tarefas já existem' });
       }
     }
 
+    // 3. Busca memorial do evento para contextualização
     const { data: memorial, error: memErr } = await supabase
       .from('memoriais')
       .select('estado')
@@ -79,6 +62,7 @@ export default async function handler(req, res) {
 
     let tarefasParaInserir = [];
 
+    // 4. Se tiver estado no memorial, usa gerador contextualizado
     if (memorial?.estado) {
       const estado = typeof memorial.estado === 'string' ? JSON.parse(memorial.estado) : memorial.estado;
       const contextualizadas = gerarTarefasContextualizadas(estado, data_evento);
@@ -88,8 +72,8 @@ export default async function handler(req, res) {
         usuario_id: uid,
         titulo: t.titulo,
         descricao: t.descricao,
-        categoria: normalizarCategoria(t.categoria),
-        categoria_principal: normalizarCategoriaPrincipal(t.categoria_principal),
+        categoria: t.categoria,
+        categoria_principal: t.categoria_principal,
         prazo: t.prazo,
         concluida: t.concluida,
         gerada_auto: true,
@@ -97,6 +81,7 @@ export default async function handler(req, res) {
       }));
     }
 
+    // 5. Fallback: se não gerou nada contextualizado, usa tarefas padrão
     if (tarefasParaInserir.length === 0) {
       const dataEvento = new Date(data_evento + 'T00:00:00');
 
@@ -108,7 +93,7 @@ export default async function handler(req, res) {
           usuario_id: uid,
           titulo: t.titulo,
           descricao: t.descricao,
-          categoria: normalizarCategoria(t.categoria),
+          categoria: t.categoria,
           prazo: dataPrazo.toISOString().split('T')[0],
           concluida: false,
           gerada_auto: true,
@@ -116,6 +101,7 @@ export default async function handler(req, res) {
       });
     }
 
+    // 6. Se for regeneração, remove tarefas antigas auto-geradas primeiro
     if (forcar_regeneracao) {
       const { error: delErr } = await supabase
         .from('tarefas')
@@ -125,6 +111,7 @@ export default async function handler(req, res) {
       if (delErr) console.error('[gerar-tarefas] Erro ao deletar antigas:', delErr);
     }
 
+    // 7. Insere novas tarefas
     const { error } = await supabase.from('tarefas').insert(tarefasParaInserir);
     if (error) throw error;
 

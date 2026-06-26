@@ -1,24 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
-import { SUBCATEGORIAS_FLAT } from '../../../utils/catalogoFornecedores';
-
-const CATEGORIAS_VALIDAS = new Set(SUBCATEGORIAS_FLAT.map(s => s.id));
-
-function validarCategoria(categoria) {
-  if (!categoria) return null;
-  const limpa = categoria.trim();
-  if (!limpa) return null;
-  if (!CATEGORIAS_VALIDAS.has(limpa)) {
-    return { erro: `Categoria invalida: "${limpa}"` };
-  }
-  return limpa;
-}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export default async function handler(req, res) {
   if (!supabaseUrl || !supabaseServiceKey) {
-    return res.status(500).json({ error: 'Configuracao do Supabase incompleta' });
+    return res.status(500).json({ error: 'Configuração do Supabase incompleta' });
   }
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -27,14 +14,14 @@ export default async function handler(req, res) {
 
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Token de autenticacao nao fornecido' });
+    return res.status(401).json({ error: 'Token de autenticação não fornecido' });
   }
 
   const token = authHeader.replace('Bearer ', '');
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
   if (authError || !user) {
-    return res.status(401).json({ error: 'Token invalido' });
+    return res.status(401).json({ error: 'Token inválido' });
   }
 
   const { data: cerimonialista, error: cerimError } = await supabase
@@ -44,7 +31,7 @@ export default async function handler(req, res) {
     .single();
 
   if (cerimError || !cerimonialista) {
-    return res.status(403).json({ error: 'Usuario nao e cerimonialista' });
+    return res.status(403).json({ error: 'Usuário não é cerimonialista' });
   }
 
   const cerimonialistaId = cerimonialista.id;
@@ -66,12 +53,7 @@ export default async function handler(req, res) {
         const { evento_id, tipo, categoria, descricao, valor, data_vencimento, pago } = req.body;
 
         if (!tipo || !valor) {
-          return res.status(400).json({ error: 'Tipo e valor sao obrigatorios' });
-        }
-
-        const catValidada = validarCategoria(categoria);
-        if (catValidada && typeof catValidada === 'object' && catValidada.erro) {
-          return res.status(400).json({ error: catValidada.erro });
+          return res.status(400).json({ error: 'Tipo e valor são obrigatórios' });
         }
 
         const { data, error } = await supabase
@@ -80,7 +62,7 @@ export default async function handler(req, res) {
             cerimonialista_id: cerimonialistaId,
             evento_id: evento_id || null,
             tipo,
-            categoria: catValidada,
+            categoria: categoria?.trim() || null,
             descricao: descricao?.trim() || null,
             valor: parseFloat(valor),
             data_vencimento: data_vencimento || null,
@@ -97,7 +79,7 @@ export default async function handler(req, res) {
         const { id, ...updates } = req.body;
 
         if (!id) {
-          return res.status(400).json({ error: 'ID do lancamento e obrigatorio' });
+          return res.status(400).json({ error: 'ID do lançamento é obrigatório' });
         }
 
         const { data: existing, error: checkError } = await supabase
@@ -108,19 +90,13 @@ export default async function handler(req, res) {
           .single();
 
         if (checkError || !existing) {
-          return res.status(403).json({ error: 'Lancamento nao encontrado ou sem permissao' });
+          return res.status(403).json({ error: 'Lançamento não encontrado ou sem permissão' });
         }
 
         const cleanUpdates = {};
         if (updates.evento_id !== undefined) cleanUpdates.evento_id = updates.evento_id || null;
         if (updates.tipo !== undefined) cleanUpdates.tipo = updates.tipo;
-        if (updates.categoria !== undefined) {
-          const catValidada = validarCategoria(updates.categoria);
-          if (catValidada && typeof catValidada === 'object' && catValidada.erro) {
-            return res.status(400).json({ error: catValidada.erro });
-          }
-          cleanUpdates.categoria = catValidada;
-        }
+        if (updates.categoria !== undefined) cleanUpdates.categoria = updates.categoria?.trim() || null;
         if (updates.descricao !== undefined) cleanUpdates.descricao = updates.descricao?.trim() || null;
         if (updates.valor !== undefined) cleanUpdates.valor = parseFloat(updates.valor);
         if (updates.data_vencimento !== undefined) cleanUpdates.data_vencimento = updates.data_vencimento || null;
@@ -141,7 +117,7 @@ export default async function handler(req, res) {
         const { id } = req.body;
 
         if (!id) {
-          return res.status(400).json({ error: 'ID do lancamento e obrigatorio' });
+          return res.status(400).json({ error: 'ID do lançamento é obrigatório' });
         }
 
         const { error } = await supabase
@@ -156,7 +132,7 @@ export default async function handler(req, res) {
 
       default:
         res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
-        return res.status(405).json({ error: `Metodo ${req.method} nao permitido` });
+        return res.status(405).json({ error: `Método ${req.method} não permitido` });
     }
   } catch (err) {
     console.error('[API financeiro]', err);

@@ -8,25 +8,29 @@ import FinanceiroResumo from '../../components/cerimonialista/FinanceiroResumo';
 import FinanceiroLista from '../../components/cerimonialista/FinanceiroLista';
 import FinanceiroModal from '../../components/cerimonialista/FinanceiroModal';
 import { supabase } from '../../lib/supabase';
-import { SUBCATEGORIAS_FLAT } from '../../utils/catalogoFornecedores';
 
 const TIPOS = [
   { id: 'receita', label: 'Receita', color: 'var(--color-success)', bg: 'var(--color-success-light)' },
   { id: 'despesa', label: 'Despesa', color: 'var(--color-danger)', bg: 'var(--color-danger-light)' },
 ];
 
-function buildCategoriasPorTipo() {
-  const map = { receita: [], despesa: [] };
-  SUBCATEGORIAS_FLAT.forEach((sub) => {
-    const id = sub.id;
-    const label = `${sub.categoriaPrincipalLabel} — ${sub.label}`;
-    map.receita.push({ id, label });
-    map.despesa.push({ id, label });
-  });
-  return map;
-}
-
-const CATEGORIAS = buildCategoriasPorTipo();
+const CATEGORIAS = {
+  receita: [
+    { id: 'contrato', label: 'Contrato' },
+    { id: 'sinal', label: 'Sinal' },
+    { id: 'parcela', label: 'Parcela' },
+    { id: 'adicional', label: 'Adicional' },
+    { id: 'outro', label: 'Outro' },
+  ],
+  despesa: [
+    { id: 'fornecedor', label: 'Fornecedor' },
+    { id: 'equipe', label: 'Equipe' },
+    { id: 'transporte', label: 'Transporte' },
+    { id: 'material', label: 'Material' },
+    { id: 'imposto', label: 'Imposto' },
+    { id: 'outro', label: 'Outro' },
+  ],
+};
 
 export default function FinanceiroCerimonialista() {
   const router = useRouter();
@@ -88,7 +92,7 @@ export default function FinanceiroCerimonialista() {
 
   const handleLancamentoSalvo = () => {
     buscarLancamentos();
-    showToast(lancamentoEditando ? 'Lancamento atualizado' : 'Lancamento criado');
+    showToast(lancamentoEditando ? 'Lançamento atualizado' : 'Lançamento criado');
   };
 
   const handleTogglePago = async (id, pago) => {
@@ -106,7 +110,7 @@ export default function FinanceiroCerimonialista() {
   };
 
   const handleExcluir = async (id) => {
-    if (!window.confirm('Tem certeza que deseja excluir este lancamento?')) return;
+    if (!window.confirm('Tem certeza que deseja excluir este lançamento?')) return;
     const { error } = await supabase
       .from('cerimonialista_financeiro')
       .delete()
@@ -114,7 +118,7 @@ export default function FinanceiroCerimonialista() {
 
     if (!error) {
       buscarLancamentos();
-      showToast('Lancamento excluido');
+      showToast('Lançamento excluído');
     } else {
       showToast('Erro ao excluir', 'error');
     }
@@ -143,7 +147,7 @@ export default function FinanceiroCerimonialista() {
             Acesso restrito
           </h2>
           <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)' }}>
-            Esta area e exclusiva para cerimonialistas.
+            Esta área é exclusiva para cerimonialistas.
           </p>
           <Button variant="primary" onClick={() => router.push('/painel')} style={{ marginTop: 'var(--space-6)' }}>
             Ir para o painel do casal
@@ -156,10 +160,11 @@ export default function FinanceiroCerimonialista() {
   return (
     <>
       <Head>
-        <title>Financeiro — Descomplicai</title>
+        <title>Financeiro — Descomplicaí</title>
       </Head>
 
       <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-off-white)' }}>
+        {/* Header */}
         <header
           style={{
             backgroundColor: 'var(--color-surface)',
@@ -209,14 +214,17 @@ export default function FinanceiroCerimonialista() {
           <Button variant="primary" size="sm" onClick={handleNovoLancamento}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
               <Icon name="plus" size={16} />
-              Novo Lancamento
+              Novo Lançamento
             </span>
           </Button>
         </header>
 
+        {/* Conteúdo */}
         <main style={{ padding: 'var(--space-5)', maxWidth: '960px', margin: '0 auto' }}>
+          {/* Resumo */}
           <FinanceiroResumo lancamentos={lancamentos} loading={lancamentosLoading} />
 
+          {/* Filtros */}
           <div
             style={{
               display: 'flex',
@@ -281,6 +289,7 @@ export default function FinanceiroCerimonialista() {
             </div>
           </div>
 
+          {/* Lista */}
           <FinanceiroLista
             lancamentos={lancamentosFiltrados}
             loading={lancamentosLoading}
@@ -293,6 +302,7 @@ export default function FinanceiroCerimonialista() {
         </main>
       </div>
 
+      {/* Modal */}
       {modalOpen && (
         <FinanceiroModal
           lancamento={lancamentoEditando}
@@ -304,6 +314,7 @@ export default function FinanceiroCerimonialista() {
         />
       )}
 
+      {/* Toast */}
       {toast && (
         <div
           role="status"

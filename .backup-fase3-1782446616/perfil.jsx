@@ -1,5 +1,5 @@
-// Perfil publico do fornecedor — dados e portfolio
-// Dependencias diretas: React, next/head, next/router, Card, Badge, Icon, EstrelasAvaliacao
+// Perfil público do fornecedor — dados e portfólio
+// Dependências diretas: React, next/head, next/router, Card, Badge, Icon, EstrelasAvaliacao
 
 import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
@@ -9,7 +9,6 @@ import Badge from '../../components/ui/Badge';
 import Icon from '../../components/ui/Icon';
 import EstrelasAvaliacao from '../../components/fornecedores/EstrelasAvaliacao';
 import { supabase } from '../../lib/supabase';
-import { getLabelSubcategoria } from '../../utils/catalogoFornecedores';
 
 export default function FornecedorPerfilPage() {
   const router = useRouter();
@@ -99,7 +98,7 @@ export default function FornecedorPerfilPage() {
   if (!fornecedor) {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-off-white)' }}>
-        <div style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Fornecedor nao encontrado.</div>
+        <div style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Fornecedor não encontrado.</div>
       </div>
     );
   }
@@ -109,7 +108,7 @@ export default function FornecedorPerfilPage() {
 
   return (
     <>
-      <Head><title>{fornecedor.nome_empresa} — Descomplicai</title></Head>
+      <Head><title>{fornecedor.nome_empresa} — Descomplicaí</title></Head>
       <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-off-white)' }}>
         <div style={{ height: '200px', background: 'linear-gradient(135deg, var(--color-brand-lighter) 0%, var(--color-brand-light) 100%)' }} />
         <div style={{ maxWidth: '800px', margin: '-60px auto 0', padding: '0 var(--space-4) var(--space-8)' }}>
@@ -123,12 +122,12 @@ export default function FornecedorPerfilPage() {
                   {fornecedor.nome_empresa}
                 </h1>
                 <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-4)' }}>
-                  <Badge variant="primary">{getLabelSubcategoria(fornecedor.categoria)}</Badge>
+                  <Badge variant="primary">{fornecedor.categoria}</Badge>
                   <Badge variant="default">{fornecedor.cidade}{fornecedor.estado ? `, ${fornecedor.estado}` : ''}</Badge>
                   {fornecedor.ativo && <Badge variant="success">Perfil ativo</Badge>}
                 </div>
                 <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
-                  {fornecedor.descricao || 'Este fornecedor ainda nao adicionou uma descricao.'}
+                  {fornecedor.descricao || 'Este fornecedor ainda não adicionou uma descrição.'}
                 </p>
               </div>
             </div>
@@ -136,7 +135,7 @@ export default function FornecedorPerfilPage() {
 
           <div style={{ marginTop: 'var(--space-6)', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--space-4)' }}>
             <Card variant="flat" padding="md">
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Avaliacao media</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Avaliação média</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-1)' }}>
                 <EstrelasAvaliacao nota={Number(fornecedor.avaliacao_media) || 0} tamanho={18} />
                 <span style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)' }}>
@@ -145,11 +144,11 @@ export default function FornecedorPerfilPage() {
               </div>
             </Card>
             <Card variant="flat" padding="md">
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Total de avaliacoes</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Total de avaliações</div>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)' }}>{fornecedor.total_avaliacoes || 0}</div>
             </Card>
             <Card variant="flat" padding="md">
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Visualizacoes</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Visualizações</div>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)' }}>{fornecedor.visualizacoes || 0}</div>
             </Card>
           </div>
@@ -211,7 +210,7 @@ export default function FornecedorPerfilPage() {
                 <div style={{ padding: 'var(--space-5)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-surface)', textAlign: 'center' }}>
                   <Icon name="info" size={24} color="var(--color-text-muted)" />
                   <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)' }}>
-                    Este fornecedor ainda nao tem perfil ativo no Descomplicai.
+                    Este fornecedor ainda não tem perfil ativo no Descomplicaí.
                   </p>
                 </div>
               )}
@@ -223,7 +222,7 @@ export default function FornecedorPerfilPage() {
               <Card variant="elevated" padding="lg">
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-lg)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                   <Icon name="users" size={20} color="var(--color-brand)" />
-                  Avaliacoes recentes
+                  Avaliações recentes
                 </h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                   {avaliacoes.map((av, idx) => (
@@ -238,7 +237,7 @@ export default function FornecedorPerfilPage() {
                         {av.comentario}
                       </p>
                       <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)', display: 'block' }}>
-                        Casal: {av.nome_casal || 'Anonimo'}
+                        Casal: {av.nome_casal || 'Anônimo'}
                       </span>
                     </div>
                   ))}
