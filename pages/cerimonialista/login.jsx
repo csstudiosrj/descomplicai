@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useAuth } from '../hooks/useAuth';
-import Input from '../components/ui/Input';
-import Button from '../components/ui/Button';
+import { useAuth } from '../../hooks/useAuth';
+import Input from '../../components/ui/Input';
+import Button from '../../components/ui/Button';
 
-export default function LoginPage() {
+export default function CerimonialistaLoginPage() {
   const router = useRouter();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
@@ -14,8 +14,6 @@ export default function LoginPage() {
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [msgRecuperacao, setMsgRecuperacao] = useState('');
-
-  const redirect = router.query.redirect || '/painel';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,36 +51,24 @@ export default function LoginPage() {
         auth: { autoRefreshToken: false, persistSession: false },
       });
 
-      const [cerimRes, fornRes] = await Promise.all([
-        supabaseClient
-          .from('cerimonialistas')
-          .select('id')
-          .eq('usuario_id', userId)
-          .single(),
-        supabaseClient
-          .from('fornecedores_plataforma')
-          .select('id')
-          .eq('usuario_id', userId)
-          .single(),
-      ]);
+      const { data: cerimData, error: cerimErr } = await supabaseClient
+        .from('cerimonialistas')
+        .select('id')
+        .eq('usuario_id', userId)
+        .single();
 
       setEnviando(false);
 
-      if (!cerimRes.error && cerimRes.data) {
+      if (!cerimErr && cerimData) {
         router.push('/cerimonialista/painel');
         return;
       }
 
-      if (!fornRes.error && fornRes.data) {
-        router.push('/fornecedor/painel');
-        return;
-      }
-
-      router.push(redirect);
+      setErro('Esta conta não é de cerimonialista.');
     } catch (err) {
       setEnviando(false);
-      console.error('[login] erro ao detectar tipo:', err);
-      router.push(redirect);
+      console.error('[cerim/login] erro:', err);
+      setErro('Erro ao verificar conta.');
     }
   };
 
@@ -93,9 +79,9 @@ export default function LoginPage() {
       setErro('Digite seu e-mail para recuperar a senha.');
       return;
     }
-    const { supabase } = await import('../lib/supabase');
+    const { supabase } = await import('../../lib/supabase');
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: typeof window !== 'undefined' ? window.location.origin + '/login' : undefined,
+      redirectTo: typeof window !== 'undefined' ? window.location.origin + '/cerimonialista/login' : undefined,
     });
     if (error) {
       setErro(error.message);
@@ -107,8 +93,8 @@ export default function LoginPage() {
   return (
     <>
       <Head>
-        <title>Entrar — Descomplicaí</title>
-        <meta name="description" content="Acesse seu memorial de casamento no Descomplicaí." />
+        <title>Entrar — Cerimonialista | Descomplicaí</title>
+        <meta name="description" content="Acesse seu escritório de cerimonialista no Descomplicaí." />
       </Head>
 
       <div style={{
@@ -127,18 +113,18 @@ export default function LoginPage() {
               color: 'var(--color-text-primary)',
               marginBottom: 'var(--space-2)',
             }}>
-              Descomplicaí
+              Seu escritório
             </h1>
             <p style={{
               fontFamily: 'var(--font-body)',
               color: 'var(--color-text-secondary)',
             }}>
-              Acesse seu memorial e continue a planejar o casamento dos seus sonhos
+              Gerencie seus eventos e leads em um só lugar
             </p>
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-            <Input label="E-mail" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input label="E-mail profissional" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             <Input label="Senha" type="password" placeholder="Sua senha" value={senha} onChange={(e) => setSenha(e.target.value)} required />
 
             {erro && (
@@ -185,9 +171,9 @@ export default function LoginPage() {
               </button>
             </p>
             <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-              Ainda não começou?{' '}
-              <Link href="/" legacyBehavior>
-                <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Comece seu memorial</a>
+              Ainda não tem conta?{' '}
+              <Link href="/cerimonialista/cadastro" legacyBehavior>
+                <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Cadastre-se</a>
               </Link>
             </p>
           </div>

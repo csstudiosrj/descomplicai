@@ -1,194 +1,387 @@
-// Cadastro de novo fornecedor no sistema
-// Dependencias diretas: React, next/head, next/router, Input, Button, Icon
-
 import React, { useState } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/ui/Icon';
-import { supabase } from '../../lib/supabase';
-import { SUBCATEGORIAS_FLAT } from '../../utils/catalogoFornecedores';
+import { CATEGORIAS_PRINCIPAIS } from '../../utils/catalogoFornecedores';
 
-export default function FornecedorCadastroPage() {
+const UFS = [
+  'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'
+];
+
+export default function CadastroFornecedorPage() {
   const router = useRouter();
-  const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
-  const [categoria, setCategoria] = useState('');
-  const [cidade, setCidade] = useState('');
-  const [plano, setPlano] = useState('gratuito');
-  const [enviado, setEnviado] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [erro, setErro] = useState('');
+  const [form, setForm] = useState({
+    nome_empresa: '',
+    categoria: '',
+    cidade: '',
+    estado: '',
+    email: '',
+    telefone: '',
+    site: '',
+    instagram: '',
+    descricao: '',
+    senha: '',
+    confirmacao_senha: '',
+  });
+  const [erros, setErros] = useState({});
+  const [enviando, setEnviando] = useState(false);
+  const [sucesso, setSucesso] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    if (erros[name]) {
+      setErros((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
+  };
+
+  const validar = () => {
+    const next = {};
+    if (!form.nome_empresa.trim()) next.nome_empresa = 'Nome da empresa é obrigatório.';
+    if (!form.categoria) next.categoria = 'Categoria é obrigatória.';
+    if (!form.cidade.trim()) next.cidade = 'Cidade é obrigatória.';
+    if (!form.estado) next.estado = 'Estado é obrigatório.';
+    if (!form.email.trim()) {
+      next.email = 'E-mail é obrigatório.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      next.email = 'E-mail inválido.';
+    }
+    if (!form.telefone.trim()) next.telefone = 'Telefone é obrigatório.';
+    if (!form.senha) {
+      next.senha = 'Senha é obrigatória.';
+    } else if (form.senha.length < 6) {
+      next.senha = 'Senha deve ter no mínimo 6 caracteres.';
+    }
+    if (form.senha !== form.confirmacao_senha) {
+      next.confirmacao_senha = 'As senhas não conferem.';
+    }
+    return next;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setErro('');
-
-    if (!categoria) {
-      setErro('Selecione uma categoria do catalogo.');
-      setLoading(false);
+    const validacao = validar();
+    if (Object.keys(validacao).length > 0) {
+      setErros(validacao);
       return;
     }
 
+    setEnviando(true);
+    setErros({});
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setErro('Voce precisa estar logado para se cadastrar como fornecedor.');
-        setLoading(false);
+      const res = await fetch('/api/fornecedor/cadastro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || data.erro) {
+        setErros({ geral: data.erro || 'Erro ao criar conta. Tente novamente.' });
+        setEnviando(false);
         return;
       }
 
-      const { error: insertError } = await supabase
-        .from('fornecedores_plataforma')
-        .insert({
-          usuario_id: user.id,
-          nome_empresa: nome,
-          categoria: categoria,
-          cidade: cidade,
-          email: email,
-          plano: plano,
-          ativo: plano === 'gratuito' ? false : true
-        });
-
-      if (insertError) {
-        console.error('Erro ao cadastrar fornecedor:', insertError);
-        setErro('Erro ao salvar cadastro. Tente novamente.');
-        setLoading(false);
-        return;
-      }
-
-      setEnviado(true);
-
-      if (plano === 'gratuito') {
-        router.push('/fornecedor/painel');
-      } else {
-        router.push('/fornecedor/painel');
-      }
+      setSucesso(true);
+      setTimeout(() => {
+        router.push('/fornecedor/login');
+      }, 2500);
     } catch (err) {
-      console.error('Erro inesperado:', err);
-      setErro('Erro inesperado. Tente novamente.');
-    } finally {
-      setLoading(false);
+      setErros({ geral: 'Erro de conexão. Tente novamente.' });
+      setEnviando(false);
     }
-  };
-
-  const labelStyle = {
-    fontFamily: 'var(--font-body)',
-    fontSize: 'var(--text-sm)',
-    color: 'var(--color-text-secondary)',
-    marginBottom: 'var(--space-2)',
-    fontWeight: 'var(--font-medium)',
-    display: 'block'
-  };
-
-  const selectStyle = {
-    width: '100%',
-    padding: 'var(--space-3)',
-    borderRadius: 'var(--radius-md)',
-    border: '1px solid var(--color-border)',
-    fontFamily: 'var(--font-body)',
-    fontSize: 'var(--text-sm)',
-    color: 'var(--color-text-primary)',
-    backgroundColor: 'var(--color-white)',
-    outline: 'none'
   };
 
   return (
     <>
-      <Head><title>Cadastro de Fornecedor — Descomplicai</title></Head>
-      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-4)', backgroundColor: 'var(--color-off-white)' }}>
-        <div style={{ width: '100%', maxWidth: '480px' }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)', textAlign: 'center' }}>
-            Seja um fornecedor
-          </h1>
-          <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', textAlign: 'center', marginBottom: 'var(--space-8)' }}>
-            Cadastre-se para receber leads qualificados de casamentos.
-          </p>
+      <Head>
+        <title>Cadastro de Fornecedor — Descomplicaí</title>
+        <meta name="description" content="Cadastre sua empresa no Descomplicaí e seja encontrado por noivas." />
+      </Head>
 
-          {enviado ? (
-            <div style={{ padding: 'var(--space-6)', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-success-light)', color: 'var(--color-success)', fontFamily: 'var(--font-body)', textAlign: 'center' }}>
-              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)', marginBottom: 'var(--space-2)' }}>Cadastro recebido!</h2>
-              <p>Redirecionando para seu painel...</p>
+      <div
+        style={{
+          minHeight: '100dvh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 'var(--space-4)',
+          backgroundColor: 'var(--color-off-white)',
+        }}
+      >
+        <div style={{ width: '100%', maxWidth: '480px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
+            <h1
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'var(--text-3xl)',
+                color: 'var(--color-text-primary)',
+                marginBottom: 'var(--space-2)',
+              }}
+            >
+              Cadastre sua empresa
+            </h1>
+            <p
+              style={{
+                fontFamily: 'var(--font-body)',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              Ganhe visibilidade e conecte-se com novos clientes
+            </p>
+          </div>
+
+          {sucesso ? (
+            <div
+              role="alert"
+              style={{
+                padding: 'var(--space-6)',
+                borderRadius: 'var(--radius-lg)',
+                backgroundColor: 'var(--color-success-light)',
+                color: 'var(--color-success)',
+                textAlign: 'center',
+                fontFamily: 'var(--font-body)',
+              }}
+            >
+              <div style={{ marginBottom: 'var(--space-3)' }}>
+                <Icon name="checkCircle" size={48} color="var(--color-success)" />
+              </div>
+              <h2 style={{ fontSize: 'var(--text-xl)', marginBottom: 'var(--space-2)' }}>Conta criada com sucesso!</h2>
+              <p style={{ fontSize: 'var(--text-sm)' }}>Redirecionando para o login...</p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-              <Input label="Nome da empresa" value={nome} onChange={(e) => setNome(e.target.value)} required />
-              <Input label="E-mail comercial" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+              <Input
+                label="Nome da empresa *"
+                name="nome_empresa"
+                type="text"
+                placeholder="Ex: Buffet Gourmet"
+                value={form.nome_empresa}
+                onChange={handleChange}
+                required
+              />
 
               <div>
-                <label htmlFor="categoria" style={labelStyle}>Categoria de servico</label>
-                <select
-                  id="categoria"
-                  value={categoria}
-                  onChange={(e) => setCategoria(e.target.value)}
-                  required
-                  style={selectStyle}
+                <label
+                  style={{
+                    display: 'block',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-sm)',
+                    fontWeight: 'var(--font-medium)',
+                    color: 'var(--color-text-primary)',
+                    marginBottom: 'var(--space-1)',
+                  }}
                 >
-                  <option value="">Selecione uma categoria...</option>
-                  {SUBCATEGORIAS_FLAT.map((sub) => (
-                    <option key={sub.id} value={sub.id}>
-                      {sub.categoriaPrincipalLabel} — {sub.label}
-                    </option>
+                  Categoria *
+                </label>
+                <select
+                  name="categoria"
+                  value={form.categoria}
+                  onChange={handleChange}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: 'var(--space-3)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1.5px solid var(--color-border-strong)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-base)',
+                    outline: 'none',
+                    backgroundColor: 'var(--color-white)',
+                    color: 'var(--color-text-primary)',
+                  }}
+                >
+                  <option value="">Selecione uma categoria</option>
+                  {CATEGORIAS_PRINCIPAIS.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.label}</option>
                   ))}
                 </select>
+                {erros.categoria && (
+                  <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-danger)', marginTop: 'var(--space-1)', display: 'block' }}>
+                    {erros.categoria}
+                  </span>
+                )}
               </div>
 
-              <Input label="Cidade de atuacao" value={cidade} onChange={(e) => setCidade(e.target.value)} required />
-
-              <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
-                <legend style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-3)', fontWeight: 'var(--font-medium)' }}>
-                  Plano desejado
-                </legend>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                  {[
-                    { value: 'gratuito', label: 'Gratuito', desc: 'Perfil invisivel nas buscas — sem custo' },
-                    { value: 'basico', label: 'Basico — R$ 19,90/mes', desc: 'Perfil ativo e visivel para casais' },
-                    { value: 'premium', label: 'Premium', desc: 'Destaque nas buscas + prioridade nos leads' }
-                  ].map((p) => (
-                    <label
-                      key={p.value}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: 'var(--space-3)',
-                        padding: 'var(--space-3)',
-                        borderRadius: 'var(--radius-md)',
-                        border: plano === p.value ? '2px solid var(--color-brand)' : '1px solid var(--color-border)',
-                        backgroundColor: plano === p.value ? 'var(--color-brand-lighter)' : 'var(--color-white)',
-                        cursor: 'pointer',
-                        transition: 'var(--transition-fast)'
-                      }}
-                    >
-                      <input
-                        type="radio"
-                        name="plano"
-                        value={p.value}
-                        checked={plano === p.value}
-                        onChange={(e) => setPlano(e.target.value)}
-                        style={{ marginTop: '2px' }}
-                      />
-                      <div>
-                        <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-primary)' }}>{p.label}</div>
-                        <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{p.desc}</div>
-                      </div>
-                    </label>
-                  ))}
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--space-3)' }}>
+                <Input
+                  label="Cidade *"
+                  name="cidade"
+                  type="text"
+                  placeholder="Sua cidade"
+                  value={form.cidade}
+                  onChange={handleChange}
+                  required
+                />
+                <div>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 'var(--text-sm)',
+                      fontWeight: 'var(--font-medium)',
+                      color: 'var(--color-text-primary)',
+                      marginBottom: 'var(--space-1)',
+                    }}
+                  >
+                    Estado *
+                  </label>
+                  <select
+                    name="estado"
+                    value={form.estado}
+                    onChange={handleChange}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: 'var(--space-3)',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1.5px solid var(--color-border-strong)',
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 'var(--text-base)',
+                      outline: 'none',
+                      backgroundColor: 'var(--color-white)',
+                      color: 'var(--color-text-primary)',
+                    }}
+                  >
+                    <option value="">UF</option>
+                    {UFS.map((uf) => (
+                      <option key={uf} value={uf}>{uf}</option>
+                    ))}
+                  </select>
+                  {erros.estado && (
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-danger)', marginTop: 'var(--space-1)', display: 'block' }}>
+                      {erros.estado}
+                    </span>
+                  )}
                 </div>
-              </fieldset>
+              </div>
 
-              {erro && (
-                <div style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-danger-light)', color: 'var(--color-danger)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)' }}>
-                  {erro}
+              <Input
+                label="E-mail *"
+                name="email"
+                type="email"
+                placeholder="seu@email.com"
+                value={form.email}
+                onChange={handleChange}
+                required
+              />
+
+              <Input
+                label="Telefone *"
+                name="telefone"
+                type="tel"
+                placeholder="(00) 00000-0000"
+                value={form.telefone}
+                onChange={handleChange}
+                required
+              />
+
+              <Input
+                label="Site (opcional)"
+                name="site"
+                type="url"
+                placeholder="https://www.suaempresa.com"
+                value={form.site}
+                onChange={handleChange}
+              />
+
+              <Input
+                label="Instagram (opcional)"
+                name="instagram"
+                type="text"
+                placeholder="@suaempresa"
+                value={form.instagram}
+                onChange={handleChange}
+              />
+
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-sm)',
+                    fontWeight: 'var(--font-medium)',
+                    color: 'var(--color-text-primary)',
+                    marginBottom: 'var(--space-1)',
+                  }}
+                >
+                  Descrição (opcional)
+                </label>
+                <textarea
+                  name="descricao"
+                  rows={3}
+                  placeholder="Conte um pouco sobre seus serviços..."
+                  value={form.descricao}
+                  onChange={handleChange}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--space-3)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1.5px solid var(--color-border-strong)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-base)',
+                    outline: 'none',
+                    resize: 'vertical',
+                    minHeight: '80px',
+                  }}
+                />
+              </div>
+
+              <Input
+                label="Senha *"
+                name="senha"
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                value={form.senha}
+                onChange={handleChange}
+                required
+                hint="Mínimo 6 caracteres"
+              />
+
+              <Input
+                label="Confirmar senha *"
+                name="confirmacao_senha"
+                type="password"
+                placeholder="Repita a senha"
+                value={form.confirmacao_senha}
+                onChange={handleChange}
+                required
+              />
+
+              {erros.geral && (
+                <div role="alert" style={{
+                  padding: 'var(--space-3)',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--color-danger-light)',
+                  color: 'var(--color-danger)',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 'var(--text-sm)',
+                }}>
+                  {erros.geral}
                 </div>
               )}
 
-              <Button type="submit" variant="primary" size="lg" fullWidth disabled={loading}>
-                {loading ? 'Enviando...' : 'Enviar cadastro'}
+              <Button type="submit" variant="primary" size="lg" fullWidth loading={enviando}>
+                Criar conta
               </Button>
             </form>
           )}
+
+          <p style={{ textAlign: 'center', marginTop: 'var(--space-6)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+            Já tem conta?{' '}
+            <Link href="/fornecedor/login" legacyBehavior>
+              <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Faça login</a>
+            </Link>
+          </p>
         </div>
       </div>
     </>

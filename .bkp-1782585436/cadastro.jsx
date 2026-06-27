@@ -18,7 +18,6 @@ export default function CadastroCerimonialistaPage() {
     nome_responsavel: '',
     email: '',
     telefone: '',
-    whatsapp: '',
     cidade: '',
     estado: '',
     senha: '',
@@ -90,7 +89,7 @@ export default function CadastroCerimonialistaPage() {
 
       setSucesso(true);
       setTimeout(() => {
-        router.push('/cerimonialista/login');
+        router.push('/login');
       }, 2500);
     } catch (err) {
       setErros({ geral: 'Erro de conexão. Tente novamente.' });
@@ -149,22 +148,22 @@ export default function CadastroCerimonialistaPage() {
                 fontFamily: 'var(--font-body)',
               }}
             >
-              <div style={{ marginBottom: 'var(--space-3)' }}>
-                <Icon name="checkCircle" size={48} color="var(--color-success)" />
-              </div>
+              <Icon name="checkCircle" size={48} color="var(--color-success)" style={{ marginBottom: 'var(--space-3)' }} />
               <h2 style={{ fontSize: 'var(--text-xl)', marginBottom: 'var(--space-2)' }}>Conta criada com sucesso!</h2>
               <p style={{ fontSize: 'var(--text-sm)' }}>Redirecionando para o login...</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
               <Input
-                label="Nome da empresa *"
+                label="Nome da empresa"
                 name="nome_empresa"
                 type="text"
                 placeholder="Ex: Cerimonial Maria Santos"
                 value={form.nome_empresa}
                 onChange={handleChange}
+                error={erros.nome_empresa}
                 required
+                iconLeft={<Icon name="briefcase" size={18} />}
               />
 
               <Input
@@ -174,56 +173,54 @@ export default function CadastroCerimonialistaPage() {
                 placeholder="00.000.000/0000-00"
                 value={form.cnpj}
                 onChange={handleChange}
+                iconLeft={<Icon name="building" size={18} />}
               />
 
               <Input
-                label="Nome do responsável *"
+                label="Nome do responsável"
                 name="nome_responsavel"
                 type="text"
                 placeholder="Nome completo"
                 value={form.nome_responsavel}
                 onChange={handleChange}
+                error={erros.nome_responsavel}
                 required
+                iconLeft={<Icon name="user" size={18} />}
               />
 
               <Input
-                label="E-mail *"
+                label="E-mail"
                 name="email"
                 type="email"
                 placeholder="seu@email.com"
                 value={form.email}
                 onChange={handleChange}
+                error={erros.email}
                 required
+                iconLeft={<Icon name="mail" size={18} />}
               />
 
               <Input
-                label="Telefone *"
+                label="Telefone"
                 name="telefone"
                 type="tel"
                 placeholder="(00) 00000-0000"
                 value={form.telefone}
                 onChange={handleChange}
-                required
-              />
-
-              <Input
-                label="WhatsApp"
-                name="whatsapp"
-                type="tel"
-                placeholder="(00) 00000-0000"
-                value={form.whatsapp}
-                onChange={handleChange}
+                iconLeft={<Icon name="phone" size={18} />}
               />
 
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--space-3)' }}>
                 <Input
-                  label="Cidade *"
+                  label="Cidade"
                   name="cidade"
                   type="text"
                   placeholder="Sua cidade"
                   value={form.cidade}
                   onChange={handleChange}
+                  error={erros.cidade}
                   required
+                  iconLeft={<Icon name="mapPin" size={18} />}
                 />
                 <div>
                   <label
@@ -236,7 +233,7 @@ export default function CadastroCerimonialistaPage() {
                       marginBottom: 'var(--space-1)',
                     }}
                   >
-                    Estado *
+                    Estado
                   </label>
                   <select
                     name="estado"
@@ -245,14 +242,15 @@ export default function CadastroCerimonialistaPage() {
                     required
                     style={{
                       width: '100%',
-                      padding: 'var(--space-3)',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1.5px solid var(--color-border-strong)',
+                      padding: 'var(--space-3) var(--space-4)',
                       fontFamily: 'var(--font-body)',
                       fontSize: 'var(--text-base)',
-                      outline: 'none',
-                      backgroundColor: 'var(--color-white)',
                       color: 'var(--color-text-primary)',
+                      backgroundColor: 'var(--color-surface)',
+                      border: erros.estado ? '1.5px solid var(--color-danger)' : '1.5px solid var(--color-border)',
+                      borderRadius: 'var(--radius-md)',
+                      outline: 'none',
+                      appearance: 'none',
                     }}
                   >
                     <option value="">UF</option>
@@ -261,7 +259,7 @@ export default function CadastroCerimonialistaPage() {
                     ))}
                   </select>
                   {erros.estado && (
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-danger)', marginTop: 'var(--space-1)', display: 'block' }}>
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-danger)', marginTop: 'var(--space-1)', display: 'block' }}>
                       {erros.estado}
                     </span>
                   )}
@@ -269,35 +267,41 @@ export default function CadastroCerimonialistaPage() {
               </div>
 
               <Input
-                label="Senha *"
+                label="Senha"
                 name="senha"
                 type="password"
                 placeholder="Mínimo 6 caracteres"
                 value={form.senha}
                 onChange={handleChange}
+                error={erros.senha}
                 required
-                hint="Mínimo 6 caracteres"
+                iconLeft={<Icon name="lock" size={18} />}
               />
 
               <Input
-                label="Confirmar senha *"
+                label="Confirme a senha"
                 name="confirmacao_senha"
                 type="password"
                 placeholder="Repita a senha"
                 value={form.confirmacao_senha}
                 onChange={handleChange}
+                error={erros.confirmacao_senha}
                 required
+                iconLeft={<Icon name="lock" size={18} />}
               />
 
               {erros.geral && (
-                <div role="alert" style={{
-                  padding: 'var(--space-3)',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--color-danger-light)',
-                  color: 'var(--color-danger)',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 'var(--text-sm)',
-                }}>
+                <div
+                  role="alert"
+                  style={{
+                    padding: 'var(--space-3)',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'var(--color-danger-light)',
+                    color: 'var(--color-danger)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-sm)',
+                  }}
+                >
                   {erros.geral}
                 </div>
               )}
@@ -308,10 +312,18 @@ export default function CadastroCerimonialistaPage() {
             </form>
           )}
 
-          <p style={{ textAlign: 'center', marginTop: 'var(--space-6)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+          <p
+            style={{
+              textAlign: 'center',
+              marginTop: 'var(--space-6)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-sm)',
+              color: 'var(--color-text-muted)',
+            }}
+          >
             Já tem conta?{' '}
-            <Link href="/cerimonialista/login" legacyBehavior>
-              <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Faça login</a>
+            <Link href="/login" legacyBehavior>
+              <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Entrar</a>
             </Link>
           </p>
         </div>
