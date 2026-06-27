@@ -275,12 +275,11 @@ export default function MemorialOrchestrator() {
             },
             body: JSON.stringify({ evento_id: evento.id, estado }),
           });
-          if (!res.ok) console.error('Erro ao salvar:', await res.text());
+          if (!res.ok) void 0
         }
       }
       router.push('/memorial/conclusao?concluido=1');
     } catch (erro) {
-      console.error('Falha ao salvar:', erro);
       alert('Falha ao salvar o progresso. Tente novamente.');
     }
   }, [estado, setRespostas, router, user, evento, supabase]);
