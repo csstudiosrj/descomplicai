@@ -4,10 +4,14 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
+import { getTermos } from '../../../utils/linguagemCasal';
 
 export default function Step11bTransporte({ onSelect, estadoAtual }) {
   const [transporte, setTransporte] = useState(estadoAtual?.transporteConvidados || '');
   const [onibus, setOnibus] = useState(estadoAtual?.onibusNoivos || false);
+
+  const perfil = estadoAtual?.perfilCasal || 'noiva-noivo';
+  const termos = getTermos(perfil);
 
   const handleConfirmar = () => {
     onSelect('transporteConvidados', transporte);
@@ -35,7 +39,7 @@ export default function Step11bTransporte({ onSelect, estadoAtual }) {
 
       {transporte === 'Ônibus/van fretado' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-          <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Ônibus para ${termos.pessoa1} e ${termos.pessoa2} também?</label>
+          <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Ônibus para {termos.pessoa1} e {termos.pessoa2} também?</label>
           {[{v:true,l:'Sim'}, {v:false,l:'Não, carro separado'}].map(o => (
             <Card key={String(o.v)} interactive selected={onibus === o.v} padding="sm" onClick={() => setOnibus(o.v)} role="radio" aria-checked={onibus === o.v}>
               <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)' }}>{o.l}</span>

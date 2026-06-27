@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
+import { getTermos } from '../../../utils/linguagemCasal';
 
 const OPCOES = [
   { valor: 'juntos', label: 'Juntos', subtexto: 'Entram juntos pelo corredor', icone: 'heart' },
@@ -12,6 +13,9 @@ const OPCOES = [
 
 export default function Step30Entrada({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
+
+  const perfil = estadoAtual?.perfilCasal || 'noiva-noivo';
+  const termos = getTermos(perfil);
 
   const selecionado = estadoAtual?.entradaNoivos;
 
