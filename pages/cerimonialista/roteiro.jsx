@@ -79,7 +79,6 @@ export default function RoteiroPage() {
           setItens([]);
         }
       } catch (err) {
-        console.error('Erro ao buscar roteiro:', err);
         setItens([]);
       } finally {
         setCarregando(false);
@@ -196,7 +195,6 @@ export default function RoteiroPage() {
     const newItens = [...itens];
     [newItens[index - 1], newItens[index]] = [newItens[index], newItens[index - 1]];
 
-    // Atualizar ordem no banco
     const token = (await supabase.auth.getSession()).data.session?.access_token;
     await Promise.all([
       fetch('/api/cerimonialista/roteiro', {
@@ -236,6 +234,47 @@ export default function RoteiroPage() {
     setItens(newItens.map((i, idx) => ({ ...i, ordem: idx + 1 })));
   };
 
+  const handleExportarPdf = async () => {
+    if (!eventoSelecionado) {
+      setToast({ tipo: 'erro', mensagem: 'Selecione um evento primeiro' });
+      return;
+    }
+    setExportandoPdf(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setToast({ tipo: 'erro', mensagem: 'Sessao expirada. Faca login novamente.' });
+        return;
+      }
+      const res = await fetch('/api/roteiro/pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ evento_id: eventoSelecionado })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.erro || 'Erro ao gerar PDF');
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `roteiro-${eventoSelecionado}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      setToast({ tipo: 'sucesso', mensagem: 'PDF exportado com sucesso!' });
+    } catch (err) {
+      setToast({ tipo: 'erro', mensagem: err.message || 'Erro ao exportar PDF' });
+    } finally {
+      setExportandoPdf(false);
+    }
+  };
+
   const eventoAtual = eventos.find((e) => e.id === eventoSelecionado);
 
   if (loading) {
@@ -261,48 +300,6 @@ export default function RoteiroPage() {
       </div>
     );
   }
-  const handleExportarPdf = async () => {
-    if (!eventoSelecionado?.id) {
-      setToast({ tipo: 'erro', mensagem: 'Selecione um evento primeiro' });
-      return;
-    }
-    setExportandoPdf(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        setToast({ tipo: 'erro', mensagem: 'Sessao expirada. Faca login novamente.' });
-        return;
-      }
-      const res = await fetch('/api/roteiro/pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({ evento_id: eventoSelecionado.id })
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.erro || 'Erro ao gerar PDF');
-      }
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `roteiro-${eventoSelecionado.id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-      setToast({ tipo: 'sucesso', mensagem: 'PDF exportado com sucesso!' });
-    } catch (err) {
-      console.error(err);
-      setToast({ tipo: 'erro', mensagem: err.message || 'Erro ao exportar PDF' });
-    } finally {
-      setExportandoPdf(false);
-    }
-  };
-
 
   return (
     <>
@@ -440,11 +437,10 @@ export default function RoteiroPage() {
                 Novo item
               </span>
             </Button>
-        <Button variant="secondary" size="sm" onClick={handleExportarPdf} disabled={exportandoPdf}>
-          <Icon name="download" size={16} />
-          {exportandoPdf ? 'Gerando...' : 'Exportar PDF'}
-        </Button>
-
+            <Button variant="secondary" size="sm" onClick={handleExportarPdf} disabled={exportandoPdf}>
+              <Icon name="download" size={16} />
+              {exportandoPdf ? 'Gerando...' : 'Exportar PDF'}
+            </Button>
             <Button
               variant="secondary"
               onClick={handleGerarAutomatico}

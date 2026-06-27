@@ -1,0 +1,40 @@
+const handleExportarPdf = async () => {
+  if (!eventoSelecionado) {
+    setToast({ tipo: 'erro', mensagem: 'Selecione um evento primeiro' });
+    return;
+  }
+  setExportandoPdf(true);
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      setToast({ tipo: 'erro', mensagem: 'Sessao expirada. Faca login novamente.' });
+      return;
+    }
+    const res = await fetch('/api/roteiro/pdf', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ evento_id: eventoSelecionado })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.erro || 'Erro ao gerar PDF');
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `roteiro-${eventoSelecionado}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+    setToast({ tipo: 'sucesso', mensagem: 'PDF exportado com sucesso!' });
+  } catch (err) {
+    setToast({ tipo: 'erro', mensagem: err.message || 'Erro ao exportar PDF' });
+  } finally {
+    setExportandoPdf(false);
+  }
+};
