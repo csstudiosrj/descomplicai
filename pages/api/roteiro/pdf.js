@@ -1,4 +1,4 @@
-import { getServiceRoleClient } from '../../../lib/supabaseAdmin';
+import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -14,7 +14,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ erro: 'evento_id e token são obrigatórios' });
     }
 
-    const supabase = getServiceRoleClient();
+    const supabase = supabaseAdmin;
 
     // 1. Autenticar
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
