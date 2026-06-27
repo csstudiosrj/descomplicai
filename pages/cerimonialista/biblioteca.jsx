@@ -6,6 +6,7 @@ import Icon from '../../components/ui/Icon';
 import Button from '../../components/ui/Button';
 import ModeloCard from '../../components/cerimonialista/ModeloCard';
 import ModeloModal from '../../components/cerimonialista/ModeloModal';
+import BibliotecaFornecedores from '../../components/cerimonialista/BibliotecaFornecedores';
 import { supabase } from '../../lib/supabase';
 
 const TIPOS = [
@@ -27,6 +28,7 @@ export default function BibliotecaCerimonialista() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modeloEditando, setModeloEditando] = useState(null);
   const [toast, setToast] = useState(null);
+  const [abaAtiva, setAbaAtiva] = useState('modelos');
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
@@ -150,7 +152,7 @@ export default function BibliotecaCerimonialista() {
   return (
     <>
       <Head>
-        <title>Biblioteca de Modelos — Descomplicaí</title>
+        <title>Biblioteca — Descomplicaí</title>
       </Head>
 
       <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-off-white)' }}>
@@ -194,195 +196,236 @@ export default function BibliotecaCerimonialista() {
                   color: 'var(--color-text-primary)',
                 }}
               >
-                Biblioteca de Modelos
+                Biblioteca
               </h1>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-                Templates de documentos e roteiros
-              </p>
-            </div>
-          </div>
-          <Button variant="primary" size="sm" onClick={handleNovoModelo}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-              <Icon name="plus" size={16} />
-              Novo Modelo
-            </span>
-          </Button>
-        </header>
-
-        {/* Conteúdo */}
-        <main style={{ padding: 'var(--space-5)', maxWidth: '960px', margin: '0 auto' }}>
-          {/* Filtros */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--space-3)',
-              marginBottom: 'var(--space-6)',
-            }}
-          >
-            {/* Busca */}
-            <div
-              style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-            >
-              <Icon
-                name="search"
-                size={18}
-                color="var(--color-text-muted)"
-                style={{ position: 'absolute', left: 'var(--space-3)', pointerEvents: 'none' }}
-              />
-              <input
-                type="text"
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                placeholder="Buscar modelos..."
-                style={{
-                  width: '100%',
-                  padding: 'var(--space-3) var(--space-4) var(--space-3) var(--space-10)',
-                  borderRadius: 'var(--radius-lg)',
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: 'var(--color-white)',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 'var(--text-sm)',
-                  color: 'var(--color-text-primary)',
-                  outline: 'none',
-                }}
-              />
-              {busca && (
+              <div style={{ display: 'flex', gap: 'var(--space-4)', marginTop: 'var(--space-2)' }}>
                 <button
-                  onClick={() => setBusca('')}
+                  onClick={() => setAbaAtiva('modelos')}
                   style={{
-                    position: 'absolute',
-                    right: 'var(--space-3)',
                     background: 'none',
                     border: 'none',
-                    cursor: 'pointer',
-                    color: 'var(--color-text-muted)',
-                  }}
-                  aria-label="Limpar busca"
-                >
-                  <Icon name="close" size={16} />
-                </button>
-              )}
-            </div>
-
-            {/* Filtro de tipo (scroll horizontal mobile) */}
-            <div
-              style={{
-                display: 'flex',
-                gap: 'var(--space-2)',
-                overflowX: 'auto',
-                paddingBottom: 'var(--space-2)',
-                scrollbarWidth: 'none',
-              }}
-            >
-              <button
-                onClick={() => setTipoFiltro('todos')}
-                style={{
-                  padding: 'var(--space-2) var(--space-4)',
-                  borderRadius: 'var(--radius-full)',
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: tipoFiltro === 'todos' ? 'var(--color-brand)' : 'var(--color-white)',
-                  color: tipoFiltro === 'todos' ? 'var(--color-white)' : 'var(--color-text-secondary)',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 'var(--text-sm)',
-                  fontWeight: 'var(--font-medium)',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  transition: 'all var(--transition-fast)',
-                }}
-              >
-                Todos
-              </button>
-              {TIPOS.map((tipo) => (
-                <button
-                  key={tipo.id}
-                  onClick={() => setTipoFiltro(tipo.id)}
-                  style={{
-                    padding: 'var(--space-2) var(--space-4)',
-                    borderRadius: 'var(--radius-full)',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: tipoFiltro === tipo.id ? tipo.color : 'var(--color-white)',
-                    color: tipoFiltro === tipo.id ? 'var(--color-white)' : 'var(--color-text-secondary)',
+                    borderBottom: abaAtiva === 'modelos' ? '2px solid var(--color-brand)' : '2px solid transparent',
+                    color: abaAtiva === 'modelos' ? 'var(--color-brand)' : 'var(--color-text-muted)',
                     fontFamily: 'var(--font-body)',
                     fontSize: 'var(--text-sm)',
                     fontWeight: 'var(--font-medium)',
                     cursor: 'pointer',
-                    whiteSpace: 'nowrap',
+                    padding: 'var(--space-2) 0',
                     transition: 'all var(--transition-fast)',
                   }}
                 >
-                  {tipo.label}
+                  Modelos
                 </button>
-              ))}
+                <button
+                  onClick={() => setAbaAtiva('fornecedores')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    borderBottom: abaAtiva === 'fornecedores' ? '2px solid var(--color-brand)' : '2px solid transparent',
+                    color: abaAtiva === 'fornecedores' ? 'var(--color-brand)' : 'var(--color-text-muted)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-sm)',
+                    fontWeight: 'var(--font-medium)',
+                    cursor: 'pointer',
+                    padding: 'var(--space-2) 0',
+                    transition: 'all var(--transition-fast)',
+                  }}
+                >
+                  Fornecedores favoritos
+                </button>
+              </div>
             </div>
           </div>
+          {abaAtiva === 'modelos' && (
+            <Button variant="primary" size="sm" onClick={handleNovoModelo}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <Icon name="plus" size={16} />
+                Novo Modelo
+              </span>
+            </Button>
+          )}
+        </header>
 
-          {/* Grid de modelos */}
-          {modelosLoading ? (
-            <div style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
-              <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando modelos...</p>
-            </div>
-          ) : modelosFiltrados.length === 0 ? (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: 'var(--space-12) var(--space-4)',
-                backgroundColor: 'var(--color-surface)',
-                borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              <Icon name="template" size={48} color="var(--color-text-muted)" />
-              <h3
+        {/* Conteúdo */}
+        <main style={{ padding: 'var(--space-5)', maxWidth: '960px', margin: '0 auto' }}>
+          {abaAtiva === 'modelos' ? (
+            <>
+              {/* Filtros */}
+              <div
                 style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: 'var(--text-lg)',
-                  color: 'var(--color-text-primary)',
-                  marginTop: 'var(--space-4)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 'var(--space-3)',
+                  marginBottom: 'var(--space-6)',
                 }}
               >
-                {busca || tipoFiltro !== 'todos' ? 'Nenhum modelo encontrado' : 'Nenhum modelo ainda'}
-              </h3>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)' }}>
-                {busca || tipoFiltro !== 'todos'
-                  ? 'Tente ajustar os filtros de busca.'
-                  : 'Crie seu primeiro modelo para começar.'}
-              </p>
-              {!busca && tipoFiltro === 'todos' && (
-                <Button variant="primary" onClick={handleNovoModelo} style={{ marginTop: 'var(--space-6)' }}>
-                  Criar modelo
-                </Button>
+                {/* Busca */}
+                <div
+                  style={{
+                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Icon
+                    name="search"
+                    size={18}
+                    color="var(--color-text-muted)"
+                    style={{ position: 'absolute', left: 'var(--space-3)', pointerEvents: 'none' }}
+                  />
+                  <input
+                    type="text"
+                    value={busca}
+                    onChange={(e) => setBusca(e.target.value)}
+                    placeholder="Buscar modelos..."
+                    style={{
+                      width: '100%',
+                      padding: 'var(--space-3) var(--space-4) var(--space-3) var(--space-10)',
+                      borderRadius: 'var(--radius-lg)',
+                      border: '1px solid var(--color-border)',
+                      backgroundColor: 'var(--color-white)',
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 'var(--text-sm)',
+                      color: 'var(--color-text-primary)',
+                      outline: 'none',
+                    }}
+                  />
+                  {busca && (
+                    <button
+                      onClick={() => setBusca('')}
+                      style={{
+                        position: 'absolute',
+                        right: 'var(--space-3)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--color-text-muted)',
+                      }}
+                      aria-label="Limpar busca"
+                    >
+                      <Icon name="close" size={16} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Filtro de tipo (scroll horizontal mobile) */}
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 'var(--space-2)',
+                    overflowX: 'auto',
+                    paddingBottom: 'var(--space-2)',
+                    scrollbarWidth: 'none',
+                  }}
+                >
+                  <button
+                    onClick={() => setTipoFiltro('todos')}
+                    style={{
+                      padding: 'var(--space-2) var(--space-4)',
+                      borderRadius: 'var(--radius-full)',
+                      border: '1px solid var(--color-border)',
+                      backgroundColor: tipoFiltro === 'todos' ? 'var(--color-brand)' : 'var(--color-white)',
+                      color: tipoFiltro === 'todos' ? 'var(--color-white)' : 'var(--color-text-secondary)',
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 'var(--text-sm)',
+                      fontWeight: 'var(--font-medium)',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      transition: 'all var(--transition-fast)',
+                    }}
+                  >
+                    Todos
+                  </button>
+                  {TIPOS.map((tipo) => (
+                    <button
+                      key={tipo.id}
+                      onClick={() => setTipoFiltro(tipo.id)}
+                      style={{
+                        padding: 'var(--space-2) var(--space-4)',
+                        borderRadius: 'var(--radius-full)',
+                        border: '1px solid var(--color-border)',
+                        backgroundColor: tipoFiltro === tipo.id ? tipo.color : 'var(--color-white)',
+                        color: tipoFiltro === tipo.id ? 'var(--color-white)' : 'var(--color-text-secondary)',
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 'var(--text-sm)',
+                        fontWeight: 'var(--font-medium)',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        transition: 'all var(--transition-fast)',
+                      }}
+                    >
+                      {tipo.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Grid de modelos */}
+              {modelosLoading ? (
+                <div style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
+                  <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando modelos...</p>
+                </div>
+              ) : modelosFiltrados.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: 'center',
+                    padding: 'var(--space-12) var(--space-4)',
+                    backgroundColor: 'var(--color-surface)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--color-border)',
+                  }}
+                >
+                  <Icon name="template" size={48} color="var(--color-text-muted)" />
+                  <h3
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontSize: 'var(--text-lg)',
+                      color: 'var(--color-text-primary)',
+                      marginTop: 'var(--space-4)',
+                    }}
+                  >
+                    {busca || tipoFiltro !== 'todos' ? 'Nenhum modelo encontrado' : 'Nenhum modelo ainda'}
+                  </h3>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)' }}>
+                    {busca || tipoFiltro !== 'todos'
+                      ? 'Tente ajustar os filtros de busca.'
+                      : 'Crie seu primeiro modelo para começar.'}
+                  </p>
+                  {!busca && tipoFiltro === 'todos' && (
+                    <Button variant="primary" onClick={handleNovoModelo} style={{ marginTop: 'var(--space-6)' }}>
+                      Criar modelo
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                    gap: 'var(--space-4)',
+                  }}
+                >
+                  {modelosFiltrados.map((modelo) => (
+                    <ModeloCard
+                      key={modelo.id}
+                      modelo={modelo}
+                      tipos={TIPOS}
+                      onEditar={handleEditarModelo}
+                      onCopiar={handleCopiarModelo}
+                      onExcluir={handleExcluirModelo}
+                    />
+                  ))}
+                </div>
               )}
-            </div>
+            </>
           ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                gap: 'var(--space-4)',
-              }}
-            >
-              {modelosFiltrados.map((modelo) => (
-                <ModeloCard
-                  key={modelo.id}
-                  modelo={modelo}
-                  tipos={TIPOS}
-                  onEditar={handleEditarModelo}
-                  onCopiar={handleCopiarModelo}
-                  onExcluir={handleExcluirModelo}
-                />
-              ))}
-            </div>
+            <BibliotecaFornecedores cerimonialistaId={cerimonialista.id} />
           )}
         </main>
       </div>
 
       {/* Modal */}
-      {modalOpen && (
+      {abaAtiva === 'modelos' && modalOpen && (
         <ModeloModal
           modelo={modeloEditando}
           cerimonialistaId={cerimonialista.id}
