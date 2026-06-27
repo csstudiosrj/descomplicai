@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { gerarTarefasContextualizadas } from '../../../utils/gerador-tarefas';
 import { TAREFAS_PADRAO } from '../../../utils/tarefasPadrao';
 import { SUBCATEGORIAS_FLAT, CATALOGO_FORNECEDORES } from '../../../utils/catalogoFornecedores';
+import { supabase } from '../../../lib/supabase';
 
 const CATEGORIAS_VALIDAS = new Set(SUBCATEGORIAS_FLAT.map(s => s.id));
 const CATEGORIAS_PRINCIPAIS_VALIDAS = new Set(CATALOGO_FORNECEDORES.map(c => c.id));
@@ -26,23 +27,34 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ erro: 'Metodo nao permitido' });
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ erro: 'Não autorizado' });
   }
 
-  const { evento_id, data_evento, usuario_id, forcar_regeneracao } = req.body;
-
-  if (!evento_id || !data_evento) {
-    return res.status(400).json({ erro: 'evento_id e data_evento sao obrigatorios' });
+  const token = authHeader.replace('Bearer ', '').trim();
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ erro: 'Não autorizado' });
   }
-
-  const key = serviceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const supabase = createClient(supabaseUrl, key);
 
   try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ erro: 'Metodo nao permitido' });
+    }
+
+    const { evento_id, data_evento, usuario_id, forcar_regeneracao } = req.body;
+
+    if (!evento_id || !data_evento) {
+      return res.status(400).json({ erro: 'evento_id e data_evento sao obrigatorios' });
+    }
+
+    const key = serviceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabaseAdmin = createClient(supabaseUrl, key);
+
     let uid = usuario_id;
     if (!uid) {
-      const { data: evt } = await supabase
+      const { data: evt } = await supabaseAdmin
         .from('eventos')
         .select('usuario_id')
         .eq('id', evento_id)
@@ -54,7 +66,7 @@ export default async function handler(req, res) {
     }
 
     if (!forcar_regeneracao) {
-      const { data: existentes, error: errCheck } = await supabase
+      const { data: existentes, error: errCheck } = await supabaseAdmin
         .from('tarefas')
         .select('id')
         .eq('evento_id', evento_id)
@@ -67,7 +79,7 @@ export default async function handler(req, res) {
       }
     }
 
-    const { data: memorial, error: memErr } = await supabase
+    const { data: memorial, error: memErr } = await supabaseAdmin
       .from('memoriais')
       .select('estado')
       .eq('evento_id', evento_id)
@@ -117,7 +129,7 @@ export default async function handler(req, res) {
     }
 
     if (forcar_regeneracao) {
-      const { error: delErr } = await supabase
+      const { error: delErr } = await supabaseAdmin
         .from('tarefas')
         .delete()
         .eq('evento_id', evento_id)
@@ -125,7 +137,7 @@ export default async function handler(req, res) {
       if (delErr) console.error('[gerar-tarefas] Erro ao deletar antigas:', delErr);
     }
 
-    const { error } = await supabase.from('tarefas').insert(tarefasParaInserir);
+    const { error } = await supabaseAdmin.from('tarefas').insert(tarefasParaInserir);
     if (error) throw error;
 
     return res.status(201).json({
@@ -133,8 +145,10 @@ export default async function handler(req, res) {
       criadas: tarefasParaInserir.length,
       contextualizadas: tarefasParaInserir[0]?.categoria_principal !== undefined,
     });
-  } catch (err) {
-    console.error('[gerar-tarefas]', err);
-    return res.status(500).json({ erro: 'Erro ao gerar tarefas', detalhe: err.message });
+  } catch (error) {
+    console.error('Erro em tarefas/gerar:', error.message);
+    return res.status(500).json({
+      erro: 'Erro interno do servidor. Tente novamente.',
+    });
   }
 }

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { SUBCATEGORIAS_FLAT } from '../../../utils/catalogoFornecedores';
+import { supabase } from '../../../lib/supabase';
 
 const CATEGORIAS_VALIDAS = new Set(SUBCATEGORIAS_FLAT.map(s => s.id));
 
@@ -13,29 +14,40 @@ function validarCategoria(categoria) {
   return limpa;
 }
 
-const supabase = createClient(
+const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ erro: 'Metodo nao permitido' });
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ erro: 'Não autorizado' });
   }
 
-  const { evento_id, fornecedor_id, tipo, categoria, conteudo } = req.body;
-
-  if (!evento_id || !fornecedor_id || !tipo || !conteudo) {
-    return res.status(400).json({ erro: 'Dados incompletos' });
-  }
-
-  const catValidada = validarCategoria(categoria);
-  if (catValidada && typeof catValidada === 'object' && catValidada.erro) {
-    return res.status(400).json({ erro: catValidada.erro });
+  const token = authHeader.replace('Bearer ', '').trim();
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ erro: 'Não autorizado' });
   }
 
   try {
-    const { data, error } = await supabase
+    if (req.method !== 'POST') {
+      return res.status(405).json({ erro: 'Metodo nao permitido' });
+    }
+
+    const { evento_id, fornecedor_id, tipo, categoria, conteudo } = req.body;
+
+    if (!evento_id || !fornecedor_id || !tipo || !conteudo) {
+      return res.status(400).json({ erro: 'Dados incompletos' });
+    }
+
+    const catValidada = validarCategoria(categoria);
+    if (catValidada && typeof catValidada === 'object' && catValidada.erro) {
+      return res.status(400).json({ erro: catValidada.erro });
+    }
+
+    const { data, error } = await supabaseAdmin
       .from('contratos')
       .insert({
         evento_id,
@@ -53,8 +65,10 @@ export default async function handler(req, res) {
     if (error) throw error;
 
     return res.status(200).json({ contrato: data });
-  } catch (err) {
-    console.error('Erro ao criar contrato:', err);
-    return res.status(500).json({ erro: err.message || 'Erro interno' });
+  } catch (error) {
+    console.error('Erro em contratos/criar:', error.message);
+    return res.status(500).json({
+      erro: 'Erro interno do servidor. Tente novamente.',
+    });
   }
 }

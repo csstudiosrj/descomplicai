@@ -1,23 +1,35 @@
 import { createClient } from '@supabase/supabase-js';
 import { enviarEmailContratoParaFornecedor } from '../../../lib/email';
+import { supabase } from '../../../lib/supabase';
 
-const supabase = createClient(
+const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ erro: 'Método não permitido' });
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ erro: 'Não autorizado' });
   }
 
-  const { contrato_id } = req.body;
-  if (!contrato_id) {
-    return res.status(400).json({ erro: 'contrato_id obrigatório' });
+  const token = authHeader.replace('Bearer ', '').trim();
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ erro: 'Não autorizado' });
   }
 
   try {
-    const { data: contrato, error: err1 } = await supabase
+    if (req.method !== 'POST') {
+      return res.status(405).json({ erro: 'Método não permitido' });
+    }
+
+    const { contrato_id } = req.body;
+    if (!contrato_id) {
+      return res.status(400).json({ erro: 'contrato_id obrigatório' });
+    }
+
+    const { data: contrato, error: err1 } = await supabaseAdmin
       .from('contratos')
       .select('id, evento_id, fornecedor_id, tipo, status, token_assinatura, assinado_noivos_em, fornecedores(nome, email)')
       .eq('id', contrato_id)
@@ -35,15 +47,15 @@ export default async function handler(req, res) {
       return res.status(400).json({ erro: 'Assine o contrato antes de enviar ao fornecedor' });
     }
 
-    let token = contrato.token_assinatura;
-    if (!token) {
-      const { data: novoToken, error: errToken } = await supabase.rpc('gen_random_uuid');
+    let tokenAssinatura = contrato.token_assinatura;
+    if (!tokenAssinatura) {
+      const { data: novoToken, error: errToken } = await supabaseAdmin.rpc('gen_random_uuid');
       if (errToken) throw errToken;
-      token = novoToken;
-      await supabase.from('contratos').update({ token_assinatura: token }).eq('id', contrato_id);
+      tokenAssinatura = novoToken;
+      await supabaseAdmin.from('contratos').update({ token_assinatura: tokenAssinatura }).eq('id', contrato_id);
     }
 
-    const { error: err2 } = await supabase
+    const { error: err2 } = await supabaseAdmin
       .from('contratos')
       .update({
         status: 'enviado',
@@ -54,7 +66,7 @@ export default async function handler(req, res) {
 
     if (err2) throw err2;
 
-    const { data: evento } = await supabase
+    const { data: evento } = await supabaseAdmin
       .from('eventos')
       .select('nome_evento')
       .eq('id', contrato.evento_id)
@@ -66,13 +78,15 @@ export default async function handler(req, res) {
       to: contrato.fornecedores.email,
       fornecedorNome: contrato.fornecedores.nome || 'Fornecedor',
       noivosNome: evento?.nome_evento || 'os noivos',
-      token,
+      token: tokenAssinatura,
       baseUrl,
     });
 
-    return res.status(200).json({ sucesso: true, mensagem: 'Contrato enviado', token });
-  } catch (err) {
-    console.error('Erro ao enviar contrato:', err);
-    return res.status(500).json({ erro: err.message || 'Erro interno' });
+    return res.status(200).json({ sucesso: true, mensagem: 'Contrato enviado', token: tokenAssinatura });
+  } catch (error) {
+    console.error('Erro em contratos/enviar:', error.message);
+    return res.status(500).json({
+      erro: 'Erro interno do servidor. Tente novamente.',
+    });
   }
 }

@@ -1,4 +1,5 @@
 import { client, Preference } from '../../../lib/mercadopago';
+import { supabase } from '../../../lib/supabase';
 
 const PLANOS = {
   mensal: { duracao_meses: 1, preco: 29.9, titulo: 'Descomplicai — Plano Mensal' },
@@ -9,53 +10,64 @@ const PLANOS = {
 };
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ erro: 'Metodo nao permitido' });
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ erro: 'Não autorizado' });
   }
 
-  const { tipo, usuarioId, eventoId, plano } = req.body;
-
-  if (!tipo) {
-    return res.status(400).json({ erro: 'Tipo de pagamento nao informado' });
+  const token = authHeader.replace('Bearer ', '').trim();
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ erro: 'Não autorizado' });
   }
-
-  if (!usuarioId || !eventoId) {
-    return res.status(400).json({ erro: 'usuarioId e eventoId sao obrigatorios' });
-  }
-
-  let item;
-  let duracaoMeses = 0;
-  let metadata = {};
-
-  if (tipo === 'memorial_pdf') {
-    item = {
-      title: 'Memorial do Casamento — PDF Completo',
-      quantity: 1,
-      unit_price: 197,
-      currency_id: 'BRL',
-    };
-    metadata = { duracao_meses: 0 };
-  } else if (tipo === 'assinatura') {
-    const planoConfig = PLANOS[plano || 'mensal'];
-    if (!planoConfig) {
-      return res.status(400).json({ erro: 'Plano de assinatura invalido' });
-    }
-    item = {
-      title: planoConfig.titulo,
-      quantity: 1,
-      unit_price: planoConfig.preco,
-      currency_id: 'BRL',
-    };
-    duracaoMeses = planoConfig.duracao_meses;
-    metadata = { duracao_meses: duracaoMeses };
-  } else {
-    return res.status(400).json({ erro: 'Tipo de pagamento invalido' });
-  }
-
-  const externalReference = JSON.stringify({ usuarioId, eventoId, tipo, duracao_meses: duracaoMeses });
-  console.log('Criar preference: external_reference =', externalReference);
 
   try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ erro: 'Metodo nao permitido' });
+    }
+
+    const { tipo, usuarioId, eventoId, plano } = req.body;
+
+    if (!tipo) {
+      return res.status(400).json({ erro: 'Tipo de pagamento nao informado' });
+    }
+
+    if (!usuarioId || !eventoId) {
+      return res.status(400).json({ erro: 'usuarioId e eventoId sao obrigatorios' });
+    }
+
+    let item;
+    let duracaoMeses = 0;
+    let metadata = {};
+
+    if (tipo === 'memorial_pdf') {
+      item = {
+        title: 'Memorial do Casamento — PDF Completo',
+        quantity: 1,
+        unit_price: 197,
+        currency_id: 'BRL',
+      };
+      metadata = { duracao_meses: 0 };
+    } else if (tipo === 'assinatura') {
+      const planoConfig = PLANOS[plano || 'mensal'];
+      if (!planoConfig) {
+        return res.status(400).json({ erro: 'Plano de assinatura invalido' });
+      }
+      item = {
+        title: planoConfig.titulo,
+        quantity: 1,
+        unit_price: planoConfig.preco,
+        currency_id: 'BRL',
+      };
+      duracaoMeses = planoConfig.duracao_meses;
+      metadata = { duracao_meses: duracaoMeses };
+    } else {
+      return res.status(400).json({ erro: 'Tipo de pagamento invalido' });
+    }
+
+    const externalReference = JSON.stringify({ usuarioId, eventoId, tipo, duracao_meses: duracaoMeses });
+    console.log('Criar preference: external_reference =', externalReference);
+
     const preference = new Preference(client);
     const resultado = await preference.create({
       body: {
@@ -77,8 +89,10 @@ export default async function handler(req, res) {
       checkoutUrl: resultado.init_point,
       preferenceId: resultado.id,
     });
-  } catch (erro) {
-    console.error('Erro Mercado Pago:', erro);
-    res.status(500).json({ erro: 'Erro ao criar pagamento', detalhe: erro.message });
+  } catch (error) {
+    console.error('Erro em pagamento/criar:', error.message);
+    return res.status(500).json({
+      erro: 'Erro interno do servidor. Tente novamente.',
+    });
   }
 }

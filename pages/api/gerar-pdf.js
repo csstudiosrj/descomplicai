@@ -2,25 +2,37 @@ import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium-min';
 import QRCode from 'qrcode';
 import { gerarTemplateHTML } from '../../utils/pdfTemplate';
+import { supabase } from '../../lib/supabase';
 
 const TARBALL_URL = 'https://github.com/Sparticuz/chromium/releases/download/v147.0.2/chromium-v147.0.2-pack.x64.tar';
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ erro: 'Método não permitido' });
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ erro: 'Não autorizado' });
   }
 
-  const { memorial, dadosEvento } = req.body;
-  if (!memorial || !dadosEvento) {
-    return res.status(400).json({ erro: 'Dados insuficientes' });
+  const token = authHeader.replace('Bearer ', '').trim();
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ erro: 'Não autorizado' });
   }
 
-  console.log('=== GERANDO PDF COM PUPPETEER ===');
-  console.log('Memorial length:', memorial.length);
-  console.log('Casal:', dadosEvento.nomePessoa1, '&', dadosEvento.nomePessoa2);
-
-  let browser = null;
   try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ erro: 'Método não permitido' });
+    }
+
+    const { memorial, dadosEvento } = req.body;
+    if (!memorial || !dadosEvento) {
+      return res.status(400).json({ erro: 'Dados insuficientes' });
+    }
+
+    console.log('=== GERANDO PDF COM PUPPETEER ===');
+    console.log('Memorial length:', memorial.length);
+    console.log('Casal:', dadosEvento.nomePessoa1, '&', dadosEvento.nomePessoa2);
+
+    let browser = null;
     let qrCodeDataUri = null;
     try {
       qrCodeDataUri = await QRCode.toDataURL('https://arxum.csstudios.site/descomplicai', {
@@ -55,8 +67,6 @@ export default async function handler(req, res) {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
 
-    // CORREÇÃO: waitForTimeout não existe nessa versão do Puppeteer
-    // Usa evaluate + Promise para esperar 2 segundos dentro da página
     await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 2000)));
 
     const pdfBuffer = await page.pdf({
@@ -76,10 +86,10 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', 'no-store');
 
     return res.end(pdfBuffer);
-
-  } catch (erro) {
-    console.error('Erro PDF:', erro);
-    if (browser) { try { await browser.close(); } catch (e) {} }
-    return res.status(500).json({ erro: 'Erro ao gerar PDF', detalhe: erro.message });
+  } catch (error) {
+    console.error('Erro em gerar-pdf:', error.message);
+    return res.status(500).json({
+      erro: 'Erro interno do servidor. Tente novamente.',
+    });
   }
 }

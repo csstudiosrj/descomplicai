@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { sincronizarFornecedorComFinanceiro } from '../../../utils/sincronizarFinanceiro';
+import { supabase } from '../../../lib/supabase';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -7,6 +8,17 @@ const supabaseAdmin = createClient(
 );
 
 export default async function handler(req, res) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  const token = authHeader.replace('Bearer ', '').trim();
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
   try {
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed' });
