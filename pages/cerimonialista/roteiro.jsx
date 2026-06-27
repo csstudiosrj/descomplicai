@@ -19,6 +19,7 @@ export default function RoteiroPage() {
   const [modalAberto, setModalAberto] = useState(false);
   const [itemEditando, setItemEditando] = useState(null);
   const [toast, setToast] = useState(null);
+  const [exportandoPdf, setExportandoPdf] = useState(false);
 
   // Proteção de rota
   useEffect(() => {
@@ -260,6 +261,48 @@ export default function RoteiroPage() {
       </div>
     );
   }
+  const handleExportarPdf = async () => {
+    if (!eventoSelecionado?.id) {
+      setToast({ tipo: 'erro', mensagem: 'Selecione um evento primeiro' });
+      return;
+    }
+    setExportandoPdf(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setToast({ tipo: 'erro', mensagem: 'Sessao expirada. Faca login novamente.' });
+        return;
+      }
+      const res = await fetch('/api/roteiro/pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ evento_id: eventoSelecionado.id })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.erro || 'Erro ao gerar PDF');
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `roteiro-${eventoSelecionado.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      setToast({ tipo: 'sucesso', mensagem: 'PDF exportado com sucesso!' });
+    } catch (err) {
+      console.error(err);
+      setToast({ tipo: 'erro', mensagem: err.message || 'Erro ao exportar PDF' });
+    } finally {
+      setExportandoPdf(false);
+    }
+  };
+
 
   return (
     <>
@@ -397,6 +440,10 @@ export default function RoteiroPage() {
                 Novo item
               </span>
             </Button>
+        <Button variant="secondary" size="sm" onClick={handleExportarPdf} disabled={exportandoPdf}>
+          <Icon name="download" size={16} />
+          {exportandoPdf ? 'Gerando...' : 'Exportar PDF'}
+        </Button>
 
             <Button
               variant="secondary"
