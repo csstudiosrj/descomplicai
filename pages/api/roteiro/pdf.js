@@ -114,11 +114,11 @@ export default async function handler(req, res) {
           margin: { top: '20mm', right: '15mm', bottom: '25mm', left: '15mm' },
           displayHeaderFooter: true,
           headerTemplate: '<div></div>',
-          footerTemplate: \`
+          footerTemplate: `
             <div style="font-size:10px;color:#999;text-align:center;width:100%;padding:8px 0;border-top:1px solid #eee;">
               Gerado pelo Descomplicaí — descomplicai.com.br
             </div>
-          \`,
+          `,
         });
         await browser.close();
         modo = 'puppeteer';
@@ -155,7 +155,7 @@ export default async function handler(req, res) {
         // Capa
         page.drawRectangle({ x: 0, y: pageH - 140, width: pageW, height: 140, color: rgb(c1.r, c1.g, c1.b) });
         
-        const nomeCasal = \`\${evento.nome_noiva || 'Noiva'} \${evento.nome_noivo ? 'e ' + evento.nome_noivo : ''}\`.trim();
+        const nomeCasal = `\${evento.nome_noiva || 'Noiva'} \${evento.nome_noivo ? 'e ' + evento.nome_noivo : ''}`.trim();
         const nomeWidth = fontBold.widthOfTextAtSize(nomeCasal, 22);
         page.drawText(nomeCasal, { x: (pageW - nomeWidth) / 2, y: pageH - 80, size: 22, font: fontBold, color: rgb(1, 1, 1) });
         
@@ -198,7 +198,7 @@ export default async function handler(req, res) {
           // Fornecedor
           if (item.fornecedores?.nome || item.fornecedor_nome) {
             const forn = item.fornecedores?.nome || item.fornecedor_nome;
-            page.drawText(\`Fornecedor: \${forn}\`, { x: 110, y, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
+            page.drawText(`Fornecedor: \${forn}`, { x: 110, y, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
             y -= 12;
           }
           
@@ -224,7 +224,7 @@ export default async function handler(req, res) {
           
           // Música
           if (item.musica) {
-            page.drawText(\`Musica: \${item.musica}\`, { x: 110, y, size: 9, font, color: rgb(c2.r, c2.g, c2.b) });
+            page.drawText(`Musica: \${item.musica}`, { x: 110, y, size: 9, font, color: rgb(c2.r, c2.g, c2.b) });
             y -= 12;
           }
           
@@ -275,7 +275,7 @@ export default async function handler(req, res) {
     }
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', \`attachment; filename="roteiro-\${evento_id}.pdf"\`);
+    res.setHeader('Content-Disposition', `attachment; filename="roteiro-\${evento_id}.pdf"`);
     res.setHeader('X-PDF-Mode', modo);
     res.send(Buffer.from(pdfBuffer));
 
@@ -286,7 +286,7 @@ export default async function handler(req, res) {
 }
 
 function gerarHTML({ evento, roteiro, corPrimaria, corSecundaria, corTexto, corFundo }) {
-  const nomeCasal = \`\${evento.nome_noiva || 'Noiva'} \${evento.nome_noivo ? 'e ' + evento.nome_noivo : 'e Noivo'}\`.trim();
+  const nomeCasal = `\${evento.nome_noiva || 'Noiva'} \${evento.nome_noivo ? 'e ' + evento.nome_noivo : 'e Noivo'}`.trim();
   const dataFormatada = evento.data_evento
     ? new Date(evento.data_evento).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
     : '';
@@ -300,23 +300,23 @@ function gerarHTML({ evento, roteiro, corPrimaria, corSecundaria, corTexto, corF
     const musica = item.musica || '';
     const observacoes = item.observacoes || '';
 
-    return \`
+    return `
       <div class="secao">
         <div class="secao-header">
           <div class="horario">\${item.horario || '--:--'}</div>
           <div class="secao-info">
             <h3>\${item.titulo || 'Sem titulo'} \${privacidade}</h3>
-            \${fornecedor ? \`<p class="fornecedor">Fornecedor: \${fornecedor}</p>\` : ''}
+            \${fornecedor ? `<p class="fornecedor">Fornecedor: \${fornecedor}</p>` : ''}
           </div>
         </div>
-        \${item.descricao ? \`<p class="descricao">\${item.descricao}</p>\` : ''}
-        \${musica ? \`<p class="musica">Musica: \${musica}</p>\` : ''}
-        \${observacoes ? \`<div class="observacoes"><strong>Obs:</strong> \${observacoes}</div>\` : ''}
+        \${item.descricao ? `<p class="descricao">\${item.descricao}</p>` : ''}
+        \${musica ? `<p class="musica">Musica: \${musica}</p>` : ''}
+        \${observacoes ? `<div class="observacoes"><strong>Obs:</strong> \${observacoes}</div>` : ''}
       </div>
-    \`;
+    `;
   }).join('');
 
-  return \`<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -360,5 +360,5 @@ function gerarHTML({ evento, roteiro, corPrimaria, corSecundaria, corTexto, corF
   </div>
   <div class="rodape">Gerado pelo Descomplicai — descomplicai.com.br</div>
 </body>
-</html>\`;
+</html>`;
 }

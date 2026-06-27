@@ -1,10 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
-import { CATEGORIAS_PRINCIPAIS } from '../../../utils/catalogoFornecedores';
+import { CATALOGO_FORNECEDORES } from '../../../utils/catalogoFornecedores';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const CATEGORIAS_VALIDAS = CATEGORIAS_PRINCIPAIS.map(c => c.id);
+const CATEGORIAS_VALIDAS = CATALOGO_FORNECEDORES.map(c => c.id);
 
 export default async function handler(req, res) {
   if (!['POST', 'PUT', 'PATCH'].includes(req.method)) {
