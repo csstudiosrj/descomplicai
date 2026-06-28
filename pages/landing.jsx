@@ -1,33 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import Icon from './components/ui/Icon';
-import Logo from './components/ui/Logo';
+import Icon from '../components/ui/Icon';
+import Logo from '../components/ui/Logo';
 
 export default function LandingPage() {
   const router = useRouter();
-  const [dropdownAberto, setDropdownAberto] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownAberto && !e.target.closest('.dropdown-profissionais')) {
-        setDropdownAberto(false);
-      }
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [dropdownAberto]);
 
   const scrollToMemorial = () => {
-    router.push('/memorial');
+    router.push('/');
   };
 
   return (
@@ -37,17 +19,16 @@ export default function LandingPage() {
         <meta name="description" content="O jeito mais simples de organizar o casamento dos seus sonhos." />
       </Head>
 
-      {/* Header */}
+      {/* Header simplificado */}
       <header style={{
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         height: '52px',
-        background: scrolled ? 'var(--color-white)' : 'transparent',
-        borderBottom: scrolled ? '1px solid var(--color-border)' : '1px solid transparent',
+        background: 'var(--color-white)',
+        borderBottom: '1px solid var(--color-border)',
         zIndex: 'var(--z-sticky)',
-        transition: 'background 0.2s, border-color 0.2s',
       }}>
         <div style={{
           maxWidth: '960px',
@@ -65,76 +46,16 @@ export default function LandingPage() {
           </Link>
 
           <nav style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-            <div className="dropdown-profissionais" style={{ position: 'relative' }}>
-              <button
-                type="button"
-                onClick={() => setDropdownAberto(!dropdownAberto)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 'var(--text-sm)',
-                  color: 'var(--color-text-secondary)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-1)',
-                  padding: 'var(--space-2)',
-                }}
-              >
+            <Link href="/cerimonialista/login" legacyBehavior>
+              <a style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--text-sm)',
+                color: 'var(--color-text-secondary)',
+                textDecoration: 'none',
+              }}>
                 Para profissionais
-                <Icon name={dropdownAberto ? 'chevronUp' : 'chevronDown'} size={16} />
-              </button>
-
-              {dropdownAberto && (
-                <div style={{
-                  position: 'absolute',
-                  top: 'calc(100% + var(--space-2))',
-                  right: 0,
-                  background: 'var(--color-white)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-md)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                  minWidth: '200px',
-                  padding: 'var(--space-2)',
-                  zIndex: 'var(--z-dropdown)',
-                }}>
-                  <Link href="/cerimonialista/login" legacyBehavior>
-                    <a style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--space-2)',
-                      padding: 'var(--space-3) var(--space-4)',
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 'var(--text-sm)',
-                      color: 'var(--color-text-primary)',
-                      textDecoration: 'none',
-                      borderRadius: 'var(--radius-sm)',
-                    }}>
-                      <Icon name="briefcase" size={18} />
-                      Sou cerimonialista
-                    </a>
-                  </Link>
-                  <Link href="/fornecedor/login" legacyBehavior>
-                    <a style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--space-2)',
-                      padding: 'var(--space-3) var(--space-4)',
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 'var(--text-sm)',
-                      color: 'var(--color-text-primary)',
-                      textDecoration: 'none',
-                      borderRadius: 'var(--radius-sm)',
-                    }}>
-                      <Icon name="store" size={18} />
-                      Sou fornecedor
-                    </a>
-                  </Link>
-                </div>
-              )}
-            </div>
-
+              </a>
+            </Link>
             <Link href="/login" legacyBehavior>
               <a style={{
                 fontFamily: 'var(--font-body)',
@@ -150,7 +71,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero */}
       <section style={{
         minHeight: '100dvh',
         display: 'flex',
@@ -169,7 +90,7 @@ export default function LandingPage() {
           marginBottom: 'var(--space-4)',
           lineHeight: 1.2,
         }}>
-          O casamento dos seus sonhos<br />começa aqui
+          O casamento dos seus sonhos<br />comeca aqui
         </h1>
         <p style={{
           fontFamily: 'var(--font-body)',
@@ -178,7 +99,7 @@ export default function LandingPage() {
           marginBottom: 'var(--space-8)',
           maxWidth: '480px',
         }}>
-          Organize tudo em um só lugar: fornecedores, convidados, cronograma e muito mais.
+          Organize tudo em um so lugar: fornecedores, convidados, cronograma e muito mais.
         </p>
         <button
           onClick={scrollToMemorial}
@@ -211,7 +132,7 @@ export default function LandingPage() {
           textAlign: 'center',
           marginBottom: 'var(--space-8)',
         }}>
-          Tudo que você precisa
+          Tudo que voce precisa
         </h2>
         <div style={{
           display: 'grid',
@@ -220,8 +141,8 @@ export default function LandingPage() {
         }}>
           {[
             { icon: 'checklist', title: 'Checklist inteligente', desc: 'Acompanhe cada etapa do planejamento' },
-            { icon: 'fornecedores', title: 'Fornecedores', desc: 'Organize orçamentos e contratos' },
-            { icon: 'convidados', title: 'Lista de convidados', desc: 'Controle confirmações e mesas' },
+            { icon: 'fornecedores', title: 'Fornecedores', desc: 'Organize orcamentos e contratos' },
+            { icon: 'convidados', title: 'Lista de convidados', desc: 'Controle confirmacoes e mesas' },
             { icon: 'financeiro', title: 'Financeiro', desc: 'Gerencie pagamentos e saldos' },
           ].map((f) => (
             <div key={f.title} style={{
@@ -250,7 +171,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Profissionais Section */}
+      {/* Profissionais */}
       <section style={{
         padding: 'var(--space-12) var(--space-4)',
         backgroundColor: 'var(--color-off-white)',
@@ -263,7 +184,7 @@ export default function LandingPage() {
             textAlign: 'center',
             marginBottom: 'var(--space-8)',
           }}>
-            Você também pode crescer com a gente
+            Voce tambem pode crescer com a gente
           </h2>
           <div style={{
             display: 'grid',
@@ -290,9 +211,7 @@ export default function LandingPage() {
                 fontWeight: 'var(--font-medium)',
                 color: 'var(--color-text-primary)',
                 marginBottom: 'var(--space-3)',
-              }}>
-                Cerimonialista
-              </h3>
+              }}>Cerimonialista</h3>
               <p style={{
                 fontFamily: 'var(--font-body)',
                 fontSize: 'var(--text-sm)',
@@ -300,7 +219,7 @@ export default function LandingPage() {
                 marginBottom: 'var(--space-6)',
                 lineHeight: 1.6,
               }}>
-                Gerencie seus eventos, acompanhe leads e organize cada detalhe do seu escritório em um só lugar.
+                Gerencie seus eventos, acompanhe leads e organize cada detalhe do seu escritorio em um so lugar.
               </p>
               <Link href="/cerimonialista/cadastro" legacyBehavior>
                 <a style={{
@@ -313,9 +232,7 @@ export default function LandingPage() {
                   padding: 'var(--space-3) var(--space-6)',
                   borderRadius: 'var(--radius-md)',
                   textDecoration: 'none',
-                }}>
-                  Cadastrar como cerimonialista
-                </a>
+                }}>Cadastrar como cerimonialista</a>
               </Link>
             </div>
 
@@ -339,9 +256,7 @@ export default function LandingPage() {
                 fontWeight: 'var(--font-medium)',
                 color: 'var(--color-text-primary)',
                 marginBottom: 'var(--space-3)',
-              }}>
-                Fornecedor
-              </h3>
+              }}>Fornecedor</h3>
               <p style={{
                 fontFamily: 'var(--font-body)',
                 fontSize: 'var(--text-sm)',
@@ -349,7 +264,7 @@ export default function LandingPage() {
                 marginBottom: 'var(--space-6)',
                 lineHeight: 1.6,
               }}>
-                Seja encontrado por noivas que estão planejando o casamento. Aumente sua visibilidade e receba novos leads.
+                Seja encontrado por pessoas que estao planejando o casamento. Aumente sua visibilidade e receba novos leads.
               </p>
               <Link href="/fornecedor/cadastro" legacyBehavior>
                 <a style={{
@@ -362,9 +277,7 @@ export default function LandingPage() {
                   padding: 'var(--space-3) var(--space-6)',
                   borderRadius: 'var(--radius-md)',
                   textDecoration: 'none',
-                }}>
-                  Cadastrar como fornecedor
-                </a>
+                }}>Cadastrar como fornecedor</a>
               </Link>
             </div>
           </div>
