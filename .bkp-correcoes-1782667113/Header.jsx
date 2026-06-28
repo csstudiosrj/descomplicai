@@ -39,6 +39,12 @@ export default function Header() {
 
         <nav className={`header-nav ${menuAberto ? 'header-nav--open' : ''}`} aria-label="Navegacao principal">
           <ul className="header-nav-list">
+            <li>
+              <Link href="/planos" className="header-nav-link" onClick={() => setMenuAberto(false)}>
+                Planos
+              </Link>
+            </li>
+
             {/* Dropdown Para profissionais */}
             <li 
               ref={dropdownRef}
@@ -73,7 +79,7 @@ export default function Header() {
                     <span>Sou cerimonialista</span>
                   </a>
                 </Link>
-                <Link href="/fornecedo/login" legacyBehavior>
+                <Link href="/fornecedor/login" legacyBehavior>
                   <a 
                     className="header-dropdown-item" 
                     role="menuitem"
@@ -94,7 +100,7 @@ export default function Header() {
               </Link>
             </li>
             <li className="header-nav-item--mobile-only">
-              <Link href="/fornecedo/login" className="header-nav-link" onClick={() => setMenuAberto(false)}>
+              <Link href="/fornecedor/login" className="header-nav-link" onClick={() => setMenuAberto(false)}>
                 <Icon name="store" size={16} />
                 Sou fornecedor
               </Link>
@@ -135,7 +141,7 @@ export default function Header() {
 
         <button 
           className="header-menu-toggle" 
-          aria-label={menuAberto ? "Fechar menu" : "Abir menu"}
+          aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
           aria-expanded={menuAberto}
           onClick={() => setMenuAberto(!menuAberto)}
         >

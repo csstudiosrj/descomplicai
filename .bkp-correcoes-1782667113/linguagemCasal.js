@@ -8,8 +8,8 @@ const PERFIL_MAP = {
     casalCap: 'Os noivos',
     pessoa1: 'a noiva',
     pessoa2: 'o noivo',
-    pessoa1Cap: 'Noiva',
-    pessoa2Cap: 'Noivo',
+    pessoa1Cap: 'A noiva',
+    pessoa2Cap: 'O noivo',
     pronome: 'eles',
     pronomeCap: 'Eles',
     possessivo: 'deles',
@@ -96,7 +96,7 @@ export function termo(perfilCasal, chave) {
 /**
  * Adapta uma frase com placeholders.
  * Ex: adaptarFrase('Quem são {casal}?', 'duas-noivas') → 'Quem são as noivas?'
- * @param {string} frase - com placeholders entre {chaver}
+ * @param {string} frase - com placeholders entre {chaves}
  * @param {string} perfilCasal
  * @returns {string}
  */
