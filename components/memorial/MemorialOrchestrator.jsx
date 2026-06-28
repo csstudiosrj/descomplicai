@@ -342,25 +342,27 @@ export default function MemorialOrchestrator() {
               <button onClick={() => handleIrParaLogin('/cadastro')}>Criar conta</button>
             </div>
           ) : (
-            <BreathTransition
-              ativa={transicionando}
-              cor={corTransicao}
-              blocoAtual={blocoAtual}
-              estiloEscolhido={estado.estilo || ''}
-              respostaAtual={respostaTransicao || estado[campoTransicao] || ''}
-              perfilCasal={estado.perfilCasal || ''}
-            >
-              <ProgressBar progress={progress} blockName={blockName} />
-              {estado.etapaAtual > 0 && <BackButton onClick={handleBack} />}
-              <React.Suspense fallback={<div style={{ padding: 'var(--space-6)' }}>Carregando etapa...</div>}>
-                <StepComponent
-                  estado={estado}
-                  onSelect={handleSelect}
-                  onConcluir={handleConcluirMemorial}
-                />
-              </React.Suspense>
+            <>
+              <BreathTransition
+                ativa={transicionando}
+                cor={corTransicao}
+                blocoAtual={blocoAtual}
+                estiloEscolhido={estado.estilo || ''}
+                respostaAtual={respostaTransicao || estado[campoTransicao] || ''}
+                perfilCasal={estado.perfilCasal || ''}
+              >
+                <ProgressBar progress={progress} blockName={blockName} />
+                {estado.etapaAtual > 0 && <BackButton onClick={handleBack} />}
+                <React.Suspense fallback={<div style={{ padding: 'var(--space-6)' }}>Carregando etapa...</div>}>
+                  <StepComponent
+                    estado={estado}
+                    onSelect={handleSelect}
+                    onConcluir={handleConcluirMemorial}
+                  />
+                </React.Suspense>
+              </BreathTransition>
               <Footer />
-            </BreathTransition>
+            </>
           )}
         </>
       )}
