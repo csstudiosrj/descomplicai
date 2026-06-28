@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Icon from './Icon';
 
 export default function Footer() {
   return (
@@ -16,9 +15,6 @@ export default function Footer() {
           <div className="footer-section">
             <h4 className="footer-title">Navegação</h4>
             <ul className="footer-list">
-              <li>
-                <Link href="/planos" className="footer-link">Planos</Link>
-              </li>
               <li>
                 <Link href="/login" className="footer-link">Entrar</Link>
               </li>

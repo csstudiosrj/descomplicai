@@ -6,8 +6,10 @@ const PERFIL_MAP = {
   'noiva-noivo': {
     casal: 'os noivos',
     casalCap: 'Os noivos',
-    pessoa1: 'a noiva',
-    pessoa2: 'o noivo',
+    pessoa1: 'noiva',
+    pessoa2: 'noivo',
+    pessoa1ComArtigo: 'a noiva',
+    pessoa2ComArtigo: 'o noivo',
     pessoa1Cap: 'Noiva',
     pessoa2Cap: 'Noivo',
     pronome: 'eles',
@@ -23,10 +25,12 @@ const PERFIL_MAP = {
   'duas-noivas': {
     casal: 'as noivas',
     casalCap: 'As noivas',
-    pessoa1: 'a primeira noiva',
-    pessoa2: 'a segunda noiva',
-    pessoa1Cap: 'A primeira noiva',
-    pessoa2Cap: 'A segunda noiva',
+    pessoa1: 'primeira noiva',
+    pessoa2: 'segunda noiva',
+    pessoa1ComArtigo: 'a primeira noiva',
+    pessoa2ComArtigo: 'a segunda noiva',
+    pessoa1Cap: 'Primeira Noiva',
+    pessoa2Cap: 'Segunda Noiva',
     pronome: 'elas',
     pronomeCap: 'Elas',
     possessivo: 'delas',
@@ -40,10 +44,12 @@ const PERFIL_MAP = {
   'dois-noivos': {
     casal: 'os noivos',
     casalCap: 'Os noivos',
-    pessoa1: 'o primeiro noivo',
-    pessoa2: 'o segundo noivo',
-    pessoa1Cap: 'O primeiro noivo',
-    pessoa2Cap: 'O segundo noivo',
+    pessoa1: 'primeiro noivo',
+    pessoa2: 'segundo noivo',
+    pessoa1ComArtigo: 'o primeiro noivo',
+    pessoa2ComArtigo: 'o segundo noivo',
+    pessoa1Cap: 'Primeiro Noivo',
+    pessoa2Cap: 'Segundo Noivo',
     pronome: 'eles',
     pronomeCap: 'Eles',
     possessivo: 'deles',
@@ -57,10 +63,12 @@ const PERFIL_MAP = {
   'nao-especificar': {
     casal: 'o casal',
     casalCap: 'O casal',
-    pessoa1: 'a primeira pessoa',
-    pessoa2: 'a segunda pessoa',
-    pessoa1Cap: 'A primeira pessoa',
-    pessoa2Cap: 'A segunda pessoa',
+    pessoa1: 'primeira pessoa',
+    pessoa2: 'segunda pessoa',
+    pessoa1ComArtigo: 'a primeira pessoa',
+    pessoa2ComArtigo: 'a segunda pessoa',
+    pessoa1Cap: 'Primeira Pessoa',
+    pessoa2Cap: 'Segunda Pessoa',
     pronome: 'eles',
     pronomeCap: 'Eles',
     possessivo: 'deles',
@@ -96,7 +104,7 @@ export function termo(perfilCasal, chave) {
 /**
  * Adapta uma frase com placeholders.
  * Ex: adaptarFrase('Quem são {casal}?', 'duas-noivas') → 'Quem são as noivas?'
- * @param {string} frase - com placeholders entre {chaver}
+ * @param {string} frase - com placeholders entre {chave}
  * @param {string} perfilCasal
  * @returns {string}
  */

@@ -5,24 +5,17 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
-import { getTermos } from '../../../utils/linguagemCasal';
-
-
 
 export default function Step00Casal({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
-  const perfil = estadoAtual?.perfilCasal || 'nao-especificar';
-  const termos = getTermos(perfil);
-
   const OPCOES = [
-    { valor: 'noiva-noivo', label: `${termos.pessoa1} e ${termos.pessoa2}`, icone: 'heart', cor: 'var(--color-info-light)' },
-    { valor: 'duas-noivas', label: `Duas ${termos.pessoa1}s`, icone: 'users', cor: 'var(--color-brand-lighter)' },
-    { valor: 'dois-noivos', label: `Dois ${termos.pessoa2}s`, icone: 'users', cor: 'var(--color-brand-lighter)' },
+    { valor: 'noiva-noivo', label: 'Noiva e Noivo', icone: 'heart', cor: 'var(--color-info-light)' },
+    { valor: 'duas-noivas', label: 'Duas Noivas', icone: 'users', cor: 'var(--color-brand-lighter)' },
+    { valor: 'dois-noivos', label: 'Dois Noivos', icone: 'users', cor: 'var(--color-brand-lighter)' },
     { valor: 'nao-especificar', label: 'Prefiro não especificar', icone: 'heart', cor: 'var(--color-info-light)' },
   ];
 
   const selecionado = estadoAtual?.perfilCasal;
-
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
@@ -32,12 +25,14 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
       setCardPulsando(null);
     }, 350);
   };
+
   const handleKeyDown = (e, opcao) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       handleCardClick(opcao);
     }
   };
+
   return (
     <div
       role="radiogroup"
@@ -75,68 +70,68 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
           const isSelected = selecionado === opcao.valor;
           return (
             <div
-      key={opcao.valor}
-      style={{
-        transition: 'transform 300ms ease, box-shadow 300ms ease',
-        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
-        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
-        borderRadius: 'var(--radius-lg)',
-      }}
-    >
-      <Card
               key={opcao.valor}
-              interactive
-              selected={isSelected}
-              padding="md"
-              onClick={() => handleCardClick(opcao)}
-              role="radio"
-              aria-checked={isSelected}
-              aria-label={opcao.label}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onSelect('perfilCasal', opcao.valor, opcao.cor);
-                }
+              style={{
+                transition: 'transform 300ms ease, box-shadow 300ms ease',
+                transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+                boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+                borderRadius: 'var(--radius-lg)',
               }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-4)',
+              <Card
+                key={opcao.valor}
+                interactive
+                selected={isSelected}
+                padding="md"
+                onClick={() => handleCardClick(opcao)}
+                role="radio"
+                aria-checked={isSelected}
+                aria-label={opcao.label}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect('perfilCasal', opcao.valor, opcao.cor);
+                  }
                 }}
               >
                 <div
                   style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: 'var(--radius-lg)',
-                    backgroundColor: isSelected ? opcao.cor : 'var(--color-surface)',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    color: isSelected ? 'var(--color-brand)' : 'var(--color-text-muted)',
-                    flexShrink: 0,
+                    gap: 'var(--space-4)',
                   }}
                 >
-                  <Icon name={opcao.icone} size={24} ariaHidden={true} />
+                  <div
+                    style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: 'var(--radius-lg)',
+                      backgroundColor: isSelected ? opcao.cor : 'var(--color-surface)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: isSelected ? 'var(--color-brand)' : 'var(--color-text-muted)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Icon name={opcao.icone} size={24} ariaHidden={true} />
+                  </div>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 'var(--text-lg)',
+                      fontWeight: 'var(--font-medium)',
+                      color: 'var(--color-text-primary)',
+                    }}
+                  >
+                    {opcao.label}
+                  </span>
                 </div>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 'var(--text-lg)',
-                    fontWeight: 'var(--font-medium)',
-                    color: 'var(--color-text-primary)',
-                  }}
-                >
-                  {opcao.label}
-                </span>
-              </div>
-            </Card>
-    </div>
-  );
-})}
+              </Card>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
