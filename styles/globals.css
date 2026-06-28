@@ -264,6 +264,11 @@
   margin-bottom: var(--space-8);
 }
 
+.footer-section {
+  display: flex;
+  flex-direction: column;
+}
+
 .footer-title {
   font-family: var(--font-body);
   font-size: var(--text-sm);
