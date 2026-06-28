@@ -7,6 +7,7 @@ import useMemorial from '../../hooks/useMemorial';
 import { useAuth } from '../../hooks/useAuth';
 import useAutoSave from '../../hooks/useAutoSave';
 import { calcularProximaEtapa, calcularEtapasTotais, deveExibirLoginAgora, getEtapaPorIndice } from '../../utils/algoritmo';
+import { getBreathConfig } from '../../utils/getBreathConfig';
 import BreathTransition from './BreathTransition';
 import ProgressBar from './ProgressBar';
 import BackButton from './BackButton';
@@ -179,8 +180,8 @@ const BLOCK_NAMES = {
 
 function PlaceholderStep({ titulo }) {
   return (
-    <div style={{ padding: 'var(--space-8)', textAlign: 'center', fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>
-      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-4)' }}>{titulo}</h2>
+    <div style={{ padding: 'var(--space-6)', textAlign: 'center' }}>
+      <h2>{titulo}</h2>
       <p>Etapa em desenvolvimento</p>
     </div>
   );
@@ -194,6 +195,8 @@ export default function MemorialOrchestrator() {
 
   const [transicionando, setTransicionando] = useState(false);
   const [corTransicao, setCorTransicao] = useState(null);
+  const [respostaTransicao, setRespostaTransicao] = useState('');
+  const [campoTransicao, setCampoTransicao] = useState('');
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
   const restauracaoFeita = useRef(false);
@@ -232,8 +235,12 @@ export default function MemorialOrchestrator() {
   const progress = etapasTotais > 0 ? (estado.etapaAtual / etapasTotais) * 100 : 0;
   const blockName = BLOCK_NAMES[blocoAtual] || '';
 
+  const BREATH_DURATION = 700;
+
   const handleSelect = useCallback((campo, valor, cor) => {
     setRespostas(campo, valor);
+    setRespostaTransicao(typeof valor === 'string' ? valor : '');
+    setCampoTransicao(campo);
     setTransicionando(true);
     if (cor) setCorTransicao(cor);
 
@@ -250,7 +257,9 @@ export default function MemorialOrchestrator() {
       irParaEtapa(proxima);
       setTransicionando(false);
       setCorTransicao(null);
-    }, 500);
+      setRespostaTransicao('');
+      setCampoTransicao('');
+    }, BREATH_DURATION);
   }, [estado, setRespostas, irParaEtapa, user]);
 
   const handleIrParaLogin = (destino) => {
@@ -302,53 +311,59 @@ export default function MemorialOrchestrator() {
 
   const StepComponent = etapaAtualObj
     ? (STEP_COMPONENTS[etapaAtualObj.componente] || (() => <PlaceholderStep titulo={etapaAtualObj.titulo} />))
-    : () => <PlaceholderStep titulo="Memorial Concluído" />;
+    : () => null;
 
   return (
-    <BreathTransition ativa={transicionando} cor={corTransicao || 'var(--color-brand-lighter)'}>
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', backgroundColor: 'var(--color-off-white)' }}>
-        <ProgressBar progress={progress} blockName={blockName} />
-        {salvandoAgora && (
-          <div style={{ position: 'fixed', top: '4px', right: 'var(--space-4)', zIndex: 'var(--z-sticky)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-brand)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-            <style jsx>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
-            Salvando...
-          </div>
-        )}
-        <main style={{ flex: 1, overflowY: 'auto', paddingTop: 'var(--space-6)', paddingBottom: 'var(--space-4)', paddingLeft: 'var(--space-4)', paddingRight: 'var(--space-4)' }}>
-          <React.Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><span style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando...</span></div>}>
-            <StepComponent onSelect={handleSelect} estadoAtual={estado} onConcluir={handleConcluirMemorial} />
-          </React.Suspense>
-        </main>
-        {estado.etapaAtual === 0 && <Footer />}
-        <BackButton onClick={handleBack} disabled={!estado.historicoEtapas?.length} />
-        {oferecerDraft && (
-          <div role="dialog" aria-modal="true" aria-label="Continuar memorial salvo" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }}>
-            <div style={{ backgroundColor: 'var(--color-white)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-8)', maxWidth: '420px', width: '100%', boxShadow: 'var(--shadow-xl)' }}>
-              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-3)', color: 'var(--color-text-primary)' }}>Continuar onde parou?</h2>
-              <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)', lineHeight: 'var(--leading-relaxed)' }}>Encontramos um memorial salvo neste dispositivo. Deseja continuar de onde parou?</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                <button onClick={handleContinuarDraft} style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: 'none', backgroundColor: 'var(--color-brand)', color: 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}>Sim, continuar</button>
-                <button onClick={handleDescartarDraft} style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-border-strong)', backgroundColor: 'transparent', color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', cursor: 'pointer' }}>Não, começar do zero</button>
-              </div>
+    <div style={{ position: 'relative', minHeight: '100vh' }}>
+      {salvandoAgora && (
+        <div style={{ position: 'fixed', top: 8, right: 8, zIndex: 9999, fontSize: 12, opacity: 0.6 }}>
+          Salvando...
+        </div>
+      )}
+
+      {carregandoAuth ? (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <p>Carregando...</p>
+        </div>
+      ) : (
+        <>
+          {estado.etapaAtual === 0 && oferecerDraft ? (
+            <div style={{ padding: 'var(--space-6)', textAlign: 'center' }}>
+              <h2>Você tem um progresso salvo</h2>
+              <p>Deseja continuar de onde parou?</p>
+              <button onClick={handleContinuarDraft}>Continuar</button>
+              <button onClick={handleDescartarDraft}>Começar do zero</button>
             </div>
-          </div>
-        )}
-        {mostrandoLogin && (
-          <div role="dialog" aria-modal="true" aria-label="Login necessário" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ backgroundColor: 'var(--color-white)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-8)', maxWidth: '400px', width: '100%', boxShadow: 'var(--shadow-xl)' }}>
-              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-4)' }}>Quase lá!</h2>
-              <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)' }}>Para continuar seu memorial na nuvem e acessar de qualquer lugar, faça login ou crie sua conta.</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                <button onClick={() => handleIrParaLogin('/login')} style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: 'none', backgroundColor: 'var(--color-brand)', color: 'var(--color-white)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}>Fazer login</button>
-                <button onClick={() => handleIrParaLogin('/cadastro')} style={{ width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--color-brand)', backgroundColor: 'transparent', color: 'var(--color-brand)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', cursor: 'pointer' }}>Criar conta</button>
-              </div>
+          ) : mostrandoLogin ? (
+            <div style={{ padding: 'var(--space-6)', textAlign: 'center' }}>
+              <h2>Quase lá!</h2>
+              <p>Para continuar salvando seu progresso, faça login ou crie uma conta.</p>
+              <button onClick={() => handleIrParaLogin('/login')}>Entrar</button>
+              <button onClick={() => handleIrParaLogin('/cadastro')}>Criar conta</button>
             </div>
-          </div>
-        )}
-      </div>
-    </BreathTransition>
+          ) : (
+            <BreathTransition
+              ativa={transicionando}
+              cor={corTransicao}
+              blocoAtual={blocoAtual}
+              estiloEscolhido={estado.estilo || ''}
+              respostaAtual={respostaTransicao || estado[campoTransicao] || ''}
+              perfilCasal={estado.perfilCasal || ''}
+            >
+              <ProgressBar progress={progress} blockName={blockName} />
+              {estado.etapaAtual > 0 && <BackButton onClick={handleBack} />}
+              <React.Suspense fallback={<div style={{ padding: 'var(--space-6)' }}>Carregando etapa...</div>}>
+                <StepComponent
+                  estado={estado}
+                  onSelect={handleSelect}
+                  onConcluir={handleConcluirMemorial}
+                />
+              </React.Suspense>
+              <Footer />
+            </BreathTransition>
+          )}
+        </>
+      )}
+    </div>
   );
 }
-
-export { MemorialOrchestrator };

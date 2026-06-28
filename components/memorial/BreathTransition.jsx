@@ -1,15 +1,71 @@
 // components/memorial/BreathTransition.jsx
-// Respiro visual INTENSO — agora perceptível
-// Overlay opacidade 0.40 + blur + glow central + 500ms
-// Respeita prefers-reduced-motion
+// Respiro contextual elaborado por bloco do memorial
+// Framer Motion + imagem de fundo + SVG temático + linguagem inclusiva
+// Duração: 700ms · Respeita prefers-reduced-motion
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import PropTypes from 'prop-types';
 import styles from './BreathTransition.module.css';
+import { getBreathConfig } from '../../utils/getBreathConfig';
+import BreathFolhagem from '../ui/svgs/breath/BreathFolhagem';
+import BreathOndas from '../ui/svgs/breath/BreathOndas';
+import BreathGeometria from '../ui/svgs/breath/BreathGeometria';
+import BreathArabescos from '../ui/svgs/breath/BreathArabescos';
+import BreathGlam from '../ui/svgs/breath/BreathGlam';
 
-export default function BreathTransition({ ativa, cor, children }) {
+const SVG_MAP = {
+  BreathFolhagem,
+  BreathOndas,
+  BreathGeometria,
+  BreathArabescos,
+  BreathGlam,
+};
+
+const breathVariants = {
+  initial: { opacity: 0, scale: 0.95 },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.4, ease: 'easeInOut' },
+  },
+  exit: {
+    opacity: 0,
+    scale: 1.02,
+    transition: { duration: 0.3 },
+  },
+};
+
+const backgroundVariants = {
+  initial: { opacity: 0, scale: 1.1 },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.6, ease: 'easeOut' },
+  },
+  exit: { opacity: 0, transition: { duration: 0.3 } },
+};
+
+const svgVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: {
+    opacity: 0.6,
+    y: 0,
+    transition: { duration: 0.5, delay: 0.2 },
+  },
+  exit: { opacity: 0, transition: { duration: 0.2 } },
+};
+
+export default function BreathTransition({
+  ativa,
+  cor,
+  blocoAtual,
+  estiloEscolhido,
+  respostaAtual,
+  perfilCasal,
+  children,
+}) {
   const [prefersReduced, setPrefersReduced] = useState(false);
-  const [fase, setFase] = useState('idle'); // idle | inhale | exhale
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -19,52 +75,121 @@ export default function BreathTransition({ ativa, cor, children }) {
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  useEffect(() => {
-    if (!ativa || prefersReduced) {
-      setFase('idle');
-      return;
-    }
+  const config = useMemo(() => {
+    if (!ativa) return null;
+    return getBreathConfig(estiloEscolhido, blocoAtual, perfilCasal);
+  }, [ativa, estiloEscolhido, blocoAtual, perfilCasal]);
 
-    // Ciclo de respiração: inspira (250ms) → expira (250ms) = 500ms total
-    setFase('inhale');
-    const exhaleTimeout = setTimeout(() => setFase('exhale'), 250);
-    const idleTimeout = setTimeout(() => setFase('idle'), 500);
+  const SvgComponent = useMemo(() => {
+    if (!config?.svgComponent) return null;
+    return SVG_MAP[config.svgComponent] || null;
+  }, [config]);
 
-    return () => {
-      clearTimeout(exhaleTimeout);
-      clearTimeout(idleTimeout);
-    };
-  }, [ativa, prefersReduced]);
+  const srMessage = useMemo(() => {
+    if (!config) return '';
+    const blockName = config.blockLabel || `Bloco ${config.blockLetter}`;
+    const resposta = typeof respostaAtual === 'string' ? respostaAtual : '';
+    return resposta
+      ? `Avançando para ${blockName}. Você escolheu: ${resposta}`
+      : `Avançando para ${blockName}`;
+  }, [config, respostaAtual]);
 
-  if (prefersReduced) return <>{children}</>;
-
-  const isBreathing = fase === 'inhale' || fase === 'exhale';
+  // prefers-reduced-motion: pular animação, ir direto
+  if (prefersReduced) {
+    return (
+      <div className={styles.wrapper}>
+        {children}
+        {ativa && (
+          <div className={styles.srOnly} role="status" aria-live="polite" aria-atomic="true">
+            {srMessage}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div
-      className={styles.wrapper}
-      aria-live="polite"
-      aria-atomic="true"
-      role="status"
-    >
+    <div className={styles.wrapper}>
       {children}
-      <div className={styles.srOnly}>
-        {isBreathing ? 'Avançando para a próxima etapa...' : ''}
-      </div>
 
-      {/* Overlay de cor — mais opaco e com blur */}
-      <div
-        aria-hidden="true"
-        className={`${styles.overlay} ${isBreathing ? styles.overlayActive : ''}`}
-        style={{ backgroundColor: cor || 'var(--color-brand)' }}
-      />
+      <AnimatePresence>
+        {ativa && config && (
+          <motion.div
+            key="breath"
+            className={styles.breathContainer}
+            variants={breathVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            aria-live="polite"
+            aria-atomic="true"
+            role="status"
+          >
+            {/* Imagem de fundo */}
+            <motion.div
+              className={styles.backgroundImage}
+              variants={backgroundVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              style={{
+                backgroundImage: `url(${config.backgroundImage})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            />
 
-      {/* Glow central — círculo de luz que expande */}
-      <div
-        aria-hidden="true"
-        className={`${styles.glow} ${isBreathing ? styles.glowActive : ''}`}
-        style={{ backgroundColor: cor || 'var(--color-brand)' }}
-      />
+            {/* Overlay colorido */}
+            <div
+              className={styles.overlay}
+              style={{
+                backgroundColor: config.overlayColor,
+              }}
+            />
+
+            {/* SVG animado */}
+            {SvgComponent && (
+              <motion.div
+                className={styles.svgContainer}
+                variants={svgVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <SvgComponent
+                  color={config.textColor}
+                  size={200}
+                  className={styles.svgElement}
+                />
+              </motion.div>
+            )}
+
+            {/* Conteúdo central */}
+            <div className={styles.content}>
+              <p
+                className={styles.blockLabel}
+                style={{
+                  fontFamily: config.fontFamily,
+                  color: config.textColor,
+                }}
+              >
+                Bloco {config.blockLetter} — {config.blockLabel}
+              </p>
+              {respostaAtual && (
+                <p
+                  className={styles.responseText}
+                  style={{ color: config.textColor }}
+                >
+                  {typeof respostaAtual === 'string' ? respostaAtual : JSON.stringify(respostaAtual)}
+                </p>
+              )}
+            </div>
+
+            {/* Mensagem para screen readers */}
+            <div className={styles.srOnly}>{srMessage}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -72,6 +197,10 @@ export default function BreathTransition({ ativa, cor, children }) {
 BreathTransition.propTypes = {
   ativa: PropTypes.bool.isRequired,
   cor: PropTypes.string,
+  blocoAtual: PropTypes.string,
+  estiloEscolhido: PropTypes.string,
+  respostaAtual: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+  perfilCasal: PropTypes.string,
   children: PropTypes.node,
 };
 

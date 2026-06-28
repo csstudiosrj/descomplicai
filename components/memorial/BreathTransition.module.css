@@ -1,50 +1,70 @@
-/* BreathTransition.module.css — VERSÃO INTENSA
-   Overlay 0.40 opacidade + blur + glow central
-   Duração: 500ms (250ms inspira + 250ms expira)
-   Agora VISÍVEL — sem scale/zoom */
+/* BreathTransition.module.css — Respiro contextual elaborado */
+/* Overlay + imagem + SVG + conteúdo central · Duração 700ms */
 
 .wrapper {
   position: relative;
   height: 100%;
+  overflow: hidden;
 }
 
-/* Overlay que cobre a tela inteira */
-.overlay {
+.breathContainer {
   position: fixed;
   inset: 0;
   z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.backgroundImage {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.content {
+  position: relative;
+  z-index: 3;
+  text-align: center;
+  color: #FFFFFF;
+  padding: var(--space-6);
+  max-width: 90vw;
+}
+
+.blockLabel {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--font-medium);
+  margin-bottom: var(--space-2);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.responseText {
+  font-family: var(--font-body);
+  font-size: var(--text-lg);
+  opacity: 0.9;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.svgContainer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 250ms ease-in-out;
-  backdrop-filter: blur(2px) brightness(0.94);
-  -webkit-backdrop-filter: blur(2px) brightness(0.94);
-  will-change: opacity, backdrop-filter;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.overlayActive {
-  opacity: 0.40;
-}
-
-/* Glow central — círculo de luz que pulsa */
-.glow {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0.5);
-  width: 300px;
-  height: 300px;
-  border-radius: 50%;
-  z-index: var(--z-modal);
-  pointer-events: none;
-  opacity: 0;
-  filter: blur(60px);
-  transition: opacity 250ms ease-in-out, transform 250ms ease-in-out;
-  will-change: opacity, transform;
-}
-
-.glowActive {
-  opacity: 0.35;
-  transform: translate(-50%, -50%) scale(1.5);
+.svgElement {
+  width: 200px;
+  height: 200px;
 }
 
 /* Texto exclusivo para leitores de tela */
@@ -62,11 +82,12 @@
 
 /* Respeita prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
+  .breathContainer,
+  .backgroundImage,
   .overlay,
-  .glow {
+  .content,
+  .svgContainer {
     transition: none !important;
-    opacity: 0 !important;
-    backdrop-filter: none !important;
-    transform: none !important;
+    animation: none !important;
   }
 }
