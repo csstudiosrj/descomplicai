@@ -94,17 +94,20 @@ export default function BreathTransition({
       : `Avançando para ${blockName}`;
   }, [config, respostaAtual]);
 
+  // Quando não está ativo, não renderiza wrapper para não afetar layout do footer
+  if (!ativa) {
+    return <>{children}</>;
+  }
+
   // prefers-reduced-motion: pular animação, ir direto
   if (prefersReduced) {
     return (
-      <div className={styles.wrapper}>
+      <>
         {children}
-        {ativa && (
-          <div className={styles.srOnly} role="status" aria-live="polite" aria-atomic="true">
-            {srMessage}
-          </div>
-        )}
-      </div>
+        <div className={styles.srOnly} role="status" aria-live="polite" aria-atomic="true">
+          {srMessage}
+        </div>
+      </>
     );
   }
 
