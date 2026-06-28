@@ -313,7 +313,7 @@ export default function MemorialOrchestrator() {
     : () => null;
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh' }}>
+    <div style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
       {salvandoAgora && (
         <div style={{ position: 'fixed', top: 8, right: 8, zIndex: 9999, fontSize: 12, opacity: 0.6 }}>
           Salvando...
@@ -359,8 +359,8 @@ export default function MemorialOrchestrator() {
                     onConcluir={handleConcluirMemorial}
                   />
                 </React.Suspense>
-                {estado.etapaAtual === 0 && <Footer />}
               </BreathTransition>
+              {estado.etapaAtual === 0 && <Footer />}
             </>
           )}
         </>
