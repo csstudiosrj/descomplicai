@@ -1,20 +1,35 @@
 const fs = require('fs');
+const path = require('path');
 const { execSync } = require('child_process');
 
-const ZIP = 'descomplica-fix.zip';
+const ZIP = 'descomplica-final.zip';
 if (!fs.existsSync(ZIP)) { console.error('ERRO:', ZIP, 'nao encontrado'); process.exit(1); }
 
-const B = '.bkp-fix-' + Math.floor(Date.now()/1000);
+const B = '.bkp-final-' + Math.floor(Date.now()/1000);
 fs.mkdirSync(B, {recursive: true});
-if (fs.existsSync('styles/globals.css')) fs.copyFileSync('styles/globals.css', B + '/globals.css');
+['components/ui/Header.jsx','components/ui/Footer.jsx','components/layout/MainLayout.jsx','styles/globals.css'].forEach(f => {
+  if (fs.existsSync(f)) fs.copyFileSync(f, path.join(B, path.basename(f)));
+});
 console.log('BKP:', B);
 
-execSync('unzip -o "' + ZIP + '" -d /tmp/dc-fix', {stdio:'inherit'});
+execSync('unzip -o "' + ZIP + '" -d /tmp/dc-final', {stdio:'inherit'});
 
-fs.copyFileSync('/tmp/dc-fix/styles/globals.css', 'styles/globals.css');
-console.log('OK: styles/globals.css');
+const map = {
+  'components/ui/Header.jsx': 'components/ui/Header.jsx',
+  'components/ui/Footer.jsx': 'components/ui/Footer.jsx',
+  'components/layout/MainLayout.jsx': 'components/layout/MainLayout.jsx',
+  'styles/globals.css': 'styles/globals.css',
+};
 
-execSync('rm -rf /tmp/dc-fix');
+for (const [src, dst] of Object.entries(map)) {
+  const srcPath = path.join('/tmp/dc-final', src);
+  const dstPath = path.join('.', dst);
+  fs.mkdirSync(path.dirname(dstPath), {recursive: true});
+  fs.copyFileSync(srcPath, dstPath);
+  console.log('OK:', dst);
+}
+
+execSync('rm -rf /tmp/dc-final');
 
 console.log('\nFazendo commit...');
-execSync('git add -A && git commit -m "fix: main-content padding + footer visivel" && git push', {stdio:'inherit'});
+execSync('git add -A && git commit -m "fix: header border + footer visivel + padding main" && git push', {stdio:'inherit'});
