@@ -7,7 +7,6 @@ import useMemorial from '../../hooks/useMemorial';
 import { useAuth } from '../../hooks/useAuth';
 import useAutoSave from '../../hooks/useAutoSave';
 import { calcularProximaEtapa, calcularEtapasTotais, deveExibirLoginAgora, getEtapaPorIndice } from '../../utils/algoritmo';
-import { getBreathConfig } from '../../utils/getBreathConfig';
 import BreathTransition from './BreathTransition';
 import ProgressBar from './ProgressBar';
 import BackButton from './BackButton';
@@ -360,8 +359,8 @@ export default function MemorialOrchestrator() {
                     onConcluir={handleConcluirMemorial}
                   />
                 </React.Suspense>
+                {estado.etapaAtual === 0 && <Footer />}
               </BreathTransition>
-              <Footer />
             </>
           )}
         </>
