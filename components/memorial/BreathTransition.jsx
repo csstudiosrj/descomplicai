@@ -94,12 +94,12 @@ export default function BreathTransition({
       : `Avançando para ${blockName}`;
   }, [config, respostaAtual]);
 
-  // Quando não está ativo, não renderiza wrapper para não afetar layout do footer
+  // Quando inativo: retorna children puro, zero interferência no layout
   if (!ativa) {
     return <>{children}</>;
   }
 
-  // prefers-reduced-motion: pular animação, ir direto
+  // prefers-reduced-motion: pular animação
   if (prefersReduced) {
     return (
       <>
@@ -112,9 +112,8 @@ export default function BreathTransition({
   }
 
   return (
-    <div className={styles.wrapper}>
+    <>
       {children}
-
       <AnimatePresence>
         {ativa && config && (
           <motion.div
@@ -145,9 +144,7 @@ export default function BreathTransition({
             {/* Overlay colorido */}
             <div
               className={styles.overlay}
-              style={{
-                backgroundColor: config.overlayColor,
-              }}
+              style={{ backgroundColor: config.overlayColor }}
             />
 
             {/* SVG animado */}
@@ -179,21 +176,17 @@ export default function BreathTransition({
                 Bloco {config.blockLetter} — {config.blockLabel}
               </p>
               {respostaAtual && (
-                <p
-                  className={styles.responseText}
-                  style={{ color: config.textColor }}
-                >
+                <p className={styles.responseText} style={{ color: config.textColor }}>
                   {typeof respostaAtual === 'string' ? respostaAtual : JSON.stringify(respostaAtual)}
                 </p>
               )}
             </div>
 
-            {/* Mensagem para screen readers */}
             <div className={styles.srOnly}>{srMessage}</div>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }
 
