@@ -152,7 +152,6 @@
 /* ---------- Main Content (padding pro header fixo) ---------- */
 #main-content {
   padding-top: 52px;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }

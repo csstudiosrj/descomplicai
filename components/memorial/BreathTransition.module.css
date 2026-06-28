@@ -5,6 +5,7 @@
 
 .wrapper {
   position: relative;
+  height: 100%;
 }
 
 /* Overlay que cobre a tela inteira */
