@@ -10,6 +10,7 @@ import { calcularProximaEtapa, calcularEtapasTotais, deveExibirLoginAgora, getEt
 import BreathTransition from './BreathTransition';
 import ProgressBar from './ProgressBar';
 import BackButton from './BackButton';
+import Footer from '../ui/Footer';
 
 const STEP_COMPONENTS = {
   Step00Casal: React.lazy(() => import('./steps/Step00Casal')),
@@ -319,6 +320,7 @@ export default function MemorialOrchestrator() {
             <StepComponent onSelect={handleSelect} estadoAtual={estado} onConcluir={handleConcluirMemorial} />
           </React.Suspense>
         </main>
+        {estado.etapaAtual === 0 && <Footer />}
         <BackButton onClick={handleBack} disabled={!estado.historicoEtapas?.length} />
         {oferecerDraft && (
           <div role="dialog" aria-modal="true" aria-label="Continuar memorial salvo" style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-overlay)', padding: 'var(--space-4)' }}>
