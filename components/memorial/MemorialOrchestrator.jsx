@@ -234,7 +234,7 @@ export default function MemorialOrchestrator() {
   const progress = etapasTotais > 0 ? (estado.etapaAtual / etapasTotais) * 100 : 0;
   const blockName = BLOCK_NAMES[blocoAtual] || '';
 
-  const BREATH_DURATION = 2800;
+  const BREATH_DURATION = 1400;
 
   const handleSelect = useCallback((campo, valor, cor) => {
     setRespostas(campo, valor);

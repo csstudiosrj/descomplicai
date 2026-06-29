@@ -7,7 +7,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathArabescos',
     textColor: '#FFFFFF',
-    duration: 2800,
+    duration: 1400,
   },
   romantico: {
     backgroundImage: '/images/breath/breath-romantico.jpg',
@@ -15,7 +15,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathArabescos',
     textColor: '#FFFFFF',
-    duration: 2800,
+    duration: 1400,
   },
   boho: {
     backgroundImage: '/images/breath/breath-boho.jpg',
@@ -23,7 +23,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathFolhagem',
     textColor: '#FFFFFF',
-    duration: 2800,
+    duration: 1400,
   },
   industrial: {
     backgroundImage: '/images/breath/breath-industrial.jpg',
@@ -31,7 +31,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-mono)',
     svgComponent: 'BreathGeometria',
     textColor: '#FFFFFF',
-    duration: 2800,
+    duration: 1400,
   },
   minimalista: {
     backgroundImage: '/images/breath/breath-minimalista.jpg',
@@ -39,7 +39,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathGeometria',
     textColor: '#1A1714',
-    duration: 2800,
+    duration: 1400,
   },
   tropical: {
     backgroundImage: '/images/breath/breath-tropical.jpg',
@@ -47,7 +47,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathFolhagem',
     textColor: '#FFFFFF',
-    duration: 2800,
+    duration: 1400,
   },
   rustico: {
     backgroundImage: '/images/breath/breath-rustico.jpg',
@@ -55,7 +55,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathFolhagem',
     textColor: '#FFFFFF',
-    duration: 2800,
+    duration: 1400,
   },
   moderno: {
     backgroundImage: '/images/breath/breath-moderno.jpg',
@@ -63,7 +63,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-mono)',
     svgComponent: 'BreathGeometria',
     textColor: '#FFFFFF',
-    duration: 2800,
+    duration: 1400,
   },
   vintage: {
     backgroundImage: '/images/breath/breath-vintage.jpg',
@@ -71,7 +71,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathArabescos',
     textColor: '#FFFFFF',
-    duration: 2800,
+    duration: 1400,
   },
   praia: {
     backgroundImage: '/images/breath/breath-praia.jpg',
@@ -79,7 +79,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathOndas',
     textColor: '#FFFFFF',
-    duration: 2800,
+    duration: 1400,
   },
   jardim: {
     backgroundImage: '/images/breath/breath-jardim.jpg',
@@ -87,7 +87,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathFolhagem',
     textColor: '#FFFFFF',
-    duration: 2800,
+    duration: 1400,
   },
   glam: {
     backgroundImage: '/images/breath/breath-glam.jpg',
@@ -95,7 +95,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathGlam',
     textColor: '#FFFFFF',
-    duration: 2800,
+    duration: 1400,
   },
 };
 

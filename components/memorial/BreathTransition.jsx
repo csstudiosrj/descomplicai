@@ -1,7 +1,7 @@
 // components/memorial/BreathTransition.jsx
 // Respiro contextual elaborado por bloco do memorial
 // Framer Motion + imagem de fundo + SVG temático + linguagem inclusiva
-// Duração: 2800ms (0.6s in + 1.4s hold + 0.8s out) · Respeita prefers-reduced-motion
+// Duração: 1400ms até troca de etapa · fade-out de 0.8s continua enquanto novo step surge · Fluido
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,12 +27,12 @@ const breathVariants = {
   animate: {
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.6, ease: 'easeOut' },
+    transition: { duration: 0.5, ease: 'easeOut' },
   },
   exit: {
     opacity: 0,
     scale: 1.02,
-    transition: { duration: 0.6, ease: 'easeIn' },
+    transition: { duration: 0.8, ease: 'easeIn' },
   },
 };
 
@@ -41,9 +41,9 @@ const backgroundVariants = {
   animate: {
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.8, ease: 'easeOut' },
+    transition: { duration: 0.6, ease: 'easeOut' },
   },
-  exit: { opacity: 0, transition: { duration: 0.5 } },
+  exit: { opacity: 0, transition: { duration: 0.7 } },
 };
 
 const svgVariants = {
@@ -51,9 +51,9 @@ const svgVariants = {
   animate: {
     opacity: 0.6,
     y: 0,
-    transition: { duration: 0.6, delay: 0.4 },
+    transition: { duration: 0.5, delay: 0.3 },
   },
-  exit: { opacity: 0, transition: { duration: 0.4 } },
+  exit: { opacity: 0, transition: { duration: 0.6 } },
 };
 
 export default function BreathTransition({
@@ -94,12 +94,10 @@ export default function BreathTransition({
       : `Avançando para ${blockName}`;
   }, [config, respostaAtual]);
 
-  // Quando inativo: retorna children puro, zero interferência no layout
   if (!ativa) {
     return <>{children}</>;
   }
 
-  // prefers-reduced-motion: pular animação
   if (prefersReduced) {
     return (
       <>
@@ -127,7 +125,6 @@ export default function BreathTransition({
             aria-atomic="true"
             role="status"
           >
-            {/* Imagem de fundo */}
             <motion.div
               className={styles.backgroundImage}
               variants={backgroundVariants}
@@ -141,13 +138,11 @@ export default function BreathTransition({
               }}
             />
 
-            {/* Overlay colorido */}
             <div
               className={styles.overlay}
               style={{ backgroundColor: config.overlayColor }}
             />
 
-            {/* SVG animado */}
             {SvgComponent && (
               <motion.div
                 className={styles.svgContainer}
@@ -164,7 +159,6 @@ export default function BreathTransition({
               </motion.div>
             )}
 
-            {/* Conteúdo central */}
             <div className={styles.content}>
               <p
                 className={styles.blockLabel}
