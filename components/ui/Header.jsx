@@ -11,6 +11,7 @@ export default function Header() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [dropdownAberto, setDropdownAberto] = useState(false);
   const dropdownRef = useRef(null);
+  const closeTimer = useRef(null);
 
   const handleLogout = async () => {
     await signOut();
@@ -28,7 +29,14 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+  const handleMouseEnter = () => {
+    clearTimeout(closeTimer.current);
+    setDropdownAberto(true);
+  };
+
+  const handleMouseLeave = () => {
+    closeTimer.current = setTimeout(() => setDropdownAberto(false), 150);
+  };
 
   return (
     <header className="header">
@@ -40,11 +48,11 @@ export default function Header() {
         <nav className={`header-nav ${menuAberto ? 'header-nav--open' : ''}`} aria-label="Navegacao principal">
           <ul className="header-nav-list">
             {/* Dropdown Para profissionais */}
-            <li 
+            <li
               ref={dropdownRef}
               className="header-dropdown"
-              onMouseEnter={() => setDropdownAberto(true)}
-              onMouseLeave={() => setDropdownAberto(false)}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
             >
               <button
                 type="button"
@@ -59,13 +67,13 @@ export default function Header() {
                 </span>
               </button>
 
-              <div 
+              <div
                 className={`header-dropdown-menu ${dropdownAberto ? 'header-dropdown-menu--open' : ''}`}
                 role="menu"
               >
                 <Link href="/cerimonialista/login" legacyBehavior>
-                  <a 
-                    className="header-dropdown-item" 
+                  <a
+                    className="header-dropdown-item"
                     role="menuitem"
                     onClick={() => { setDropdownAberto(false); setMenuAberto(false); }}
                   >
@@ -73,9 +81,9 @@ export default function Header() {
                     <span>Sou cerimonialista</span>
                   </a>
                 </Link>
-                <Link href="/fornecedo/login" legacyBehavior>
-                  <a 
-                    className="header-dropdown-item" 
+                <Link href="/fornecedor/login" legacyBehavior>
+                  <a
+                    className="header-dropdown-item"
                     role="menuitem"
                     onClick={() => { setDropdownAberto(false); setMenuAberto(false); }}
                   >
@@ -94,7 +102,7 @@ export default function Header() {
               </Link>
             </li>
             <li className="header-nav-item--mobile-only">
-              <Link href="/fornecedo/login" className="header-nav-link" onClick={() => setMenuAberto(false)}>
+              <Link href="/fornecedor/login" className="header-nav-link" onClick={() => setMenuAberto(false)}>
                 <Icon name="store" size={16} />
                 Sou fornecedor
               </Link>
@@ -133,9 +141,9 @@ export default function Header() {
           </ul>
         </nav>
 
-        <button 
-          className="header-menu-toggle" 
-          aria-label={menuAberto ? "Fechar menu" : "Abir menu"}
+        <button
+          className="header-menu-toggle"
+          aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
           aria-expanded={menuAberto}
           onClick={() => setMenuAberto(!menuAberto)}
         >
