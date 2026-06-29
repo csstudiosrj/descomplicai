@@ -63,11 +63,20 @@ export default function AssistenteForm({ assistente, cerimonialistaId, acessos, 
         error = updError;
       } else {
         // Para criar, usamos a API que lida com criação do usuário Auth
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError || !sessionData?.session?.access_token) {
+          throw new Error(
+            sessionError?.message ||
+            'Sessão inválida ou expirada. Faça login novamente.'
+          );
+        }
+
         const res = await fetch('/api/cerimonialista/assistentes/convidar', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+            Authorization: `Bearer ${sessionData.session.access_token}`,
           },
           body: JSON.stringify({ ...payload, cerimonialista_id: cerimonialistaId }),
         });
