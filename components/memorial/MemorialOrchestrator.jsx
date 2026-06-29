@@ -313,7 +313,7 @@ export default function MemorialOrchestrator() {
     : () => null;
 
   return (
-    <div style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'relative', minHeight: '100%' }}>
       {salvandoAgora && (
         <div style={{ position: 'fixed', top: 8, right: 8, zIndex: 9999, fontSize: 12, opacity: 0.6 }}>
           Salvando...

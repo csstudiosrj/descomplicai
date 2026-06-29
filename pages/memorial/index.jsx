@@ -5,7 +5,7 @@ export default function MemorialPage() {
   return (
     <>
       <Header />
-      <main style={{ paddingTop: '52px', height: '100dvh', boxSizing: 'border-box', overflow: 'hidden' }}>
+      <main style={{ paddingTop: '52px', minHeight: '100dvh', boxSizing: 'border-box' }}>
         <MemorialOrchestrator />
       </main>
     </>
