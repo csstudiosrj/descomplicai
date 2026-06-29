@@ -1,3 +1,4 @@
+import { getTermos } from "../../../utils/linguagemCasal";
 // StepB16DefiniramEntrada — {`Já definiu a entrada de ${termos.pessoa1} e ${termos.pessoa2}?`}
 // Dependências diretas: React, PropTypes, Input
 
@@ -5,7 +6,9 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Input from '../../ui/Input';
 
-export default function StepB16DefiniramEntrada({ onSelect, estadoAtual }) {
+export default function StepB16DefiniramEntrada({
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil); onSelect, estadoAtual }) {
   const [valor, setValor] = useState(estadoAtual?.definiramEntrada || '');
 
   const handleConfirmar = () => {

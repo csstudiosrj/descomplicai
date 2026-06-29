@@ -1,3 +1,4 @@
+import { getTermos } from "../../../utils/linguagemCasal";
 // components/memorial/steps/Step07dSimbolica.jsx
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
@@ -45,7 +46,9 @@ const RITUAIS = [
   },
 ];
 
-export default function Step07dSimbolica({ onSelect, estadoAtual }) {
+export default function Step07dSimbolica({
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil); onSelect, estadoAtual }) {
   const [selecionados, setSelecionados] = useState(
     estadoAtual?.rituaisSimbolicos || []
   );

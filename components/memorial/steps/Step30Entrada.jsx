@@ -21,9 +21,9 @@ export default function Step30Entrada({ onSelect, estadoAtual }) {
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
-    setCardPulsando(opcao.valor);
+    setCardPulsando(o.valor);
     setTimeout(() => {
-      onSelect(opcao.campo || opcao.valor, opcao.valor, opcao.cor);
+      onSelect(o.campo || o.valor, o.valor, o.cor);
       setCardPulsando(null);
     }, 350);
   };
@@ -42,25 +42,25 @@ export default function Step30Entrada({ onSelect, estadoAtual }) {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: 'var(--space-4)' }}>
         {OPCOES.map((opcao) => {
-          const isSelected = selecionado === opcao.valor;
+          const isSelected = selecionado === o.valor;
           return (
             <div
-      key={opcao.valor}
+      key={o.valor}
       style={{
         transition: 'transform 300ms ease, box-shadow 300ms ease',
-        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
-        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+        transform: cardPulsando === o.valor ? 'scale(1.03)' : 'scale(1)',
+        boxShadow: cardPulsando === o.valor ? `0 0 0 3px ${o.cor || 'var(--color-brand)'}` : 'none',
         borderRadius: 'var(--radius-lg)',
       }}
     >
-      <Card key={opcao.valor} interactive selected={isSelected} padding="lg" onClick={() => handleCardClick(opcao)} role="radio" aria-checked={isSelected} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(opcao); } }}>
+      <Card key={o.valor} interactive selected={isSelected} padding="lg" onClick={() => handleCardClick(opcao)} role="radio" aria-checked={isSelected} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(opcao); } }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                 <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', backgroundColor: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isSelected ? 'var(--color-brand)' : 'var(--color-text-muted)', flexShrink: 0 }}>
-                  <Icon name={opcao.icone} size={24} ariaHidden={true} />
+                  <Icon name={o.icone} size={24} ariaHidden={true} />
                 </div>
                 <div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>{opcao.label}</div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>{opcao.subtexto}</div>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>{o.label}</div>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>{o.subtexto}</div>
                 </div>
               </div>
             </Card>

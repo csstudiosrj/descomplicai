@@ -16,9 +16,9 @@ export default function Step09MesmoLocal({ onSelect, estadoAtual }) {
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
-    setCardPulsando(opcao.valor);
+    setCardPulsando(o.valor);
     setTimeout(() => {
-      onSelect('ceremoniaFestaMesmoLocal', opcao.valor, opcao.cor);
+      onSelect('ceremoniaFestaMesmoLocal', o.valor, o.cor);
       setCardPulsando(null);
     }, 350);
   };
@@ -40,14 +40,14 @@ export default function Step09MesmoLocal({ onSelect, estadoAtual }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-4)' }}>
         {OPCOES.map((opcao) => {
-          const isSelected = selecionado === opcao.valor;
+          const isSelected = selecionado === o.valor;
           return (
             <div
-              key={String(opcao.valor)}
+              key={String(o.valor)}
               style={{
                 transition: 'transform 300ms ease, box-shadow 300ms ease',
-                transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
-                boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+                transform: cardPulsando === o.valor ? 'scale(1.03)' : 'scale(1)',
+                boxShadow: cardPulsando === o.valor ? `0 0 0 3px ${o.cor || 'var(--color-brand)'}` : 'none',
                 borderRadius: 'var(--radius-lg)',
               }}
             >
@@ -61,7 +61,7 @@ export default function Step09MesmoLocal({ onSelect, estadoAtual }) {
                 tabIndex={0}
                 onKeyDown={(e) => handleKeyDown(e, opcao)}
               >
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-medium)' }}>{opcao.label}</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-medium)' }}>{o.label}</span>
               </Card>
             </div>
           );

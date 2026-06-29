@@ -1,0 +1,1733 @@
+import { createClient } from '@supabase/supabase-js';
+import { enviarEmailAssinaturaNoivos } from '../../../lib/email';
+import { gerarPDFContratoAssinado } from '../../../utils/pdfContrato';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ erro: 'Método não permitido' });
+  }
+
+  const { token, nome, email } = req.body;
+  if (!token) {
+    return res.status(400).json({ erro: 'Token obrigatório' });
+  }
+  if (!nome?.trim()) {
+    return res.status(400).json({ erro: 'Nome obrigatório' });
+  }
+
+  try {
+    const { data: contrato, error: err1 } = await supabase
+      .from('contratos')
+      .select('id, evento_id, fornecedor_id, tipo, status, conteudo, token_assinatura, fornecedores(nome, email)')
+      .eq('token_assinatura', token)
+      .single();
+
+    if (err1 || !contrato) {
+      return res.status(404).json({ erro: 'Contrato não encontrado' });
+    }
+
+    if (contrato.status === 'assinado') {
+      return res.status(400).json({ erro: 'Contrato já assinado' });
+    }
+
+    const { error: err2 } = await supabase
+      .from('contratos')
+      .update({
+        assinado_fornecedor_em: new Date().toISOString(),
+        fornecedor_nome_assinatura: nome.trim(),
+        fornecedor_email_assinatura: email?.trim() || null,
+        status: 'assinado',
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq('id', contrato.id);
+
+    if (err2) throw err2;
+
+    let pdfUrl = null;
+    try {
+      const { data: evento } = await supabase
+        .from('eventos')
+        .select('nome_evento, data_evento, local_evento, cidade_evento')
+        .eq('id', contrato.evento_id)
+        .single();
+
+      const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '0.0.0.0').toString();
+
+      pdfUrl = await gerarPDFContratoAssinado({
+        contrato,
+        fornecedor: contrato.fornecedores,
+        evento,
+        rodape: {
+          nome: nome.trim(),
+          email: email?.trim() || contrato.fornecedores?.email || '',
+          dataHora: new Date().toLocaleString('pt-BR'),
+          ip: ip.split(',')[0].trim(),
+          identificador: contrato.token_assinatura || contrato.id,
+        }
+      });
+
+      if (pdfUrl) {
+        await supabase
+          .from('contratos')
+          .update({ pdf_url: pdfUrl, atualizado_em: new Date().toISOString() })
+          .eq('id', contrato.id);
+      }
+    } catch (pdfErr) {
+      console.error('Erro ao gerar PDF automaticamente:', pdfErr);
+    }
+
+    const { data: evento } = await supabase
+      .from('eventos')
+      .select('nome_evento, usuario_id')
+      .eq('id', contrato.evento_id)
+      .single();
+
+    let emailNoivos = null;
+    try {
+      const { data: user } = await supabase.auth.admin.getUserById(evento?.usuario_id);
+      emailNoivos = user?.user?.email;
+    } catch (e) { /* ignora erro de auth */ }
+
+    if (emailNoivos) {
+      await enviarEmailAssinaturaNoivos({
+        to: emailNoivos,
+        fornecedorNome: nome.trim(),
+        noivosNome: evento?.nome_evento || 'os noivos',
+        contratoTipo: contrato.tipo === 'upload_fornecedor' ? 'Upload do fornecedor' : (contrato.tipo || 'Prestação de serviços'),
+      });
+    }
+
+    return res.status(200).json({
+      sucesso: true,
+      mensagem: 'Contrato assinado com sucesso!',
+      contrato_id: contrato.id,
+      pdf_url: pdfUrl,
+    });
+  } catch (err) {
+    console.error('Erro ao assinar contrato:', err);
+    return res.status(500).json({ erro: err.message || 'Erro interno' });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ erro: 'Método não permitido' });
+  }
+
+  const { contrato_id } = req.body;
+  if (!contrato_id) {
+    return res.status(400).json({ erro: 'contrato_id obrigatório' });
+  }
+
+  try {
+    const authHeader = req.headers.authorization;
+    let userId = null;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      if (!authError && user) userId = user.id;
+    }
+
+    if (!userId) {
+      const { data: { user }, error: sessionError } = await supabase.auth.getUser();
+      if (!sessionError && user) userId = user.id;
+    }
+
+    if (!userId) {
+      return res.status(401).json({ erro: 'Não autenticado' });
+    }
+
+    const { data: contrato, error: err1 } = await supabase
+      .from('contratos')
+      .select('id, evento_id, status, assinado_noivos_em')
+      .eq('id', contrato_id)
+      .single();
+
+    if (err1 || !contrato) {
+      return res.status(404).json({ erro: 'Contrato não encontrado' });
+    }
+
+    const { data: evento, error: errEvento } = await supabase
+      .from('eventos')
+      .select('usuario_id')
+      .eq('id', contrato.evento_id)
+      .single();
+
+    if (errEvento || !evento || evento.usuario_id !== userId) {
+      return res.status(403).json({ erro: 'Acesso negado' });
+    }
+
+    if (contrato.assinado_noivos_em) {
+      return res.status(400).json({ erro: 'Contrato já assinado pelos noivos' });
+    }
+
+    if (contrato.status !== 'rascunho') {
+      return res.status(400).json({ erro: 'Só é possível assinar contratos em rascunho' });
+    }
+
+    const { error: err2 } = await supabase
+      .from('contratos')
+      .update({
+        assinado_noivos_em: new Date().toISOString(),
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq('id', contrato_id);
+
+    if (err2) throw err2;
+
+    return res.status(200).json({ sucesso: true, mensagem: 'Contrato assinado pelos noivos' });
+  } catch (err) {
+    console.error('Erro ao assinar contrato (noivos):', err);
+    return res.status(500).json({ erro: err.message || 'Erro interno' });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+import { SUBCATEGORIAS_FLAT } from '../../../utils/catalogoFornecedores';
+import { supabase } from '../../../lib/supabase';
+
+const CATEGORIAS_VALIDAS = new Set(SUBCATEGORIAS_FLAT.map(s => s.id));
+
+function validarCategoria(categoria) {
+  if (!categoria) return null;
+  const limpa = categoria.trim();
+  if (!limpa) return null;
+  if (!CATEGORIAS_VALIDAS.has(limpa)) {
+    return { erro: `Categoria invalida: "${limpa}"` };
+  }
+  return limpa;
+}
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+export default async function handler(req, res) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  const token = authHeader.replace('Bearer ', '').trim();
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ erro: 'Metodo nao permitido' });
+    }
+
+    const { evento_id, fornecedor_id, tipo, categoria, conteudo } = req.body;
+
+    if (!evento_id || !fornecedor_id || !tipo || !conteudo) {
+      return res.status(400).json({ erro: 'Dados incompletos' });
+    }
+
+    const catValidada = validarCategoria(categoria);
+    if (catValidada && typeof catValidada === 'object' && catValidada.erro) {
+      return res.status(400).json({ erro: catValidada.erro });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('contratos')
+      .insert({
+        evento_id,
+        fornecedor_id,
+        tipo,
+        categoria: catValidada,
+        status: 'rascunho',
+        conteudo,
+        criado_em: new Date().toISOString(),
+        atualizado_em: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return res.status(200).json({ contrato: data });
+  } catch (error) {
+    console.error('Erro em contratos/criar:', error.message);
+    return res.status(500).json({
+      erro: 'Erro interno do servidor. Tente novamente.',
+    });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+import { enviarEmailContratoParaFornecedor } from '../../../lib/email';
+import { supabase } from '../../../lib/supabase';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+export default async function handler(req, res) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  const token = authHeader.replace('Bearer ', '').trim();
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ erro: 'Método não permitido' });
+    }
+
+    const { contrato_id } = req.body;
+    if (!contrato_id) {
+      return res.status(400).json({ erro: 'contrato_id obrigatório' });
+    }
+
+    const { data: contrato, error: err1 } = await supabaseAdmin
+      .from('contratos')
+      .select('id, evento_id, fornecedor_id, tipo, status, token_assinatura, assinado_noivos_em, fornecedores(nome, email)')
+      .eq('id', contrato_id)
+      .single();
+
+    if (err1 || !contrato) {
+      return res.status(404).json({ erro: 'Contrato não encontrado' });
+    }
+
+    if (!contrato.fornecedores?.email) {
+      return res.status(400).json({ erro: 'Fornecedor sem email cadastrado' });
+    }
+
+    if (!contrato.assinado_noivos_em) {
+      return res.status(400).json({ erro: 'Assine o contrato antes de enviar ao fornecedor' });
+    }
+
+    let tokenAssinatura = contrato.token_assinatura;
+    if (!tokenAssinatura) {
+      const { data: novoToken, error: errToken } = await supabaseAdmin.rpc('gen_random_uuid');
+      if (errToken) throw errToken;
+      tokenAssinatura = novoToken;
+      await supabaseAdmin.from('contratos').update({ token_assinatura: tokenAssinatura }).eq('id', contrato_id);
+    }
+
+    const { error: err2 } = await supabaseAdmin
+      .from('contratos')
+      .update({
+        status: 'enviado',
+        fornecedor_email_enviado_em: new Date().toISOString(),
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq('id', contrato_id);
+
+    if (err2) throw err2;
+
+    const { data: evento } = await supabaseAdmin
+      .from('eventos')
+      .select('nome_evento')
+      .eq('id', contrato.evento_id)
+      .single();
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://descomplicai.com';
+
+    await enviarEmailContratoParaFornecedor({
+      to: contrato.fornecedores.email,
+      fornecedorNome: contrato.fornecedores.nome || 'Fornecedor',
+      noivosNome: evento?.nome_evento || 'os noivos',
+      token: tokenAssinatura,
+      baseUrl,
+    });
+
+    return res.status(200).json({ sucesso: true, mensagem: 'Contrato enviado', token: tokenAssinatura });
+  } catch (error) {
+    console.error('Erro em contratos/enviar:', error.message);
+    return res.status(500).json({
+      erro: 'Erro interno do servidor. Tente novamente.',
+    });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+import { gerarPDFContratoAssinado } from '../../../utils/pdfContrato';
+import { supabase } from '../../../lib/supabase';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+export default async function handler(req, res) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  const token = authHeader.replace('Bearer ', '').trim();
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ erro: 'Método não permitido' });
+    }
+
+    const { contrato_id } = req.body;
+    if (!contrato_id) {
+      return res.status(400).json({ erro: 'contrato_id obrigatório' });
+    }
+
+    const { data: contrato, error: err1 } = await supabaseAdmin
+      .from('contratos')
+      .select('id, evento_id, tipo, conteudo, token_assinatura, fornecedor_nome_assinatura, fornecedor_email_assinatura, fornecedores(nome, email)')
+      .eq('id', contrato_id)
+      .single();
+
+    if (err1 || !contrato) {
+      return res.status(404).json({ erro: 'Contrato não encontrado' });
+    }
+
+    const { data: evento } = await supabaseAdmin
+      .from('eventos')
+      .select('nome_evento, data_evento, local_evento, cidade_evento')
+      .eq('id', contrato.evento_id)
+      .single();
+
+    const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '0.0.0.0').toString();
+    const rodape = {
+      nome: contrato.fornecedor_nome_assinatura || contrato.fornecedores?.nome || 'Fornecedor',
+      email: contrato.fornecedor_email_assinatura || contrato.fornecedores?.email || '',
+      dataHora: new Date().toLocaleString('pt-BR'),
+      ip: ip.split(',')[0].trim(),
+      identificador: contrato.token_assinatura || contrato.id,
+    };
+
+    const pdfUrl = await gerarPDFContratoAssinado({ contrato, fornecedor: contrato.fornecedores, evento, rodape });
+
+    const { error: err2 } = await supabaseAdmin
+      .from('contratos')
+      .update({ pdf_url: pdfUrl, atualizado_em: new Date().toISOString() })
+      .eq('id', contrato_id);
+
+    if (err2) throw err2;
+
+    return res.status(200).json({ sucesso: true, pdf_url: pdfUrl });
+  } catch (error) {
+    console.error('Erro em contratos/pdf:', error.message);
+    return res.status(500).json({
+      erro: 'Erro interno do servidor. Tente novamente.',
+    });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+import { enviarEmailRecusaNoivos } from '../../../lib/email';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ erro: 'Método não permitido' });
+  }
+
+  const { token, justificativa } = req.body;
+  if (!token) {
+    return res.status(400).json({ erro: 'Token obrigatório' });
+  }
+
+  try {
+    const { data: contrato, error: err1 } = await supabase
+      .from('contratos')
+      .select('id, evento_id, fornecedor_id, status, fornecedores(nome, email)')
+      .eq('token_assinatura', token)
+      .single();
+
+    if (err1 || !contrato) {
+      return res.status(404).json({ erro: 'Contrato não encontrado' });
+    }
+
+    if (contrato.status === 'assinado' || contrato.status === 'recusado') {
+      return res.status(400).json({ erro: 'Contrato já finalizado' });
+    }
+
+    const { error: err2 } = await supabase
+      .from('contratos')
+      .update({
+        status: 'recusado',
+        recusado_em: new Date().toISOString(),
+        justificativa_recusa: justificativa?.trim() || null,
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq('id', contrato.id);
+
+    if (err2) throw err2;
+
+    // Notifica noivos
+    const { data: evento } = await supabase
+      .from('eventos')
+      .select('nome_evento, usuario_id')
+      .eq('id', contrato.evento_id)
+      .single();
+
+    let emailNoivos = null;
+    try {
+      const { data: user } = await supabase.auth.admin.getUserById(evento?.usuario_id);
+      emailNoivos = user?.user?.email;
+    } catch (e) { /* ignora erro de auth */ }
+
+    if (emailNoivos) {
+      await enviarEmailRecusaNoivos({
+        to: emailNoivos,
+        fornecedorNome: contrato.fornecedores?.nome || 'Fornecedor',
+        noivosNome: evento?.nome_evento || 'os noivos',
+        justificativa: justificativa?.trim(),
+      });
+    }
+
+    return res.status(200).json({ sucesso: true, mensagem: 'Contrato recusado' });
+  } catch (err) {
+    console.error('Erro ao recusar contrato:', err);
+    return res.status(500).json({ erro: err.message || 'Erro interno' });
+  }
+}import { createClient } from '@supabase/supabase-js';
+import { SUBCATEGORIAS_FLAT } from '../../../utils/catalogoFornecedores';
+import { supabase } from '../../../lib/supabase';
+
+const CATEGORIAS_VALIDAS = new Set(SUBCATEGORIAS_FLAT.map(s => s.id));
+
+function validarCategoria(categoria) {
+  if (!categoria) return null;
+  const limpa = categoria.trim();
+  if (!limpa) return null;
+  if (!CATEGORIAS_VALIDAS.has(limpa)) {
+    return { erro: `Categoria invalida: "${limpa}"` };
+  }
+  return limpa;
+}
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+export default async function handler(req, res) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  const token = authHeader.replace('Bearer ', '').trim();
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ erro: 'Metodo nao permitido' });
+    }
+
+    const { evento_id, fornecedor_id, pdf_url, categoria, conteudo } = req.body;
+    if (!evento_id || !fornecedor_id || !pdf_url) {
+      return res.status(400).json({ erro: 'Dados incompletos (evento_id, fornecedor_id, pdf_url)' });
+    }
+
+    const catValidada = validarCategoria(categoria);
+    if (catValidada && typeof catValidada === 'object' && catValidada.erro) {
+      return res.status(400).json({ erro: catValidada.erro });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('contratos')
+      .insert({
+        evento_id,
+        fornecedor_id,
+        tipo: 'upload_fornecedor',
+        categoria: catValidada,
+        status: 'enviado',
+        conteudo: conteudo || null,
+        pdf_url,
+        criado_em: new Date().toISOString(),
+        atualizado_em: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return res.status(200).json({ contrato: data });
+  } catch (error) {
+    console.error('Erro em contratos/upload:', error.message);
+    return res.status(500).json({
+      erro: 'Erro interno do servidor. Tente novamente.',
+    });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../../../lib/supabase';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+export default async function handler(req, res) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  const token = authHeader.replace('Bearer ', '').trim();
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  try {
+    if (req.method !== 'GET') {
+      return res.status(405).json({ erro: 'Método não permitido' });
+    }
+
+    const { token: tokenQuery } = req.query;
+    if (!tokenQuery) {
+      return res.status(400).json({ erro: 'Token obrigatório' });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('contratos')
+      .select('*, fornecedores(nome, email)')
+      .eq('token_assinatura', tokenQuery)
+      .single();
+
+    if (error || !data) {
+      return res.status(404).json({ erro: 'Contrato não encontrado' });
+    }
+
+    return res.status(200).json({ contrato: data });
+  } catch (error) {
+    console.error('Erro em contratos/ver:', error.message);
+    return res.status(500).json({
+      erro: 'Erro interno do servidor. Tente novamente.',
+    });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../../../lib/supabase';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+export default async function handler(req, res) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  const token = authHeader.replace('Bearer ', '').trim();
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ erro: 'Método não permitido' });
+    }
+
+    const { token: tokenBody } = req.body;
+    if (!tokenBody) {
+      return res.status(400).json({ erro: 'Token obrigatório' });
+    }
+
+    const { data: contrato, error: err1 } = await supabaseAdmin
+      .from('contratos')
+      .select('id, status')
+      .eq('token_assinatura', tokenBody)
+      .single();
+
+    if (err1 || !contrato) {
+      return res.status(404).json({ erro: 'Contrato não encontrado' });
+    }
+
+    // Só marca visualizado se estiver enviado (não sobrescreve assinado/recusado)
+    if (contrato.status === 'enviado') {
+      const { error: err2 } = await supabaseAdmin
+        .from('contratos')
+        .update({
+          status: 'visualizado',
+          visualizado_em: new Date().toISOString(),
+          atualizado_em: new Date().toISOString(),
+        })
+        .eq('id', contrato.id);
+
+      if (err2) throw err2;
+    }
+
+    return res.status(200).json({ sucesso: true });
+  } catch (error) {
+    console.error('Erro em contratos/visualizado:', error.message);
+    return res.status(500).json({
+      erro: 'Erro interno do servidor. Tente novamente.',
+    });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ erro: 'Metodo nao permitido.' });
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return res.status(500).json({ erro: 'Configuracao do servidor incompleta.' });
+  }
+
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const {
+    nome_empresa,
+    categoria,
+    cidade,
+    estado,
+    email,
+    telefone,
+    site,
+    instagram,
+    descricao,
+    senha,
+  } = req.body;
+
+  if (!nome_empresa || !categoria || !cidade || !estado || !email || !telefone || !senha) {
+    return res.status(400).json({ erro: 'Campos obrigatorios nao preenchidos.' });
+  }
+
+  if (senha.length < 6) {
+    return res.status(400).json({ erro: 'A senha deve ter no minimo 6 caracteres.' });
+  }
+
+  try {
+    const { data: existingUser } = await supabaseAdmin
+      .from('fornecedores_plataforma')
+      .select('id')
+      .eq('nome_empresa', nome_empresa)
+      .limit(1);
+
+    if (existingUser && existingUser.length > 0) {
+      return res.status(409).json({ erro: 'Ja existe uma empresa com este nome cadastrada.' });
+    }
+
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: senha,
+      email_confirm: true,
+      user_metadata: { nome: nome_empresa, tipo: 'fornecedor' },
+    });
+
+    if (authError) {
+      if (authError.message && authError.message.includes('already been registered')) {
+        return res.status(409).json({ erro: 'Este e-mail ja esta cadastrado.' });
+      }
+      console.error('Erro ao criar usuario no Auth:', authError);
+      return res.status(500).json({ erro: 'Erro ao criar conta. Tente novamente.' });
+    }
+
+    const usuario_id = authData.user.id;
+
+    const { error: insertError } = await supabaseAdmin.from('fornecedores_plataforma').insert({
+      usuario_id,
+      nome_empresa,
+      categoria,
+      cidade,
+      estado,
+      email,
+      telefone: telefone || null,
+      site: site || null,
+      instagram: instagram || null,
+      descricao: descricao || null,
+      ativo: false,
+      plano: 'gratuito',
+      criado_em: new Date().toISOString(),
+    });
+
+    if (insertError) {
+      console.error('Erro ao inserir fornecedor:', insertError);
+      await supabaseAdmin.auth.admin.deleteUser(usuario_id);
+      return res.status(500).json({ erro: 'Erro ao salvar dados. Tente novamente.' });
+    }
+
+    return res.status(201).json({ sucesso: true });
+  } catch (err) {
+    console.error('Erro inesperado no cadastro de fornecedor:', err);
+    return res.status(500).json({ erro: 'Erro interno. Tente novamente.' });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+
+export default async function handler(req, res) {
+  try {
+    if (req.method !== 'POST') return res.status(405).json({ erro: 'Método não permitido' });
+
+    const { fornecedorId } = req.body;
+    if (!fornecedorId) {
+      return res.status(400).json({ erro: 'fornecedorId obrigatório' });
+    }
+
+    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
+    const ua = req.headers['user-agent'] || 'unknown';
+
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    // Verifica se o fornecedor existe
+    const { data: fornecedor, error: findError } = await supabaseAdmin
+      .from('fornecedores')
+      .select('id, nome, contrato_assinado_em')
+      .eq('id', fornecedorId)
+      .single();
+
+    if (findError || !fornecedor) {
+      return res.status(404).json({ erro: 'Fornecedor não encontrado' });
+    }
+
+    // Verifica se já foi assinado
+    if (fornecedor.contrato_assinado_em) {
+      return res.status(400).json({ erro: 'Contrato já foi assinado anteriormente' });
+    }
+
+    // Grava a assinatura
+    const { error } = await supabaseAdmin
+      .from('fornecedores')
+      .update({
+        contrato_assinado_em: new Date().toISOString(),
+        contrato_assinado_ip: ip,
+        contrato_assinado_ua: ua,
+      })
+      .eq('id', fornecedorId);
+
+    if (error) {
+      console.error('Erro ao assinar:', error);
+      return res.status(500).json({ erro: 'Erro ao gravar assinatura' });
+    }
+
+    res.status(200).json({
+      sucesso: true,
+      assinadoEm: new Date().toISOString(),
+      fornecedor: fornecedor.nome,
+      ip,
+    });
+  } catch (error) {
+    console.error('Erro em fornecedores/assinar:', error.message);
+    return res.status(500).json({
+      error: 'Erro interno do servidor. Tente novamente.',
+    });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+import { getLabelSubcategoria } from '../../../utils/catalogoFornecedores';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+export default async function handler(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { data: fornecedor } = await supabase
+      .from('fornecedores_plataforma')
+      .select('id, categoria, avaliacao_media, total_avaliacoes')
+      .eq('usuario_id', user.id)
+      .single();
+
+    if (!fornecedor) {
+      return res.status(404).json({ error: 'Fornecedor not found' });
+    }
+
+    const { data: avaliacoes } = await supabase
+      .from('avaliacoes')
+      .select('id, nota, comentario, nome_casal, criado_em')
+      .eq('fornecedor_id', fornecedor.id)
+      .order('criado_em', { ascending: false })
+      .limit(5);
+
+    const { data: mediaCategoria } = await supabase
+      .from('fornecedores_plataforma')
+      .select('avaliacao_media')
+      .eq('categoria', fornecedor.categoria)
+      .gt('total_avaliacoes', 0);
+
+    const mediaCat = mediaCategoria?.length 
+      ? (mediaCategoria.reduce((acc, f) => acc + Number(f.avaliacao_media), 0) / mediaCategoria.length).toFixed(1)
+      : '0.0';
+
+    res.status(200).json({
+      avaliacoes: avaliacoes || [],
+      mediaFornecedor: Number(fornecedor.avaliacao_media) || 0,
+      totalAvaliacoes: fornecedor.total_avaliacoes,
+      mediaCategoria: mediaCat,
+      categoriaLabel: getLabelSubcategoria(fornecedor.categoria)
+    });
+  } catch (err) {
+    console.error('[API avaliacoes] erro:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+// POST /api/fornecedores/clique
+// Registra clique em telefone, email ou site no perfil público
+// Body: { fornecedorId, tipo: 'telefone' | 'email' | 'site' }
+
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { fornecedorId, tipo } = req.body;
+    if (!fornecedorId || !['telefone', 'email', 'site'].includes(tipo)) {
+      return res.status(400).json({ error: 'Invalid parameters' });
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const { data: existente } = await supabase
+      .from('metricas_fornecedor')
+      .select('id, cliques')
+      .eq('fornecedor_id', fornecedorId)
+      .eq('dia', today)
+      .single();
+
+    if (existente) {
+      await supabase
+        .from('metricas_fornecedor')
+        .update({ cliques: existente.cliques + 1 })
+        .eq('id', existente.id);
+    } else {
+      await supabase
+        .from('metricas_fornecedor')
+        .insert({ fornecedor_id: fornecedorId, dia: today, cliques: 1 });
+    }
+
+    await supabase.from('cliques_fornecedor').insert({
+      fornecedor_id: fornecedorId,
+      tipo
+    });
+
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('[API clique] erro:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+import { getLabelSubcategoria } from '../../../utils/catalogoFornecedores';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+export default async function handler(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { data: fornecedor } = await supabase
+      .from('fornecedores_plataforma')
+      .select('id, nome_empresa, visualizacoes, avaliacao_media, total_avaliacoes, plano, ativo, cidade, categoria')
+      .eq('usuario_id', user.id)
+      .single();
+
+    if (!fornecedor) {
+      return res.status(404).json({ error: 'Fornecedor not found' });
+    }
+
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const thirtyDaysAgoDate = thirtyDaysAgo.split('T')[0];
+
+    const { data: cliques } = await supabase
+      .from('cliques_fornecedor')
+      .select('tipo')
+      .eq('fornecedor_id', fornecedor.id)
+      .gte('criado_em', thirtyDaysAgo);
+
+    const { data: metricasDiarias } = await supabase
+      .from('metricas_fornecedor')
+      .select('dia, visualizacoes, cliques')
+      .eq('fornecedor_id', fornecedor.id)
+      .gte('dia', thirtyDaysAgoDate)
+      .order('dia', { ascending: true });
+
+    const dadosGrafico = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const diaStr = d.toISOString().split('T')[0];
+      const metrica = metricasDiarias?.find(m => m.dia === diaStr);
+      dadosGrafico.push({
+        dia: `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`,
+        valor: metrica?.visualizacoes || 0
+      });
+    }
+
+    const sixMonthsFromNow = new Date();
+    sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
+    const { count: oportunidadesCount } = await supabase
+      .from('eventos')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'rascunho')
+      .gte('data_evento', new Date().toISOString().split('T')[0])
+      .lte('data_evento', sixMonthsFromNow.toISOString().split('T')[0]);
+
+    res.status(200).json({
+      fornecedor: {
+        nomeEmpresa: fornecedor.nome_empresa,
+        plano: fornecedor.plano,
+        ativo: fornecedor.ativo,
+        cidade: fornecedor.cidade,
+        categoria: fornecedor.categoria,
+        categoriaLabel: getLabelSubcategoria(fornecedor.categoria)
+      },
+      metricas: {
+        visualizacoes: fornecedor.visualizacoes,
+        cliques: cliques?.length || 0,
+        avaliacaoMedia: Number(fornecedor.avaliacao_media) || 0,
+        totalAvaliacoes: fornecedor.total_avaliacoes
+      },
+      grafico: dadosGrafico,
+      oportunidades: oportunidadesCount || 0
+    });
+  } catch (err) {
+    console.error('[API metricas] erro:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+import { sincronizarFornecedorComFinanceiro } from '../../../utils/sincronizarFinanceiro';
+import { supabase } from '../../../lib/supabase';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+export default async function handler(req, res) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  const token = authHeader.replace('Bearer ', '').trim();
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    const { fornecedor } = req.body;
+
+    if (!fornecedor || !fornecedor.id) {
+      return res.status(400).json({ error: 'fornecedor obrigatorio' });
+    }
+
+    const resultado = await sincronizarFornecedorComFinanceiro(fornecedor, supabaseAdmin);
+    return res.status(200).json(resultado);
+  } catch (error) {
+    console.error('Erro em fornecedores/sincronizar:', error.message);
+    return res.status(500).json({
+      error: 'Erro interno do servidor. Tente novamente.',
+    });
+  }
+}
+import { supabaseAdmin } from '../../../lib/supabaseAdmin'
+import { supabase } from '../../../lib/supabase'
+import { enviarEmailNotificacaoChat } from '../../../lib/email'
+
+export default async function handler(req, res) {
+  try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ erro: 'Método não permitido' })
+    }
+
+    const authHeader = req.headers.authorization
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ erro: 'Token não fornecido' })
+    }
+
+    const token = authHeader.replace('Bearer ', '').trim()
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+
+    if (authError || !user) {
+      return res.status(401).json({ erro: 'Não autenticado' })
+    }
+
+    const { evento_id, conteudo } = req.body
+    if (!evento_id || !conteudo?.trim()) {
+      return res.status(400).json({ erro: 'evento_id e conteudo são obrigatórios' })
+    }
+
+    // Verificar acesso ao evento e determinar tipo de remetente
+    const { data: evento, error: eventoError } = await supabaseAdmin
+      .from('eventos')
+      .select('usuario_id, cerimonialista_id, nome_evento')
+      .eq('id', evento_id)
+      .single()
+
+    if (eventoError || !evento) {
+      return res.status(404).json({ erro: 'Evento não encontrado' })
+    }
+
+    let remetente_tipo = null
+    let destinatario_id = null
+    let destinatario_tipo = null
+    let destinatario_info = null
+
+    if (evento.usuario_id === user.id) {
+      remetente_tipo = 'casal'
+      destinatario_tipo = 'cerimonialista'
+      if (evento.cerimonialista_id) {
+        const { data: cerim } = await supabaseAdmin
+          .from('cerimonialistas')
+          .select('usuario_id, nome_empresa, email')
+          .eq('id', evento.cerimonialista_id)
+          .single()
+        if (cerim) {
+          destinatario_id = cerim.usuario_id
+          destinatario_info = cerim
+        }
+      }
+    } else {
+      // Verificar se é cerimonialista deste evento
+      const { data: cerim } = await supabaseAdmin
+        .from('cerimonialistas')
+        .select('id, usuario_id, nome_empresa, email')
+        .eq('usuario_id', user.id)
+        .eq('id', evento.cerimonialista_id)
+        .single()
+
+      if (cerim) {
+        remetente_tipo = 'cerimonialista'
+        destinatario_tipo = 'casal'
+        destinatario_id = evento.usuario_id
+        destinatario_info = null
+      } else {
+        return res.status(403).json({ erro: 'Acesso negado ao evento' })
+      }
+    }
+
+    // Inserir mensagem
+    const { data: mensagem, error: insertError } = await supabaseAdmin
+      .from('mensagens')
+      .insert({
+        evento_id,
+        remetente_id: user.id,
+        remetente_tipo,
+        conteudo: conteudo.trim(),
+        lida: false,
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('[mensagens/enviar] erro ao inserir:', insertError)
+      return res.status(500).json({ erro: 'Erro ao enviar mensagem' })
+    }
+
+    // Verificar se destinatário está "online" (enviou mensagem nos últimos 2 minutos)
+    let destinatarioOnline = false
+    if (destinatario_id) {
+      const doisMinutosAtras = new Date(Date.now() - 2 * 60 * 1000).toISOString()
+      const { data: ultimaMsg } = await supabaseAdmin
+        .from('mensagens')
+        .select('criado_em')
+        .eq('evento_id', evento_id)
+        .eq('remetente_id', destinatario_id)
+        .gte('criado_em', doisMinutosAtras)
+        .order('criado_em', { ascending: false })
+        .limit(1)
+        .single()
+
+      destinatarioOnline = !!ultimaMsg
+    }
+
+    // Se offline, disparar email de notificação
+    if (!destinatarioOnline && destinatario_id) {
+      let destinatarioEmail = null
+      let destinatarioNome = null
+
+      if (destinatario_tipo === 'cerimonialista') {
+        const { data: cerim } = await supabaseAdmin
+          .from('cerimonialistas')
+          .select('email, nome_empresa')
+          .eq('id', evento.cerimonialista_id)
+          .single()
+        if (cerim) {
+          destinatarioEmail = cerim.email
+          destinatarioNome = cerim.nome_empresa
+        }
+      } else {
+        // Buscar email do auth.users
+        const { data: userData } = await supabaseAdmin.auth.admin.getUserById(destinatario_id)
+        if (userData?.user?.email) {
+          destinatarioEmail = userData.user.email
+          destinatarioNome = evento.nome_evento || 'Casal'
+        }
+      }
+
+      if (destinatarioEmail) {
+        const remetenteNome = remetente_tipo === 'casal'
+          ? (evento.nome_evento || 'Casal')
+          : (destinatario_info?.nome_empresa || 'Cerimonialista')
+
+        await enviarEmailNotificacaoChat({
+          to: destinatarioEmail,
+          remetenteNome,
+          eventoNome: evento.nome_evento || 'Evento',
+          preview: conteudo.trim().slice(0, 120),
+        })
+      }
+    }
+
+    return res.status(201).json({ mensagem })
+  } catch (error) {
+    console.error('Erro em mensagens/enviar:', error.message)
+    return res.status(500).json({
+      error: 'Erro interno do servidor. Tente novamente.',
+    })
+  }
+}
+import { supabaseAdmin } from '../../../lib/supabaseAdmin'
+import { supabase } from '../../../lib/supabase'
+
+export default async function handler(req, res) {
+  try {
+    if (req.method !== 'POST' && req.method !== 'PATCH') {
+      return res.status(405).json({ erro: 'Método não permitido' })
+    }
+
+    const authHeader = req.headers.authorization
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ erro: 'Token não fornecido' })
+    }
+
+    const token = authHeader.replace('Bearer ', '').trim()
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+
+    if (authError || !user) {
+      return res.status(401).json({ erro: 'Não autenticado' })
+    }
+
+    const { evento_id } = req.body
+    if (!evento_id) {
+      return res.status(400).json({ erro: 'evento_id é obrigatório' })
+    }
+
+    // Verificar acesso ao evento
+    const { data: evento, error: eventoError } = await supabaseAdmin
+      .from('eventos')
+      .select('usuario_id, cerimonialista_id')
+      .eq('id', evento_id)
+      .single()
+
+    if (eventoError || !evento) {
+      return res.status(404).json({ erro: 'Evento não encontrado' })
+    }
+
+    const isCasal = evento.usuario_id === user.id
+    const isCerimonialista = evento.cerimonialista_id && await (async () => {
+      const { data } = await supabaseAdmin
+        .from('cerimonialistas')
+        .select('id')
+        .eq('usuario_id', user.id)
+        .eq('id', evento.cerimonialista_id)
+        .single()
+      return !!data
+    })()
+
+    if (!isCasal && !isCerimonialista) {
+      return res.status(403).json({ erro: 'Acesso negado ao evento' })
+    }
+
+    // Marcar como lidas as mensagens onde o remetente NÃO é o usuário atual
+    const { error } = await supabaseAdmin
+      .from('mensagens')
+      .update({ lida: true })
+      .eq('evento_id', evento_id)
+      .neq('remetente_id', user.id)
+      .eq('lida', false)
+
+    if (error) {
+      console.error('[mensagens/lida] erro:', error)
+      return res.status(500).json({ erro: 'Erro ao marcar mensagens como lidas' })
+    }
+
+    return res.status(200).json({ ok: true })
+  } catch (error) {
+    console.error('Erro em mensagens/lida:', error.message)
+    return res.status(500).json({
+      error: 'Erro interno do servidor. Tente novamente.',
+    })
+  }
+}
+import { supabaseAdmin } from '../../../lib/supabaseAdmin'
+import { supabase } from '../../../lib/supabase'
+
+export default async function handler(req, res) {
+  try {
+    if (req.method !== 'GET') {
+      return res.status(405).json({ erro: 'Método não permitido' })
+    }
+
+    const authHeader = req.headers.authorization
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ erro: 'Token não fornecido' })
+    }
+
+    const token = authHeader.replace('Bearer ', '').trim()
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+
+    if (authError || !user) {
+      return res.status(401).json({ erro: 'Não autenticado' })
+    }
+
+    const { evento_id } = req.query
+    if (!evento_id) {
+      return res.status(400).json({ erro: 'evento_id é obrigatório' })
+    }
+
+    // Verificar se usuário tem acesso ao evento
+    const { data: evento, error: eventoError } = await supabaseAdmin
+      .from('eventos')
+      .select('usuario_id, cerimonialista_id')
+      .eq('id', evento_id)
+      .single()
+
+    if (eventoError || !evento) {
+      return res.status(404).json({ erro: 'Evento não encontrado' })
+    }
+
+    const isCasal = evento.usuario_id === user.id
+    const isCerimonialista = evento.cerimonialista_id && await (async () => {
+      const { data } = await supabaseAdmin
+        .from('cerimonialistas')
+        .select('id')
+        .eq('usuario_id', user.id)
+        .eq('id', evento.cerimonialista_id)
+        .single()
+      return !!data
+    })()
+
+    if (!isCasal && !isCerimonialista) {
+      return res.status(403).json({ erro: 'Acesso negado ao evento' })
+    }
+
+    const { data: mensagens, error } = await supabaseAdmin
+      .from('mensagens')
+      .select('*')
+      .eq('evento_id', evento_id)
+      .order('criado_em', { ascending: false })
+      .limit(50)
+
+    if (error) {
+      console.error('[mensagens/listar] erro:', error)
+      return res.status(500).json({ erro: 'Erro ao buscar mensagens' })
+    }
+
+    // Inverter para ordem cronológica (mais antiga primeiro) para exibição
+    return res.status(200).json({ mensagens: (mensagens || []).reverse() })
+  } catch (error) {
+    console.error('Erro em mensagens/listar:', error.message)
+    return res.status(500).json({
+      error: 'Erro interno do servidor. Tente novamente.',
+    })
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', ['POST']);
+    return res.status(405).json({ error: `Método ${req.method} não permitido` });
+  }
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return res.status(500).json({ error: 'Configuração do Supabase incompleta' });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token de autenticação não fornecido' });
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+  if (authError || !user) {
+    return res.status(401).json({ error: 'Token inválido' });
+  }
+
+  const { token: eventoToken } = req.body;
+
+  if (!eventoToken) {
+    return res.status(400).json({ error: 'Token do evento é obrigatório' });
+  }
+
+  try {
+    const { data: evento, error: eventoError } = await supabase
+      .from('eventos')
+      .select('id, cerimonialista_id, casal_confirmado, convite_revogado, usuario_id')
+      .eq('id', eventoToken)
+      .single();
+
+    if (eventoError || !evento) {
+      return res.status(404).json({ error: 'Evento não encontrado' });
+    }
+
+    if (!evento.cerimonialista_id) {
+      return res.status(404).json({ error: 'Evento não encontrado' });
+    }
+
+    if (evento.convite_revogado) {
+      return res.status(410).json({ error: 'Convite revogado' });
+    }
+
+    if (evento.casal_confirmado) {
+      return res.status(409).json({ error: 'Convite já foi aceito', status: 'ja_confirmado' });
+    }
+
+    const { error: updError } = await supabase
+      .from('eventos')
+      .update({
+        usuario_id: user.id,
+        casal_confirmado: true,
+        status: 'ativo',
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq('id', evento.id);
+
+    if (updError) throw updError;
+
+    // Notificar cerimonialista (defensivo)
+    let cerimUsuarioId = null;
+    try {
+      const { data: cerimData } = await supabase
+        .from('cerimonialistas')
+        .select('usuario_id')
+        .eq('id', evento.cerimonialista_id)
+        .single();
+      if (cerimData) cerimUsuarioId = cerimData.usuario_id;
+    } catch (e) { /* ignora */ }
+
+    if (cerimUsuarioId) {
+      try {
+        await supabase.from('notificacoes').insert({
+          usuario_id: cerimUsuarioId,
+          tipo: 'convite_aceito',
+          mensagem: 'O casal aceitou o convite e agora está vinculado ao evento.',
+          lida: false,
+          criado_em: new Date().toISOString(),
+        });
+      } catch (notifErr) {
+        console.log('[convite/aceitar] notificação não enviada:', notifErr.message);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      redirect_url: '/painel',
+    });
+  } catch (err) {
+    console.error('[API convite/aceitar]', err);
+    return res.status(500).json({ error: err.message || 'Erro interno' });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+export default async function handler(req, res) {
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', ['GET']);
+    return res.status(405).json({ error: `Método ${req.method} não permitido` });
+  }
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return res.status(500).json({ error: 'Configuração do Supabase incompleta' });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const { token } = req.query;
+
+  if (!token) {
+    return res.status(400).json({ error: 'Token é obrigatório' });
+  }
+
+  try {
+    const { data: evento, error: eventoError } = await supabase
+      .from('eventos')
+      .select('id, nome_evento, data_evento, cidade, cerimonialista_id, casal_confirmado, convite_revogado')
+      .eq('id', token)
+      .single();
+
+    if (eventoError || !evento) {
+      return res.status(404).json({ error: 'Convite não encontrado' });
+    }
+
+    if (!evento.cerimonialista_id) {
+      return res.status(404).json({ error: 'Convite não encontrado' });
+    }
+
+    if (evento.convite_revogado) {
+      return res.status(410).json({ error: 'Convite revogado' });
+    }
+
+    const { data: cerimonialista, error: cerimError } = await supabase
+      .from('cerimonialistas')
+      .select('id, nome_empresa, cidade, estado')
+      .eq('id', evento.cerimonialista_id)
+      .single();
+
+    if (cerimError) {
+      console.error('[validar] erro ao buscar cerimonialista:', cerimError);
+    }
+
+    return res.status(200).json({
+      evento: {
+        id: evento.id,
+        nome_evento: evento.nome_evento,
+        data_evento: evento.data_evento,
+        cidade: evento.cidade,
+        casal_confirmado: evento.casal_confirmado,
+      },
+      cerimonialista: cerimonialista || null,
+      status: evento.casal_confirmado ? 'ja_confirmado' : 'pendente',
+    });
+  } catch (err) {
+    console.error('[API convite/validar]', err);
+    return res.status(500).json({ error: err.message || 'Erro interno' });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+import { gerarTarefasContextualizadas } from '../../../utils/gerador-tarefas';
+import { TAREFAS_PADRAO } from '../../../utils/tarefasPadrao';
+import { SUBCATEGORIAS_FLAT, CATALOGO_FORNECEDORES } from '../../../utils/catalogoFornecedores';
+import { supabase } from '../../../lib/supabase';
+
+const CATEGORIAS_VALIDAS = new Set(SUBCATEGORIAS_FLAT.map(s => s.id));
+const CATEGORIAS_PRINCIPAIS_VALIDAS = new Set(CATALOGO_FORNECEDORES.map(c => c.id));
+
+function normalizarCategoria(categoria) {
+  if (!categoria) return null;
+  const limpa = String(categoria).trim();
+  if (!limpa) return null;
+  if (CATEGORIAS_VALIDAS.has(limpa)) return limpa;
+  return 'outro';
+}
+
+function normalizarCategoriaPrincipal(categoriaPrincipal) {
+  if (!categoriaPrincipal) return null;
+  const limpa = String(categoriaPrincipal).trim();
+  if (!limpa) return null;
+  if (CATEGORIAS_PRINCIPAIS_VALIDAS.has(limpa)) return limpa;
+  return 'outro';
+}
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+export default async function handler(req, res) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  const token = authHeader.replace('Bearer ', '').trim();
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ erro: 'Não autorizado' });
+  }
+
+  try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ erro: 'Metodo nao permitido' });
+    }
+
+    const { evento_id, data_evento, usuario_id, forcar_regeneracao } = req.body;
+
+    if (!evento_id || !data_evento) {
+      return res.status(400).json({ erro: 'evento_id e data_evento sao obrigatorios' });
+    }
+
+    const key = serviceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabaseAdmin = createClient(supabaseUrl, key);
+
+    let uid = usuario_id;
+    if (!uid) {
+      const { data: evt } = await supabaseAdmin
+        .from('eventos')
+        .select('usuario_id')
+        .eq('id', evento_id)
+        .single();
+      uid = evt?.usuario_id;
+    }
+    if (!uid) {
+      return res.status(400).json({ erro: 'usuario_id nao encontrado' });
+    }
+
+    if (!forcar_regeneracao) {
+      const { data: existentes, error: errCheck } = await supabaseAdmin
+        .from('tarefas')
+        .select('id')
+        .eq('evento_id', evento_id)
+        .eq('gerada_auto', true)
+        .limit(1);
+
+      if (errCheck) throw errCheck;
+      if (existentes && existentes.length > 0) {
+        return res.status(200).json({ sucesso: true, criadas: 0, mensagem: 'Tarefas ja existem' });
+      }
+    }
+
+    const { data: memorial, error: memErr } = await supabaseAdmin
+      .from('memoriais')
+      .select('estado')
+      .eq('evento_id', evento_id)
+      .order('criado_em', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (memErr) console.error('[gerar-tarefas] Erro ao buscar memorial:', memErr);
+
+    let tarefasParaInserir = [];
+
+    if (memorial?.estado) {
+      const estado = typeof memorial.estado === 'string' ? JSON.parse(memorial.estado) : memorial.estado;
+      const contextualizadas = gerarTarefasContextualizadas(estado, data_evento);
+
+      tarefasParaInserir = contextualizadas.map((t) => ({
+        evento_id,
+        usuario_id: uid,
+        titulo: t.titulo,
+        descricao: t.descricao,
+        categoria: normalizarCategoria(t.categoria),
+        categoria_principal: normalizarCategoriaPrincipal(t.categoria_principal),
+        prazo: t.prazo,
+        concluida: t.concluida,
+        gerada_auto: true,
+        prioridade: t.prioridade,
+      }));
+    }
+
+    if (tarefasParaInserir.length === 0) {
+      const dataEvento = new Date(data_evento + 'T00:00:00');
+
+      tarefasParaInserir = TAREFAS_PADRAO.map((t) => {
+        const dataPrazo = new Date(dataEvento);
+        dataPrazo.setDate(dataPrazo.getDate() - t.diasAntes);
+        return {
+          evento_id,
+          usuario_id: uid,
+          titulo: t.titulo,
+          descricao: t.descricao,
+          categoria: normalizarCategoria(t.categoria),
+          prazo: dataPrazo.toISOString().split('T')[0],
+          concluida: false,
+          gerada_auto: true,
+        };
+      });
+    }
+
+    if (forcar_regeneracao) {
+      const { error: delErr } = await supabaseAdmin
+        .from('tarefas')
+        .delete()
+        .eq('evento_id', evento_id)
+        .eq('gerada_auto', true);
+      if (delErr) console.error('[gerar-tarefas] Erro ao deletar antigas:', delErr);
+    }
+
+    const { error } = await supabaseAdmin.from('tarefas').insert(tarefasParaInserir);
+    if (error) throw error;
+
+    return res.status(201).json({
+      sucesso: true,
+      criadas: tarefasParaInserir.length,
+      contextualizadas: tarefasParaInserir[0]?.categoria_principal !== undefined,
+    });
+  } catch (error) {
+    console.error('Erro em tarefas/gerar:', error.message);
+    return res.status(500).json({
+      erro: 'Erro interno do servidor. Tente novamente.',
+    });
+  }
+}

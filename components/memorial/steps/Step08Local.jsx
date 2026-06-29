@@ -27,9 +27,9 @@ export default function Step03Local({ onSelect, estadoAtual }) {
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
-    setCardPulsando(opcao.valor);
+    setCardPulsando(o.valor);
     setTimeout(() => {
-      onSelect(opcao.campo || opcao.valor, opcao.valor, opcao.cor);
+      onSelect(o.campo || o.valor, o.valor, o.cor);
       setCardPulsando(null);
     }, 350);
   };
@@ -74,19 +74,19 @@ export default function Step03Local({ onSelect, estadoAtual }) {
 
       <div className="local-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: 'var(--space-4)' }}>
         {OPCOES.map((opcao) => {
-          const isSelected = selecionado === opcao.valor;
+          const isSelected = selecionado === o.valor;
           return (
             <div
-      key={opcao.valor}
+      key={o.valor}
       style={{
         transition: 'transform 300ms ease, box-shadow 300ms ease',
-        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
-        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+        transform: cardPulsando === o.valor ? 'scale(1.03)' : 'scale(1)',
+        boxShadow: cardPulsando === o.valor ? `0 0 0 3px ${o.cor || 'var(--color-brand)'}` : 'none',
         borderRadius: 'var(--radius-lg)',
       }}
     >
       <Card
-              key={opcao.valor}
+              key={o.valor}
               interactive
               selected={isSelected}
               padding="md"
@@ -97,7 +97,7 @@ export default function Step03Local({ onSelect, estadoAtual }) {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  onSelect('tipoLocal', opcao.valor);
+                  onSelect('tipoLocal', o.valor);
                 }
               }}
             >
@@ -114,7 +114,7 @@ export default function Step03Local({ onSelect, estadoAtual }) {
                   flexShrink: 0,
                 }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    {opcao.valor === 'outro' ? (
+                    {o.valor === 'outro' ? (
                       <>
                         <circle cx="11" cy="11" r="8" />
                         <path d="M21 21l-4.35-4.35" />
@@ -125,7 +125,7 @@ export default function Step03Local({ onSelect, estadoAtual }) {
                   </svg>
                 </div>
                 <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-primary)' }}>
-                  {opcao.label}
+                  {o.label}
                 </span>
               </div>
             </Card>

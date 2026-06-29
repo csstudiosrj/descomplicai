@@ -18,9 +18,9 @@ export default function StepA11TemAnimais({ onSelect, estadoAtual }) {
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
-    setCardPulsando(opcao.valor);
+    setCardPulsando(o.valor);
     setTimeout(() => {
-      onSelect(opcao.campo || opcao.valor, opcao.valor, opcao.cor);
+      onSelect(o.campo || o.valor, o.valor, o.cor);
       setCardPulsando(null);
     }, 350);
   };
@@ -43,11 +43,11 @@ export default function StepA11TemAnimais({ onSelect, estadoAtual }) {
           const isSelected = selecionado === o.valor;
           return (
             <div
-      key={opcao.valor}
+      key={o.valor}
       style={{
         transition: 'transform 300ms ease, box-shadow 300ms ease',
-        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
-        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+        transform: cardPulsando === o.valor ? 'scale(1.03)' : 'scale(1)',
+        boxShadow: cardPulsando === o.valor ? `0 0 0 3px ${o.cor || 'var(--color-brand)'}` : 'none',
         borderRadius: 'var(--radius-lg)',
       }}
     >

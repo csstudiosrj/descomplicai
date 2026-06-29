@@ -1,0 +1,124 @@
+
+
+/* ==========================================
+ * ARQUIVO: package.json
+ * ========================================== */\n
+{
+  "name": "out",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@react-pdf/renderer": "^4.5.1",
+    "@sparticuz/chromium-min": "^147.0.2",
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.106.2",
+    "framer-motion": "^12.0.0",
+    "mercadopago": "^3.1.0",
+    "next": "16.2.4",
+    "pdf-lib": "^1.17.1",
+    "puppeteer-core": "^24.41.0",
+    "qrcode": "^1.5.4",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-markdown": "^10.1.0",
+    "sharp": "^0.35.1"
+  },
+  "devDependencies": {
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4"
+  }
+}
+
+
+/* ==========================================
+ * ARQUIVO: next.config.mjs
+ * ========================================== */\n
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+};
+
+export default nextConfig;
+
+/* ==========================================
+ * ARQUIVO: eslint.config.mjs
+ * ========================================== */\n
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  // Override default ignores of eslint-config-next.
+  globalIgnores([
+    // Default ignores of eslint-config-next:
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+  ]),
+]);
+
+export default eslintConfig;
+
+
+/* ==========================================
+ * ARQUIVO: .env.example
+ * ========================================== */\n
+# Supabase — Auth + Banco de dados
+NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+
+# Mercado Pago — Pagamentos
+MP_ACCESS_TOKEN=APP_USR-...
+
+# UploadThing — Upload de imagens e referências
+UPLOADTHING_SECRET=sk_live_...
+UPLOADTHING_APP_ID=seu-app-id
+
+# Anthropic Claude — Geração de memorial via IA
+ANTHROPIC_API_KEY=sk-ant-api03-...
+
+# Google Places API — Busca de locais e fornecedores
+NEXT_PUBLIC_GOOGLE_PLACES_KEY=AIza...
+
+# URL base da aplicação (para webhooks e redirects)
+NEXT_PUBLIC_URL=https://descomplicai.com.br
+
+MP_ACCESS_TOKEN=APP_USR-... (ou TEST-... para sandbox)
+SUPABASE_SERVICE_ROLE_KEY=eyJh... (chave service_role do Supabase)
+NEXT_PUBLIC_URL=https://descomplicai-lovat.vercel.app
+
+NEXT_PUBLIC_SITE_URL=https://seudominio.com
+SUPABASE_SERVICE_ROLE_KEY=sua_service_role_key
+
+/* ==========================================
+ * ARQUIVO: jsconfig.json
+ * ========================================== */\n
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./*"]
+    }
+  }
+}
+
+
+/* ==========================================
+ * ARQUIVO: vercel.json
+ * ========================================== */\n
+{
+    "functions": {
+      "pages/api/teste-pdf.js": {
+        "maxDuration": 60
+      },
+      "pages/api/gerar-pdf.js": {
+        "maxDuration": 60
+      }
+    }
+  }

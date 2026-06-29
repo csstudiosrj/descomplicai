@@ -1,0 +1,4634 @@
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/AssistenteCard.jsx
+ * ========================================== */\n
+import React from 'react';
+import Icon from '../ui/Icon';
+
+export default function AssistenteCard({ assistente, acessos, onToggleAtivo, onEditar, onExcluir }) {
+  const acessoInfo = acessos.find((a) => a.id === assistente.acesso) || acessos[0];
+
+  return (
+    <div
+      style={{
+        backgroundColor: 'var(--color-white)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--color-border)',
+        padding: 'var(--space-5)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--space-3)',
+        opacity: assistente.ativo ? 1 : 0.6,
+        transition: 'opacity var(--transition-fast)',
+      }}
+    >
+      {/* Topo: avatar + ações */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-2)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+          <div
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: acessoInfo.bg,
+              color: acessoInfo.color,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-lg)',
+              fontWeight: 'var(--font-semibold)',
+              flexShrink: 0,
+            }}
+          >
+            {assistente.nome.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <h3
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'var(--text-base)',
+                fontWeight: 'var(--font-semibold)',
+                color: 'var(--color-text-primary)',
+                wordBreak: 'break-word',
+              }}
+            >
+              {assistente.nome}
+            </h3>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+              {assistente.email}
+            </p>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
+          <button
+            onClick={() => onEditar(assistente)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-text-muted)',
+              padding: 'var(--space-1)',
+              borderRadius: 'var(--radius-sm)',
+            }}
+            aria-label={`Editar ${assistente.nome}`}
+            title="Editar"
+          >
+            <Icon name="edit" size={16} />
+          </button>
+          <button
+            onClick={() => onExcluir(assistente.id)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-danger)',
+              padding: 'var(--space-1)',
+              borderRadius: 'var(--radius-sm)',
+            }}
+            aria-label={`Remover ${assistente.nome}`}
+            title="Remover"
+          >
+            <Icon name="trash" size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* Badge de acesso + toggle ativo */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-2)', marginTop: 'auto' }}>
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 'var(--space-1)',
+            padding: 'var(--space-1) var(--space-3)',
+            borderRadius: 'var(--radius-full)',
+            backgroundColor: acessoInfo.bg,
+            color: acessoInfo.color,
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-xs)',
+            fontWeight: 'var(--font-medium)',
+          }}
+        >
+          <div
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: acessoInfo.color,
+            }}
+          />
+          {acessoInfo.label}
+        </span>
+
+        <button
+          onClick={() => onToggleAtivo(assistente.id, assistente.ativo)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 'var(--space-2)',
+            padding: 'var(--space-2) var(--space-3)',
+            borderRadius: 'var(--radius-full)',
+            border: '1px solid var(--color-border)',
+            backgroundColor: assistente.ativo ? 'var(--color-success-light)' : 'var(--color-off-white)',
+            color: assistente.ativo ? 'var(--color-success)' : 'var(--color-text-muted)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-xs)',
+            fontWeight: 'var(--font-medium)',
+            cursor: 'pointer',
+            transition: 'all var(--transition-fast)',
+          }}
+        >
+          <Icon name={assistente.ativo ? 'userCheck' : 'userX'} size={14} />
+          {assistente.ativo ? 'Ativo' : 'Inativo'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/AssistenteForm.jsx
+ * ========================================== */\n
+import React, { useState, useCallback } from 'react';
+import { supabase } from '../../lib/supabase';
+import Icon from '../ui/Icon';
+import Button from '../../components/ui/Button';
+
+export default function AssistenteForm({ assistente, cerimonialistaId, acessos, onSalvo, onClose }) {
+  const isEditando = !!assistente;
+
+  const [form, setForm] = useState({
+    nome: assistente?.nome || '',
+    email: assistente?.email || '',
+    acesso: assistente?.acesso || 'operacional',
+  });
+
+  const [erros, setErros] = useState({});
+  const [salvando, setSalvando] = useState(false);
+
+  const handleChange = useCallback((campo, valor) => {
+    setForm((prev) => ({ ...prev, [campo]: valor }));
+    if (erros[campo]) {
+      setErros((prev) => {
+        const next = { ...prev };
+        delete next[campo];
+        return next;
+      });
+    }
+  }, [erros]);
+
+  const validar = () => {
+    const novosErros = {};
+    if (!form.nome.trim()) {
+      novosErros.nome = 'Nome é obrigatório';
+    }
+    if (!form.email.trim()) {
+      novosErros.email = 'E-mail é obrigatório';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      novosErros.email = 'E-mail inválido';
+    }
+    setErros(novosErros);
+    return Object.keys(novosErros).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validar()) return;
+
+    setSalvando(true);
+
+    const payload = {
+      nome: form.nome.trim(),
+      email: form.email.trim(),
+      acesso: form.acesso,
+    };
+
+    try {
+      let error;
+
+      if (isEditando) {
+        const { error: updError } = await supabase
+          .from('cerimonialista_assistentes')
+          .update(payload)
+          .eq('id', assistente.id);
+        error = updError;
+      } else {
+        // Para criar, usamos a API que lida com criação do usuário Auth
+        const res = await fetch('/api/cerimonialista/assistentes/convidar', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          },
+          body: JSON.stringify({ ...payload, cerimonialista_id: cerimonialistaId }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Erro ao criar assistente');
+        }
+      }
+
+      if (error) throw error;
+
+      onSalvo();
+      onClose();
+    } catch (err) {
+      console.error('[AssistenteForm]', err);
+      setErros({ geral: err.message || 'Erro ao salvar. Tente novamente.' });
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const inputStyle = (campo) => ({
+    width: '100%',
+    padding: 'var(--space-3) var(--space-4)',
+    borderRadius: 'var(--radius-md)',
+    border: `1px solid ${erros[campo] ? 'var(--color-danger)' : 'var(--color-border)'}`,
+    backgroundColor: 'var(--color-white)',
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-sm)',
+    color: 'var(--color-text-primary)',
+    outline: 'none',
+    transition: 'border-color var(--transition-fast)',
+  });
+
+  const labelStyle = {
+    display: 'block',
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-xs)',
+    fontWeight: 'var(--font-medium)',
+    color: 'var(--color-text-secondary)',
+    marginBottom: 'var(--space-2)',
+  };
+
+  const grupoStyle = {
+    marginBottom: 'var(--space-4)',
+  };
+
+  const erroStyle = {
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-xs)',
+    color: 'var(--color-danger)',
+    marginTop: 'var(--space-1)',
+  };
+
+  return (
+    <form onSubmit={handleSubmit} noValidate>
+      {/* Nome */}
+      <div style={grupoStyle}>
+        <label htmlFor="nome" style={labelStyle}>
+          Nome <span style={{ color: 'var(--color-danger)' }}>*</span>
+        </label>
+        <input
+          id="nome"
+          type="text"
+          value={form.nome}
+          onChange={(e) => handleChange('nome', e.target.value)}
+          placeholder="Nome completo"
+          style={inputStyle('nome')}
+          required
+        />
+        {erros.nome && <p style={erroStyle}>{erros.nome}</p>}
+      </div>
+
+      {/* Email */}
+      <div style={grupoStyle}>
+        <label htmlFor="email" style={labelStyle}>
+          E-mail <span style={{ color: 'var(--color-danger)' }}>*</span>
+        </label>
+        <input
+          id="email"
+          type="email"
+          value={form.email}
+          onChange={(e) => handleChange('email', e.target.value)}
+          placeholder="email@exemplo.com"
+          disabled={isEditando}
+          style={{
+            ...inputStyle('email'),
+            backgroundColor: isEditando ? 'var(--color-off-white)' : 'var(--color-white)',
+            cursor: isEditando ? 'not-allowed' : 'text',
+          }}
+          required
+        />
+        {isEditando && (
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)' }}>
+            O e-mail não pode ser alterado
+          </p>
+        )}
+        {erros.email && <p style={erroStyle}>{erros.email}</p>}
+      </div>
+
+      {/* Acesso */}
+      <div style={grupoStyle}>
+        <label htmlFor="acesso" style={labelStyle}>Nível de acesso</label>
+        <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+          {acessos.map((a) => (
+            <label
+              key={a.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+                padding: 'var(--space-3) var(--space-4)',
+                borderRadius: 'var(--radius-md)',
+                border: `2px solid ${form.acesso === a.id ? a.color : 'var(--color-border)'}`,
+                backgroundColor: form.acesso === a.id ? a.bg : 'var(--color-white)',
+                cursor: 'pointer',
+                flex: 1,
+                minWidth: '120px',
+                justifyContent: 'center',
+                transition: 'all var(--transition-fast)',
+              }}
+            >
+              <input
+                type="radio"
+                name="acesso"
+                value={a.id}
+                checked={form.acesso === a.id}
+                onChange={(e) => handleChange('acesso', e.target.value)}
+                style={{ accentColor: a.color }}
+              />
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-medium)', color: form.acesso === a.id ? a.color : 'var(--color-text-secondary)' }}>
+                {a.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Erro geral */}
+      {erros.geral && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-2)',
+            padding: 'var(--space-3)',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'var(--color-danger-light)',
+            color: 'var(--color-danger)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-sm)',
+            marginBottom: 'var(--space-4)',
+          }}
+          role="alert"
+        >
+          <Icon name="alertCircle" size={18} />
+          {erros.geral}
+        </div>
+      )}
+
+      {/* Ações */}
+      <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+        <Button variant="secondary" type="button" onClick={onClose} disabled={salvando}>
+          Cancelar
+        </Button>
+        <Button variant="primary" type="submit" disabled={salvando}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            {salvando ? (
+              <>
+                <Icon name="refreshCw" size={16} />
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Icon name="save" size={16} />
+                {isEditando ? 'Atualizar' : 'Adicionar'}
+              </>
+            )}
+          </span>
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/AssistenteModal.jsx
+ * ========================================== */\n
+import React from 'react';
+import Icon from '../ui/Icon';
+import AssistenteForm from './AssistenteForm';
+
+export default function AssistenteModal({ assistente, cerimonialistaId, acessos, onClose, onSalvo }) {
+  const isEditando = !!assistente;
+
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="assistente-modal-title"
+      onClick={handleOverlayClick}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 'var(--z-modal)',
+        backgroundColor: 'var(--color-overlay)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 'var(--space-4)',
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: 'var(--color-white)',
+          borderRadius: 'var(--radius-xl)',
+          width: '100%',
+          maxWidth: '520px',
+          maxHeight: '90vh',
+          overflow: 'auto',
+          boxShadow: 'var(--shadow-xl)',
+          animation: 'modalIn 250ms ease',
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: 'var(--space-5) var(--space-5) var(--space-4)',
+            borderBottom: '1px solid var(--color-border)',
+          }}
+        >
+          <h2
+            id="assistente-modal-title"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-lg)',
+              fontWeight: 'var(--font-semibold)',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            {isEditando ? 'Editar Assistente' : 'Novo Assistente'}
+          </h2>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-text-muted)',
+              padding: 'var(--space-2)',
+              borderRadius: 'var(--radius-sm)',
+            }}
+            aria-label="Fechar modal"
+          >
+            <Icon name="close" size={20} />
+          </button>
+        </div>
+
+        {/* Form */}
+        <div style={{ padding: 'var(--space-5)' }}>
+          <AssistenteForm
+            assistente={assistente}
+            cerimonialistaId={cerimonialistaId}
+            acessos={acessos}
+            onSalvo={onSalvo}
+            onClose={onClose}
+          />
+        </div>
+      </div>
+
+      <style jsx global>{`
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.96); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/BibliotecaFornecedores.jsx
+ * ========================================== */\n
+import React, { useState, useEffect, useCallback } from 'react';
+import Icon from '../ui/Icon';
+import Button from '../ui/Button';
+import Card from '../ui/Card';
+import Badge from '../ui/Badge';
+import BibliotecaFornecedoresModal from './BibliotecaFornecedoresModal';
+import {
+  CATEGORIAS_PRINCIPAIS,
+  getLabelCategoriaPrincipalPorId,
+} from '../../utils/catalogoFornecedores';
+
+export default function BibliotecaFornecedores({ cerimonialistaId }) {
+  const [favoritos, setFavoritos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busca, setBusca] = useState('');
+  const [categoriaFiltro, setCategoriaFiltro] = useState('todas');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [favoritoEditando, setFavoritoEditando] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = useCallback((message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  const buscarFavoritos = useCallback(async () => {
+    if (!cerimonialistaId) return;
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      const res = await fetch('/api/cerimonialista/favoritos/listar', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (res.ok && json.favoritos) {
+        setFavoritos(json.favoritos);
+      }
+    } catch (err) {
+      console.error('[BibliotecaFornecedores] erro ao buscar:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [cerimonialistaId]);
+
+  useEffect(() => {
+    buscarFavoritos();
+  }, [buscarFavoritos]);
+
+  const handleNovo = () => {
+    setFavoritoEditando(null);
+    setModalOpen(true);
+  };
+
+  const handleEditar = (favorito) => {
+    setFavoritoEditando(favorito);
+    setModalOpen(true);
+  };
+
+  const handleSalvo = () => {
+    buscarFavoritos();
+    showToast(favoritoEditando ? 'Fornecedor atualizado' : 'Fornecedor adicionado aos favoritos');
+  };
+
+  const handleDeletar = async (id) => {
+    if (!window.confirm('Tem certeza que deseja remover este fornecedor dos favoritos?')) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return;
+      const res = await fetch(`/api/cerimonialista/favoritos/deletar?id=${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        buscarFavoritos();
+        showToast('Fornecedor removido dos favoritos');
+      } else {
+        showToast('Erro ao remover', 'error');
+      }
+    } catch (err) {
+      showToast('Erro ao remover', 'error');
+    }
+  };
+
+  const favoritosFiltrados = favoritos.filter((f) => {
+    const matchBusca = !busca || f.nome_fornecedor.toLowerCase().includes(busca.toLowerCase());
+    const matchCategoria = categoriaFiltro === 'todas' || f.categoria === categoriaFiltro;
+    return matchBusca && matchCategoria;
+  });
+
+  // Agrupar por categoria
+  const agrupados = favoritosFiltrados.reduce((acc, f) => {
+    const cat = f.categoria || 'outro';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(f);
+    return acc;
+  }, {});
+
+  const ordemCategorias = CATEGORIAS_PRINCIPAIS.map(c => c.id);
+  const categoriasOrdenadas = Object.keys(agrupados).sort(
+    (a, b) => ordemCategorias.indexOf(a) - ordemCategorias.indexOf(b)
+  );
+
+  return (
+    <div>
+      {/* Filtros */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
+        {/* Busca */}
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <Icon name="search" size={18} color="var(--color-text-muted)" style={{ position: 'absolute', left: 'var(--space-3)', pointerEvents: 'none' }} />
+          <input
+            type="text"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar fornecedores favoritos..."
+            style={{
+              width: '100%',
+              padding: 'var(--space-3) var(--space-4) var(--space-3) var(--space-10)',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--color-border)',
+              backgroundColor: 'var(--color-white)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-sm)',
+              color: 'var(--color-text-primary)',
+              outline: 'none',
+            }}
+          />
+          {busca && (
+            <button
+              onClick={() => setBusca('')}
+              style={{ position: 'absolute', right: 'var(--space-3)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)' }}
+              aria-label="Limpar busca"
+            >
+              <Icon name="close" size={16} />
+            </button>
+          )}
+        </div>
+
+        {/* Filtro de categoria */}
+        <div style={{ display: 'flex', gap: 'var(--space-2)', overflowX: 'auto', paddingBottom: 'var(--space-2)', scrollbarWidth: 'none' }}>
+          <button
+            onClick={() => setCategoriaFiltro('todas')}
+            style={{
+              padding: 'var(--space-2) var(--space-4)',
+              borderRadius: 'var(--radius-full)',
+              border: '1px solid var(--color-border)',
+              backgroundColor: categoriaFiltro === 'todas' ? 'var(--color-brand)' : 'var(--color-white)',
+              color: categoriaFiltro === 'todas' ? 'var(--color-white)' : 'var(--color-text-secondary)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-sm)',
+              fontWeight: 'var(--font-medium)',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'all var(--transition-fast)',
+            }}
+          >
+            Todas
+          </button>
+          {CATEGORIAS_PRINCIPAIS.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setCategoriaFiltro(cat.id)}
+              style={{
+                padding: 'var(--space-2) var(--space-4)',
+                borderRadius: 'var(--radius-full)',
+                border: '1px solid var(--color-border)',
+                backgroundColor: categoriaFiltro === cat.id ? 'var(--color-brand)' : 'var(--color-white)',
+                color: categoriaFiltro === cat.id ? 'var(--color-white)' : 'var(--color-text-secondary)',
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'var(--font-medium)',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                transition: 'all var(--transition-fast)',
+              }}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Botão adicionar */}
+      <div style={{ marginBottom: 'var(--space-6)' }}>
+        <Button variant="primary" size="sm" onClick={handleNovo}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Icon name="plus" size={16} />
+            Adicionar fornecedor
+          </span>
+        </Button>
+      </div>
+
+      {/* Lista */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
+          <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando favoritos...</p>
+        </div>
+      ) : favoritosFiltrados.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 'var(--space-12) var(--space-4)', backgroundColor: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)' }}>
+          <Icon name="heart" size={48} color="var(--color-text-muted)" />
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-lg)', color: 'var(--color-text-primary)', marginTop: 'var(--space-4)' }}>
+            {busca || categoriaFiltro !== 'todas' ? 'Nenhum fornecedor encontrado' : 'Nenhum fornecedor favorito ainda'}
+          </h3>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)' }}>
+            {busca || categoriaFiltro !== 'todas'
+              ? 'Tente ajustar os filtros de busca.'
+              : 'Adicione fornecedores a sua biblioteca pessoal.'}
+          </p>
+          {!busca && categoriaFiltro === 'todas' && (
+            <Button variant="primary" onClick={handleNovo} style={{ marginTop: 'var(--space-6)' }}>
+              Adicionar fornecedor
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+          {categoriasOrdenadas.map((catId) => (
+            <div key={catId}>
+              <h3 style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'var(--text-base)',
+                color: 'var(--color-brand)',
+                marginBottom: 'var(--space-3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+              }}>
+                <Icon name="tag" size={16} />
+                {getLabelCategoriaPrincipalPorId(catId)}
+                <Badge variant="default" size="sm" pill>{agrupados[catId].length}</Badge>
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--space-3)' }}>
+                {agrupados[catId].map((f) => (
+                  <Card key={f.id} variant="default" padding="md">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-2)' }}>
+                      <h4 style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)', margin: 0, fontSize: 'var(--text-base)' }}>
+                        {f.nome_fornecedor}
+                      </h4>
+                      <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
+                        <button
+                          onClick={() => handleEditar(f)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', padding: 'var(--space-1)' }}
+                          aria-label="Editar fornecedor"
+                        >
+                          <Icon name="edit" size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDeletar(f.id)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', padding: 'var(--space-1)' }}
+                          aria-label="Remover dos favoritos"
+                        >
+                          <Icon name="trash" size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    {f.telefone && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-1)' }}>
+                        <Icon name="phone" size={14} />
+                        {f.telefone}
+                      </div>
+                    )}
+                    {f.email && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-1)' }}>
+                        <Icon name="mail" size={14} />
+                        {f.email}
+                      </div>
+                    )}
+                    {f.instagram && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-1)' }}>
+                        <Icon name="link" size={14} />
+                        @{f.instagram}
+                      </div>
+                    )}
+                    {f.notas_internas && (
+                      <div style={{ marginTop: 'var(--space-2)', paddingTop: 'var(--space-2)', borderTop: '1px solid var(--color-border)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                        {f.notas_internas}
+                      </div>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modal */}
+      {modalOpen && (
+        <BibliotecaFornecedoresModal
+          favorito={favoritoEditando}
+          cerimonialistaId={cerimonialistaId}
+          onClose={() => { setModalOpen(false); setFavoritoEditando(null); }}
+          onSalvo={handleSalvo}
+        />
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'fixed',
+            bottom: 'var(--space-6)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 'var(--z-toast)',
+            padding: 'var(--space-3) var(--space-6)',
+            borderRadius: 'var(--radius-lg)',
+            backgroundColor: toast.type === 'error' ? 'var(--color-danger)' : 'var(--color-success)',
+            color: 'var(--color-white)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-sm)',
+            fontWeight: 'var(--font-medium)',
+            boxShadow: 'var(--shadow-lg)',
+            animation: 'slideUp 300ms ease',
+          }}
+        >
+          {toast.message}
+        </div>
+      )}
+
+      <style jsx global>{`
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+          to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/BibliotecaFornecedoresModal.jsx
+ * ========================================== */\n
+import React, { useState, useEffect } from 'react';
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import Input from '../ui/Input';
+import Icon from '../ui/Icon';
+import {
+  CATEGORIAS_PRINCIPAIS,
+} from '../../utils/catalogoFornecedores';
+
+export default function BibliotecaFornecedoresModal({ favorito, cerimonialistaId, onClose, onSalvo }) {
+  const [nome, setNome] = useState('');
+  const [categoria, setCategoria] = useState('outro');
+  const [telefone, setTelefone] = useState('');
+  const [email, setEmail] = useState('');
+  const [instagram, setInstagram] = useState('');
+  const [notas, setNotas] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
+
+  useEffect(() => {
+    if (favorito) {
+      setNome(favorito.nome_fornecedor || '');
+      setCategoria(favorito.categoria || 'outro');
+      setTelefone(favorito.telefone || '');
+      setEmail(favorito.email || '');
+      setInstagram(favorito.instagram || '');
+      setNotas(favorito.notas_internas || '');
+    } else {
+      setNome('');
+      setCategoria('outro');
+      setTelefone('');
+      setEmail('');
+      setInstagram('');
+      setNotas('');
+    }
+    setErro('');
+  }, [favorito]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErro('');
+
+    if (!nome.trim()) {
+      setErro('Nome do fornecedor e obrigatorio');
+      return;
+    }
+
+    setSalvando(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        setErro('Sessao expirada. Faca login novamente.');
+        setSalvando(false);
+        return;
+      }
+
+      const payload = {
+        id: favorito?.id,
+        nome_fornecedor: nome.trim(),
+        categoria,
+        telefone: telefone.trim() || null,
+        email: email.trim() || null,
+        instagram: instagram.trim() || null,
+        notas_internas: notas.trim() || null,
+      };
+
+      const res = await fetch('/api/cerimonialista/favoritos/salvar', {
+        method: favorito ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+
+      if (res.ok) {
+        onSalvo();
+        onClose();
+      } else {
+        setErro(json.error || 'Erro ao salvar');
+      }
+    } catch (err) {
+      setErro('Erro de conexao. Tente novamente.');
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title={favorito ? 'Editar fornecedor favorito' : 'Adicionar fornecedor aos favoritos'}
+      size="md"
+    >
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        {erro && (
+          <div style={{
+            padding: 'var(--space-3)',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'var(--color-danger-light)',
+            color: 'var(--color-danger)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-sm)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-2)',
+          }}>
+            <Icon name="alertCircle" size={16} />
+            {erro}
+          </div>
+        )}
+
+        <Input
+          label="Nome do fornecedor *"
+          placeholder="Ex: Buffet Gourmet"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          required
+        />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          <label style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-primary)' }}>
+            Categoria *
+          </label>
+          <select
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
+            required
+            style={{
+              padding: 'var(--space-3)',
+              borderRadius: 'var(--radius-md)',
+              border: '1.5px solid var(--color-border-strong)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-base)',
+              color: 'var(--color-text-primary)',
+              backgroundColor: 'var(--color-white)',
+              outline: 'none',
+            }}
+          >
+            {CATEGORIAS_PRINCIPAIS.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <Input
+          label="Telefone"
+          placeholder="(11) 99999-9999"
+          value={telefone}
+          onChange={(e) => setTelefone(e.target.value)}
+        />
+
+        <Input
+          label="E-mail"
+          type="email"
+          placeholder="contato@fornecedor.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <Input
+          label="Instagram"
+          placeholder="@fornecedor"
+          value={instagram}
+          onChange={(e) => setInstagram(e.target.value.replace(/^@/, ''))}
+        />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          <label style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-primary)' }}>
+            Notas internas
+          </label>
+          <textarea
+            value={notas}
+            onChange={(e) => setNotas(e.target.value)}
+            placeholder="Observacoes, valores, preferencias..."
+            rows={3}
+            style={{
+              padding: 'var(--space-3)',
+              borderRadius: 'var(--radius-md)',
+              border: '1.5px solid var(--color-border-strong)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-base)',
+              color: 'var(--color-text-primary)',
+              resize: 'vertical',
+              outline: 'none',
+            }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end', marginTop: 'var(--space-2)' }}>
+          <Button variant="secondary" onClick={onClose} type="button">
+            Cancelar
+          </Button>
+          <Button variant="primary" loading={salvando} type="submit">
+            {salvando ? 'Salvando...' : (favorito ? 'Atualizar' : 'Adicionar')}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/ConviteCard.jsx
+ * ========================================== */\n
+import React from 'react';
+import Icon from '../ui/Icon';
+import Button from '../ui/Button';
+
+function formatarData(dataStr) {
+  if (!dataStr) return null;
+  const data = new Date(dataStr + 'T00:00:00');
+  return data.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+export default function ConviteCard({ evento, onGerarLink }) {
+  return (
+    <div
+      style={{
+        backgroundColor: 'var(--color-white)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--color-border)',
+        padding: 'var(--space-5)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--space-3)',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-2)' }}>
+        <h3
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'var(--text-base)',
+            fontWeight: 'var(--font-semibold)',
+            color: 'var(--color-text-primary)',
+            wordBreak: 'break-word',
+            flex: 1,
+          }}
+        >
+          {evento.nome_evento || 'Evento sem nome'}
+        </h3>
+        <span
+          style={{
+            padding: 'var(--space-1) var(--space-2)',
+            borderRadius: 'var(--radius-full)',
+            backgroundColor: 'var(--color-success-light)',
+            color: 'var(--color-success)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-xs)',
+            fontWeight: 'var(--font-medium)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Pendente
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+        {evento.data_evento && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Icon name="calendar" size={14} color="var(--color-text-muted)" />
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
+              {formatarData(evento.data_evento)}
+            </span>
+          </div>
+        )}
+        {evento.cidade && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Icon name="mapPin" size={14} color="var(--color-text-muted)" />
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
+              {evento.cidade}
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginTop: 'auto', paddingTop: 'var(--space-3)' }}>
+        <Button variant="primary" size="sm" fullWidth onClick={() => onGerarLink(evento)}>
+          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)' }}>
+            <Icon name="send" size={16} />
+            Copiar link de convite
+          </span>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/EventoCasalCard.jsx
+ * ========================================== */\n
+import React from 'react';
+import Icon from '../ui/Icon';
+
+export default function EventoCasalCard({ evento, naoLidas = 0, onClick }) {
+  const formatarData = (dataStr) => {
+    if (!dataStr) return 'Data não definida';
+    const [ano, mes, dia] = dataStr.split('-');
+    return `${dia}/${mes}/${ano}`;
+  };
+
+  const calcularDiasRestantes = (dataStr) => {
+    if (!dataStr) return null;
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const dataEvento = new Date(dataStr + 'T00:00:00');
+    return Math.ceil((dataEvento - hoje) / (1000 * 60 * 60 * 24));
+  };
+
+  const dias = calcularDiasRestantes(evento.data_evento);
+
+  return (
+    <div
+      style={styles.card}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
+    >
+      <div style={styles.header}>
+        <div style={styles.icone}>
+          <Icon name="calendar" size={20} color="var(--color-brand)" />
+        </div>
+        <div style={styles.info}>
+          <h3 style={styles.titulo}>{evento.nome_evento || 'Evento sem nome'}</h3>
+          <p style={styles.data}>{formatarData(evento.data_evento)}</p>
+        </div>
+        {naoLidas > 0 && (
+          <span style={styles.badge} aria-label={`${naoLidas} mensagens não lidas`}>
+            {naoLidas > 99 ? '99+' : naoLidas}
+          </span>
+        )}
+      </div>
+
+      <div style={styles.body}>
+        {dias !== null && (
+          <div style={styles.diasBadge(dias)}>
+            <Icon name="clock" size={14} />
+            <span>
+              {dias < 0
+                ? `Realizado há ${Math.abs(dias)} dias`
+                : dias === 0
+                ? 'Hoje é o grande dia'
+                : `${dias} dias restantes`}
+            </span>
+          </div>
+        )}
+        <div style={styles.meta}>
+          <span style={styles.metaItem}>
+            <Icon name="dollar" size={14} color="var(--color-text-muted)" />
+            {evento.orcamento
+              ? `R$ ${Number(evento.orcamento).toLocaleString('pt-BR')}`
+              : 'Orçamento não definido'}
+          </span>
+          {evento.memorial_concluido && (
+            <span style={styles.metaItem}>
+              <Icon name="memorial" size={14} color="var(--color-success)" />
+              Memorial completo
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div style={styles.footer}>
+        <span style={styles.verMais}>
+          <Icon name="arrowRight" size={14} />
+          Acessar painel espelhado
+        </span>
+      </div>
+    </div>
+  );
+}
+
+const styles = {
+  card: {
+    backgroundColor: 'var(--color-surface)',
+    borderRadius: 'var(--radius-lg)',
+    border: '1px solid var(--color-border)',
+    cursor: 'pointer',
+    transition: 'box-shadow 200ms ease, transform 100ms ease',
+    overflow: 'hidden',
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 'var(--space-3)',
+    padding: 'var(--space-4)',
+    borderBottom: '1px solid var(--color-border-light)',
+  },
+  icone: {
+    width: '40px',
+    height: '40px',
+    borderRadius: 'var(--radius-md)',
+    backgroundColor: 'var(--color-brand-light)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  info: { flex: 1, minWidth: 0 },
+  titulo: {
+    fontFamily: 'var(--font-display)',
+    fontSize: 'var(--text-base)',
+    color: 'var(--color-text-primary)',
+    margin: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  data: {
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-sm)',
+    color: 'var(--color-text-muted)',
+    margin: '2px 0 0',
+  },
+  badge: {
+    background: 'var(--color-danger)',
+    color: 'var(--color-white)',
+    fontSize: 'var(--text-xs)',
+    fontWeight: 'var(--font-bold)',
+    minWidth: '20px',
+    height: '20px',
+    borderRadius: 'var(--radius-full)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '0 6px',
+    flexShrink: 0,
+  },
+  body: {
+    padding: 'var(--space-4)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 'var(--space-3)',
+  },
+  diasBadge: (dias) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: 'var(--space-2) var(--space-3)',
+    borderRadius: 'var(--radius-full)',
+    backgroundColor: dias < 0 ? 'var(--color-text-muted-light)' : dias <= 30 ? 'var(--color-danger-light)' : 'var(--color-success-light)',
+    color: dias < 0 ? 'var(--color-text-muted)' : dias <= 30 ? 'var(--color-danger)' : 'var(--color-success)',
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-sm)',
+    fontWeight: 'var(--font-medium)',
+    alignSelf: 'flex-start',
+  }),
+  meta: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 'var(--space-3)',
+  },
+  metaItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-sm)',
+    color: 'var(--color-text-muted)',
+  },
+  footer: {
+    padding: 'var(--space-3) var(--space-4)',
+    borderTop: '1px solid var(--color-border-light)',
+    backgroundColor: 'var(--color-off-white)',
+  },
+  verMais: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-sm)',
+    color: 'var(--color-brand)',
+    fontWeight: 'var(--font-semibold)',
+  },
+};
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/FinanceiroForm.jsx
+ * ========================================== */\n
+import React, { useState, useCallback } from 'react';
+import { supabase } from '../../lib/supabase';
+import Icon from '../ui/Icon';
+import Button from '../ui/Button';
+
+function formatarMoedaInput(valor) {
+  if (!valor) return '';
+  const num = parseFloat(valor.toString().replace(/[^\d]/g, '')) / 100;
+  if (isNaN(num)) return '';
+  return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
+}
+
+function parseMoeda(valorStr) {
+  if (!valorStr) return 0;
+  const limpo = valorStr.replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(limpo);
+  return isNaN(num) ? 0 : num;
+}
+
+export default function FinanceiroForm({ lancamento, cerimonialistaId, tipos, categorias, onSalvo, onClose }) {
+  const isEditando = !!lancamento;
+
+  const [form, setForm] = useState({
+    tipo: lancamento?.tipo || 'receita',
+    categoria: lancamento?.categoria || '',
+    descricao: lancamento?.descricao || '',
+    valor: lancamento?.valor ? formatarMoedaInput(lancamento.valor * 100) : '',
+    data_vencimento: lancamento?.data_vencimento || '',
+    pago: lancamento?.pago || false,
+  });
+
+  const [erros, setErros] = useState({});
+  const [salvando, setSalvando] = useState(false);
+
+  const handleChange = useCallback((campo, valor) => {
+    setForm((prev) => ({ ...prev, [campo]: valor }));
+    if (erros[campo]) {
+      setErros((prev) => {
+        const next = { ...prev };
+        delete next[campo];
+        return next;
+      });
+    }
+  }, [erros]);
+
+  const handleMoedaChange = useCallback((valor) => {
+    const apenasNumeros = valor.replace(/[^\d]/g, '');
+    const formatado = formatarMoedaInput(apenasNumeros);
+    setForm((prev) => ({ ...prev, valor: formatado }));
+  }, []);
+
+  const validar = () => {
+    const novosErros = {};
+    if (!form.valor || parseMoeda(form.valor) <= 0) {
+      novosErros.valor = 'Valor deve ser maior que zero';
+    }
+    setErros(novosErros);
+    return Object.keys(novosErros).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validar()) return;
+
+    setSalvando(true);
+
+    const payload = {
+      tipo: form.tipo,
+      categoria: form.categoria?.trim() || null,
+      descricao: form.descricao?.trim() || null,
+      valor: parseMoeda(form.valor),
+      data_vencimento: form.data_vencimento || null,
+      pago: form.pago,
+    };
+
+    try {
+      let error;
+
+      if (isEditando) {
+        const { error: updError } = await supabase
+          .from('cerimonialista_financeiro')
+          .update(payload)
+          .eq('id', lancamento.id);
+        error = updError;
+      } else {
+        const { error: insError } = await supabase
+          .from('cerimonialista_financeiro')
+          .insert({ ...payload, cerimonialista_id: cerimonialistaId });
+        error = insError;
+      }
+
+      if (error) throw error;
+
+      onSalvo();
+      onClose();
+    } catch (err) {
+      console.error('[FinanceiroForm]', err);
+      setErros({ geral: 'Erro ao salvar. Tente novamente.' });
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const inputStyle = (campo) => ({
+    width: '100%',
+    padding: 'var(--space-3) var(--space-4)',
+    borderRadius: 'var(--radius-md)',
+    border: `1px solid ${erros[campo] ? 'var(--color-danger)' : 'var(--color-border)'}`,
+    backgroundColor: 'var(--color-white)',
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-sm)',
+    color: 'var(--color-text-primary)',
+    outline: 'none',
+    transition: 'border-color var(--transition-fast)',
+  });
+
+  const labelStyle = {
+    display: 'block',
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-xs)',
+    fontWeight: 'var(--font-medium)',
+    color: 'var(--color-text-secondary)',
+    marginBottom: 'var(--space-2)',
+  };
+
+  const grupoStyle = {
+    marginBottom: 'var(--space-4)',
+  };
+
+  const erroStyle = {
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-xs)',
+    color: 'var(--color-danger)',
+    marginTop: 'var(--space-1)',
+  };
+
+  const cats = categorias[form.tipo] || [];
+
+  return (
+    <form onSubmit={handleSubmit} noValidate>
+      {/* Tipo */}
+      <div style={grupoStyle}>
+        <label htmlFor="tipo" style={labelStyle}>Tipo</label>
+        <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+          {tipos.map((t) => (
+            <label
+              key={t.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+                padding: 'var(--space-3) var(--space-4)',
+                borderRadius: 'var(--radius-md)',
+                border: `2px solid ${form.tipo === t.id ? t.color : 'var(--color-border)'}`,
+                backgroundColor: form.tipo === t.id ? t.bg : 'var(--color-white)',
+                cursor: 'pointer',
+                flex: 1,
+                justifyContent: 'center',
+                transition: 'all var(--transition-fast)',
+              }}
+            >
+              <input
+                type="radio"
+                name="tipo"
+                value={t.id}
+                checked={form.tipo === t.id}
+                onChange={(e) => handleChange('tipo', e.target.value)}
+                style={{ accentColor: t.color }}
+              />
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', fontWeight: 'var(--font-medium)', color: form.tipo === t.id ? t.color : 'var(--color-text-secondary)' }}>
+                {t.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Categoria + Valor */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', ...grupoStyle }}>
+        <div>
+          <label htmlFor="categoria" style={labelStyle}>Categoria</label>
+          <select
+            id="categoria"
+            value={form.categoria}
+            onChange={(e) => handleChange('categoria', e.target.value)}
+            style={inputStyle('categoria')}
+          >
+            <option value="">Selecione...</option>
+            {cats.map((c) => (
+              <option key={c.id} value={c.id}>{c.label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="valor" style={labelStyle}>
+            Valor <span style={{ color: 'var(--color-danger)' }}>*</span>
+          </label>
+          <input
+            id="valor"
+            type="text"
+            inputMode="decimal"
+            value={form.valor}
+            onChange={(e) => handleMoedaChange(e.target.value)}
+            placeholder="R$ 0,00"
+            style={inputStyle('valor')}
+          />
+          {erros.valor && <p style={erroStyle}>{erros.valor}</p>}
+        </div>
+      </div>
+
+      {/* Descrição */}
+      <div style={grupoStyle}>
+        <label htmlFor="descricao" style={labelStyle}>Descrição</label>
+        <input
+          id="descricao"
+          type="text"
+          value={form.descricao}
+          onChange={(e) => handleChange('descricao', e.target.value)}
+          placeholder="Ex: Sinal do casal Silva"
+          style={inputStyle('descricao')}
+        />
+      </div>
+
+      {/* Data + Pago */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', ...grupoStyle }}>
+        <div>
+          <label htmlFor="data_vencimento" style={labelStyle}>Data de vencimento</label>
+          <input
+            id="data_vencimento"
+            type="date"
+            value={form.data_vencimento}
+            onChange={(e) => handleChange('data_vencimento', e.target.value)}
+            style={inputStyle('data_vencimento')}
+          />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: 'var(--space-3)' }}>
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-2)',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-sm)',
+              color: 'var(--color-text-secondary)',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={form.pago}
+              onChange={(e) => handleChange('pago', e.target.checked)}
+              style={{ width: '18px', height: '18px', accentColor: 'var(--color-success)' }}
+            />
+            Já está pago/recebido
+          </label>
+        </div>
+      </div>
+
+      {/* Erro geral */}
+      {erros.geral && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-2)',
+            padding: 'var(--space-3)',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'var(--color-danger-light)',
+            color: 'var(--color-danger)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-sm)',
+            marginBottom: 'var(--space-4)',
+          }}
+          role="alert"
+        >
+          <Icon name="alertCircle" size={18} />
+          {erros.geral}
+        </div>
+      )}
+
+      {/* Ações */}
+      <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+        <Button variant="secondary" type="button" onClick={onClose} disabled={salvando}>
+          Cancelar
+        </Button>
+        <Button variant="primary" type="submit" disabled={salvando}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            {salvando ? (
+              <>
+                <Icon name="refreshCw" size={16} />
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Icon name="save" size={16} />
+                {isEditando ? 'Atualizar' : 'Criar Lançamento'}
+              </>
+            )}
+          </span>
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/FinanceiroLista.jsx
+ * ========================================== */\n
+import React from 'react';
+import Icon from '../ui/Icon';
+import { getLabelSubcategoria } from '../../utils/catalogoFornecedores';
+
+function formatarValor(valor) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+}
+
+function formatarData(dataStr) {
+  if (!dataStr) return '-';
+  const data = new Date(dataStr + 'T00:00:00');
+  return data.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function agruparPorMes(lancamentos) {
+  const grupos = {};
+  lancamentos.forEach((l) => {
+    const data = l.data_vencimento ? new Date(l.data_vencimento + 'T00:00:00') : new Date();
+    const chave = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+    const label = data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    if (!grupos[chave]) grupos[chave] = { label, items: [] };
+    grupos[chave].items.push(l);
+  });
+  return Object.entries(grupos).sort((a, b) => b[0].localeCompare(a[0]));
+}
+
+export default function FinanceiroLista({ lancamentos, loading, tipos, categorias, onTogglePago, onEditar, onExcluir }) {
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
+        <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>Carregando lancamentos...</p>
+      </div>
+    );
+  }
+
+  if (lancamentos.length === 0) {
+    return (
+      <div
+        style={{
+          textAlign: 'center',
+          padding: 'var(--space-12) var(--space-4)',
+          backgroundColor: 'var(--color-surface)',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--color-border)',
+        }}
+      >
+        <Icon name="receipt" size={48} color="var(--color-text-muted)" />
+        <h3
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'var(--text-lg)',
+            color: 'var(--color-text-primary)',
+            marginTop: 'var(--space-4)',
+          }}
+        >
+          Nenhum lancamento
+        </h3>
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)' }}>
+          Crie seu primeiro lancamento para comecar.
+        </p>
+      </div>
+    );
+  }
+
+  const grupos = agruparPorMes(lancamentos);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+      {grupos.map(([chave, { label, items }]) => {
+        const totalMes = items.reduce((s, l) => s + (l.valor || 0), 0);
+        return (
+          <div key={chave}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: 'var(--space-3) var(--space-4)',
+                backgroundColor: 'var(--color-surface)',
+                borderRadius: 'var(--radius-md)',
+                marginBottom: 'var(--space-3)',
+              }}
+            >
+              <h3
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--font-semibold)',
+                  color: 'var(--color-text-primary)',
+                  textTransform: 'capitalize',
+                }}
+              >
+                {label}
+              </h3>
+              <span
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--font-medium)',
+                  color: 'var(--color-text-secondary)',
+                }}
+              >
+                {formatarValor(totalMes)}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              {items.map((l) => {
+                const tipoInfo = tipos.find((t) => t.id === l.tipo) || tipos[0];
+                const catLabel = getLabelSubcategoria(l.categoria) || '—';
+
+                return (
+                  <div
+                    key={l.id}
+                    style={{
+                      backgroundColor: 'var(--color-white)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: 'var(--space-4)',
+                      border: '1px solid var(--color-border)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--space-3)',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <button
+                      onClick={() => onTogglePago(l.id, l.pago)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: 'var(--space-2)',
+                        color: l.pago ? 'var(--color-success)' : 'var(--color-text-muted)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                      }}
+                      aria-label={l.pago ? 'Marcar como pendente' : 'Marcar como pago'}
+                      title={l.pago ? 'Pago' : 'Pendente'}
+                    >
+                      <Icon name={l.pago ? 'checkSquare' : 'square'} size={20} />
+                    </button>
+
+                    <div style={{ flex: 1, minWidth: '200px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-1)' }}>
+                        <span
+                          style={{
+                            padding: 'var(--space-1) var(--space-2)',
+                            borderRadius: 'var(--radius-sm)',
+                            backgroundColor: tipoInfo.bg,
+                            color: tipoInfo.color,
+                            fontFamily: 'var(--font-body)',
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 'var(--font-medium)',
+                          }}
+                        >
+                          {tipoInfo.label}
+                        </span>
+                        <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+                          {catLabel}
+                        </span>
+                      </div>
+                      <p
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontSize: 'var(--text-sm)',
+                          fontWeight: 'var(--font-medium)',
+                          color: 'var(--color-text-primary)',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {l.descricao || 'Sem descricao'}
+                      </p>
+                      <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)' }}>
+                        Vencimento: {formatarData(l.data_vencimento)}
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexShrink: 0 }}>
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-display)',
+                          fontSize: 'var(--text-base)',
+                          fontWeight: 'var(--font-semibold)',
+                          color: l.tipo === 'receita' ? 'var(--color-success)' : 'var(--color-danger)',
+                        }}
+                      >
+                        {l.tipo === 'receita' ? '+' : '-'}{formatarValor(l.valor)}
+                      </span>
+                      <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
+                        <button
+                          onClick={() => onEditar(l)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--color-text-muted)',
+                            padding: 'var(--space-1)',
+                          }}
+                          aria-label="Editar"
+                        >
+                          <Icon name="edit" size={16} />
+                        </button>
+                        <button
+                          onClick={() => onExcluir(l.id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--color-danger)',
+                            padding: 'var(--space-1)',
+                          }}
+                          aria-label="Excluir"
+                        >
+                          <Icon name="trash" size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/FinanceiroModal.jsx
+ * ========================================== */\n
+import React from 'react';
+import Icon from '../ui/Icon';
+import FinanceiroForm from './FinanceiroForm';
+
+export default function FinanceiroModal({ lancamento, cerimonialistaId, tipos, categorias, onClose, onSalvo }) {
+  const isEditando = !!lancamento;
+
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="financeiro-modal-title"
+      onClick={handleOverlayClick}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 'var(--z-modal)',
+        backgroundColor: 'var(--color-overlay)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 'var(--space-4)',
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: 'var(--color-white)',
+          borderRadius: 'var(--radius-xl)',
+          width: '100%',
+          maxWidth: '520px',
+          maxHeight: '90vh',
+          overflow: 'auto',
+          boxShadow: 'var(--shadow-xl)',
+          animation: 'modalIn 250ms ease',
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: 'var(--space-5) var(--space-5) var(--space-4)',
+            borderBottom: '1px solid var(--color-border)',
+          }}
+        >
+          <h2
+            id="financeiro-modal-title"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-lg)',
+              fontWeight: 'var(--font-semibold)',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            {isEditando ? 'Editar Lançamento' : 'Novo Lançamento'}
+          </h2>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-text-muted)',
+              padding: 'var(--space-2)',
+              borderRadius: 'var(--radius-sm)',
+            }}
+            aria-label="Fechar modal"
+          >
+            <Icon name="close" size={20} />
+          </button>
+        </div>
+
+        {/* Form */}
+        <div style={{ padding: 'var(--space-5)' }}>
+          <FinanceiroForm
+            lancamento={lancamento}
+            cerimonialistaId={cerimonialistaId}
+            tipos={tipos}
+            categorias={categorias}
+            onSalvo={onSalvo}
+            onClose={onClose}
+          />
+        </div>
+      </div>
+
+      <style jsx global>{`
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.96); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/FinanceiroResumo.jsx
+ * ========================================== */\n
+import React from 'react';
+import Icon from '../ui/Icon';
+
+function formatarValor(valor) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+}
+
+export default function FinanceiroResumo({ lancamentos, loading }) {
+  if (loading) {
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-4)' }}>
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} style={{ height: '100px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }} />
+        ))}
+      </div>
+    );
+  }
+
+  const receitas = lancamentos.filter((l) => l.tipo === 'receita');
+  const despesas = lancamentos.filter((l) => l.tipo === 'despesa');
+  const totalReceitas = receitas.reduce((s, l) => s + (l.valor || 0), 0);
+  const totalDespesas = despesas.reduce((s, l) => s + (l.valor || 0), 0);
+  const saldo = totalReceitas - totalDespesas;
+  const pendentes = lancamentos.filter((l) => !l.pago).reduce((s, l) => s + (l.valor || 0), 0);
+
+  const cards = [
+    {
+      label: 'Saldo',
+      valor: formatarValor(saldo),
+      icon: 'wallet',
+      color: saldo >= 0 ? 'var(--color-success)' : 'var(--color-danger)',
+      bg: saldo >= 0 ? 'var(--color-success-light)' : 'var(--color-danger-light)',
+    },
+    {
+      label: 'Receitas',
+      valor: formatarValor(totalReceitas),
+      icon: 'trendingUp',
+      color: 'var(--color-success)',
+      bg: 'var(--color-success-light)',
+    },
+    {
+      label: 'Despesas',
+      valor: formatarValor(totalDespesas),
+      icon: 'trendingDown',
+      color: 'var(--color-danger)',
+      bg: 'var(--color-danger-light)',
+    },
+    {
+      label: 'Pendentes',
+      valor: formatarValor(pendentes),
+      icon: 'receipt',
+      color: 'var(--color-warning)',
+      bg: 'var(--color-warning-light)',
+    },
+  ];
+
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: 'var(--space-4)',
+      }}
+    >
+      {cards.map((card) => (
+        <div
+          key={card.label}
+          style={{
+            backgroundColor: 'var(--color-surface)',
+            borderRadius: 'var(--radius-lg)',
+            padding: 'var(--space-5)',
+            border: '1px solid var(--color-border)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-3)',
+          }}
+        >
+          <div
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: card.bg,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <Icon name={card.icon} size={20} color={card.color} />
+          </div>
+          <div>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+              {card.label}
+            </p>
+            <p
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'var(--text-xl)',
+                fontWeight: 'var(--font-semibold)',
+                color: card.color,
+              }}
+            >
+              {card.valor}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/FunilKanban.jsx
+ * ========================================== */\n
+import React, { useState, useCallback } from 'react';
+import Icon from '../ui/Icon';
+import LeadCard from './LeadCard';
+
+export default function FunilKanban({ leads, estagios, onEditar, onMover, onExcluir }) {
+  const [draggingId, setDraggingId] = useState(null);
+  const [dragOverColuna, setDragOverColuna] = useState(null);
+
+  const handleDragStart = useCallback((e, leadId) => {
+    setDraggingId(leadId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', leadId);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggingId(null);
+    setDragOverColuna(null);
+  }, []);
+
+  const handleDragOver = useCallback((e, estagioId) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverColuna(estagioId);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverColuna(null);
+  }, []);
+
+  const handleDrop = useCallback((e, estagioId) => {
+    e.preventDefault();
+    const leadId = e.dataTransfer.getData('text/plain');
+    if (leadId) {
+      const lead = leads.find((l) => l.id === leadId);
+      if (lead && lead.estagio !== estagioId) {
+        onMover(leadId, estagioId);
+      }
+    }
+    setDragOverColuna(null);
+    setDraggingId(null);
+  }, [leads, onMover]);
+
+  const leadsPorEstagio = (estagioId) => leads.filter((l) => l.estagio === estagioId);
+
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, minmax(260px, 1fr))',
+        gap: 'var(--space-4)',
+        overflowX: 'auto',
+        paddingBottom: 'var(--space-4)',
+        minHeight: '60vh',
+      }}
+      role="region"
+      aria-label="Funil de leads Kanban"
+    >
+      {estagios.map((estagio) => {
+        const colLeads = leadsPorEstagio(estagio.id);
+        const isDropTarget = dragOverColuna === estagio.id;
+
+        return (
+          <div
+            key={estagio.id}
+            role="list"
+            aria-label={`Coluna ${estagio.label}`}
+            onDragOver={(e) => handleDragOver(e, estagio.id)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, estagio.id)}
+            style={{
+              backgroundColor: isDropTarget ? 'var(--color-brand-lighter)' : 'var(--color-surface)',
+              borderRadius: 'var(--radius-lg)',
+              border: `2px solid ${isDropTarget ? estagio.color : 'transparent'}`,
+              padding: 'var(--space-4)',
+              minWidth: '260px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-3)',
+              transition: 'background-color var(--transition-fast), border-color var(--transition-fast)',
+            }}
+          >
+            {/* Cabeçalho da coluna */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingBottom: 'var(--space-3)',
+                borderBottom: '1px solid var(--color-border)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <div
+                  style={{
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: 'var(--radius-full)',
+                    backgroundColor: estagio.color,
+                  }}
+                />
+                <h3
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: 'var(--text-sm)',
+                    fontWeight: 'var(--font-semibold)',
+                    color: 'var(--color-text-primary)',
+                  }}
+                >
+                  {estagio.label}
+                </h3>
+              </div>
+              <span
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: 'var(--font-medium)',
+                  color: 'var(--color-text-muted)',
+                  backgroundColor: 'var(--color-off-white)',
+                  padding: 'var(--space-1) var(--space-2)',
+                  borderRadius: 'var(--radius-full)',
+                }}
+                aria-label={`${colLeads.length} leads nesta coluna`}
+              >
+                {colLeads.length}
+              </span>
+            </div>
+
+            {/* Lista de leads */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', flex: 1 }}>
+              {colLeads.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: 'center',
+                    padding: 'var(--space-8) var(--space-4)',
+                    color: 'var(--color-text-muted)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-sm)',
+                    border: '2px dashed var(--color-border)',
+                    borderRadius: 'var(--radius-md)',
+                  }}
+                >
+                  <Icon name="columns" size={24} style={{ marginBottom: 'var(--space-2)', opacity: 0.4 }} />
+                  <p>Arraste leads aqui</p>
+                </div>
+              ) : (
+                colLeads.map((lead) => (
+                  <LeadCard
+                    key={lead.id}
+                    lead={lead}
+                    estagios={estagios}
+                    isDragging={draggingId === lead.id}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    onEditar={onEditar}
+                    onMover={onMover}
+                    onExcluir={onExcluir}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/LeadCard.jsx
+ * ========================================== */\n
+import React from 'react';
+import Icon from '../ui/Icon';
+
+function formatarValor(valor) {
+  if (!valor) return null;
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(valor);
+}
+
+function formatarData(dataStr) {
+  if (!dataStr) return null;
+  const data = new Date(dataStr + 'T00:00:00');
+  return data.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+export default function LeadCard({
+  lead,
+  estagios,
+  isDragging,
+  onDragStart,
+  onDragEnd,
+  onEditar,
+  onMover,
+  onExcluir,
+}) {
+  const estagioAtual = estagios.find((e) => e.id === lead.estagio);
+  const estagioIndex = estagios.findIndex((e) => e.id === lead.estagio);
+  const podeAvancar = estagioIndex < estagios.length - 1;
+  const podeRetroceder = estagioIndex > 0;
+
+  return (
+    <div
+      role="listitem"
+      draggable
+      onDragStart={(e) => onDragStart(e, lead.id)}
+      onDragEnd={onDragEnd}
+      style={{
+        backgroundColor: 'var(--color-white)',
+        borderRadius: 'var(--radius-md)',
+        padding: 'var(--space-4)',
+        border: '1px solid var(--color-border)',
+        boxShadow: isDragging ? 'var(--shadow-lg)' : 'var(--shadow-sm)',
+        opacity: isDragging ? 0.6 : 1,
+        cursor: 'grab',
+        transition: 'box-shadow var(--transition-fast), opacity var(--transition-fast), transform var(--transition-fast)',
+        transform: isDragging ? 'rotate(2deg)' : 'none',
+      }}
+    >
+      {/* Topo: nome + ações */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+        <h4
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'var(--text-sm)',
+            fontWeight: 'var(--font-semibold)',
+            color: 'var(--color-text-primary)',
+            lineHeight: 'var(--leading-snug)',
+            flex: 1,
+            wordBreak: 'break-word',
+          }}
+        >
+          {lead.nome_lead}
+        </h4>
+        <div style={{ display: 'flex', gap: 'var(--space-1)', flexShrink: 0 }}>
+          <button
+            onClick={() => onEditar(lead)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-text-muted)',
+              padding: 'var(--space-1)',
+              borderRadius: 'var(--radius-sm)',
+            }}
+            aria-label={`Editar lead ${lead.nome_lead}`}
+            title="Editar"
+          >
+            <Icon name="edit" size={16} />
+          </button>
+          <button
+            onClick={() => onExcluir(lead.id)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-danger)',
+              padding: 'var(--space-1)',
+              borderRadius: 'var(--radius-sm)',
+            }}
+            aria-label={`Excluir lead ${lead.nome_lead}`}
+            title="Excluir"
+          >
+            <Icon name="trash" size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* Info do lead */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+        {lead.tipo_evento && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Icon name="tag" size={14} color="var(--color-text-muted)" />
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+              {lead.tipo_evento}
+            </span>
+          </div>
+        )}
+        {lead.data_prevista && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Icon name="calendar" size={14} color="var(--color-text-muted)" />
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+              {formatarData(lead.data_prevista)}
+            </span>
+          </div>
+        )}
+        {lead.valor_proposta && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Icon name="dollar" size={14} color="var(--color-text-muted)" />
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-medium)' }}>
+              {formatarValor(lead.valor_proposta)}
+            </span>
+          </div>
+        )}
+        {lead.email && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Icon name="mail" size={14} color="var(--color-text-muted)" />
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+              {lead.email}
+            </span>
+          </div>
+        )}
+        {lead.telefone && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Icon name="phone" size={14} color="var(--color-text-muted)" />
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+              {lead.telefone}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Badge de estágio + navegação mobile */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-2)' }}>
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 'var(--space-1)',
+            padding: 'var(--space-1) var(--space-2)',
+            borderRadius: 'var(--radius-full)',
+            backgroundColor: estagioAtual?.bg || 'var(--color-off-white)',
+            color: estagioAtual?.color || 'var(--color-text-muted)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-xs)',
+            fontWeight: 'var(--font-medium)',
+          }}
+        >
+          <div
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: estagioAtual?.color || 'var(--color-text-muted)',
+            }}
+          />
+          {estagioAtual?.label || lead.estagio}
+        </span>
+
+        {/* Navegação por botões (mobile fallback) */}
+        <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
+          {podeRetroceder && (
+            <button
+              onClick={() => onMover(lead.id, estagios[estagioIndex - 1].id)}
+              style={{
+                background: 'var(--color-off-white)',
+                border: '1px solid var(--color-border)',
+                cursor: 'pointer',
+                color: 'var(--color-text-muted)',
+                padding: 'var(--space-1)',
+                borderRadius: 'var(--radius-sm)',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+              aria-label={`Mover para ${estagios[estagioIndex - 1].label}`}
+              title={`Mover para ${estagios[estagioIndex - 1].label}`}
+            >
+              <Icon name="arrowLeft" size={14} />
+            </button>
+          )}
+          {podeAvancar && (
+            <button
+              onClick={() => onMover(lead.id, estagios[estagioIndex + 1].id)}
+              style={{
+                background: 'var(--color-off-white)',
+                border: '1px solid var(--color-border)',
+                cursor: 'pointer',
+                color: 'var(--color-text-muted)',
+                padding: 'var(--space-1)',
+                borderRadius: 'var(--radius-sm)',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+              aria-label={`Mover para ${estagios[estagioIndex + 1].label}`}
+              title={`Mover para ${estagios[estagioIndex + 1].label}`}
+            >
+              <Icon name="arrowRight" size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/LeadForm.jsx
+ * ========================================== */\n
+import React, { useState, useCallback } from 'react';
+import { supabase } from '../../lib/supabase';
+import Icon from '../ui/Icon';
+import Button from '../ui/Button';
+
+function formatarMoedaInput(valor) {
+  if (!valor) return '';
+  const num = parseFloat(valor.toString().replace(/[^\d]/g, '')) / 100;
+  if (isNaN(num)) return '';
+  return new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(num);
+}
+
+function parseMoeda(valorStr) {
+  if (!valorStr) return null;
+  const limpo = valorStr.replace(/\./g, '').replace(',', '.');
+  const num = parseFloat(limpo);
+  return isNaN(num) ? null : num;
+}
+
+export default function LeadForm({ lead, cerimonialistaId, estagios, onSalvo, onClose }) {
+  const isEditando = !!lead;
+
+  const [form, setForm] = useState({
+    nome_lead: lead?.nome_lead || '',
+    email: lead?.email || '',
+    telefone: lead?.telefone || '',
+    tipo_evento: lead?.tipo_evento || '',
+    data_prevista: lead?.data_prevista || '',
+    valor_proposta: lead?.valor_proposta ? formatarMoedaInput(lead.valor_proposta * 100) : '',
+    estagio: lead?.estagio || 'contato_inicial',
+    fonte: lead?.fonte || '',
+    notas: lead?.notas || '',
+  });
+
+  const [erros, setErros] = useState({});
+  const [salvando, setSalvando] = useState(false);
+
+  const handleChange = useCallback((campo, valor) => {
+    setForm((prev) => ({ ...prev, [campo]: valor }));
+    if (erros[campo]) {
+      setErros((prev) => {
+        const next = { ...prev };
+        delete next[campo];
+        return next;
+      });
+    }
+  }, [erros]);
+
+  const handleMoedaChange = useCallback((valor) => {
+    const apenasNumeros = valor.replace(/[^\d]/g, '');
+    const formatado = formatarMoedaInput(apenasNumeros);
+    setForm((prev) => ({ ...prev, valor_proposta: formatado }));
+  }, []);
+
+  const validar = () => {
+    const novosErros = {};
+    if (!form.nome_lead.trim()) {
+      novosErros.nome_lead = 'Nome do lead é obrigatório';
+    }
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      novosErros.email = 'E-mail inválido';
+    }
+    setErros(novosErros);
+    return Object.keys(novosErros).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validar()) return;
+
+    setSalvando(true);
+
+    const payload = {
+      nome_lead: form.nome_lead.trim(),
+      email: form.email.trim() || null,
+      telefone: form.telefone.trim() || null,
+      tipo_evento: form.tipo_evento.trim() || null,
+      data_prevista: form.data_prevista || null,
+      valor_proposta: parseMoeda(form.valor_proposta),
+      estagio: form.estagio,
+      fonte: form.fonte.trim() || null,
+      notas: form.notas.trim() || null,
+    };
+
+    try {
+      let error;
+
+      if (isEditando) {
+        const { error: updError } = await supabase
+          .from('cerimonialista_leads')
+          .update({ ...payload, atualizado_em: new Date().toISOString() })
+          .eq('id', lead.id);
+        error = updError;
+      } else {
+        const { error: insError } = await supabase
+          .from('cerimonialista_leads')
+          .insert({ ...payload, cerimonialista_id: cerimonialistaId });
+        error = insError;
+      }
+
+      if (error) throw error;
+
+      onSalvo();
+      onClose();
+    } catch (err) {
+      console.error('[LeadForm]', err);
+      setErros({ geral: 'Erro ao salvar. Tente novamente.' });
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const inputStyle = (campo) => ({
+    width: '100%',
+    padding: 'var(--space-3) var(--space-4)',
+    borderRadius: 'var(--radius-md)',
+    border: `1px solid ${erros[campo] ? 'var(--color-danger)' : 'var(--color-border)'}`,
+    backgroundColor: 'var(--color-white)',
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-sm)',
+    color: 'var(--color-text-primary)',
+    outline: 'none',
+    transition: 'border-color var(--transition-fast)',
+  });
+
+  const labelStyle = {
+    display: 'block',
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-xs)',
+    fontWeight: 'var(--font-medium)',
+    color: 'var(--color-text-secondary)',
+    marginBottom: 'var(--space-2)',
+  };
+
+  const grupoStyle = {
+    marginBottom: 'var(--space-4)',
+  };
+
+  const erroStyle = {
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-xs)',
+    color: 'var(--color-danger)',
+    marginTop: 'var(--space-1)',
+  };
+
+  return (
+    <form onSubmit={handleSubmit} noValidate>
+      {/* Nome */}
+      <div style={grupoStyle}>
+        <label htmlFor="nome_lead" style={labelStyle}>
+          Nome do lead <span style={{ color: 'var(--color-danger)' }}>*</span>
+        </label>
+        <input
+          id="nome_lead"
+          type="text"
+          value={form.nome_lead}
+          onChange={(e) => handleChange('nome_lead', e.target.value)}
+          placeholder="Ex: Maria e João"
+          style={inputStyle('nome_lead')}
+          required
+        />
+        {erros.nome_lead && <p style={erroStyle}>{erros.nome_lead}</p>}
+      </div>
+
+      {/* Email + Telefone */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', ...grupoStyle }}>
+        <div>
+          <label htmlFor="email" style={labelStyle}>E-mail</label>
+          <input
+            id="email"
+            type="email"
+            value={form.email}
+            onChange={(e) => handleChange('email', e.target.value)}
+            placeholder="email@exemplo.com"
+            style={inputStyle('email')}
+          />
+          {erros.email && <p style={erroStyle}>{erros.email}</p>}
+        </div>
+        <div>
+          <label htmlFor="telefone" style={labelStyle}>Telefone</label>
+          <input
+            id="telefone"
+            type="tel"
+            value={form.telefone}
+            onChange={(e) => handleChange('telefone', e.target.value)}
+            placeholder="(11) 99999-9999"
+            style={inputStyle('telefone')}
+          />
+        </div>
+      </div>
+
+      {/* Tipo de evento + Data */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', ...grupoStyle }}>
+        <div>
+          <label htmlFor="tipo_evento" style={labelStyle}>Tipo de evento</label>
+          <input
+            id="tipo_evento"
+            type="text"
+            value={form.tipo_evento}
+            onChange={(e) => handleChange('tipo_evento', e.target.value)}
+            placeholder="Ex: Casamento, Festa de 15 anos"
+            style={inputStyle('tipo_evento')}
+          />
+        </div>
+        <div>
+          <label htmlFor="data_prevista" style={labelStyle}>Data prevista</label>
+          <input
+            id="data_prevista"
+            type="date"
+            value={form.data_prevista}
+            onChange={(e) => handleChange('data_prevista', e.target.value)}
+            style={inputStyle('data_prevista')}
+          />
+        </div>
+      </div>
+
+      {/* Valor + Estágio */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', ...grupoStyle }}>
+        <div>
+          <label htmlFor="valor_proposta" style={labelStyle}>Valor da proposta</label>
+          <input
+            id="valor_proposta"
+            type="text"
+            inputMode="decimal"
+            value={form.valor_proposta}
+            onChange={(e) => handleMoedaChange(e.target.value)}
+            placeholder="R$ 0,00"
+            style={inputStyle('valor_proposta')}
+          />
+        </div>
+        <div>
+          <label htmlFor="estagio" style={labelStyle}>Estágio</label>
+          <select
+            id="estagio"
+            value={form.estagio}
+            onChange={(e) => handleChange('estagio', e.target.value)}
+            style={inputStyle('estagio')}
+          >
+            {estagios.map((e) => (
+              <option key={e.id} value={e.id}>{e.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Fonte */}
+      <div style={grupoStyle}>
+        <label htmlFor="fonte" style={labelStyle}>Fonte</label>
+        <input
+          id="fonte"
+          type="text"
+          value={form.fonte}
+          onChange={(e) => handleChange('fonte', e.target.value)}
+          placeholder="Ex: Instagram, Indicação, Site"
+          style={inputStyle('fonte')}
+        />
+      </div>
+
+      {/* Notas */}
+      <div style={grupoStyle}>
+        <label htmlFor="notas" style={labelStyle}>Notas</label>
+        <textarea
+          id="notas"
+          rows={3}
+          value={form.notas}
+          onChange={(e) => handleChange('notas', e.target.value)}
+          placeholder="Observações sobre o lead..."
+          style={{
+            ...inputStyle('notas'),
+            resize: 'vertical',
+            minHeight: '80px',
+          }}
+        />
+      </div>
+
+      {/* Erro geral */}
+      {erros.geral && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-2)',
+            padding: 'var(--space-3)',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'var(--color-danger-light)',
+            color: 'var(--color-danger)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-sm)',
+            marginBottom: 'var(--space-4)',
+          }}
+          role="alert"
+        >
+          <Icon name="alertCircle" size={18} />
+          {erros.geral}
+        </div>
+      )}
+
+      {/* Ações */}
+      <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+        <Button variant="secondary" type="button" onClick={onClose} disabled={salvando}>
+          Cancelar
+        </Button>
+        <Button variant="primary" type="submit" disabled={salvando}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            {salvando ? (
+              <>
+                <Icon name="refreshCw" size={16} />
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Icon name="save" size={16} />
+                {isEditando ? 'Atualizar' : 'Criar Lead'}
+              </>
+            )}
+          </span>
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/LeadModal.jsx
+ * ========================================== */\n
+import React from 'react';
+import Icon from '../ui/Icon';
+import LeadForm from './LeadForm';
+
+export default function LeadModal({ lead, cerimonialistaId, estagios, onClose, onSalvo }) {
+  const isEditando = !!lead;
+
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="lead-modal-title"
+      onClick={handleOverlayClick}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 'var(--z-modal)',
+        backgroundColor: 'var(--color-overlay)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 'var(--space-4)',
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: 'var(--color-white)',
+          borderRadius: 'var(--radius-xl)',
+          width: '100%',
+          maxWidth: '520px',
+          maxHeight: '90vh',
+          overflow: 'auto',
+          boxShadow: 'var(--shadow-xl)',
+          animation: 'modalIn 250ms ease',
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: 'var(--space-5) var(--space-5) var(--space-4)',
+            borderBottom: '1px solid var(--color-border)',
+          }}
+        >
+          <h2
+            id="lead-modal-title"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-lg)',
+              fontWeight: 'var(--font-semibold)',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            {isEditando ? 'Editar Lead' : 'Novo Lead'}
+          </h2>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-text-muted)',
+              padding: 'var(--space-2)',
+              borderRadius: 'var(--radius-sm)',
+            }}
+            aria-label="Fechar modal"
+          >
+            <Icon name="close" size={20} />
+          </button>
+        </div>
+
+        {/* Form */}
+        <div style={{ padding: 'var(--space-5)' }}>
+          <LeadForm
+            lead={lead}
+            cerimonialistaId={cerimonialistaId}
+            estagios={estagios}
+            onSalvo={onSalvo}
+            onClose={onClose}
+          />
+        </div>
+      </div>
+
+      <style jsx global>{`
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.96); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/ModeloCard.jsx
+ * ========================================== */\n
+import React from 'react';
+import Icon from '../ui/Icon';
+
+export default function ModeloCard({ modelo, tipos, onEditar, onCopiar, onExcluir }) {
+  const tipoInfo = tipos.find((t) => t.id === modelo.tipo) || tipos[tipos.length - 1];
+  const variaveis = modelo.variaveis ? Object.keys(modelo.variaveis) : [];
+
+  return (
+    <div
+      style={{
+        backgroundColor: 'var(--color-white)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--color-border)',
+        padding: 'var(--space-5)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--space-3)',
+        transition: 'box-shadow var(--transition-fast)',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+      }}
+    >
+      {/* Topo: tipo + ações */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-2)' }}>
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 'var(--space-1)',
+            padding: 'var(--space-1) var(--space-3)',
+            borderRadius: 'var(--radius-full)',
+            backgroundColor: tipoInfo.bg,
+            color: tipoInfo.color,
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-xs)',
+            fontWeight: 'var(--font-medium)',
+          }}
+        >
+          <div
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: tipoInfo.color,
+            }}
+          />
+          {tipoInfo.label}
+        </span>
+        <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
+          <button
+            onClick={() => onCopiar(modelo)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-text-muted)',
+              padding: 'var(--space-1)',
+              borderRadius: 'var(--radius-sm)',
+            }}
+            aria-label={`Duplicar modelo ${modelo.nome}`}
+            title="Duplicar"
+          >
+            <Icon name="copy" size={16} />
+          </button>
+          <button
+            onClick={() => onEditar(modelo)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-text-muted)',
+              padding: 'var(--space-1)',
+              borderRadius: 'var(--radius-sm)',
+            }}
+            aria-label={`Editar modelo ${modelo.nome}`}
+            title="Editar"
+          >
+            <Icon name="edit" size={16} />
+          </button>
+          <button
+            onClick={() => onExcluir(modelo.id)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-danger)',
+              padding: 'var(--space-1)',
+              borderRadius: 'var(--radius-sm)',
+            }}
+            aria-label={`Excluir modelo ${modelo.nome}`}
+            title="Excluir"
+          >
+            <Icon name="trash" size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* Nome */}
+      <h3
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 'var(--text-base)',
+          fontWeight: 'var(--font-semibold)',
+          color: 'var(--color-text-primary)',
+          lineHeight: 'var(--leading-snug)',
+          wordBreak: 'break-word',
+        }}
+      >
+        {modelo.nome}
+      </h3>
+
+      {/* Preview do conteúdo */}
+      {modelo.conteudo && (
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-sm)',
+            color: 'var(--color-text-secondary)',
+            lineHeight: 'var(--leading-normal)',
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            wordBreak: 'break-word',
+          }}
+        >
+          {modelo.conteudo}
+        </p>
+      )}
+
+      {/* Variáveis */}
+      {variaveis.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-1)', marginTop: 'auto' }}>
+          {variaveis.slice(0, 5).map((v) => (
+            <span
+              key={v}
+              style={{
+                padding: 'var(--space-1) var(--space-2)',
+                borderRadius: 'var(--radius-sm)',
+                backgroundColor: 'var(--color-brand-lighter)',
+                color: 'var(--color-brand)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 'var(--text-xs)',
+              }}
+            >
+              {'{{' + v + '}}'}
+            </span>
+          ))}
+          {variaveis.length > 5 && (
+            <span
+              style={{
+                padding: 'var(--space-1) var(--space-2)',
+                borderRadius: 'var(--radius-sm)',
+                backgroundColor: 'var(--color-off-white)',
+                color: 'var(--color-text-muted)',
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--text-xs)',
+              }}
+            >
+              +{variaveis.length - 5}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/ModeloForm.jsx
+ * ========================================== */\n
+import React, { useState, useCallback } from 'react';
+import { supabase } from '../../lib/supabase';
+import Icon from '../ui/Icon';
+import Button from '../ui/Button';
+
+export default function ModeloForm({ modelo, cerimonialistaId, tipos, onSalvo, onClose }) {
+  const isEditando = !!modelo;
+
+  const [form, setForm] = useState({
+    nome: modelo?.nome || '',
+    tipo: modelo?.tipo || 'outro',
+    conteudo: modelo?.conteudo || '',
+    variaveisTexto: modelo?.variaveis
+      ? Object.entries(modelo.variaveis)
+          .map(([k, v]) => `${k}=${v}`)
+          .join('\n')
+      : '',
+  });
+
+  const [erros, setErros] = useState({});
+  const [salvando, setSalvando] = useState(false);
+
+  const handleChange = useCallback((campo, valor) => {
+    setForm((prev) => ({ ...prev, [campo]: valor }));
+    if (erros[campo]) {
+      setErros((prev) => {
+        const next = { ...prev };
+        delete next[campo];
+        return next;
+      });
+    }
+  }, [erros]);
+
+  const parseVariaveis = (texto) => {
+    if (!texto.trim()) return null;
+    const vars = {};
+    texto.split('\n').forEach((linha) => {
+      const [chave, ...resto] = linha.split('=');
+      if (chave?.trim()) {
+        vars[chave.trim()] = resto.join('=').trim() || '';
+      }
+    });
+    return Object.keys(vars).length > 0 ? vars : null;
+  };
+
+  const validar = () => {
+    const novosErros = {};
+    if (!form.nome.trim()) {
+      novosErros.nome = 'Nome do modelo é obrigatório';
+    }
+    setErros(novosErros);
+    return Object.keys(novosErros).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validar()) return;
+
+    setSalvando(true);
+
+    const payload = {
+      nome: form.nome.trim(),
+      tipo: form.tipo || null,
+      conteudo: form.conteudo.trim() || null,
+      variaveis: parseVariaveis(form.variaveisTexto),
+    };
+
+    try {
+      let error;
+
+      if (isEditando) {
+        const { error: updError } = await supabase
+          .from('cerimonialista_modelos')
+          .update(payload)
+          .eq('id', modelo.id);
+        error = updError;
+      } else {
+        const { error: insError } = await supabase
+          .from('cerimonialista_modelos')
+          .insert({ ...payload, cerimonialista_id: cerimonialistaId });
+        error = insError;
+      }
+
+      if (error) throw error;
+
+      onSalvo();
+      onClose();
+    } catch (err) {
+      console.error('[ModeloForm]', err);
+      setErros({ geral: 'Erro ao salvar. Tente novamente.' });
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const inputStyle = (campo) => ({
+    width: '100%',
+    padding: 'var(--space-3) var(--space-4)',
+    borderRadius: 'var(--radius-md)',
+    border: `1px solid ${erros[campo] ? 'var(--color-danger)' : 'var(--color-border)'}`,
+    backgroundColor: 'var(--color-white)',
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-sm)',
+    color: 'var(--color-text-primary)',
+    outline: 'none',
+    transition: 'border-color var(--transition-fast)',
+  });
+
+  const labelStyle = {
+    display: 'block',
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-xs)',
+    fontWeight: 'var(--font-medium)',
+    color: 'var(--color-text-secondary)',
+    marginBottom: 'var(--space-2)',
+  };
+
+  const grupoStyle = {
+    marginBottom: 'var(--space-4)',
+  };
+
+  const erroStyle = {
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-xs)',
+    color: 'var(--color-danger)',
+    marginTop: 'var(--space-1)',
+  };
+
+  return (
+    <form onSubmit={handleSubmit} noValidate>
+      {/* Nome */}
+      <div style={grupoStyle}>
+        <label htmlFor="nome" style={labelStyle}>
+          Nome do modelo <span style={{ color: 'var(--color-danger)' }}>*</span>
+        </label>
+        <input
+          id="nome"
+          type="text"
+          value={form.nome}
+          onChange={(e) => handleChange('nome', e.target.value)}
+          placeholder="Ex: Contrato de Prestação de Serviços"
+          style={inputStyle('nome')}
+          required
+        />
+        {erros.nome && <p style={erroStyle}>{erros.nome}</p>}
+      </div>
+
+      {/* Tipo */}
+      <div style={grupoStyle}>
+        <label htmlFor="tipo" style={labelStyle}>Tipo</label>
+        <select
+          id="tipo"
+          value={form.tipo}
+          onChange={(e) => handleChange('tipo', e.target.value)}
+          style={inputStyle('tipo')}
+        >
+          {tipos.map((t) => (
+            <option key={t.id} value={t.id}>{t.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Conteúdo */}
+      <div style={grupoStyle}>
+        <label htmlFor="conteudo" style={labelStyle}>Conteúdo</label>
+        <textarea
+          id="conteudo"
+          rows={8}
+          value={form.conteudo}
+          onChange={(e) => handleChange('conteudo', e.target.value)}
+          placeholder="Digite o conteúdo do modelo... Use {{variavel}} para campos dinâmicos."
+          style={{
+            ...inputStyle('conteudo'),
+            resize: 'vertical',
+            minHeight: '120px',
+            fontFamily: 'var(--font-body)',
+            lineHeight: 'var(--leading-normal)',
+          }}
+        />
+      </div>
+
+      {/* Variáveis */}
+      <div style={grupoStyle}>
+        <label htmlFor="variaveis" style={labelStyle}>
+          Variáveis
+          <span style={{ fontWeight: 'var(--font-normal)', color: 'var(--color-text-muted)', marginLeft: 'var(--space-2)' }}>
+            (uma por linha: nome=valor)
+          </span>
+        </label>
+        <textarea
+          id="variaveis"
+          rows={4}
+          value={form.variaveisTexto}
+          onChange={(e) => handleChange('variaveisTexto', e.target.value)}
+          placeholder={'nome_casal=João e Maria\ndata_evento=25/12/2026\nlocal=Fazenda Solaris'}
+          style={{
+            ...inputStyle('variaveis'),
+            resize: 'vertical',
+            minHeight: '80px',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 'var(--text-xs)',
+          }}
+        />
+      </div>
+
+      {/* Preview de variáveis no conteúdo */}
+      {form.conteudo && form.variaveisTexto && (
+        <div
+          style={{
+            padding: 'var(--space-4)',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'var(--color-off-white)',
+            border: '1px solid var(--color-border)',
+            marginBottom: 'var(--space-4)',
+          }}
+        >
+          <p style={{ ...labelStyle, marginBottom: 'var(--space-2)' }}>Preview</p>
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-sm)',
+              color: 'var(--color-text-secondary)',
+              lineHeight: 'var(--leading-normal)',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+            }}
+          >
+            {(() => {
+              const vars = parseVariaveis(form.variaveisTexto) || {};
+              let preview = form.conteudo;
+              Object.entries(vars).forEach(([k, v]) => {
+                preview = preview.replace(new RegExp(`{{\\s*${k}\\s*}}`, 'g'), v || `{{${k}}}`);
+              });
+              return preview;
+            })()}
+          </p>
+        </div>
+      )}
+
+      {/* Erro geral */}
+      {erros.geral && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-2)',
+            padding: 'var(--space-3)',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'var(--color-danger-light)',
+            color: 'var(--color-danger)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-sm)',
+            marginBottom: 'var(--space-4)',
+          }}
+          role="alert"
+        >
+          <Icon name="alertCircle" size={18} />
+          {erros.geral}
+        </div>
+      )}
+
+      {/* Ações */}
+      <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+        <Button variant="secondary" type="button" onClick={onClose} disabled={salvando}>
+          Cancelar
+        </Button>
+        <Button variant="primary" type="submit" disabled={salvando}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            {salvando ? (
+              <>
+                <Icon name="refreshCw" size={16} />
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Icon name="save" size={16} />
+                {isEditando ? 'Atualizar' : 'Criar Modelo'}
+              </>
+            )}
+          </span>
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/ModeloModal.jsx
+ * ========================================== */\n
+import React from 'react';
+import Icon from '../ui/Icon';
+import ModeloForm from './ModeloForm';
+
+export default function ModeloModal({ modelo, cerimonialistaId, tipos, onClose, onSalvo }) {
+  const isEditando = !!modelo;
+
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modelo-modal-title"
+      onClick={handleOverlayClick}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 'var(--z-modal)',
+        backgroundColor: 'var(--color-overlay)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 'var(--space-4)',
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: 'var(--color-white)',
+          borderRadius: 'var(--radius-xl)',
+          width: '100%',
+          maxWidth: '600px',
+          maxHeight: '90vh',
+          overflow: 'auto',
+          boxShadow: 'var(--shadow-xl)',
+          animation: 'modalIn 250ms ease',
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: 'var(--space-5) var(--space-5) var(--space-4)',
+            borderBottom: '1px solid var(--color-border)',
+          }}
+        >
+          <h2
+            id="modelo-modal-title"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-lg)',
+              fontWeight: 'var(--font-semibold)',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            {isEditando ? 'Editar Modelo' : 'Novo Modelo'}
+          </h2>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-text-muted)',
+              padding: 'var(--space-2)',
+              borderRadius: 'var(--radius-sm)',
+            }}
+            aria-label="Fechar modal"
+          >
+            <Icon name="close" size={20} />
+          </button>
+        </div>
+
+        {/* Form */}
+        <div style={{ padding: 'var(--space-5)' }}>
+          <ModeloForm
+            modelo={modelo}
+            cerimonialistaId={cerimonialistaId}
+            tipos={tipos}
+            onSalvo={onSalvo}
+            onClose={onClose}
+          />
+        </div>
+      </div>
+
+      <style jsx global>{`
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.96); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/PermissoesPainel.jsx
+ * ========================================== */\n
+import React, { useEffect, useState } from 'react';
+import Icon from '../ui/Icon';
+import Button from '../ui/Button';
+import { supabase } from '../../lib/supabase';
+
+const MODULOS = [
+  { key: 'fornecedores', label: 'Fornecedores', icone: 'store' },
+  { key: 'financeiro', label: 'Financeiro', icone: 'dollar' },
+  { key: 'tarefas', label: 'Tarefas', icone: 'checklist' },
+  { key: 'convidados', label: 'Convidados', icone: 'users' },
+  { key: 'chat', label: 'Chat', icone: 'chat' },
+  { key: 'cronograma', label: 'Cronograma', icone: 'cronograma' },
+  { key: 'contratos', label: 'Contratos', icone: 'contratos' },
+  { key: 'mesas', label: 'Mesas', icone: 'mesas' },
+];
+
+export default function PermissoesPainel({ eventoId, cerimonialistaId }) {
+  const [permissoes, setPermissoes] = useState(null);
+  const [carregando, setCarregando] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+  const [salvo, setSalvo] = useState(false);
+
+  useEffect(() => {
+    if (!eventoId) return;
+    buscarPermissoes();
+  }, [eventoId]);
+
+  const buscarPermissoes = async () => {
+    setCarregando(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) return;
+
+      const res = await fetch(`/api/cerimonialista/permissao?evento_id=${eventoId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        // Evento sem cerimonialista vinculado ou sem permissão
+        setPermissoes(null);
+        setCarregando(false);
+        return;
+      }
+
+      const json = await res.json();
+      setPermissoes(json.permissoes);
+    } catch (err) {
+      console.error('Erro ao buscar permissões:', err);
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  const toggleVer = (key) => {
+    setPermissoes((prev) => {
+      if (!prev) return prev;
+      const novo = { ...prev };
+      novo[`ver_${key}`] = !novo[`ver_${key}`];
+      // Se desmarca "ver", desmarca "editar" também
+      if (!novo[`ver_${key}`]) {
+        novo[`editar_${key}`] = false;
+      }
+      return novo;
+    });
+    setSalvo(false);
+  };
+
+  const toggleEditar = (key) => {
+    setPermissoes((prev) => {
+      if (!prev) return prev;
+      const novo = { ...prev };
+      novo[`editar_${key}`] = !novo[`editar_${key}`];
+      // Se marca "editar", marca "ver" também
+      if (novo[`editar_${key}`]) {
+        novo[`ver_${key}`] = true;
+      }
+      return novo;
+    });
+    setSalvo(false);
+  };
+
+  const salvar = async () => {
+    if (!permissoes || !eventoId || !cerimonialistaId) return;
+    setSalvando(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) return;
+
+      const payload = {
+        evento_id: eventoId,
+        cerimonialista_id: cerimonialistaId,
+        ver_fornecedores: permissoes.ver_fornecedores,
+        editar_fornecedores: permissoes.editar_fornecedores,
+        ver_financeiro: permissoes.ver_financeiro,
+        editar_financeiro: permissoes.editar_financeiro,
+        ver_tarefas: permissoes.ver_tarefas,
+        editar_tarefas: permissoes.editar_tarefas,
+        ver_convidados: permissoes.ver_convidados,
+        editar_convidados: permissoes.editar_convidados,
+        ver_chat: permissoes.ver_chat,
+        editar_chat: permissoes.editar_chat,
+        ver_cronograma: permissoes.ver_cronograma,
+        editar_cronograma: permissoes.editar_cronograma,
+        ver_contratos: permissoes.ver_contratos,
+        editar_contratos: permissoes.editar_contratos,
+        ver_mesas: permissoes.ver_mesas,
+        editar_mesas: permissoes.editar_mesas,
+        ver_memorial: true,
+      };
+
+      const res = await fetch('/api/cerimonialista/permissao', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        setSalvo(true);
+        setTimeout(() => setSalvo(false), 3000);
+      }
+    } catch (err) {
+      console.error('Erro ao salvar permissões:', err);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  if (carregando) {
+    return (
+      <div style={styles.loading}>
+        <p style={styles.loadingText}>Carregando permissões...</p>
+      </div>
+    );
+  }
+
+  if (!permissoes) {
+    return (
+      <div style={styles.semCerimonialista}>
+        <Icon name="info" size={24} color="var(--color-text-muted)" />
+        <p style={styles.semCerimonialistaText}>
+          Nenhum cerimonialista vinculado a este evento.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h3 style={styles.titulo}>Acesso do cerimonialista</h3>
+        <p style={styles.subtitulo}>
+          Defina o que seu cerimonialista pode ver e editar no seu evento.
+        </p>
+      </div>
+
+      <div style={styles.legenda}>
+        <span style={styles.legendaItem}>
+          <span style={styles.legendaIconeVer}><Icon name="eye" size={12} /></span>
+          Visualizar
+        </span>
+        <span style={styles.legendaItem}>
+          <span style={styles.legendaIconeEditar}><Icon name="edit" size={12} /></span>
+          Editar
+        </span>
+      </div>
+
+      <div style={styles.lista}>
+        {MODULOS.map((mod) => {
+          const verKey = `ver_${mod.key}`;
+          const editarKey = `editar_${mod.key}`;
+          const podeVer = permissoes[verKey];
+          const podeEditar = permissoes[editarKey];
+
+          return (
+            <div key={mod.key} style={styles.item}>
+              <div style={styles.itemInfo}>
+                <Icon name={mod.icone} size={18} color="var(--color-text-muted)" />
+                <span style={styles.itemLabel}>{mod.label}</span>
+              </div>
+              <div style={styles.itemAcoes}>
+                <button
+                  onClick={() => toggleVer(mod.key)}
+                  style={styles.btnToggle(podeVer, 'ver')}
+                  aria-label={podeVer ? `Remover visualização de ${mod.label}` : `Permitir visualização de ${mod.label}`}
+                  aria-pressed={podeVer}
+                >
+                  <Icon name="eye" size={14} />
+                  {podeVer ? 'Sim' : 'Não'}
+                </button>
+                <button
+                  onClick={() => toggleEditar(mod.key)}
+                  style={styles.btnToggle(podeEditar, 'editar')}
+                  aria-label={podeEditar ? `Remover edição de ${mod.label}` : `Permitir edição de ${mod.label}`}
+                  aria-pressed={podeEditar}
+                  disabled={!podeVer}
+                >
+                  <Icon name="edit" size={14} />
+                  {podeEditar ? 'Sim' : 'Não'}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Memorial — sempre visível, não editável */}
+        <div key="memorial" style={styles.item}>
+          <div style={styles.itemInfo}>
+            <Icon name="memorial" size={18} color="var(--color-text-muted)" />
+            <span style={styles.itemLabel}>Memorial</span>
+          </div>
+          <div style={styles.itemAcoes}>
+            <span style={styles.badgeFixo}>
+              <Icon name="eye" size={14} />
+              Sempre visível
+            </span>
+            <span style={styles.badgeFixoDesabilitado}>
+              <Icon name="edit" size={14} />
+              Somente leitura
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div style={styles.footer}>
+        <Button
+          variant="primary"
+          onClick={salvar}
+          disabled={salvando}
+          style={{ opacity: salvando ? 0.6 : 1 }}
+        >
+          {salvando ? 'Salvando...' : salvo ? 'Salvo!' : 'Salvar permissões'}
+        </Button>
+        {salvo && (
+          <span style={styles.salvoMsg}>
+            <Icon name="checkCircle" size={14} color="var(--color-success)" />
+            Permissões atualizadas
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const styles = {
+  container: {
+    backgroundColor: 'var(--color-surface)',
+    borderRadius: 'var(--radius-lg)',
+    border: '1px solid var(--color-border)',
+    overflow: 'hidden',
+  },
+  header: {
+    padding: 'var(--space-5)',
+    borderBottom: '1px solid var(--color-border)',
+  },
+  titulo: {
+    fontFamily: 'var(--font-display)',
+    fontSize: 'var(--text-lg)',
+    color: 'var(--color-brand)',
+    margin: 0,
+    fontWeight: 'var(--font-normal)',
+  },
+  subtitulo: {
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-sm)',
+    color: 'var(--color-text-muted)',
+    margin: 'var(--space-1) 0 0',
+  },
+
+  legenda: {
+    display: 'flex',
+    gap: 'var(--space-4)',
+    padding: 'var(--space-3) var(--space-5)',
+    backgroundColor: 'var(--color-off-white)',
+    borderBottom: '1px solid var(--color-border-light)',
+  },
+  legendaItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-xs)',
+    color: 'var(--color-text-muted)',
+  },
+  legendaIconeVer: {
+    color: 'var(--color-brand)',
+  },
+  legendaIconeEditar: {
+    color: 'var(--color-success)',
+  },
+
+  lista: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  item: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 'var(--space-4) var(--space-5)',
+    borderBottom: '1px solid var(--color-border-light)',
+    gap: 'var(--space-4)',
+  },
+  itemInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 'var(--space-3)',
+    flex: 1,
+    minWidth: 0,
+  },
+  itemLabel: {
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-sm)',
+    color: 'var(--color-text-primary)',
+    fontWeight: 'var(--font-medium)',
+  },
+  itemAcoes: {
+    display: 'flex',
+    gap: 'var(--space-2)',
+  },
+  btnToggle: (ativo, tipo) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '6px 12px',
+    borderRadius: 'var(--radius-sm)',
+    border: `1.5px solid ${ativo ? (tipo === 'ver' ? 'var(--color-brand)' : 'var(--color-success)') : 'var(--color-border)'}`,
+    backgroundColor: ativo ? (tipo === 'ver' ? 'var(--color-brand-light)' : 'var(--color-success-light)') : 'var(--color-surface)',
+    color: ativo ? (tipo === 'ver' ? 'var(--color-brand)' : 'var(--color-success)') : 'var(--color-text-muted)',
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-xs)',
+    fontWeight: 'var(--font-medium)',
+    cursor: 'pointer',
+    transition: 'all 150ms ease',
+  }),
+  badgeFixo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '6px 12px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1.5px solid var(--color-brand)',
+    backgroundColor: 'var(--color-brand-light)',
+    color: 'var(--color-brand)',
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-xs)',
+    fontWeight: 'var(--font-medium)',
+  },
+  badgeFixoDesabilitado: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '6px 12px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1.5px solid var(--color-border)',
+    backgroundColor: 'var(--color-surface)',
+    color: 'var(--color-text-muted)',
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-xs)',
+    fontWeight: 'var(--font-medium)',
+  },
+
+  footer: {
+    padding: 'var(--space-4) var(--space-5)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 'var(--space-3)',
+  },
+  salvoMsg: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-sm)',
+    color: 'var(--color-success)',
+    fontWeight: 'var(--font-medium)',
+  },
+
+  loading: {
+    padding: 'var(--space-8)',
+    textAlign: 'center',
+  },
+  loadingText: {
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-sm)',
+    color: 'var(--color-text-muted)',
+  },
+  semCerimonialista: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 'var(--space-3)',
+    padding: 'var(--space-5)',
+    backgroundColor: 'var(--color-surface)',
+    borderRadius: 'var(--radius-lg)',
+    border: '1px solid var(--color-border)',
+  },
+  semCerimonialistaText: {
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-sm)',
+    color: 'var(--color-text-muted)',
+    margin: 0,
+  },
+};
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/RoteiroForm.jsx
+ * ========================================== */\n
+import React, { useState, useEffect } from 'react';
+import Icon from '../ui/Icon';
+import Button from '../ui/Button';
+
+export default function RoteiroForm({ item, onSave, onCancel, eventoId }) {
+  const [horario, setHorario] = useState('');
+  const [titulo, setTitulo] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [responsavel, setResponsavel] = useState('');
+  const [status, setStatus] = useState('pendente');
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
+
+  useEffect(() => {
+    if (item) {
+      setHorario(item.horario || '');
+      setTitulo(item.titulo || '');
+      setDescricao(item.descricao || '');
+      setResponsavel(item.responsavel || '');
+      setStatus(item.status || 'pendente');
+    } else {
+      setHorario('');
+      setTitulo('');
+      setDescricao('');
+      setResponsavel('');
+      setStatus('pendente');
+    }
+    setErro('');
+  }, [item]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErro('');
+
+    if (!horario.trim() || !titulo.trim()) {
+      setErro('Horário e título são obrigatórios.');
+      return;
+    }
+
+    setSalvando(true);
+    try {
+      await onSave({
+        id: item?.id,
+        evento_id: eventoId,
+        horario: horario.trim(),
+        titulo: titulo.trim(),
+        descricao: descricao.trim() || null,
+        responsavel: responsavel.trim() || null,
+        status,
+      });
+    } catch (err) {
+      setErro(err.message || 'Erro ao salvar.');
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'var(--color-overlay)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 'var(--space-4)',
+        zIndex: 'var(--z-modal)',
+      }}
+      onClick={onCancel}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="roteiro-form-titulo"
+    >
+      <div
+        style={{
+          backgroundColor: 'var(--color-white)',
+          borderRadius: 'var(--radius-xl)',
+          width: '100%',
+          maxWidth: '520px',
+          maxHeight: '90dvh',
+          overflow: 'auto',
+          boxShadow: 'var(--shadow-xl)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          style={{
+            padding: 'var(--space-5) var(--space-5) var(--space-3)',
+            borderBottom: '1px solid var(--color-border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <h2
+            id="roteiro-form-titulo"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-xl)',
+              fontWeight: 'var(--font-semibold)',
+              color: 'var(--color-text-primary)',
+              margin: 0,
+            }}
+          >
+            {item ? 'Editar item' : 'Novo item do roteiro'}
+          </h2>
+          <button
+            onClick={onCancel}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-text-muted)',
+              padding: 'var(--space-1)',
+            }}
+            aria-label="Fechar modal"
+          >
+            <Icon name="close" size={22} />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ padding: 'var(--space-4) var(--space-5) var(--space-5)' }}>
+          <div style={{ display: 'grid', gap: 'var(--space-4)' }}>
+            {/* Horário */}
+            <div>
+              <label
+                htmlFor="horario"
+                style={{
+                  display: 'block',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--font-medium)',
+                  color: 'var(--color-text-secondary)',
+                  marginBottom: 'var(--space-2)',
+                }}
+              >
+                Horário <span aria-label="obrigatório">*</span>
+              </label>
+              <input
+                id="horario"
+                type="time"
+                value={horario}
+                onChange={(e) => setHorario(e.target.value)}
+                required
+                style={{
+                  width: '100%',
+                  padding: 'var(--space-3) var(--space-4)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 'var(--text-base)',
+                  color: 'var(--color-text-primary)',
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            {/* Título */}
+            <div>
+              <label
+                htmlFor="titulo"
+                style={{
+                  display: 'block',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--font-medium)',
+                  color: 'var(--color-text-secondary)',
+                  marginBottom: 'var(--space-2)',
+                }}
+              >
+                Título <span aria-label="obrigatório">*</span>
+              </label>
+              <input
+                id="titulo"
+                type="text"
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
+                placeholder="Ex: Início da cerimônia"
+                required
+                maxLength={120}
+                style={{
+                  width: '100%',
+                  padding: 'var(--space-3) var(--space-4)',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 'var(--text-base)',
+                  color: 'var(--color-text-primary)',
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            {/* Descrição */}
+            <div>
+              <label
+                htmlFor="descricao"
+                style={{
+                  display: 'block',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--font-medium)',
+                  color: 'var(--color-text-secondary)',
+                  marginBottom: 'var(--space-2)',
+                }}
+              >
+                Descrição
+              </label>
+              <textarea
+                id="descricao"
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                placeholder="Detalhes e observações..."
+                rows={3}
+                maxLength={500}
+                style={{
+                  width: '100%',
+                  padding: 'var(--space-3) var(--space-4)',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 'var(--text-base)',
+                  color: 'var(--color-text-primary)',
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  outline: 'none',
+                  resize: 'vertical',
+                }}
+              />
+            </div>
+
+            {/* Responsável */}
+            <div>
+              <label
+                htmlFor="responsavel"
+                style={{
+                  display: 'block',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--font-medium)',
+                  color: 'var(--color-text-secondary)',
+                  marginBottom: 'var(--space-2)',
+                }}
+              >
+                Responsável
+              </label>
+              <input
+                id="responsavel"
+                type="text"
+                value={responsavel}
+                onChange={(e) => setResponsavel(e.target.value)}
+                placeholder="Ex: Cerimonialista / Fotógrafo"
+                maxLength={100}
+                style={{
+                  width: '100%',
+                  padding: 'var(--space-3) var(--space-4)',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 'var(--text-base)',
+                  color: 'var(--color-text-primary)',
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            {/* Status */}
+            <div>
+              <label
+                htmlFor="status"
+                style={{
+                  display: 'block',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--font-medium)',
+                  color: 'var(--color-text-secondary)',
+                  marginBottom: 'var(--space-2)',
+                }}
+              >
+                Status
+              </label>
+              <select
+                id="status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: 'var(--space-3) var(--space-4)',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 'var(--text-base)',
+                  color: 'var(--color-text-primary)',
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  outline: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="pendente">Pendente</option>
+                <option value="em_andamento">Em andamento</option>
+                <option value="concluido">Concluído</option>
+                <option value="atrasado">Atrasado</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Erro */}
+          {erro && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+                marginTop: 'var(--space-4)',
+                padding: 'var(--space-3)',
+                backgroundColor: 'var(--color-danger-light)',
+                borderRadius: 'var(--radius-md)',
+                color: 'var(--color-danger)',
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--text-sm)',
+              }}
+              role="alert"
+            >
+              <Icon name="alertCircle" size={16} />
+              {erro}
+            </div>
+          )}
+
+          {/* Ações */}
+          <div
+            style={{
+              display: 'flex',
+              gap: 'var(--space-3)',
+              marginTop: 'var(--space-6)',
+            }}
+          >
+            <Button variant="secondary" onClick={onCancel} type="button" fullWidth>
+              Cancelar
+            </Button>
+            <Button variant="primary" type="submit" fullWidth disabled={salvando}>
+              {salvando ? 'Salvando...' : item ? 'Salvar alterações' : 'Adicionar'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/RoteiroItem.jsx
+ * ========================================== */\n
+import React, { useState } from 'react';
+import Icon from '../ui/Icon';
+
+export default function RoteiroItem({ item, index, total, onEdit, onDelete, onStatusChange, onMoveUp, onMoveDown, readOnly }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const statusLabels = {
+    pendente: 'Pendente',
+    em_andamento: 'Em andamento',
+    concluido: 'Concluído',
+    atrasado: 'Atrasado',
+  };
+
+  const statusStyles = {
+    pendente: {
+      background: 'var(--color-surface)',
+      color: 'var(--color-text-muted)',
+      border: '1px solid var(--color-border)',
+    },
+    em_andamento: {
+      background: 'var(--color-brand-lighter)',
+      color: 'var(--color-brand)',
+      border: '1px solid var(--color-brand-light)',
+    },
+    concluido: {
+      background: 'var(--color-success-light)',
+      color: 'var(--color-success)',
+      border: '1px solid var(--color-success)',
+    },
+    atrasado: {
+      background: 'var(--color-danger-light)',
+      color: 'var(--color-danger)',
+      border: '1px solid var(--color-danger)',
+    },
+  };
+
+  return (
+    <div
+      style={{
+        backgroundColor: 'var(--color-white)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--color-border)',
+        padding: 'var(--space-4)',
+        transition: 'box-shadow var(--transition-fast)',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = 'none';
+      }}
+    >
+      {/* Header: horário + título + status */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+        {/* Horário */}
+        <div
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 'var(--text-sm)',
+            fontWeight: 'var(--font-bold)',
+            color: 'var(--color-brand)',
+            backgroundColor: 'var(--color-brand-lighter)',
+            padding: 'var(--space-1) var(--space-3)',
+            borderRadius: 'var(--radius-md)',
+            whiteSpace: 'nowrap',
+            minWidth: '52px',
+            textAlign: 'center',
+          }}
+        >
+          {item.horario?.slice(0, 5)}
+        </div>
+
+        {/* Título e descrição */}
+        <div style={{ flex: 1, minWidth: '140px' }}>
+          <h3
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-base)',
+              fontWeight: 'var(--font-semibold)',
+              color: 'var(--color-text-primary)',
+              margin: 0,
+            }}
+          >
+            {item.titulo}
+          </h3>
+          {item.descricao && (
+            <p
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--text-sm)',
+                color: 'var(--color-text-secondary)',
+                marginTop: 'var(--space-1)',
+                lineHeight: 'var(--leading-snug)',
+                display: expanded ? 'block' : '-webkit-box',
+                WebkitLineClamp: expanded ? 'unset' : 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {item.descricao}
+            </p>
+          )}
+        </div>
+
+        {/* Status badge */}
+        <button
+          onClick={() => !readOnly && onStatusChange && onStatusChange(item.id, nextStatus(item.status))}
+          disabled={readOnly}
+          style={{
+            ...statusStyles[item.status],
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-xs)',
+            fontWeight: 'var(--font-medium)',
+            padding: 'var(--space-1) var(--space-3)',
+            borderRadius: 'var(--radius-full)',
+            cursor: readOnly ? 'default' : 'pointer',
+            whiteSpace: 'nowrap',
+            transition: 'all var(--transition-fast)',
+          }}
+          aria-label={`Status: ${statusLabels[item.status]}. Clique para alterar.`}
+        >
+          {statusLabels[item.status]}
+        </button>
+      </div>
+
+      {/* Responsável + Ações */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginTop: 'var(--space-3)',
+          flexWrap: 'wrap',
+          gap: 'var(--space-2)',
+        }}
+      >
+        {item.responsavel && (
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 'var(--space-1)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-xs)',
+              color: 'var(--color-text-muted)',
+            }}
+          >
+            <Icon name="user" size={12} />
+            {item.responsavel}
+          </div>
+        )}
+
+        {!readOnly && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginLeft: 'auto' }}>
+            {/* Expandir */}
+            {item.descricao && item.descricao.length > 80 && (
+              <button
+                onClick={() => setExpanded(!expanded)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--color-text-muted)',
+                  padding: 'var(--space-1)',
+                }}
+                aria-label={expanded ? 'Recolher detalhes' : 'Expandir detalhes'}
+              >
+                <Icon name={expanded ? 'chevronUp' : 'chevronDown'} size={16} />
+              </button>
+            )}
+
+            {/* Mover para cima */}
+            <button
+              onClick={() => onMoveUp && onMoveUp(index)}
+              disabled={index === 0}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: index === 0 ? 'not-allowed' : 'pointer',
+                color: index === 0 ? 'var(--color-border)' : 'var(--color-text-muted)',
+                padding: 'var(--space-1)',
+              }}
+              aria-label="Mover para cima"
+            >
+              <Icon name="chevronUp" size={16} />
+            </button>
+
+            {/* Mover para baixo */}
+            <button
+              onClick={() => onMoveDown && onMoveDown(index)}
+              disabled={index === total - 1}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: index === total - 1 ? 'not-allowed' : 'pointer',
+                color: index === total - 1 ? 'var(--color-border)' : 'var(--color-text-muted)',
+                padding: 'var(--space-1)',
+              }}
+              aria-label="Mover para baixo"
+            >
+              <Icon name="chevronDown" size={16} />
+            </button>
+
+            {/* Editar */}
+            <button
+              onClick={() => onEdit && onEdit(item)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--color-text-muted)',
+                padding: 'var(--space-1)',
+              }}
+              aria-label="Editar item"
+            >
+              <Icon name="edit" size={16} />
+            </button>
+
+            {/* Deletar */}
+            <button
+              onClick={() => onDelete && onDelete(item.id)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--color-danger)',
+                padding: 'var(--space-1)',
+              }}
+              aria-label="Excluir item"
+            >
+              <Icon name="trash" size={16} />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function nextStatus(current) {
+  const cycle = ['pendente', 'em_andamento', 'concluido', 'atrasado'];
+  const idx = cycle.indexOf(current);
+  return cycle[(idx + 1) % cycle.length];
+}
+
+
+/* ==========================================
+ * ARQUIVO: components/cerimonialista/RoteiroTimeline.jsx
+ * ========================================== */\n
+import React from 'react';
+import Icon from '../ui/Icon';
+import RoteiroItem from './RoteiroItem';
+
+export default function RoteiroTimeline({ itens, onEdit, onDelete, onStatusChange, onMoveUp, onMoveDown, readOnly = false }) {
+  if (!itens || itens.length === 0) {
+    return (
+      <div
+        style={{
+          textAlign: 'center',
+          padding: 'var(--space-12) var(--space-5)',
+          backgroundColor: 'var(--color-surface)',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px dashed var(--color-border-strong)',
+        }}
+      >
+        <Icon name="timeline" size={40} color="var(--color-text-muted)" />
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-base)',
+            color: 'var(--color-text-secondary)',
+            marginTop: 'var(--space-4)',
+          }}
+        >
+          Nenhum item no roteiro ainda.
+        </p>
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-sm)',
+            color: 'var(--color-text-muted)',
+            marginTop: 'var(--space-2)',
+          }}
+        >
+          Gere automaticamente a partir do memorial ou adicione manualmente.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ position: 'relative', paddingLeft: 'var(--space-6)' }}>
+      {/* Linha vertical da timeline */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '18px',
+          top: '0',
+          bottom: '0',
+          width: '2px',
+          backgroundColor: 'var(--color-border-strong)',
+          borderRadius: 'var(--radius-full)',
+        }}
+        aria-hidden="true"
+      />
+
+      {itens.map((item, index) => (
+        <div key={item.id} style={{ position: 'relative', marginBottom: 'var(--space-4)' }}>
+          {/* Bolinha da timeline */}
+          <div
+            style={{
+              position: 'absolute',
+              left: '-26px',
+              top: '20px',
+              width: '12px',
+              height: '12px',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: statusColor(item.status),
+              border: `2px solid var(--color-white)`,
+              boxShadow: '0 0 0 2px var(--color-border-strong)',
+              zIndex: 2,
+            }}
+            aria-hidden="true"
+          />
+
+          <RoteiroItem
+            item={item}
+            index={index}
+            total={itens.length}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onStatusChange={onStatusChange}
+            onMoveUp={onMoveUp}
+            onMoveDown={onMoveDown}
+            readOnly={readOnly}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function statusColor(status) {
+  switch (status) {
+    case 'concluido':
+      return 'var(--color-success)';
+    case 'em_andamento':
+      return 'var(--color-brand)';
+    case 'atrasado':
+      return 'var(--color-danger)';
+    default:
+      return 'var(--color-text-muted)';
+  }
+}

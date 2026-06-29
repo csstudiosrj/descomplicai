@@ -55,22 +55,22 @@ export default function Step04Estilo({ onSelect, estadoAtual }) {
 
       <div className="estilo-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: 'var(--space-4)' }}>
         {ESTILOS.map((opcao) => {
-          const isSelected = selecionado === opcao.valor;
-          const paleta = sugerirPaleta(opcao.valor);
+          const isSelected = selecionado === o.valor;
+          const paleta = sugerirPaleta(o.valor);
           return (
             <Card
-              key={opcao.valor}
+              key={o.valor}
               interactive
               selected={isSelected}
               padding="md"
-              onClick={() => setSelecionado(opcao.valor)}
+              onClick={() => setSelecionado(o.valor)}
               role="radio"
               aria-checked={isSelected}
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  setSelecionado(opcao.valor);
+                  setSelecionado(o.valor);
                 }
               }}
             >
@@ -82,10 +82,10 @@ export default function Step04Estilo({ onSelect, estadoAtual }) {
                 </div>
                 <div>
                   <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-primary)' }}>
-                    {opcao.label}
+                    {o.label}
                   </div>
                   <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', fontStyle: 'italic', color: 'var(--color-text-muted)' }}>
-                    {opcao.desc}
+                    {o.desc}
                   </div>
                 </div>
               </div>

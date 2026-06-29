@@ -1,0 +1,1510 @@
+
+
+/* ==========================================
+ * ARQUIVO: components/memorial/BackButton.jsx
+ * ========================================== */\n
+// Botão de voltar sempre visível no fluxo do memorial
+// Dependências diretas: React, PropTypes, Icon.jsx
+
+import React from 'react';
+import PropTypes from 'prop-types';
+import Icon from '../ui/Icon';
+
+export default function BackButton({ onClick, disabled = false }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      aria-label="Voltar para a etapa anterior"
+      style={{
+        position: 'fixed',
+        bottom: 'var(--space-6)',
+        left: 'var(--space-6)',
+        zIndex: 'var(--z-sticky)',
+        width: '48px',
+        height: '48px',
+        borderRadius: 'var(--radius-full)',
+        border: disabled ? '1.5px solid var(--color-border)' : '1.5px solid var(--color-border-strong)',
+        backgroundColor: disabled ? 'var(--color-surface)' : 'var(--color-white)',
+        color: 'var(--color-text-primary)',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: disabled ? 0.5 : 1,
+        boxShadow: 'var(--shadow-md)',
+        transition: 'background-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast)',
+      }}
+      onMouseEnter={(e) => {
+        if (!disabled) {
+          e.currentTarget.style.backgroundColor = 'var(--color-brand-lighter)';
+          e.currentTarget.style.transform = 'scale(1.08)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = disabled ? 'var(--color-surface)' : 'var(--color-white)';
+        e.currentTarget.style.transform = 'scale(1)';
+      }}
+      onMouseDown={(e) => {
+        if (!disabled) e.currentTarget.style.transform = 'scale(0.95)';
+      }}
+      onMouseUp={(e) => {
+        if (!disabled) e.currentTarget.style.transform = 'scale(1.08)';
+      }}
+    >
+      <Icon name="arrowLeft" size={20} />
+    </button>
+  );
+}
+
+BackButton.propTypes = {
+  onClick: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
+};
+
+export { BackButton };
+
+
+/* ==========================================
+ * ARQUIVO: components/memorial/BreathTransition.jsx
+ * ========================================== */\n
+// components/memorial/BreathTransition.jsx
+// Respiro contextual elaborado por bloco do memorial
+// Framer Motion + imagem de fundo + SVG temático + linguagem inclusiva
+// Duração: 1400ms até troca de etapa · fade-out de 0.8s continua enquanto novo step surge · Fluido
+
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import PropTypes from 'prop-types';
+import styles from './BreathTransition.module.css';
+import { getBreathConfig } from '../../utils/getBreathConfig';
+import BreathFolhagem from '../ui/svgs/breath/BreathFolhagem';
+import BreathOndas from '../ui/svgs/breath/BreathOndas';
+import BreathGeometria from '../ui/svgs/breath/BreathGeometria';
+import BreathArabescos from '../ui/svgs/breath/BreathArabescos';
+import BreathGlam from '../ui/svgs/breath/BreathGlam';
+
+const SVG_MAP = {
+  BreathFolhagem,
+  BreathOndas,
+  BreathGeometria,
+  BreathArabescos,
+  BreathGlam,
+};
+
+const breathVariants = {
+  initial: { opacity: 0, scale: 0.95 },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.5, ease: 'easeOut' },
+  },
+  exit: {
+    opacity: 0,
+    scale: 1.02,
+    transition: { duration: 0.8, ease: 'easeIn' },
+  },
+};
+
+const backgroundVariants = {
+  initial: { opacity: 0, scale: 1.1 },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.6, ease: 'easeOut' },
+  },
+  exit: { opacity: 0, transition: { duration: 0.7 } },
+};
+
+const svgVariants = {
+  initial: { opacity: 0, y: 30 },
+  animate: {
+    opacity: 0.6,
+    y: 0,
+    transition: { duration: 0.5, delay: 0.3 },
+  },
+  exit: { opacity: 0, transition: { duration: 0.6 } },
+};
+
+export default function BreathTransition({
+  ativa,
+  cor,
+  blocoAtual,
+  estiloEscolhido,
+  respostaAtual,
+  perfilCasal,
+  children,
+}) {
+  const [prefersReduced, setPrefersReduced] = useState(false);
+  // Congela config no momento da ativação — não re-renderiza durante fade-out
+  const frozenConfig = useRef(null);
+  const frozenResposta = useRef('');
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReduced(mq.matches);
+    const handler = (e) => setPrefersReduced(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  // Quando ativa=true, congela config e resposta
+  useEffect(() => {
+    if (ativa) {
+      frozenConfig.current = getBreathConfig(estiloEscolhido, blocoAtual, perfilCasal);
+      frozenResposta.current = typeof respostaAtual === 'string' ? respostaAtual : '';
+    }
+  }, [ativa, estiloEscolhido, blocoAtual, perfilCasal, respostaAtual]);
+
+  const config = frozenConfig.current;
+  const resposta = frozenResposta.current;
+
+  const SvgComponent = useMemo(() => {
+    if (!config?.svgComponent) return null;
+    return SVG_MAP[config.svgComponent] || null;
+  }, [config]);
+
+  const srMessage = useMemo(() => {
+    if (!config) return '';
+    const blockName = config.blockLabel || `Bloco ${config.blockLetter}`;
+    return resposta
+      ? `Avançando para ${blockName}. Você escolheu: ${resposta}`
+      : `Avançando para ${blockName}`;
+  }, [config, resposta]);
+
+  if (!ativa) {
+    return <>{children}</>;
+  }
+
+  if (prefersReduced) {
+    return (
+      <>
+        {children}
+        <div className={styles.srOnly} role="status" aria-live="polite" aria-atomic="true">
+          {srMessage}
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {children}
+      <AnimatePresence>
+        {ativa && config && (
+          <motion.div
+            key="breath"
+            className={styles.breathContainer}
+            variants={breathVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            aria-live="polite"
+            aria-atomic="true"
+            role="status"
+          >
+            <motion.div
+              className={styles.backgroundImage}
+              variants={backgroundVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              style={{
+                backgroundImage: `url(${config.backgroundImage})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            />
+
+            <div
+              className={styles.overlay}
+              style={{ backgroundColor: config.overlayColor }}
+            />
+
+            {SvgComponent && (
+              <motion.div
+                className={styles.svgContainer}
+                variants={svgVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <SvgComponent
+                  color={config.textColor}
+                  size={200}
+                  className={styles.svgElement}
+                />
+              </motion.div>
+            )}
+
+            <div className={styles.content}>
+              <p
+                className={styles.blockLabel}
+                style={{
+                  fontFamily: config.fontFamily,
+                  color: config.textColor,
+                }}
+              >
+                Bloco {config.blockLetter} — {config.blockLabel}
+              </p>
+              {resposta && (
+                <p className={styles.responseText} style={{ color: config.textColor }}>
+                  {resposta}
+                </p>
+              )}
+            </div>
+
+            <div className={styles.srOnly}>{srMessage}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+BreathTransition.propTypes = {
+  ativa: PropTypes.bool.isRequired,
+  cor: PropTypes.string,
+  blocoAtual: PropTypes.string,
+  estiloEscolhido: PropTypes.string,
+  respostaAtual: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+  perfilCasal: PropTypes.string,
+  children: PropTypes.node,
+};
+
+export { BreathTransition };
+
+/* ==========================================
+ * ARQUIVO: components/memorial/conclusao.jsx
+ * ========================================== */\n
+// pages/memorial/conclusao.jsx
+// Tela de conclusão do memorial — geração via IA e oferta dos planos (PDF/Assinatura)
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import Head from 'next/head';
+import { montarPayloadParaAPI } from '../../utils/gerador-memorial';
+import { useAuth } from '../../hooks/useAuth';
+import { useMemorial } from '../../hooks/useMemorial';
+import Button from '../../components/ui/Button';
+
+export default function ConclusaoPage() {
+  const router = useRouter();
+  const { estado } = useMemorial();
+  const { usuario } = useAuth();
+
+  const [status, setStatus] = useState('carregando'); // carregando | pronto | erro
+  const [memorial, setMemorial] = useState('');
+  const [erro, setErro] = useState('');
+  const [baixandoPDF, setBaixandoPDF] = useState(false);
+
+  useEffect(() => {
+    if (!estado || !estado.etapaAtual) {
+      router.replace('/memorial');
+      return;
+    }
+
+    const gerarMemorial = async () => {
+      try {
+        const payload = montarPayloadParaAPI(estado);
+        const resposta = await fetch('/api/ia/gerar-memorial', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await resposta.json();
+        if (!resposta.ok || !data.sucesso) {
+          throw new Error(data.erro || 'Erro desconhecido');
+        }
+
+        setMemorial(data.memorial);
+        setStatus('pronto');
+      } catch (err) {
+        setErro(err.message);
+        setStatus('erro');
+      }
+    };
+
+    gerarMemorial();
+  }, [estado, router]);
+
+  const baixarPDF = async () => {
+    setBaixandoPDF(true);
+    try {
+      const dadosEvento = montarPayloadParaAPI(estado);
+      const response = await fetch('/api/gerar-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          memorial,
+          dadosEvento,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Erro ao gerar PDF');
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'memorial-descomplicai.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Erro ao baixar PDF:', err);
+      alert('Não foi possível gerar o PDF. Tente novamente.');
+    } finally {
+      setBaixandoPDF(false);
+    }
+  };
+
+  if (status === 'carregando') {
+    return (
+      <div
+        className="conclusao-container"
+        style={{
+          minHeight: '100dvh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 'var(--space-4)',
+          backgroundColor: 'var(--color-off-white)',
+        }}
+      >
+        <div style={{ textAlign: 'center', maxWidth: '400px' }}>
+          <div
+            className="spinner"
+            style={{
+              width: '40px',
+              height: '40px',
+              border: '3px solid var(--color-border)',
+              borderTopColor: 'var(--color-brand)',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+              margin: '0 auto var(--space-6)',
+            }}
+          />
+          <style jsx>{`
+            @keyframes spin {
+              to {
+                transform: rotate(360deg);
+              }
+            }
+          `}</style>
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-2xl)',
+              color: 'var(--color-text-primary)',
+              marginBottom: 'var(--space-2)',
+            }}
+          >
+            Gerando seu memorial...
+          </h2>
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              color: 'var(--color-text-secondary)',
+            }}
+          >
+            Estamos criando cada detalhe com inteligência artificial. Isso pode
+            levar alguns segundos.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'erro') {
+    return (
+      <div
+        className="conclusao-container"
+        style={{
+          minHeight: '100dvh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 'var(--space-4)',
+          backgroundColor: 'var(--color-off-white)',
+        }}
+      >
+        <div style={{ textAlign: 'center', maxWidth: '400px' }}>
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-2xl)',
+              color: 'var(--color-danger)',
+              marginBottom: 'var(--space-2)',
+            }}
+          >
+            Ops!
+          </h2>
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              color: 'var(--color-text-secondary)',
+              marginBottom: 'var(--space-6)',
+            }}
+          >
+            {erro || 'Não foi possível gerar o memorial. Tente novamente.'}
+          </p>
+          <Button variant="primary" onClick={() => router.reload()}>
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Exibe preview com blur abaixo da dobra
+  const previewVisivel = memorial.substring(0, 800);
+  const previewOculto = memorial.substring(800);
+
+  return (
+    <>
+      <Head>
+        <title>Seu memorial está pronto — Descomplicaí</title>
+      </Head>
+      <div
+        style={{
+          maxWidth: '600px',
+          margin: '0 auto',
+          padding: 'var(--space-6) var(--space-4) var(--space-24)',
+          fontFamily: 'var(--font-body)',
+        }}
+      >
+        <div style={{ marginBottom: 'var(--space-8)' }}>
+          <h1
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-4xl)',
+              color: 'var(--color-text-primary)',
+              marginBottom: 'var(--space-2)',
+            }}
+          >
+            Memorial pronto!
+          </h1>
+          <p
+            style={{
+              color: 'var(--color-text-secondary)',
+              fontSize: 'var(--text-lg)',
+            }}
+          >
+            Ele foi gerado com base nas suas escolhas. Confira um trecho:
+          </p>
+        </div>
+
+        <div
+          style={{
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--color-border)',
+            padding: 'var(--space-6)',
+            backgroundColor: 'var(--color-white)',
+            marginBottom: 'var(--space-8)',
+          }}
+        >
+          <div
+            style={{
+              whiteSpace: 'pre-wrap',
+              lineHeight: 'var(--leading-relaxed)',
+            }}
+          >
+            {previewVisivel}
+          </div>
+          {previewOculto && (
+            <div
+              style={{
+                filter: 'blur(4px)',
+                opacity: 0.4,
+                marginTop: 'var(--space-4)',
+                whiteSpace: 'pre-wrap',
+                lineHeight: 'var(--leading-relaxed)',
+              }}
+            >
+              {previewOculto}
+            </div>
+          )}
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--space-4)',
+          }}
+        >
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            onClick={baixarPDF}
+            loading={baixandoPDF}
+          >
+            {baixandoPDF
+              ? 'Gerando PDF...'
+              : 'Baixar PDF completo — R$197'}
+          </Button>
+          <Button
+            variant="secondary"
+            size="lg"
+            fullWidth
+            onClick={() => router.push('/planos?produto=assinatura')}
+          >
+            Gerenciar meu casamento — R$29,90/mês
+          </Button>
+        </div>
+
+        <p
+          style={{
+            textAlign: 'center',
+            marginTop: 'var(--space-6)',
+            fontSize: 'var(--text-sm)',
+            color: 'var(--color-text-muted)',
+          }}
+        >
+          Seu memorial ficará salvo por 7 dias. Depois é só assinar para manter
+          o acesso.
+        </p>
+      </div>
+    </>
+  );
+}
+
+/* ==========================================
+ * ARQUIVO: components/memorial/MemorialConclusao.jsx
+ * ========================================== */\n
+// components/memorial/MemorialConclusao.jsx
+// Tela de conclusão do memorial — exibe o memorial gerado pela IA e resumo das escolhas
+// Dependências diretas: React, PropTypes, Card, Button, gerador-memorial, ProgressRing
+
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import Card from '../ui/Card';
+import Button from '../ui/Button';
+import ProgressRing from '../ui/ProgressRing';
+import MarkdownRenderer from '../ui/MarkdownRenderer';
+import { montarMemorial, listarFornecedoresNecessarios } from '../../utils/gerador-memorial';
+
+export default function MemorialConclusao({ estado, memorialGerado, onRecomecar, onIrParaPainel }) {
+  const [copiado, setCopiado] = useState(false);
+  const resumo = montarMemorial(estado);
+  const fornecedores = listarFornecedoresNecessarios(estado);
+
+  const handleCopiar = async () => {
+    if (!memorialGerado) return;
+    try {
+      await navigator.clipboard.writeText(memorialGerado);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      // silent fail
+    }
+  };
+
+  const handleDownload = () => {
+    if (!memorialGerado) return;
+    const blob = new Blob([memorialGerado], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `memorial-${estado.nomeJuntos || 'casamento'}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-off-white)', padding: 'var(--space-6) var(--space-4)' }}>
+      <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
+
+        {/* Header */}
+        <div style={{ textAlign: 'center', animation: 'fadeInUp 600ms ease-out' }}>
+          <style jsx>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+          <div style={{ width: '64px', height: '64px', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--color-success-light)', color: 'var(--color-success)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto var(--space-4)' }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+          </div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-4xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-3)', lineHeight: 'var(--leading-tight)' }}>
+            Seu memorial está pronto
+          </h1>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', color: 'var(--color-text-secondary)', maxWidth: '480px', margin: '0 auto' }}>
+            {estado.nomeJuntos || `${estado.nomePessoa1} e ${estado.nomePessoa2}`}
+          </p>
+        </div>
+
+        {/* Memorial gerido pela IA */}
+        {memorialGerado ? (
+          <Card variant="elevated" padding="lg">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)', margin: 0 }}>
+                Memorial completo
+              </h2>
+              <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                <Button variant="secondary" size="sm" onClick={handleCopiar}>
+                  {copiado ? 'Copiado!' : 'Copiar'}
+                </Button>
+                <Button variant="primary" size="sm" onClick={handleDownload}>
+                  Baixar .txt
+                </Button>
+              </div>
+            </div>
+            <div
+              style={{
+                maxHeight: '60vh',
+                overflowY: 'auto',
+                padding: 'var(--space-4)',
+                backgroundColor: 'var(--color-surface)',
+                borderRadius: 'var(--radius-md)',
+              }}
+            >
+              <MarkdownRenderer text={memorialGerado} />
+            </div>
+          </Card>
+        ) : (
+          <Card variant="outlined" padding="lg" style={{ textAlign: 'center' }}>
+            <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>
+              O memorial será gerado pela IA assim que você confirmar. Aguarde...
+            </p>
+          </Card>
+        )}
+
+        {/* Resumo visual das escolhas */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-4)' }}>
+          <ResumoCard titulo="Identidade" valor={resumo.estilo} sub={resumo.paleta} />
+          <ResumoCard titulo="Cerimônia" valor={resumo.cerimonia} sub={resumo.horario} />
+          <ResumoCard titulo="Local" valor={resumo.local} />
+          <ResumoCard titulo="Convidados" valor={resumo.convidados} />
+          <ResumoCard titulo="Decoração" valor={resumo.decoracao} />
+          <ResumoCard titulo="Orçamento" valor={resumo.orcamento} />
+        </div>
+
+        {/* Fornecedores necessários */}
+        <Card variant="flat" padding="lg">
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)', color: 'var(--color-text-primary)', margin: '0 0 var(--space-4)' }}>
+            Fornecedores necessários
+          </h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+            {fornecedores.map((f) => (
+              <span
+                key={f}
+                style={{
+                  padding: 'var(--space-2) var(--space-3)',
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--color-brand-lighter)',
+                  color: 'var(--color-brand-dark)',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--font-medium)',
+                }}
+              >
+                {f}
+              </span>
+            ))}
+          </div>
+        </Card>
+
+        {/* CTA final */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', alignItems: 'center', paddingTop: 'var(--space-4)' }}>
+          <Button variant="primary" size="lg" fullWidth onClick={onIrParaPainel}>
+            Ir para o painel — gerenciar tudo
+          </Button>
+          <Button variant="ghost" size="md" onClick={onRecomecar}>
+            Recomeçar memorial
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResumoCard({ titulo, valor, sub }) {
+  return (
+    <Card variant="default" padding="md">
+      <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-2)' }}>
+        {titulo}
+      </div>
+      <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-primary)', lineHeight: 'var(--leading-snug)' }}>
+        {valor || '—'}
+      </div>
+      {sub && (
+        <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)' }}>
+          {sub}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+MemorialConclusao.propTypes = {
+  estado: PropTypes.object.isRequired,
+  memorialGerado: PropTypes.string,
+  onRecomecar: PropTypes.func.isRequired,
+  onIrParaPainel: PropTypes.func.isRequired,
+};
+
+export { MemorialConclusao };
+
+/* ==========================================
+ * ARQUIVO: components/memorial/MemorialOrchestrator.jsx
+ * ========================================== */\n
+// components/memorial/MemorialOrchestrator.jsx
+// HOTFIX: corrigido typo salvandoAgoro -> salvandoAgora
+
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useRouter } from 'next/router';
+import useMemorial from '../../hooks/useMemorial';
+import { useAuth } from '../../hooks/useAuth';
+import useAutoSave from '../../hooks/useAutoSave';
+import { calcularProximaEtapa, calcularEtapasTotais, deveExibirLoginAgora, getEtapaPorIndice } from '../../utils/algoritmo';
+import BreathTransition from './BreathTransition';
+import ProgressBar from './ProgressBar';
+import BackButton from './BackButton';
+import Footer from '../ui/Footer';
+
+const STEP_COMPONENTS = {
+  Step00Casal: React.lazy(() => import('./steps/Step00Casal')),
+  Step01Modo: React.lazy(() => import('./steps/Step01Modo')),
+  Step02NomeCasal: React.lazy(() => import('./steps/Step02NomeCasal')),
+  Step03Data: React.lazy(() => import('./steps/Step03Data')),
+  Step04Cidade: React.lazy(() => import('./steps/Step04Cidade')),
+  Step05Convidados: React.lazy(() => import('./steps/Step05Convidados')),
+  Step06Orcamento: React.lazy(() => import('./steps/Step06Orcamento')),
+  Step07Cerimonia: React.lazy(() => import('./steps/Step07Cerimonia')),
+  Step07aCatolica: React.lazy(() => import('./steps/Step07aCatolica')),
+  Step07bEvangelica: React.lazy(() => import('./steps/Step07bEvangelica')),
+  Step07cJudaica: React.lazy(() => import('./steps/Step07cJudaica')),
+  Step07dSimbolica: React.lazy(() => import('./steps/Step07dSimbolica')),
+  Step08Local: React.lazy(() => import('./steps/Step08Local')),
+  Step09MesmoLocal: React.lazy(() => import('./steps/Step09MesmoLocal')),
+  Step10Horario: React.lazy(() => import('./steps/Step10Horario')),
+  Step11PlanoChuva: React.lazy(() => import('./steps/Step11PlanoChuva')),
+  Step11bTransporte: React.lazy(() => import('./steps/Step11bTransporte')),
+  Step12Estilo: React.lazy(() => import('./steps/Step12Estilo')),
+  Step13Formalidade: React.lazy(() => import('./steps/Step13Formalidade')),
+  Step14Paleta: React.lazy(() => import('./steps/Step14Paleta')),
+  Step15Tom: React.lazy(() => import('./steps/Step15Tom')),
+  Step16Referencias: React.lazy(() => import('./steps/Step16Referencias')),
+  Step60Fornecedores: React.lazy(() => import('./steps/Step60Fornecedores')),
+  Step17Flores: React.lazy(() => import('./steps/Step17Flores')),
+  Step18Iluminacao: React.lazy(() => import('./steps/Step18Iluminacao')),
+  Step19Velas: React.lazy(() => import('./steps/Step19Velas')),
+  Step20Mobiliario: React.lazy(() => import('./steps/Step20Mobiliario')),
+  Step21Backdrop: React.lazy(() => import('./steps/Step21Backdrop')),
+  Step22Tecidos: React.lazy(() => import('./steps/Step22Tecidos')),
+  Step23Toalha: React.lazy(() => import('./steps/Step23Toalha')),
+  Step24Loucas: React.lazy(() => import('./steps/Step24Loucas')),
+  Step25Talheres: React.lazy(() => import('./steps/Step25Talheres')),
+  Step26Tacas: React.lazy(() => import('./steps/Step26Tacas')),
+  Step27CentroMesa: React.lazy(() => import('./steps/Step27CentroMesa')),
+  Step28Guardanapo: React.lazy(() => import('./steps/Step28Guardanapo')),
+  Step29CartaoLugar: React.lazy(() => import('./steps/Step29CartaoLugar')),
+  Step30Entrada: React.lazy(() => import('./steps/Step30Entrada')),
+  Step31MusicaCerimonia: React.lazy(() => import('./steps/Step31MusicaCerimonia')),
+  Step32PadrinhosCriancas: React.lazy(() => import('./steps/Step32PadrinhosCriancas')),
+  Step33RituaisSaida: React.lazy(() => import('./steps/Step33RituaisSaida')),
+  Step38Coquetel: React.lazy(() => import('./steps/Step38Coquetel')),
+  Step39BoloDocesBar: React.lazy(() => import('./steps/Step39BoloDocesBar')),
+  Step40MusicaEntretenimento: React.lazy(() => import('./steps/Step40MusicaEntretenimento')),
+  Step49Convites: React.lazy(() => import('./steps/Step49Convites')),
+  Step50IdentidadeVisual: React.lazy(() => import('./steps/Step50IdentidadeVisual')),
+  Step54Vestido: React.lazy(() => import('./steps/Step54Vestido')),
+  Step55BelezaPadronizacao: React.lazy(() => import('./steps/Step55BelezaPadronizacao')),
+  StepA4Criancas: React.lazy(() => import('./steps/StepA4Criancas')),
+  StepA5Padrinhos: React.lazy(() => import('./steps/StepA5Padrinhos')),
+  StepA6DataPrevista: React.lazy(() => import('./steps/StepA6DataPrevista')),
+  StepA7TempoJuntos: React.lazy(() => import('./steps/StepA7TempoJuntos')),
+  StepA8MoramJuntos: React.lazy(() => import('./steps/StepA8MoramJuntos')),
+  StepA9ComoSeConheceram: React.lazy(() => import('./steps/StepA9ComoSeConheceram')),
+  StepA10TemFilhos: React.lazy(() => import('./steps/StepA10TemFilhos')),
+  StepA11TemAnimais: React.lazy(() => import('./steps/StepA11TemAnimais')),
+  StepA12GostamDeFazer: React.lazy(() => import('./steps/StepA12GostamDeFazer')),
+  StepA13PersonalidadeNoivo: React.lazy(() => import('./steps/StepA13PersonalidadeNoivo')),
+  StepA14PersonalidadeNoiva: React.lazy(() => import('./steps/StepA14PersonalidadeNoiva')),
+  StepA15TradicaoFamiliar: React.lazy(() => import('./steps/StepA15TradicaoFamiliar')),
+  StepA16RestricaoCultural: React.lazy(() => import('./steps/StepA16RestricaoCultural')),
+  StepB5CriancasCerimonia: React.lazy(() => import('./steps/StepB5CriancasCerimonia')),
+  StepB6DuracaoCerimonia: React.lazy(() => import('./steps/StepB6DuracaoCerimonia')),
+  StepB7MusicaCerimoniaViva: React.lazy(() => import('./steps/StepB7MusicaCerimoniaViva')),
+  StepB8ReservouIgreja: React.lazy(() => import('./steps/StepB8ReservouIgreja')),
+  StepB9CursoNoivos: React.lazy(() => import('./steps/StepB9CursoNoivos')),
+  StepB10EscolheuPadre: React.lazy(() => import('./steps/StepB10EscolheuPadre')),
+  StepB11ReservouTemplo: React.lazy(() => import('./steps/StepB11ReservouTemplo')),
+  StepB12DefiniuChupa: React.lazy(() => import('./steps/StepB12DefiniuChupa')),
+  StepB13EscolheuCelebrante: React.lazy(() => import('./steps/StepB13EscolheuCelebrante')),
+  StepB14AgendouCartorio: React.lazy(() => import('./steps/StepB14AgendouCartorio')),
+  StepB15PadrinhosEscolhidos: React.lazy(() => import('./steps/StepB15PadrinhosEscolhidos')),
+  StepB16DefiniramEntrada: React.lazy(() => import('./steps/StepB16DefiniramEntrada')),
+  StepB17MusicosCerimonia: React.lazy(() => import('./steps/StepB17MusicosCerimonia')),
+  StepB18CertidaoBatismo: React.lazy(() => import('./steps/StepB18CertidaoBatismo')),
+  StepC4Estacionamento: React.lazy(() => import('./steps/StepC4Estacionamento')),
+  StepC5CozinhaApoio: React.lazy(() => import('./steps/StepC5CozinhaApoio')),
+  StepC6CapacidadeLocal: React.lazy(() => import('./steps/StepC6CapacidadeLocal')),
+  StepC7GeradorLocal: React.lazy(() => import('./steps/StepC7GeradorLocal')),
+  StepC8ReservouLocalCerimonia: React.lazy(() => import('./steps/StepC8ReservouLocalCerimonia')),
+  StepC9ReservouLocalFesta: React.lazy(() => import('./steps/StepC9ReservouLocalFesta')),
+  StepC10VerificouMare: React.lazy(() => import('./steps/StepC10VerificouMare')),
+  StepC11ListaPreliminar: React.lazy(() => import('./steps/StepC11ListaPreliminar')),
+  StepC12ConvidadosForaCidade: React.lazy(() => import('./steps/StepC12ConvidadosForaCidade')),
+  StepC13HotelIndicacao: React.lazy(() => import('./steps/StepC13HotelIndicacao')),
+  StepC14HorarioFesta: React.lazy(() => import('./steps/StepC14HorarioFesta')),
+  StepC15DuracaoCoquetel: React.lazy(() => import('./steps/StepC15DuracaoCoquetel')),
+  StepD1TipoFlores: React.lazy(() => import('./steps/StepD1TipoFlores')),
+  StepD2TipoIluminacao: React.lazy(() => import('./steps/StepD2TipoIluminacao')),
+  StepD3MobiliarioQual: React.lazy(() => import('./steps/StepD3MobiliarioQual')),
+  StepD4FotografoContratado: React.lazy(() => import('./steps/StepD4FotografoContratado')),
+  StepD5FilmagemContratada: React.lazy(() => import('./steps/StepD5FilmagemContratada')),
+  StepD6BuffetContratado: React.lazy(() => import('./steps/StepD6BuffetContratado')),
+  StepD7DecoracaoContratada: React.lazy(() => import('./steps/StepD7DecoracaoContratada')),
+  StepD8MusicaContratada: React.lazy(() => import('./steps/StepD8MusicaContratada')),
+  StepD9EspacoContratado: React.lazy(() => import('./steps/StepD9EspacoContratado')),
+  StepD10VestidoContratado: React.lazy(() => import('./steps/StepD10VestidoContratado')),
+  StepD11TrajeNoivoContratado: React.lazy(() => import('./steps/StepD11TrajeNoivoContratado')),
+  StepD12CerimonialistaContratado: React.lazy(() => import('./steps/StepD12CerimonialistaContratado')),
+  StepD13TransporteContratado: React.lazy(() => import('./steps/StepD13TransporteContratado')),
+  StepD14PapelariaContratada: React.lazy(() => import('./steps/StepD14PapelariaContratada')),
+  StepD15CabineFotos: React.lazy(() => import('./steps/StepD15CabineFotos')),
+  StepD16Drone: React.lazy(() => import('./steps/StepD16Drone')),
+  StepD17AnimacaoInfantil: React.lazy(() => import('./steps/StepD17AnimacaoInfantil')),
+  StepD18VestidoComprado: React.lazy(() => import('./steps/StepD18VestidoComprado')),
+  StepD19TesteBeleza: React.lazy(() => import('./steps/StepD19TesteBeleza')),
+  StepD20ConvitesEncomendados: React.lazy(() => import('./steps/StepD20ConvitesEncomendados')),
+  StepD21SaveTheDate: React.lazy(() => import('./steps/StepD21SaveTheDate')),
+  StepD22Lembrancinhas: React.lazy(() => import('./steps/StepD22Lembrancinhas')),
+  StepD23KitSaida: React.lazy(() => import('./steps/StepD23KitSaida')),
+  StepG8MesaFrios: React.lazy(() => import('./steps/StepG8MesaFrios')),
+  StepG9BebidasPorPessoa: React.lazy(() => import('./steps/StepG9BebidasPorPessoa')),
+  StepG10MenuInfantil: React.lazy(() => import('./steps/StepG10MenuInfantil')),
+  StepH3FogosSparklers: React.lazy(() => import('./steps/StepH3FogosSparklers')),
+  StepH4MesaDocesExposta: React.lazy(() => import('./steps/StepH4MesaDocesExposta')),
+  StepH5AulaDanca: React.lazy(() => import('./steps/StepH5AulaDanca')),
+  StepI4AulasDanca: React.lazy(() => import('./steps/StepI4AulasDanca')),
+  StepI5MudancaLook: React.lazy(() => import('./steps/StepI5MudancaLook')),
+  StepI6QuantasMadrinhas: React.lazy(() => import('./steps/StepI6QuantasMadrinhas')),
+  StepL1Aliancas: React.lazy(() => import('./steps/StepL1Aliancas')),
+  StepL2CivilJunto: React.lazy(() => import('./steps/StepL2CivilJunto')),
+  StepL3TransporteEspecialNoivos: React.lazy(() => import('./steps/StepL3TransporteEspecialNoivos')),
+  StepL4CarroNoivos: React.lazy(() => import('./steps/StepL4CarroNoivos')),
+  StepL5TransporteConvidados: React.lazy(() => import('./steps/StepL5TransporteConvidados')),
+  StepL6Seguranca: React.lazy(() => import('./steps/StepL6Seguranca')),
+  StepM1LuaDeMel: React.lazy(() => import('./steps/StepM1LuaDeMel')),
+  StepM2FotosLuaDeMel: React.lazy(() => import('./steps/StepM2FotosLuaDeMel')),
+  StepE1EstadoCivilNoivo: React.lazy(() => import('./steps/StepE1EstadoCivilNoivo')),
+  StepE2EstadoCivilNoiva: React.lazy(() => import('./steps/StepE2EstadoCivilNoiva')),
+  StepE3CertidaoDivorcioNoivo: React.lazy(() => import('./steps/StepE3CertidaoDivorcioNoivo')),
+  StepE4CertidaoDivorcioNoiva: React.lazy(() => import('./steps/StepE4CertidaoDivorcioNoiva')),
+  StepE5CertidaoObitoNoivo: React.lazy(() => import('./steps/StepE5CertidaoObitoNoivo')),
+  StepE6CertidaoObitoNoiva: React.lazy(() => import('./steps/StepE6CertidaoObitoNoiva')),
+  StepE7NacionalidadeNoivo: React.lazy(() => import('./steps/StepE7NacionalidadeNoivo')),
+  StepE8NacionalidadeNoiva: React.lazy(() => import('./steps/StepE8NacionalidadeNoiva')),
+  StepE9DocumentacaoEstrangeiro: React.lazy(() => import('./steps/StepE9DocumentacaoEstrangeiro')),
+  StepE10QuemPaga: React.lazy(() => import('./steps/StepE10QuemPaga')),
+  StepE11FormaPagamento: React.lazy(() => import('./steps/StepE11FormaPagamento')),
+  StepE12CronogramaDia: React.lazy(() => import('./steps/StepE12CronogramaDia')),
+  StepE13HorarioMakingOfNoiva: React.lazy(() => import('./steps/StepE13HorarioMakingOfNoiva')),
+  StepE14HorarioMakingOfNoivo: React.lazy(() => import('./steps/StepE14HorarioMakingOfNoivo')),
+  StepE15DestinoLuaDeMel: React.lazy(() => import('./steps/StepE15DestinoLuaDeMel')),
+  StepE16LuaDeMelReservada: React.lazy(() => import('./steps/StepE16LuaDeMelReservada')),
+  StepE17PassaporteValido: React.lazy(() => import('./steps/StepE17PassaporteValido')),
+  StepE18Visto: React.lazy(() => import('./steps/StepE18Visto')),
+  StepE19Vacinas: React.lazy(() => import('./steps/StepE19Vacinas')),
+};
+
+const BLOCK_NAMES = {
+  'A': 'Bloco A — Perfil do Casal',
+  'B': 'Bloco B — Cerimônia',
+  'C': 'Bloco C — Local e Estrutura',
+  'D': 'Bloco D — Identidade Visual e Fornecedores',
+  'E': 'Bloco E — Decoração',
+  'F': 'Bloco F — Mesa Posta',
+  'G': 'Bloco G — Cerimônia Detalhada',
+  'H': 'Bloco H — Recepção',
+  'I': 'Bloco I — Papelaria e Identidade',
+  'J': 'Bloco J — Vestuário e Beleza',
+  'K': 'Bloco K — Fornecedores',
+  'L': 'Bloco L — Logística e Documentação',
+  'M': 'Bloco M — Pós-casamento',
+  'N': 'Bloco N — Documentação e Financeiro',
+};
+
+function PlaceholderStep({ titulo }) {
+  return (
+    <div style={{ padding: 'var(--space-6)', textAlign: 'center' }}>
+      <h2>{titulo}</h2>
+      <p>Etapa em desenvolvimento</p>
+    </div>
+  );
+}
+
+export default function MemorialOrchestrator() {
+  const router = useRouter();
+  const { estado, setRespostas, carregarEstado, irParaEtapa, voltarEtapa } = useMemorial();
+  const { user, evento, loading: carregandoAuth, supabase } = useAuth();
+  const { temDraft, carregarDraft, limparDraft, salvandoAgora } = useAutoSave(estado, user, evento);
+
+  const [transicionando, setTransicionando] = useState(false);
+  const [corTransicao, setCorTransicao] = useState(null);
+  const [respostaTransicao, setRespostaTransicao] = useState('');
+  const [campoTransicao, setCampoTransicao] = useState('');
+  const [mostrandoLogin, setMostrandoLogin] = useState(false);
+  const [oferecerDraft, setOferecerDraft] = useState(false);
+  const restauracaoFeita = useRef(false);
+
+  useEffect(() => {
+    if (!user) return;
+    if (estado.etapaAtual !== 0 || estado.perfilCasal) return;
+    if (restauracaoFeita.current) return;
+
+    restauracaoFeita.current = true;
+
+    async function buscarDoSupabase() {
+      try {
+        const { data, error } = await supabase
+          .from('memoriais')
+          .select('estado')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (data?.estado && data.estado.perfilCasal) {
+          carregarEstado(data.estado);
+          return;
+        }
+      } catch (e) {
+        console.warn('Erro ao buscar memorial:', e);
+      }
+      const draft = carregarDraft();
+      if (draft) setOferecerDraft(true);
+    }
+
+    buscarDoSupabase();
+  }, [user, estado.etapaAtual, estado.perfilCasal, carregarEstado, carregarDraft, supabase]);
+
+  const etapasTotais = calcularEtapasTotais(estado);
+  const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
+  const blocoAtual = etapaAtualObj?.bloco || '';
+  const progress = etapasTotais > 0 ? (estado.etapaAtual / etapasTotais) * 100 : 0;
+  const blockName = BLOCK_NAMES[blocoAtual] || '';
+
+  const BREATH_DURATION = 1400;
+
+  const handleSelect = useCallback((campo, valor, cor) => {
+    setRespostas(campo, valor);
+    setRespostaTransicao(typeof valor === 'string' ? valor : '');
+    setCampoTransicao(campo);
+    setTransicionando(true);
+    if (cor) setCorTransicao(cor);
+
+    const novoEstado = { ...estado, [campo]: valor };
+
+    setTimeout(() => {
+      const proxima = calcularProximaEtapa(novoEstado, estado.etapaAtual);
+      const etapaId = getEtapaPorIndice(proxima)?.id;
+      if (!user && deveExibirLoginAgora(novoEstado, etapaId)) {
+        setMostrandoLogin(true);
+        setTransicionando(false);
+        return;
+      }
+      irParaEtapa(proxima);
+      setTransicionando(false);
+      setCorTransicao(null);
+      setRespostaTransicao('');
+      setCampoTransicao('');
+    }, BREATH_DURATION);
+  }, [estado, setRespostas, irParaEtapa, user]);
+
+  const handleIrParaLogin = (destino) => {
+    try {
+      sessionStorage.setItem('descomplicai-pre-login-state', JSON.stringify(estado));
+    } catch (e) {}
+    router.push(`${destino}?redirect=${encodeURIComponent('/memorial')}`);
+  };
+
+  const handleConcluirMemorial = useCallback(async (fornecedores) => {
+    setRespostas('fornecedoresNecessarios', fornecedores);
+    try {
+      localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
+      if (user && evento?.id) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+        if (token) {
+          const res = await fetch('/api/memorial/salvar', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ evento_id: evento.id, estado }),
+          });
+          if (!res.ok) void 0
+        }
+      }
+      router.push('/memorial/conclusao?concluido=1');
+    } catch (erro) {
+      alert('Falha ao salvar o progresso. Tente novamente.');
+    }
+  }, [estado, setRespostas, router, user, evento, supabase]);
+
+  const handleBack = useCallback(() => {
+    if (estado.historicoEtapas?.length > 0) voltarEtapa();
+  }, [estado.historicoEtapas, voltarEtapa]);
+
+  const handleContinuarDraft = () => {
+    const draft = carregarDraft();
+    if (draft) carregarEstado(draft);
+    setOferecerDraft(false);
+  };
+
+  const handleDescartarDraft = () => {
+    limparDraft();
+    setOferecerDraft(false);
+  };
+
+  const StepComponent = etapaAtualObj
+    ? (STEP_COMPONENTS[etapaAtualObj.componente] || (() => <PlaceholderStep titulo={etapaAtualObj.titulo} />))
+    : () => null;
+
+  return (
+    <div style={{ position: 'relative', minHeight: '100vh' }}>
+      {salvandoAgora && (
+        <div style={{ position: 'fixed', top: 8, right: 8, zIndex: 9999, fontSize: 12, opacity: 0.6 }}>
+          Salvando...
+        </div>
+      )}
+
+      {carregandoAuth ? (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <p>Carregando...</p>
+        </div>
+      ) : (
+        <>
+          {estado.etapaAtual === 0 && oferecerDraft ? (
+            <div style={{ padding: 'var(--space-6)', textAlign: 'center' }}>
+              <h2>Você tem um progresso salvo</h2>
+              <p>Deseja continuar de onde parou?</p>
+              <button onClick={handleContinuarDraft}>Continuar</button>
+              <button onClick={handleDescartarDraft}>Começar do zero</button>
+            </div>
+          ) : mostrandoLogin ? (
+            <div style={{ padding: 'var(--space-6)', textAlign: 'center' }}>
+              <h2>Quase lá!</h2>
+              <p>Para continuar salvando seu progresso, faça login ou crie uma conta.</p>
+              <button onClick={() => handleIrParaLogin('/login')}>Entrar</button>
+              <button onClick={() => handleIrParaLogin('/cadastro')}>Criar conta</button>
+            </div>
+          ) : (
+            <>
+              <BreathTransition
+                ativa={transicionando}
+                cor={corTransicao}
+                blocoAtual={blocoAtual}
+                estiloEscolhido={estado.estilo || ''}
+                respostaAtual={respostaTransicao || estado[campoTransicao] || ''}
+                perfilCasal={estado.perfilCasal || ''}
+              >
+                <ProgressBar progress={progress} blockName={blockName} />
+                {estado.etapaAtual > 0 && <BackButton onClick={handleBack} />}
+                <React.Suspense fallback={<div style={{ padding: 'var(--space-6)' }}>Carregando etapa...</div>}>
+                  <StepComponent
+                    estado={estado}
+                    onSelect={handleSelect}
+                    onConcluir={handleConcluirMemorial}
+                  />
+                </React.Suspense>
+                {estado.etapaAtual === 0 && <Footer />}
+              </BreathTransition>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ==========================================
+ * ARQUIVO: components/memorial/MemorialPreview.jsx
+ * ========================================== */\n
+// Preview em tempo real do memorial sendo construído
+// Dependências diretas: React, PropTypes, sugestoes.js (sugerirPaleta)
+
+import React, { useState } from 'react';
+import PropTypes from 'prop-types';
+import { sugerirPaleta } from '../../utils/sugestoes';
+
+function Secao({ titulo, children, defaultOpen = true }) {
+  const [aberto, setAberto] = useState(defaultOpen);
+  return (
+    <div style={{ borderBottom: '1px solid var(--color-border)', padding: 'var(--space-4) 0' }}>
+      <button
+        onClick={() => setAberto(!aberto)}
+        aria-expanded={aberto}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'none',
+          border: 'none',
+          fontFamily: 'var(--font-body)',
+          fontSize: 'var(--text-sm)',
+          fontWeight: 'var(--font-semibold)',
+          color: 'var(--color-text-primary)',
+          cursor: 'pointer',
+          padding: 0,
+        }}
+      >
+        {titulo}
+        <span style={{ color: 'var(--color-text-muted)', transform: aberto ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }}>
+          ▼
+        </span>
+      </button>
+      {aberto && (
+        <div style={{ marginTop: 'var(--space-3)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function MemorialPreview({ estado, visivel = true }) {
+  const [mobileAberto, setMobileAberto] = useState(false);
+
+  const temDados = Object.values(estado || {}).some((v) => {
+    if (Array.isArray(v)) return v.length > 0;
+    if (typeof v === 'boolean') return true;
+    return v !== null && v !== '' && v !== 0;
+  });
+
+  const conteudo = (
+    <div style={{ height: '100%', overflowY: 'auto', padding: 'var(--space-5)' }}>
+      {!temDados ? (
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+          Seu memorial vai tomando forma aqui...
+        </p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {estado.perfilCasal && (
+            <Secao titulo="Identidade do casal">
+              <p>Perfil: {estado.perfilCasal}</p>
+              {(estado.nomePessoa1 || estado.nomePessoa2) && (
+                <p>{[estado.nomePessoa1, estado.nomePessoa2].filter(Boolean).join(' e ')}</p>
+              )}
+            </Secao>
+          )}
+
+          {estado.estilo && (
+            <Secao titulo="Identidade visual">
+              <p style={{ textTransform: 'capitalize', marginBottom: 'var(--space-2)' }}>Estilo: {estado.estilo}</p>
+              {estado.paleta?.length > 0 && (
+                <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                  {estado.paleta.map((cor) => (
+                    <div
+                      key={cor}
+                      aria-label={`Cor ${cor}`}
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: 'var(--radius-md)',
+                        backgroundColor: cor,
+                        border: '1px solid var(--color-border)',
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+              {!estado.paleta?.length && estado.estilo && (
+                <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                  {sugerirPaleta(estado.estilo).map((cor) => (
+                    <div
+                      key={cor}
+                      aria-label={`Cor sugerida ${cor}`}
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: 'var(--radius-md)',
+                        backgroundColor: cor,
+                        border: '1px solid var(--color-border)',
+                        opacity: 0.5,
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </Secao>
+          )}
+
+          {(estado.tipoCerimonia || estado.tipoLocal) && (
+            <Secao titulo="Cerimônia e local">
+              {estado.tipoCerimonia && <p>Cerimônia: {estado.tipoCerimonia}</p>}
+              {estado.tipoLocal && <p>Local: {estado.tipoLocal}</p>}
+              {estado.cidadeEvento && <p>Cidade: {estado.cidadeEvento}</p>}
+              {estado.dataEvento && <p>Data: {estado.dataEvento}</p>}
+            </Secao>
+          )}
+
+          {(estado.flores !== null || estado.iluminacao !== null) && (
+            <Secao titulo="Decoração">
+              {estado.flores !== null && <p>Flores: {estado.flores === false ? 'Sem flores' : 'Sim'}</p>}
+              {estado.iluminacao && <p>Iluminação: {estado.iluminacao}</p>}
+              {estado.velas !== null && <p>Velas: {estado.velas === false ? 'Sem velas' : 'Sim'}</p>}
+            </Secao>
+          )}
+
+          {(estado.toalha || estado.loucas || estado.talheres) && (
+            <Secao titulo="Mesa posta">
+              {estado.toalha && <p>Toalha: {estado.toalha}</p>}
+              {estado.loucas && <p>Louças: {estado.loucas}</p>}
+              {estado.talheres && <p>Talheres: {estado.talheres}</p>}
+            </Secao>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  if (!visivel) return null;
+
+  return (
+    <>
+      {/* Desktop: painel lateral fixo */}
+      <aside
+        style={{
+          display: 'none',
+          width: '320px',
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'var(--color-surface)',
+          borderLeft: '1px solid var(--color-border)',
+          zIndex: 'var(--z-sticky)',
+        }}
+        className="memorial-preview-desktop"
+      >
+        <style jsx>{`
+          @media (min-width: 1024px) {
+            .memorial-preview-desktop {
+              display: block !important;
+            }
+          }
+        `}</style>
+        {conteudo}
+      </aside>
+
+      {/* Mobile: drawer via botão */}
+      <div className="memorial-preview-mobile" style={{ display: 'block' }}>
+        <style jsx>{`
+          @media (min-width: 1024px) {
+            .memorial-preview-mobile {
+              display: none !important;
+            }
+          }
+        `}</style>
+        <button
+          onClick={() => setMobileAberto(!mobileAberto)}
+          aria-expanded={mobileAberto}
+          aria-controls="memorial-preview-drawer"
+          style={{
+            position: 'fixed',
+            bottom: 'var(--space-20)',
+            right: 'var(--space-4)',
+            zIndex: 'var(--z-sticky)',
+            padding: 'var(--space-3) var(--space-4)',
+            borderRadius: 'var(--radius-full)',
+            border: 'none',
+            backgroundColor: 'var(--color-brand)',
+            color: 'var(--color-white)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-sm)',
+            fontWeight: 'var(--font-medium)',
+            cursor: 'pointer',
+            boxShadow: 'var(--shadow-md)',
+          }}
+        >
+          {mobileAberto ? 'Fechar memorial' : 'Ver meu memorial'}
+        </button>
+
+        {mobileAberto && (
+          <div
+            id="memorial-preview-drawer"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              top: '60px',
+              backgroundColor: 'var(--color-surface)',
+              zIndex: 'var(--z-modal)',
+              borderTop: '1px solid var(--color-border)',
+            }}
+          >
+            {conteudo}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+MemorialPreview.propTypes = {
+  estado: PropTypes.object.isRequired,
+  visivel: PropTypes.bool,
+};
+
+export { MemorialPreview };
+
+/* ==========================================
+ * ARQUIVO: components/memorial/ProgressBar.jsx
+ * ========================================== */\n
+// components/memorial/ProgressBar.jsx
+import styles from './ProgressBar.module.css';
+
+export default function ProgressBar({ progress = 0, blockName = '' }) {
+  return (
+    <div
+      className={styles.progressWrapper}
+      role="progressbar"
+      aria-valuenow={Math.round(progress)}
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-label={`Progresso: ${Math.round(progress)}%`}
+    >
+      <div className={styles.progressTrack}>
+        <div
+          className={styles.progressFill}
+          style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+        />
+      </div>
+      {blockName && <span className={styles.progressLabel}>{blockName}</span>}
+    </div>
+  );
+}
+
+/* ==========================================
+ * ARQUIVO: components/memorial/BreathTransition.module.css
+ * ========================================== */\n
+/* BreathTransition.module.css — Respiro contextual elaborado */
+/* Overlay position:fixed independente do layout · Duração 700ms */
+
+.breathContainer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.backgroundImage {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.content {
+  position: relative;
+  z-index: 3;
+  text-align: center;
+  color: #FFFFFF;
+  padding: var(--space-6);
+  max-width: 90vw;
+}
+
+.blockLabel {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--font-medium);
+  margin-bottom: var(--space-2);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.responseText {
+  font-family: var(--font-body);
+  font-size: var(--text-lg);
+  opacity: 0.9;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.svgContainer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.svgElement {
+  width: 200px;
+  height: 200px;
+}
+
+/* Texto exclusivo para leitores de tela */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Respeita prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .breathContainer,
+  .backgroundImage,
+  .overlay,
+  .content,
+  .svgContainer {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ==========================================
+ * ARQUIVO: components/memorial/ProgressBar.module.css
+ * ========================================== */\n
+/* components/memorial/ProgressBar.module.css */
+
+.progressWrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 0 0 8px 0;
+  }
+  
+  .progressTrack {
+    width: 100%;
+    height: 3px;
+    background: var(--color-border);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+  }
+  
+  .progressFill {
+    height: 100%;
+    background: var(--color-brand);
+    border-radius: var(--radius-full);
+    transition: width 0.3s ease;
+  }
+  
+  .progressLabel {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    line-height: 1;
+  }

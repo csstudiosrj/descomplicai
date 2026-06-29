@@ -1,3 +1,6 @@
+/* ==========================================
+ * ARQUIVO: components/memorial/steps/Step01Modo.jsx
+ * ========================================== */\n
 // Etapa 1 do memorial — escolha do modo de criação
 // COM PULSO NO WRAPPER (não no Card — evita conflito de estilos internos)
 
@@ -32,10 +35,10 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
   const handleClick = (opcao) => {
     if (cardPulsando) return;
 
-    setCardPulsando(opcao.valor);
+    setCardPulsando(o.valor);
 
     setTimeout(() => {
-      onSelect('modoPlanejamento', opcao.valor, opcao.cor);
+      onSelect('modoPlanejamento', o.valor, o.cor);
       setCardPulsando(null);
     }, 350);
   };
@@ -81,17 +84,17 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
         }}
       >
         {OPCOES.map((opcao) => {
-          const isSelected = selecionado === opcao.valor;
-          const isPulsando = cardPulsando === opcao.valor;
+          const isSelected = selecionado === o.valor;
+          const isPulsando = cardPulsando === o.valor;
 
           return (
             <div
-              key={opcao.valor}
+              key={o.valor}
               style={{
                 transition: 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1)',
                 transform: isPulsando ? 'scale(1.03)' : 'scale(1)',
                 boxShadow: isPulsando 
-                  ? `0 0 0 3px ${opcao.corPulso}, 0 6px 24px ${opcao.corPulso}` 
+                  ? `0 0 0 3px ${o.corPulso}, 0 6px 24px ${o.corPulso}` 
                   : 'none',
                 borderRadius: 'var(--radius-lg)',
                 border: isPulsando ? 'none' : 'transparent',
@@ -104,7 +107,7 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
                 onClick={() => handleClick(opcao)}
                 role="radio"
                 aria-checked={isSelected}
-                aria-label={`${opcao.label}: ${opcao.subtexto}`}
+                aria-label={`${o.label}: ${o.subtexto}`}
                 tabIndex={0}
                 onKeyDown={(e) => handleKeyDown(e, opcao)}
               >
@@ -120,7 +123,7 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
                       width: '48px',
                       height: '48px',
                       borderRadius: 'var(--radius-lg)',
-                      backgroundColor: isSelected ? opcao.cor : 'var(--color-surface)',
+                      backgroundColor: isSelected ? o.cor : 'var(--color-surface)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -128,7 +131,7 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
                       transition: 'background-color 200ms ease, color 200ms ease',
                     }}
                   >
-                    <Icon name={opcao.icone} size={24} ariaHidden={true} />
+                    <Icon name={o.icone} size={24} ariaHidden={true} />
                   </div>
                   <div>
                     <div
@@ -140,7 +143,7 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
                         marginBottom: 'var(--space-1)',
                       }}
                     >
-                      {opcao.label}
+                      {o.label}
                     </div>
                     <div
                       style={{
@@ -150,7 +153,7 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
                         lineHeight: 'var(--leading-relaxed)',
                       }}
                     >
-                      {opcao.subtexto}
+                      {o.subtexto}
                     </div>
                   </div>
                 </div>

@@ -1,0 +1,1573 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+export default async function handler(req, res) {
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return res.status(500).json({ error: 'Configuração do Supabase incompleta' });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token de autenticação não fornecido' });
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+  if (authError || !user) {
+    return res.status(401).json({ error: 'Token inválido' });
+  }
+
+  const { data: cerimonialista, error: cerimError } = await supabase
+    .from('cerimonialistas')
+    .select('id')
+    .eq('usuario_id', user.id)
+    .single();
+
+  if (cerimError || !cerimonialista) {
+    return res.status(403).json({ error: 'Usuário não é cerimonialista' });
+  }
+
+  const cerimonialistaId = cerimonialista.id;
+
+  try {
+    switch (req.method) {
+      case 'GET': {
+        const { data, error } = await supabase
+          .from('cerimonialista_assistentes')
+          .select('*')
+          .eq('cerimonialista_id', cerimonialistaId)
+          .order('criado_em', { ascending: false });
+
+        if (error) throw error;
+        return res.status(200).json({ assistentes: data || [] });
+      }
+
+      case 'POST': {
+        const { nome, email, acesso = 'operacional' } = req.body;
+
+        if (!nome?.trim() || !email?.trim()) {
+          return res.status(400).json({ error: 'Nome e e-mail são obrigatórios' });
+        }
+
+        // Verificar se o usuário existe no Auth
+        const { data: authUsers, error: authListError } = await supabase.auth.admin.listUsers();
+        if (authListError) {
+          return res.status(500).json({ error: 'Erro ao verificar usuário' });
+        }
+
+        const usuarioExistente = authUsers?.users?.find((u) => u.email === email.trim());
+        let usuarioId = usuarioExistente?.id;
+
+        // Se não existir, criar usuário
+        if (!usuarioExistente) {
+          const { data: novoUser, error: createError } = await supabase.auth.admin.createUser({
+            email: email.trim(),
+            password: Math.random().toString(36).slice(-8),
+            email_confirm: true,
+          });
+
+          if (createError) {
+            return res.status(400).json({ error: 'Erro ao criar usuário: ' + createError.message });
+          }
+          usuarioId = novoUser.user.id;
+        }
+
+        // Verificar se já é assistente deste cerimonialista
+        const { data: existente, error: checkError } = await supabase
+          .from('cerimonialista_assistentes')
+          .select('id')
+          .eq('cerimonialista_id', cerimonialistaId)
+          .eq('usuario_id', usuarioId)
+          .single();
+
+        if (existente) {
+          return res.status(409).json({ error: 'Este usuário já é assistente' });
+        }
+
+        const { data, error } = await supabase
+          .from('cerimonialista_assistentes')
+          .insert({
+            cerimonialista_id: cerimonialistaId,
+            usuario_id: usuarioId,
+            nome: nome.trim(),
+            email: email.trim(),
+            acesso,
+            ativo: true,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return res.status(201).json({ assistente: data });
+      }
+
+      case 'PUT': {
+        const { id, ...updates } = req.body;
+
+        if (!id) {
+          return res.status(400).json({ error: 'ID do assistente é obrigatório' });
+        }
+
+        const { data: existing, error: checkError } = await supabase
+          .from('cerimonialista_assistentes')
+          .select('id')
+          .eq('id', id)
+          .eq('cerimonialista_id', cerimonialistaId)
+          .single();
+
+        if (checkError || !existing) {
+          return res.status(403).json({ error: 'Assistente não encontrado ou sem permissão' });
+        }
+
+        const cleanUpdates = {};
+        if (updates.nome !== undefined) cleanUpdates.nome = updates.nome.trim();
+        if (updates.email !== undefined) cleanUpdates.email = updates.email.trim();
+        if (updates.acesso !== undefined) cleanUpdates.acesso = updates.acesso;
+        if (updates.ativo !== undefined) cleanUpdates.ativo = updates.ativo;
+
+        const { data, error } = await supabase
+          .from('cerimonialista_assistentes')
+          .update(cleanUpdates)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return res.status(200).json({ assistente: data });
+      }
+
+      case 'DELETE': {
+        const { id } = req.body;
+
+        if (!id) {
+          return res.status(400).json({ error: 'ID do assistente é obrigatório' });
+        }
+
+        const { error } = await supabase
+          .from('cerimonialista_assistentes')
+          .delete()
+          .eq('id', id)
+          .eq('cerimonialista_id', cerimonialistaId);
+
+        if (error) throw error;
+        return res.status(200).json({ success: true });
+      }
+
+      default:
+        res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
+        return res.status(405).json({ error: `Método ${req.method} não permitido` });
+    }
+  } catch (err) {
+    console.error('[API assistentes]', err);
+    return res.status(500).json({ error: err.message || 'Erro interno' });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ erro: 'Metodo nao permitido.' });
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return res.status(500).json({ erro: 'Configuracao do servidor incompleta.' });
+  }
+
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const {
+    nome_empresa,
+    cnpj,
+    nome_responsavel,
+    email,
+    telefone,
+    cidade,
+    estado,
+    senha,
+  } = req.body;
+
+  if (!nome_empresa || !nome_responsavel || !email || !cidade || !estado || !senha) {
+    return res.status(400).json({ erro: 'Campos obrigatorios nao preenchidos.' });
+  }
+
+  if (senha.length < 6) {
+    return res.status(400).json({ erro: 'A senha deve ter no minimo 6 caracteres.' });
+  }
+
+  try {
+    const { data: existingUser } = await supabaseAdmin
+      .from('cerimonialistas')
+      .select('id')
+      .eq('nome_empresa', nome_empresa)
+      .limit(1);
+
+    if (existingUser && existingUser.length > 0) {
+      return res.status(409).json({ erro: 'Ja existe uma empresa com este nome cadastrada.' });
+    }
+
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: senha,
+      email_confirm: true,
+      user_metadata: { nome: nome_responsavel, tipo: 'cerimonialista' },
+    });
+
+    if (authError) {
+      if (authError.message && authError.message.includes('already been registered')) {
+        return res.status(409).json({ erro: 'Este e-mail ja esta cadastrado.' });
+      }
+      console.error('Erro ao criar usuario no Auth:', authError);
+      return res.status(500).json({ erro: 'Erro ao criar conta. Tente novamente.' });
+    }
+
+    const usuario_id = authData.user.id;
+
+    const { error: insertError } = await supabaseAdmin.from('cerimonialistas').insert({
+      usuario_id,
+      nome_empresa,
+      cnpj: cnpj || null,
+      telefone: telefone || null,
+      cidade,
+      estado,
+      regiao_atuacao: cidade + ' — ' + estado,
+      ativo: false,
+      plano: 'trial',
+      trial_inicio: new Date().toISOString(),
+    });
+
+    if (insertError) {
+      console.error('Erro ao inserir cerimonialista:', insertError);
+      await supabaseAdmin.auth.admin.deleteUser(usuario_id);
+      return res.status(500).json({ erro: 'Erro ao salvar dados. Tente novamente.' });
+    }
+
+    return res.status(201).json({ sucesso: true });
+  } catch (err) {
+    console.error('Erro inesperado no cadastro:', err);
+    return res.status(500).json({ erro: 'Erro interno. Tente novamente.' });
+  }
+}import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+export default async function handler(req, res) {
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return res.status(500).json({ error: 'Configuração do Supabase incompleta' });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  try {
+    // GET público — dados do convite para a página pública
+    if (req.method === 'GET') {
+      const { leadId } = req.query;
+
+      if (!leadId) {
+        return res.status(400).json({ error: 'leadId é obrigatório' });
+      }
+
+      const { data: lead, error: leadError } = await supabase
+        .from('cerimonialista_leads')
+        .select('id, nome_lead, email, tipo_evento, data_prevista, valor_proposta, cerimonialista_id, estagio, convertido_evento_id')
+        .eq('id', leadId)
+        .eq('estagio', 'contratado')
+        .is('convertido_evento_id', null)
+        .single();
+
+      if (leadError || !lead) {
+        return res.status(404).json({ error: 'Convite não encontrado ou já convertido' });
+      }
+
+      const { data: cerimonialista, error: cerimError } = await supabase
+        .from('cerimonialistas')
+        .select('id, nome_empresa, nome_completo, cidade, estado')
+        .eq('id', lead.cerimonialista_id)
+        .single();
+
+      if (cerimError) {
+        return res.status(500).json({ error: 'Erro ao buscar cerimonialista' });
+      }
+
+      return res.status(200).json({ lead, cerimonialista });
+    }
+
+    // POST — aceitar convite (requer autenticação)
+    if (req.method === 'POST') {
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Token de autenticação não fornecido' });
+      }
+
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+      if (authError || !user) {
+        return res.status(401).json({ error: 'Token inválido' });
+      }
+
+      const { leadId } = req.body;
+
+      if (!leadId) {
+        return res.status(400).json({ error: 'leadId é obrigatório' });
+      }
+
+      // Buscar lead
+      const { data: lead, error: leadError } = await supabase
+        .from('cerimonialista_leads')
+        .select('*')
+        .eq('id', leadId)
+        .eq('estagio', 'contratado')
+        .is('convertido_evento_id', null)
+        .single();
+
+      if (leadError || !lead) {
+        return res.status(404).json({ error: 'Lead não encontrado ou já convertido' });
+      }
+
+      // Verificar se o usuário já tem um evento
+      const { data: eventoExistente, error: eventoCheckError } = await supabase
+        .from('eventos')
+        .select('id')
+        .eq('usuario_id', user.id)
+        .single();
+
+      if (eventoExistente) {
+        // Atualizar evento existente com cerimonialista
+        const { error: updError } = await supabase
+          .from('eventos')
+          .update({
+            cerimonialista_id: lead.cerimonialista_id,
+            casal_confirmado: true,
+            nome_evento: lead.nome_lead,
+            data_evento: lead.data_prevista,
+            orcamento: lead.valor_proposta || 0,
+          })
+          .eq('id', eventoExistente.id);
+
+        if (updError) throw updError;
+
+        // Atualizar lead
+        await supabase
+          .from('cerimonialista_leads')
+          .update({ convertido_evento_id: eventoExistente.id })
+          .eq('id', leadId);
+
+        return res.status(200).json({ evento: eventoExistente });
+      }
+
+      // Criar novo evento
+      const { data: novoEvento, error: createError } = await supabase
+        .from('eventos')
+        .insert({
+          usuario_id: user.id,
+          cerimonialista_id: lead.cerimonialista_id,
+          nome_evento: lead.nome_lead,
+          data_evento: lead.data_prevista,
+          orcamento: lead.valor_proposta || 0,
+          status: 'ativo',
+          casal_confirmado: true,
+          criado_por: 'cerimonialista',
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+
+      // Atualizar lead
+      await supabase
+        .from('cerimonialista_leads')
+        .update({ convertido_evento_id: novoEvento.id })
+        .eq('id', leadId);
+
+      return res.status(201).json({ evento: novoEvento });
+    }
+
+    res.setHeader('Allow', ['GET', 'POST']);
+    return res.status(405).json({ error: `Método ${req.method} não permitido` });
+  } catch (err) {
+    console.error('[API convites]', err);
+    return res.status(500).json({ error: err.message || 'Erro interno' });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+import { SUBCATEGORIAS_FLAT } from '../../../utils/catalogoFornecedores';
+
+const CATEGORIAS_VALIDAS = new Set(SUBCATEGORIAS_FLAT.map(s => s.id));
+
+function validarCategoria(categoria) {
+  if (!categoria) return null;
+  const limpa = categoria.trim();
+  if (!limpa) return null;
+  if (!CATEGORIAS_VALIDAS.has(limpa)) {
+    return { erro: `Categoria invalida: "${limpa}"` };
+  }
+  return limpa;
+}
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+export default async function handler(req, res) {
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return res.status(500).json({ error: 'Configuracao do Supabase incompleta' });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token de autenticacao nao fornecido' });
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+  if (authError || !user) {
+    return res.status(401).json({ error: 'Token invalido' });
+  }
+
+  const { data: cerimonialista, error: cerimError } = await supabase
+    .from('cerimonialistas')
+    .select('id')
+    .eq('usuario_id', user.id)
+    .single();
+
+  if (cerimError || !cerimonialista) {
+    return res.status(403).json({ error: 'Usuario nao e cerimonialista' });
+  }
+
+  const cerimonialistaId = cerimonialista.id;
+
+  try {
+    switch (req.method) {
+      case 'GET': {
+        const { data, error } = await supabase
+          .from('cerimonialista_financeiro')
+          .select('*')
+          .eq('cerimonialista_id', cerimonialistaId)
+          .order('data_vencimento', { ascending: false });
+
+        if (error) throw error;
+        return res.status(200).json({ lancamentos: data || [] });
+      }
+
+      case 'POST': {
+        const { evento_id, tipo, categoria, descricao, valor, data_vencimento, pago } = req.body;
+
+        if (!tipo || !valor) {
+          return res.status(400).json({ error: 'Tipo e valor sao obrigatorios' });
+        }
+
+        const catValidada = validarCategoria(categoria);
+        if (catValidada && typeof catValidada === 'object' && catValidada.erro) {
+          return res.status(400).json({ error: catValidada.erro });
+        }
+
+        const { data, error } = await supabase
+          .from('cerimonialista_financeiro')
+          .insert({
+            cerimonialista_id: cerimonialistaId,
+            evento_id: evento_id || null,
+            tipo,
+            categoria: catValidada,
+            descricao: descricao?.trim() || null,
+            valor: parseFloat(valor),
+            data_vencimento: data_vencimento || null,
+            pago: pago || false,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return res.status(201).json({ lancamento: data });
+      }
+
+      case 'PUT': {
+        const { id, ...updates } = req.body;
+
+        if (!id) {
+          return res.status(400).json({ error: 'ID do lancamento e obrigatorio' });
+        }
+
+        const { data: existing, error: checkError } = await supabase
+          .from('cerimonialista_financeiro')
+          .select('id')
+          .eq('id', id)
+          .eq('cerimonialista_id', cerimonialistaId)
+          .single();
+
+        if (checkError || !existing) {
+          return res.status(403).json({ error: 'Lancamento nao encontrado ou sem permissao' });
+        }
+
+        const cleanUpdates = {};
+        if (updates.evento_id !== undefined) cleanUpdates.evento_id = updates.evento_id || null;
+        if (updates.tipo !== undefined) cleanUpdates.tipo = updates.tipo;
+        if (updates.categoria !== undefined) {
+          const catValidada = validarCategoria(updates.categoria);
+          if (catValidada && typeof catValidada === 'object' && catValidada.erro) {
+            return res.status(400).json({ error: catValidada.erro });
+          }
+          cleanUpdates.categoria = catValidada;
+        }
+        if (updates.descricao !== undefined) cleanUpdates.descricao = updates.descricao?.trim() || null;
+        if (updates.valor !== undefined) cleanUpdates.valor = parseFloat(updates.valor);
+        if (updates.data_vencimento !== undefined) cleanUpdates.data_vencimento = updates.data_vencimento || null;
+        if (updates.pago !== undefined) cleanUpdates.pago = updates.pago;
+
+        const { data, error } = await supabase
+          .from('cerimonialista_financeiro')
+          .update(cleanUpdates)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return res.status(200).json({ lancamento: data });
+      }
+
+      case 'DELETE': {
+        const { id } = req.body;
+
+        if (!id) {
+          return res.status(400).json({ error: 'ID do lancamento e obrigatorio' });
+        }
+
+        const { error } = await supabase
+          .from('cerimonialista_financeiro')
+          .delete()
+          .eq('id', id)
+          .eq('cerimonialista_id', cerimonialistaId);
+
+        if (error) throw error;
+        return res.status(200).json({ success: true });
+      }
+
+      default:
+        res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
+        return res.status(405).json({ error: `Metodo ${req.method} nao permitido` });
+    }
+  } catch (err) {
+    console.error('[API financeiro]', err);
+    return res.status(500).json({ error: err.message || 'Erro interno' });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+export default async function handler(req, res) {
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return res.status(500).json({ error: 'Configuração do Supabase incompleta' });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token de autenticação não fornecido' });
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+  if (authError || !user) {
+    return res.status(401).json({ error: 'Token inválido' });
+  }
+
+  const { data: cerimonialista, error: cerimError } = await supabase
+    .from('cerimonialistas')
+    .select('id')
+    .eq('usuario_id', user.id)
+    .single();
+
+  if (cerimError || !cerimonialista) {
+    return res.status(403).json({ error: 'Usuário não é cerimonialista' });
+  }
+
+  const cerimonialistaId = cerimonialista.id;
+
+  try {
+    switch (req.method) {
+      case 'GET': {
+        const { data, error } = await supabase
+          .from('cerimonialista_leads')
+          .select('*')
+          .eq('cerimonialista_id', cerimonialistaId)
+          .order('criado_em', { ascending: false });
+
+        if (error) throw error;
+        return res.status(200).json({ leads: data || [] });
+      }
+
+      case 'POST': {
+        const {
+          nome_lead,
+          email,
+          telefone,
+          tipo_evento,
+          data_prevista,
+          valor_proposta,
+          estagio = 'contato_inicial',
+          fonte,
+          notas,
+        } = req.body;
+
+        if (!nome_lead?.trim()) {
+          return res.status(400).json({ error: 'Nome do lead é obrigatório' });
+        }
+
+        const { data, error } = await supabase
+          .from('cerimonialista_leads')
+          .insert({
+            cerimonialista_id: cerimonialistaId,
+            nome_lead: nome_lead.trim(),
+            email: email?.trim() || null,
+            telefone: telefone?.trim() || null,
+            tipo_evento: tipo_evento?.trim() || null,
+            data_prevista: data_prevista || null,
+            valor_proposta: valor_proposta ? parseFloat(valor_proposta) : null,
+            estagio,
+            fonte: fonte?.trim() || null,
+            notas: notas?.trim() || null,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return res.status(201).json({ lead: data });
+      }
+
+      case 'PUT': {
+        const { id, ...updates } = req.body;
+
+        if (!id) {
+          return res.status(400).json({ error: 'ID do lead é obrigatório' });
+        }
+
+        const { data: existing, error: checkError } = await supabase
+          .from('cerimonialista_leads')
+          .select('*')
+          .eq('id', id)
+          .eq('cerimonialista_id', cerimonialistaId)
+          .single();
+
+        if (checkError || !existing) {
+          return res.status(403).json({ error: 'Lead não encontrado ou sem permissão' });
+        }
+
+        const cleanUpdates = {};
+        if (updates.nome_lead !== undefined) cleanUpdates.nome_lead = updates.nome_lead.trim();
+        if (updates.email !== undefined) cleanUpdates.email = updates.email?.trim() || null;
+        if (updates.telefone !== undefined) cleanUpdates.telefone = updates.telefone?.trim() || null;
+        if (updates.tipo_evento !== undefined) cleanUpdates.tipo_evento = updates.tipo_evento?.trim() || null;
+        if (updates.data_prevista !== undefined) cleanUpdates.data_prevista = updates.data_prevista || null;
+        if (updates.valor_proposta !== undefined) cleanUpdates.valor_proposta = updates.valor_proposta ? parseFloat(updates.valor_proposta) : null;
+        if (updates.estagio !== undefined) cleanUpdates.estagio = updates.estagio;
+        if (updates.fonte !== undefined) cleanUpdates.fonte = updates.fonte?.trim() || null;
+        if (updates.notas !== undefined) cleanUpdates.notas = updates.notas?.trim() || null;
+        cleanUpdates.atualizado_em = new Date().toISOString();
+
+        let eventoCriado = null;
+        if (cleanUpdates.estagio === 'contratado' && !existing.convertido_evento_id) {
+          const { data: novoEvento, error: eventoError } = await supabase
+            .from('eventos')
+            .insert({
+              cerimonialista_id: cerimonialistaId,
+              criado_por: 'cerimonialista',
+              nome_evento: cleanUpdates.nome_lead || existing.nome_lead,
+              data_evento: cleanUpdates.data_prevista || existing.data_prevista,
+              orcamento: cleanUpdates.valor_proposta || existing.valor_proposta || 0,
+              status: 'rascunho',
+              casal_confirmado: false,
+              convite_revogado: false,
+            })
+            .select()
+            .single();
+
+          if (eventoError) {
+            console.error('[leads] erro ao criar evento:', eventoError);
+            return res.status(500).json({ error: 'Erro ao criar evento para o lead' });
+          }
+
+          eventoCriado = novoEvento;
+          cleanUpdates.convertido_evento_id = novoEvento.id;
+
+          try {
+            const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://descomplicai.vercel.app';
+            const linkConvite = `${baseUrl}/convite/${novoEvento.id}`;
+
+            await supabase
+              .from('notificacoes')
+              .insert({
+                usuario_id: user.id,
+                tipo: 'convite_enviado',
+                mensagem: `Convite enviado para ${existing.nome_lead}: ${linkConvite}`,
+                lida: true,
+                criado_em: new Date().toISOString(),
+              });
+          } catch (emailErr) {
+            console.log('[leads] notificação de email não registrada:', emailErr.message);
+          }
+        }
+
+        const { data, error } = await supabase
+          .from('cerimonialista_leads')
+          .update(cleanUpdates)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return res.status(200).json({ lead: data, evento: eventoCriado });
+      }
+
+      case 'DELETE': {
+        const { id } = req.body;
+
+        if (!id) {
+          return res.status(400).json({ error: 'ID do lead é obrigatório' });
+        }
+
+        const { error } = await supabase
+          .from('cerimonialista_leads')
+          .delete()
+          .eq('id', id)
+          .eq('cerimonialista_id', cerimonialistaId);
+
+        if (error) throw error;
+        return res.status(200).json({ success: true });
+      }
+
+      default:
+        res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
+        return res.status(405).json({ error: `Método ${req.method} não permitido` });
+    }
+  } catch (err) {
+    console.error('[API leads]', err);
+    return res.status(500).json({ error: err.message || 'Erro interno' });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+export default async function handler(req, res) {
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return res.status(500).json({ error: 'Configuração do Supabase incompleta' });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token de autenticação não fornecido' });
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+  if (authError || !user) {
+    return res.status(401).json({ error: 'Token inválido' });
+  }
+
+  const { data: cerimonialista, error: cerimError } = await supabase
+    .from('cerimonialistas')
+    .select('id')
+    .eq('usuario_id', user.id)
+    .single();
+
+  if (cerimError || !cerimonialista) {
+    return res.status(403).json({ error: 'Usuário não é cerimonialista' });
+  }
+
+  const cerimonialistaId = cerimonialista.id;
+
+  try {
+    switch (req.method) {
+      case 'GET': {
+        const { data, error } = await supabase
+          .from('cerimonialista_modelos')
+          .select('*')
+          .eq('cerimonialista_id', cerimonialistaId)
+          .order('criado_em', { ascending: false });
+
+        if (error) throw error;
+        return res.status(200).json({ modelos: data || [] });
+      }
+
+      case 'POST': {
+        const { tipo, nome, conteudo, variaveis } = req.body;
+
+        if (!nome?.trim()) {
+          return res.status(400).json({ error: 'Nome do modelo é obrigatório' });
+        }
+
+        const { data, error } = await supabase
+          .from('cerimonialista_modelos')
+          .insert({
+            cerimonialista_id: cerimonialistaId,
+            tipo: tipo?.trim() || null,
+            nome: nome.trim(),
+            conteudo: conteudo?.trim() || null,
+            variaveis: variaveis || null,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return res.status(201).json({ modelo: data });
+      }
+
+      case 'PUT': {
+        const { id, ...updates } = req.body;
+
+        if (!id) {
+          return res.status(400).json({ error: 'ID do modelo é obrigatório' });
+        }
+
+        const { data: existing, error: checkError } = await supabase
+          .from('cerimonialista_modelos')
+          .select('id')
+          .eq('id', id)
+          .eq('cerimonialista_id', cerimonialistaId)
+          .single();
+
+        if (checkError || !existing) {
+          return res.status(403).json({ error: 'Modelo não encontrado ou sem permissão' });
+        }
+
+        const cleanUpdates = {};
+        if (updates.tipo !== undefined) cleanUpdates.tipo = updates.tipo?.trim() || null;
+        if (updates.nome !== undefined) cleanUpdates.nome = updates.nome.trim();
+        if (updates.conteudo !== undefined) cleanUpdates.conteudo = updates.conteudo?.trim() || null;
+        if (updates.variaveis !== undefined) cleanUpdates.variaveis = updates.variaveis || null;
+
+        const { data, error } = await supabase
+          .from('cerimonialista_modelos')
+          .update(cleanUpdates)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return res.status(200).json({ modelo: data });
+      }
+
+      case 'DELETE': {
+        const { id } = req.body;
+
+        if (!id) {
+          return res.status(400).json({ error: 'ID do modelo é obrigatório' });
+        }
+
+        const { error } = await supabase
+          .from('cerimonialista_modelos')
+          .delete()
+          .eq('id', id)
+          .eq('cerimonialista_id', cerimonialistaId);
+
+        if (error) throw error;
+        return res.status(200).json({ success: true });
+      }
+
+      default:
+        res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
+        return res.status(405).json({ error: `Método ${req.method} não permitido` });
+    }
+  } catch (err) {
+    console.error('[API modelos]', err);
+    return res.status(500).json({ error: err.message || 'Erro interno' });
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const CAMPOS_EDITAVEIS = [
+  'nome_empresa', 'cnpj', 'bio', 'portfolio_urls',
+  'instagram', 'site', 'telefone', 'cidade', 'estado', 'regiao_atuacao',
+];
+
+export default async function handler(req, res) {
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return res.status(500).json({ error: 'Configuração do Supabase incompleta' });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token de autenticação não fornecido' });
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+  if (authError || !user) {
+    return res.status(401).json({ error: 'Token inválido' });
+  }
+
+  try {
+    if (req.method === 'GET') {
+      const { data: cerimonialista, error } = await supabase
+        .from('cerimonialistas')
+        .select('*')
+        .eq('usuario_id', user.id)
+        .single();
+
+      if (error || !cerimonialista) {
+        return res.status(404).json({ error: 'Perfil não encontrado' });
+      }
+
+      const { data: assistentes, error: assistError } = await supabase
+        .from('cerimonialista_assistentes')
+        .select('id, nome, email, acesso, ativo, criado_em')
+        .eq('cerimonialista_id', cerimonialista.id)
+        .eq('ativo', true)
+        .order('criado_em', { ascending: false });
+
+      return res.status(200).json({
+        perfil: cerimonialista,
+        assistentes: assistentes || [],
+      });
+    }
+
+    if (req.method === 'PUT' || req.method === 'PATCH') {
+      const updates = req.body;
+
+      const cleanUpdates = {};
+      for (const key of Object.keys(updates)) {
+        if (CAMPOS_EDITAVEIS.includes(key)) {
+          if (key === 'portfolio_urls') {
+            cleanUpdates[key] = Array.isArray(updates[key]) ? updates[key] : [];
+          } else if (updates[key] !== undefined) {
+            cleanUpdates[key] = typeof updates[key] === 'string' ? updates[key].trim() : updates[key];
+          }
+        }
+      }
+
+      if (Object.keys(cleanUpdates).length === 0) {
+        return res.status(400).json({ error: 'Nenhum campo válido para atualizar' });
+      }
+
+      cleanUpdates.atualizado_em = new Date().toISOString();
+
+      const { data, error } = await supabase
+        .from('cerimonialistas')
+        .update(cleanUpdates)
+        .eq('usuario_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (!data) {
+        return res.status(404).json({ error: 'Perfil não encontrado' });
+      }
+
+      return res.status(200).json({ perfil: data });
+    }
+
+    res.setHeader('Allow', ['GET', 'PUT', 'PATCH']);
+    return res.status(405).json({ error: `Método ${req.method} não permitido` });
+  } catch (err) {
+    console.error('[API perfil]', err);
+    return res.status(500).json({ error: err.message || 'Erro interno' });
+  }
+}
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+)
+
+export default async function handler(req, res) {
+  const authHeader = req.headers.authorization
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token obrigatório' })
+  }
+  const token = authHeader.replace('Bearer ', '')
+
+  try {
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Token inválido' })
+    }
+
+    if (req.method === 'GET') {
+      const { evento_id } = req.query
+      if (!evento_id) {
+        return res.status(400).json({ error: 'evento_id obrigatório' })
+      }
+
+      // Verifica se o usuário é o casal dono do evento
+      const { data: eventoData, error: eventoError } = await supabaseAdmin
+        .from('eventos')
+        .select('cerimonialista_id')
+        .eq('id', evento_id)
+        .eq('usuario_id', user.id)
+        .single()
+
+      if (eventoError || !eventoData) {
+        return res.status(403).json({ error: 'Acesso negado' })
+      }
+
+      if (!eventoData.cerimonialista_id) {
+        return res.status(404).json({ error: 'Evento sem cerimonialista vinculado' })
+      }
+
+      const { data } = await supabaseAdmin
+        .from('cerimonialista_permissoes')
+        .select('*')
+        .eq('evento_id', evento_id)
+        .eq('cerimonialista_id', eventoData.cerimonialista_id)
+        .single()
+
+      return res.status(200).json({
+        permissoes: data || {
+          ver_fornecedores: false,
+          editar_fornecedores: false,
+          ver_financeiro: false,
+          editar_financeiro: false,
+          ver_tarefas: false,
+          editar_tarefas: false,
+          ver_convidados: false,
+          editar_convidados: false,
+          ver_chat: false,
+          editar_chat: false,
+          ver_cronograma: false,
+          editar_cronograma: false,
+          ver_contratos: false,
+          editar_contratos: false,
+          ver_mesas: false,
+          editar_mesas: false,
+          ver_memorial: true,
+        },
+        cerimonialista_id: eventoData.cerimonialista_id,
+      })
+    }
+
+    if (req.method === 'POST' || req.method === 'PUT') {
+      const payload = req.body
+      const { evento_id, cerimonialista_id, ...permissoes } = payload
+
+      if (!evento_id || !cerimonialista_id) {
+        return res.status(400).json({ error: 'evento_id e cerimonialista_id obrigatórios' })
+      }
+
+      // Verifica se o usuário é o casal dono do evento
+      const { data: eventoData, error: eventoError } = await supabaseAdmin
+        .from('eventos')
+        .select('id')
+        .eq('id', evento_id)
+        .eq('usuario_id', user.id)
+        .single()
+
+      if (eventoError || !eventoData) {
+        return res.status(403).json({ error: 'Acesso negado' })
+      }
+
+      // Memorial sempre true
+      permissoes.ver_memorial = true
+
+      const { data, error } = await supabaseAdmin
+        .from('cerimonialista_permissoes')
+        .upsert({
+          evento_id,
+          cerimonialista_id,
+          ...permissoes,
+          atualizado_em: new Date().toISOString(),
+        }, {
+          onConflict: 'evento_id,cerimonialista_id',
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('[permissao] erro upsert:', error)
+        return res.status(500).json({ error: 'Erro ao salvar permissões' })
+      }
+
+      return res.status(200).json({ permissoes: data })
+    }
+
+    return res.status(405).json({ error: 'Method not allowed' })
+  } catch (err) {
+    console.error('[permissao] erro:', err)
+    return res.status(500).json({ error: 'Erro interno' })
+  }
+}
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+export default async function handler(req, res) {
+  res.setHeader('Content-Type', 'application/json');
+
+  // Extrair token do header Authorization
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.replace('Bearer ', '').trim();
+
+  if (!token) {
+    return res.status(401).json({ erro: 'Token ausente.' });
+  }
+
+  // Verificar sessão
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).json({ erro: 'Sessão inválida.' });
+  }
+
+  // Buscar cerimonialista vinculado ao usuário
+  const { data: cerim, error: cerimError } = await supabaseAdmin
+    .from('cerimonialistas')
+    .select('id')
+    .eq('usuario_id', user.id)
+    .single();
+
+  if (cerimError || !cerim) {
+    return res.status(403).json({ erro: 'Usuário não é cerimonialista.' });
+  }
+
+  const cerimonialistaId = cerim.id;
+
+  try {
+    // ─── GET ───────────────────────────────────────────────────────────
+    if (req.method === 'GET') {
+      const { evento_id } = req.query;
+      if (!evento_id) {
+        return res.status(400).json({ erro: 'evento_id obrigatório.' });
+      }
+
+      // Verificar se o evento pertence ao cerimonialista
+      const { data: evento, error: evtError } = await supabaseAdmin
+        .from('eventos')
+        .select('id, cerimonialista_id, data_evento, tipo_cerimonia, tipo_local, status')
+        .eq('id', evento_id)
+        .single();
+
+      if (evtError || !evento) {
+        return res.status(404).json({ erro: 'Evento não encontrado.' });
+      }
+
+      if (evento.cerimonialista_id !== cerimonialistaId) {
+        return res.status(403).json({ erro: 'Evento não pertence a este cerimonialista.' });
+      }
+
+      const { data: itens, error: itensError } = await supabaseAdmin
+        .from('cerimonialista_roteiro_itens')
+        .select('*')
+        .eq('evento_id', evento_id)
+        .eq('cerimonialista_id', cerimonialistaId)
+        .order('ordem', { ascending: true })
+        .order('horario', { ascending: true });
+
+      if (itensError) {
+        console.error('Erro ao buscar roteiro:', itensError);
+        return res.status(500).json({ erro: 'Erro ao buscar roteiro.' });
+      }
+
+      return res.status(200).json({
+        evento,
+        itens: itens || [],
+      });
+    }
+
+    // ─── POST ───────────────────────────────────────────────────────────
+    if (req.method === 'POST') {
+      const { evento_id, horario, titulo, descricao, responsavel, status, ordem } = req.body;
+
+      if (!evento_id || !horario || !titulo) {
+        return res.status(400).json({ erro: 'evento_id, horario e titulo são obrigatórios.' });
+      }
+
+      // Verificar evento
+      const { data: evento, error: evtError } = await supabaseAdmin
+        .from('eventos')
+        .select('cerimonialista_id')
+        .eq('id', evento_id)
+        .single();
+
+      if (evtError || !evento || evento.cerimonialista_id !== cerimonialistaId) {
+        return res.status(403).json({ erro: 'Evento não autorizado.' });
+      }
+
+      // Calcular ordem automaticamente se não informada
+      let ordemFinal = ordem;
+      if (ordemFinal === undefined || ordemFinal === null) {
+        const { data: maxOrdem } = await supabaseAdmin
+          .from('cerimonialista_roteiro_itens')
+          .select('ordem')
+          .eq('evento_id', evento_id)
+          .eq('cerimonialista_id', cerimonialistaId)
+          .order('ordem', { ascending: false })
+          .limit(1)
+          .single();
+        ordemFinal = (maxOrdem?.ordem || 0) + 1;
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from('cerimonialista_roteiro_itens')
+        .insert({
+          evento_id,
+          cerimonialista_id: cerimonialistaId,
+          horario,
+          titulo,
+          descricao: descricao || null,
+          responsavel: responsavel || null,
+          status: status || 'pendente',
+          ordem: ordemFinal,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao criar item:', error);
+        return res.status(500).json({ erro: 'Erro ao criar item do roteiro.' });
+      }
+
+      return res.status(201).json(data);
+    }
+
+    // ─── PUT ───────────────────────────────────────────────────────────
+    if (req.method === 'PUT') {
+      const { id, horario, titulo, descricao, responsavel, status, ordem } = req.body;
+
+      if (!id) {
+        return res.status(400).json({ erro: 'id obrigatório.' });
+      }
+
+      // Verificar se o item pertence ao cerimonialista
+      const { data: itemExistente, error: itemError } = await supabaseAdmin
+        .from('cerimonialista_roteiro_itens')
+        .select('id, cerimonialista_id')
+        .eq('id', id)
+        .single();
+
+      if (itemError || !itemExistente || itemExistente.cerimonialista_id !== cerimonialistaId) {
+        return res.status(403).json({ erro: 'Item não autorizado.' });
+      }
+
+      const updateData = {};
+      if (horario !== undefined) updateData.horario = horario;
+      if (titulo !== undefined) updateData.titulo = titulo;
+      if (descricao !== undefined) updateData.descricao = descricao;
+      if (responsavel !== undefined) updateData.responsavel = responsavel;
+      if (status !== undefined) updateData.status = status;
+      if (ordem !== undefined) updateData.ordem = ordem;
+
+      const { data, error } = await supabaseAdmin
+        .from('cerimonialista_roteiro_itens')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao atualizar item:', error);
+        return res.status(500).json({ erro: 'Erro ao atualizar item.' });
+      }
+
+      return res.status(200).json(data);
+    }
+
+    // ─── DELETE ─────────────────────────────────────────────────────────
+    if (req.method === 'DELETE') {
+      const { id } = req.query;
+
+      if (!id) {
+        return res.status(400).json({ erro: 'id obrigatório.' });
+      }
+
+      const { data: itemExistente, error: itemError } = await supabaseAdmin
+        .from('cerimonialista_roteiro_itens')
+        .select('id, cerimonialista_id, evento_id')
+        .eq('id', id)
+        .single();
+
+      if (itemError || !itemExistente || itemExistente.cerimonialista_id !== cerimonialistaId) {
+        return res.status(403).json({ erro: 'Item não autorizado.' });
+      }
+
+      const { error } = await supabaseAdmin
+        .from('cerimonialista_roteiro_itens')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Erro ao deletar item:', error);
+        return res.status(500).json({ erro: 'Erro ao deletar item.' });
+      }
+
+      // Reordenar itens restantes
+      const { data: restantes } = await supabaseAdmin
+        .from('cerimonialista_roteiro_itens')
+        .select('id')
+        .eq('evento_id', itemExistente.evento_id)
+        .eq('cerimonialista_id', cerimonialistaId)
+        .order('ordem', { ascending: true });
+
+      if (restantes && restantes.length > 0) {
+        for (let i = 0; i < restantes.length; i++) {
+          await supabaseAdmin
+            .from('cerimonialista_roteiro_itens')
+            .update({ ordem: i + 1 })
+            .eq('id', restantes[i].id);
+        }
+      }
+
+      return res.status(200).json({ sucesso: true });
+    }
+
+    // ─── POST /gerar ────────────────────────────────────────────────────
+    if (req.method === 'POST' && req.query.acao === 'gerar') {
+      const { evento_id } = req.body;
+
+      if (!evento_id) {
+        return res.status(400).json({ erro: 'evento_id obrigatório.' });
+      }
+
+      const { data: evento, error: evtError } = await supabaseAdmin
+        .from('eventos')
+        .select('id, cerimonialista_id, data_evento, tipo_cerimonia, tipo_local, horario_cerimonia, horario_recepcao, total_convidados, tipo_jantar, musica_festa')
+        .eq('id', evento_id)
+        .single();
+
+      if (evtError || !evento || evento.cerimonialista_id !== cerimonialistaId) {
+        return res.status(403).json({ erro: 'Evento não autorizado.' });
+      }
+
+      // Verificar se já existe roteiro para este evento
+      const { data: existentes } = await supabaseAdmin
+        .from('cerimonialista_roteiro_itens')
+        .select('id')
+        .eq('evento_id', evento_id)
+        .eq('cerimonialista_id', cerimonialistaId);
+
+      if (existentes && existentes.length > 0) {
+        return res.status(409).json({ erro: 'Roteiro já existe para este evento. Exclua primeiro para gerar novamente.' });
+      }
+
+      // Gerar roteiro baseado no tipo de evento
+      const roteiroPadrao = gerarRoteiroPadrao(evento);
+
+      const itensParaInserir = roteiroPadrao.map((item, idx) => ({
+        evento_id,
+        cerimonialista_id: cerimonialistaId,
+        horario: item.horario,
+        titulo: item.titulo,
+        descricao: item.descricao || null,
+        responsavel: item.responsavel || null,
+        status: 'pendente',
+        ordem: idx + 1,
+      }));
+
+      const { data, error } = await supabaseAdmin
+        .from('cerimonialista_roteiro_itens')
+        .insert(itensParaInserir)
+        .select();
+
+      if (error) {
+        console.error('Erro ao gerar roteiro:', error);
+        return res.status(500).json({ erro: 'Erro ao gerar roteiro.' });
+      }
+
+      return res.status(201).json({
+        sucesso: true,
+        itens_criados: data.length,
+        itens: data,
+      });
+    }
+
+    return res.status(405).json({ erro: 'Método não permitido.' });
+  } catch (err) {
+    console.error('Erro inesperado na API de roteiro:', err);
+    return res.status(500).json({ erro: 'Erro interno.' });
+  }
+}
+
+function gerarRoteiroPadrao(evento) {
+  const data = evento.data_evento ? new Date(evento.data_evento) : new Date();
+  const diaSemana = data.toLocaleDateString('pt-BR', { weekday: 'long' });
+  const tipoCerimonia = evento.tipo_cerimonia || 'religiosa';
+  const tipoLocal = evento.tipo_local || 'salao';
+  const totalConvidados = parseInt(evento.total_convidados) || 100;
+  const temJantar = evento.tipo_jantar && evento.tipo_jantar !== 'coquetel';
+  const temMusica = !!evento.musica_festa;
+
+  const roteiro = [];
+
+  // Making of (sempre presente)
+  roteiro.push({
+    horario: '08:00',
+    titulo: 'Início do making of — noiva',
+    descricao: 'Preparação no local definido. Fotógrafo e cinegrafista devem estar presentes.',
+    responsavel: 'Fotografia / Beleza',
+  });
+
+  roteiro.push({
+    horario: '09:30',
+    titulo: 'Início do making of — noivo',
+    descricao: 'Preparação do noivo e padrinhos.',
+    responsavel: 'Fotografia',
+  });
+
+  // Cerimônia
+  if (tipoCerimonia === 'religiosa' || tipoCerimonia === 'catolica') {
+    roteiro.push({
+      horario: '16:00',
+      titulo: 'Chegada dos noivos à igreja/templo',
+      descricao: 'Entrada dos padrinhos, damas e pajens. Verificar flores e música.',
+      responsavel: 'Cerimonialista / Celebrante',
+    });
+    roteiro.push({
+      horario: '16:30',
+      titulo: 'Início da cerimônia religiosa',
+      descricao: 'Cerimônia com duração estimada de 45-60 minutos.',
+      responsavel: 'Celebrante / Cerimonialista',
+    });
+  } else if (tipoCerimonia === 'civil') {
+    roteiro.push({
+      horario: '16:00',
+      titulo: 'Chegada ao cartório/local civil',
+      descricao: 'Verificar documentação e testemunhas.',
+      responsavel: 'Cerimonialista',
+    });
+    roteiro.push({
+      horario: '16:30',
+      titulo: 'Cerimônia civil',
+      descricao: 'Duração estimada de 20-30 minutos.',
+      responsavel: 'Oficial / Cerimonialista',
+    });
+  } else if (tipoCerimonia === 'simbolica') {
+    roteiro.push({
+      horario: '16:30',
+      titulo: 'Cerimônia simbólica',
+      descricao: 'Cerimônia personalizada. Verificar rituais e decoração.',
+      responsavel: 'Celebrante / Cerimonialista',
+    });
+  } else {
+    roteiro.push({
+      horario: '16:30',
+      titulo: 'Cerimônia',
+      descricao: 'Início da cerimônia conforme planejado.',
+      responsavel: 'Cerimonialista',
+    });
+  }
+
+  // Saída
+  roteiro.push({
+    horario: '17:30',
+    titulo: 'Saída dos noivos',
+    descricao: 'Confete, fotos na saída. Verificar carro dos noivos.',
+    responsavel: 'Cerimonialista / Fotografia',
+  });
+
+  // Recepção / Coquetel
+  if (tipoLocal === 'salao' || tipoLocal === 'sitio' || tipoLocal === 'praia') {
+    roteiro.push({
+      horario: '18:00',
+      titulo: 'Chegada dos convidados à recepção',
+      descricao: 'Coquetel de boas-vindas. Música ambiente.',
+      responsavel: 'Buffet / Música',
+    });
+  }
+
+  // Jantar ou coquetel estendido
+  if (temJantar) {
+    roteiro.push({
+      horario: '19:30',
+      titulo: 'Início do jantar',
+      descricao: `Serviço para ${totalConvidados} convidados. Verificar mesas e cardápio.`,
+      responsavel: 'Buffet / Cerimonialista',
+    });
+  } else {
+    roteiro.push({
+      horario: '19:00',
+      titulo: 'Coquetel estendido',
+      descricao: `Serviço contínuo para ${totalConvidados} convidados.`,
+      responsavel: 'Buffet / Cerimonialista',
+    });
+  }
+
+  // Entrada dos noivos na festa
+  roteiro.push({
+    horario: temJantar ? '20:30' : '20:00',
+    titulo: 'Entrada dos noivos na festa',
+    descricao: 'Música de entrada, primeiro dança. Verificar DJ/banda.',
+    responsavel: 'Música / Cerimonialista',
+  });
+
+  // Discursos
+  roteiro.push({
+    horario: temJantar ? '21:00' : '20:30',
+    titulo: 'Discursos e brindes',
+    descricao: 'Padrinhos, pais e amigos. Controlar tempo (máx. 30 min).',
+    responsavel: 'Cerimonialista',
+  });
+
+  // Bolo
+  roteiro.push({
+    horario: temJantar ? '22:00' : '21:30',
+    titulo: 'Corte do bolo',
+    descricao: 'Verificar faca, champanhe e fotógrafo posicionado.',
+    responsavel: 'Cerimonialista / Fotografia',
+  });
+
+  // Dança
+  if (temMusica) {
+    roteiro.push({
+      horario: temJantar ? '22:30' : '22:00',
+      titulo: 'Abertura da pista de dança',
+      descricao: 'Música animada. Verificar playlist com DJ/banda.',
+      responsavel: 'Música',
+    });
+  }
+
+  // Final
+  roteiro.push({
+    horario: '23:30',
+    titulo: 'Saída dos noivos',
+    descricao: 'Despedida, fogos/sparklers se previsto. Verificar carro e malas.',
+    responsavel: 'Cerimonialista / Segurança',
+  });
+
+  roteiro.push({
+    horario: '00:00',
+    titulo: 'Encerramento da festa',
+    descricao: 'Desmontagem e checkout com fornecedores.',
+    responsavel: 'Cerimonialista / Equipe',
+  });
+
+  return roteiro;
+}

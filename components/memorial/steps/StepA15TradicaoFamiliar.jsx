@@ -1,3 +1,4 @@
+import { getTermos } from "../../../utils/linguagemCasal";
 // StepA15TradicaoFamiliar — Há alguma tradição familiar importante?
 // Dependências diretas: React, PropTypes, Input
 
@@ -5,7 +6,9 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Input from '../../ui/Input';
 
-export default function StepA15TradicaoFamiliar({ onSelect, estadoAtual }) {
+export default function StepA15TradicaoFamiliar({
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil); onSelect, estadoAtual }) {
   const [valor, setValor] = useState(estadoAtual?.tradicaoFamiliar || '');
 
   const handleConfirmar = () => {

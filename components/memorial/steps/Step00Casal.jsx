@@ -1,3 +1,6 @@
+/* ==========================================
+ * ARQUIVO: components/memorial/steps/Step00Casal.jsx
+ * ========================================== */\n
 // Etapa 0 do memorial — coleta dos dados do casal (perfil)
 // Título SEMPRE neutro: a resposta do perfil é a própria pergunta
 
@@ -19,9 +22,9 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
-    setCardPulsando(opcao.valor);
+    setCardPulsando(o.valor);
     setTimeout(() => {
-      onSelect(opcao.campo || opcao.valor, opcao.valor, opcao.cor);
+      onSelect(o.campo || o.valor, o.valor, o.cor);
       setCardPulsando(null);
     }, 350);
   };
@@ -67,31 +70,30 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
         }}
       >
         {OPCOES.map((opcao) => {
-          const isSelected = selecionado === opcao.valor;
+          const isSelected = selecionado === o.valor;
           return (
             <div
-              key={opcao.valor}
+              key={o.valor}
               style={{
                 transition: 'transform 300ms ease, box-shadow 300ms ease',
-                transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
-                boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+                transform: cardPulsando === o.valor ? 'scale(1.03)' : 'scale(1)',
+                boxShadow: cardPulsando === o.valor ? `0 0 0 3px ${o.cor || 'var(--color-brand)'}` : 'none',
                 borderRadius: 'var(--radius-lg)',
               }}
             >
               <Card
-                key={opcao.valor}
                 interactive
                 selected={isSelected}
                 padding="md"
                 onClick={() => handleCardClick(opcao)}
                 role="radio"
                 aria-checked={isSelected}
-                aria-label={opcao.label}
+                aria-label={o.label}
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    onSelect('perfilCasal', opcao.valor, opcao.cor);
+                    onSelect('perfilCasal', o.valor, o.cor);
                   }
                 }}
               >
@@ -107,7 +109,7 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
                       width: '48px',
                       height: '48px',
                       borderRadius: 'var(--radius-lg)',
-                      backgroundColor: isSelected ? opcao.cor : 'var(--color-surface)',
+                      backgroundColor: isSelected ? o.cor : 'var(--color-surface)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -115,7 +117,7 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
                       flexShrink: 0,
                     }}
                   >
-                    <Icon name={opcao.icone} size={24} ariaHidden={true} />
+                    <Icon name={o.icone} size={24} ariaHidden={true} />
                   </div>
                   <span
                     style={{
@@ -125,7 +127,7 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
                       color: 'var(--color-text-primary)',
                     }}
                   >
-                    {opcao.label}
+                    {o.label}
                   </span>
                 </div>
               </Card>
