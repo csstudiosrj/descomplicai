@@ -11,9 +11,9 @@ const OPCOES = [
   { valor: "nao", label: "Não", desc: "Preciso regularizar a documentação" }
 ];
 
-export default function StepE9DocumentacaoEstrangeiro({
+export default function StepE9DocumentacaoEstrangeiro({ onSelect, estadoAtual }) {
   const perfil = estadoAtual?.perfilCasal || "nao-especificar";
-  const termos = getTermos(perfil); onSelect, estadoAtual }) {
+  const termos = getTermos(perfil);
   const [cardPulsando, setCardPulsando] = React.useState(null);
 
   const selecionado = estadoAtual?.documentacaoEstrangeiro;

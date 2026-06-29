@@ -6,9 +6,9 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Input from '../../ui/Input';
 
-export default function StepA15TradicaoFamiliar({
+export default function StepA15TradicaoFamiliar({ onSelect, estadoAtual }) {
   const perfil = estadoAtual?.perfilCasal || "nao-especificar";
-  const termos = getTermos(perfil); onSelect, estadoAtual }) {
+  const termos = getTermos(perfil);
   const [valor, setValor] = useState(estadoAtual?.tradicaoFamiliar || '');
 
   const handleConfirmar = () => {

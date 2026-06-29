@@ -1,6 +1,6 @@
 /* ==========================================
  * ARQUIVO: components/memorial/steps/Step01Modo.jsx
- * ========================================== */\n
+ * ========================================== */
 // Etapa 1 do memorial — escolha do modo de criação
 // COM PULSO NO WRAPPER (não no Card — evita conflito de estilos internos)
 

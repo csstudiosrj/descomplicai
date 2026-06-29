@@ -32,9 +32,9 @@ const OPCOES = [
     },
 ];
 
-export default function Step32PadrinhosCriancas({
+export default function Step32PadrinhosCriancas({ onSelect, estadoAtual }) {
   const perfil = estadoAtual?.perfilCasal || "nao-especificar";
-  const termos = getTermos(perfil); onSelect, estadoAtual }) {
+  const termos = getTermos(perfil);
   const [cardPulsando, setCardPulsando] = React.useState(null);
 
   const selecionado = estadoAtual?.papeisCriancas;

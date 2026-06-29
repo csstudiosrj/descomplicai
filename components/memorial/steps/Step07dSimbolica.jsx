@@ -46,9 +46,9 @@ const RITUAIS = [
   },
 ];
 
-export default function Step07dSimbolica({
+export default function Step07dSimbolica({ onSelect, estadoAtual }) {
   const perfil = estadoAtual?.perfilCasal || "nao-especificar";
-  const termos = getTermos(perfil); onSelect, estadoAtual }) {
+  const termos = getTermos(perfil);
   const [selecionados, setSelecionados] = useState(
     estadoAtual?.rituaisSimbolicos || []
   );

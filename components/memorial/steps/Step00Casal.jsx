@@ -1,6 +1,6 @@
 /* ==========================================
  * ARQUIVO: components/memorial/steps/Step00Casal.jsx
- * ========================================== */\n
+ * ========================================== */
 // Etapa 0 do memorial — coleta dos dados do casal (perfil)
 // Título SEMPRE neutro: a resposta do perfil é a própria pergunta
 
