@@ -1,7 +1,7 @@
 // components/memorial/BreathTransition.jsx
 // Respiro contextual elaborado por bloco do memorial
 // Framer Motion + imagem de fundo + SVG temático + linguagem inclusiva
-// Duração: 700ms · Respeita prefers-reduced-motion
+// Duração: 2800ms (0.6s in + 1.4s hold + 0.8s out) · Respeita prefers-reduced-motion
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,12 +27,12 @@ const breathVariants = {
   animate: {
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.4, ease: 'easeInOut' },
+    transition: { duration: 0.6, ease: 'easeOut' },
   },
   exit: {
     opacity: 0,
     scale: 1.02,
-    transition: { duration: 0.3 },
+    transition: { duration: 0.6, ease: 'easeIn' },
   },
 };
 
@@ -41,19 +41,19 @@ const backgroundVariants = {
   animate: {
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.6, ease: 'easeOut' },
+    transition: { duration: 0.8, ease: 'easeOut' },
   },
-  exit: { opacity: 0, transition: { duration: 0.3 } },
+  exit: { opacity: 0, transition: { duration: 0.5 } },
 };
 
 const svgVariants = {
-  initial: { opacity: 0, y: 20 },
+  initial: { opacity: 0, y: 30 },
   animate: {
     opacity: 0.6,
     y: 0,
-    transition: { duration: 0.5, delay: 0.2 },
+    transition: { duration: 0.6, delay: 0.4 },
   },
-  exit: { opacity: 0, transition: { duration: 0.2 } },
+  exit: { opacity: 0, transition: { duration: 0.4 } },
 };
 
 export default function BreathTransition({

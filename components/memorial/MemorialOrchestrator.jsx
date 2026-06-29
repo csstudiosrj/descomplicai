@@ -234,7 +234,7 @@ export default function MemorialOrchestrator() {
   const progress = etapasTotais > 0 ? (estado.etapaAtual / etapasTotais) * 100 : 0;
   const blockName = BLOCK_NAMES[blocoAtual] || '';
 
-  const BREATH_DURATION = 700;
+  const BREATH_DURATION = 2800;
 
   const handleSelect = useCallback((campo, valor, cor) => {
     setRespostas(campo, valor);
@@ -313,7 +313,7 @@ export default function MemorialOrchestrator() {
     : () => null;
 
   return (
-    <div style={{ position: 'relative', minHeight: '100%' }}>
+    <div style={{ position: 'relative', minHeight: '100vh' }}>
       {salvandoAgora && (
         <div style={{ position: 'fixed', top: 8, right: 8, zIndex: 9999, fontSize: 12, opacity: 0.6 }}>
           Salvando...
@@ -359,8 +359,8 @@ export default function MemorialOrchestrator() {
                     onConcluir={handleConcluirMemorial}
                   />
                 </React.Suspense>
+                {estado.etapaAtual === 0 && <Footer />}
               </BreathTransition>
-              {estado.etapaAtual === 0 && <Footer />}
             </>
           )}
         </>

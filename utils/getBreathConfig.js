@@ -1,6 +1,3 @@
-// utils/getBreathConfig.js
-// Configuração de respiro contextual por estilo e bloco do memorial
-
 import { getTermos } from './linguagemCasal';
 
 export const BREATH_CONFIG = {
@@ -10,7 +7,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathArabescos',
     textColor: '#FFFFFF',
-    duration: 700,
+    duration: 2800,
   },
   romantico: {
     backgroundImage: '/images/breath/breath-romantico.jpg',
@@ -18,7 +15,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathArabescos',
     textColor: '#FFFFFF',
-    duration: 700,
+    duration: 2800,
   },
   boho: {
     backgroundImage: '/images/breath/breath-boho.jpg',
@@ -26,7 +23,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathFolhagem',
     textColor: '#FFFFFF',
-    duration: 700,
+    duration: 2800,
   },
   industrial: {
     backgroundImage: '/images/breath/breath-industrial.jpg',
@@ -34,7 +31,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-mono)',
     svgComponent: 'BreathGeometria',
     textColor: '#FFFFFF',
-    duration: 700,
+    duration: 2800,
   },
   minimalista: {
     backgroundImage: '/images/breath/breath-minimalista.jpg',
@@ -42,7 +39,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathGeometria',
     textColor: '#1A1714',
-    duration: 700,
+    duration: 2800,
   },
   tropical: {
     backgroundImage: '/images/breath/breath-tropical.jpg',
@@ -50,7 +47,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathFolhagem',
     textColor: '#FFFFFF',
-    duration: 700,
+    duration: 2800,
   },
   rustico: {
     backgroundImage: '/images/breath/breath-rustico.jpg',
@@ -58,7 +55,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathFolhagem',
     textColor: '#FFFFFF',
-    duration: 700,
+    duration: 2800,
   },
   moderno: {
     backgroundImage: '/images/breath/breath-moderno.jpg',
@@ -66,7 +63,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-mono)',
     svgComponent: 'BreathGeometria',
     textColor: '#FFFFFF',
-    duration: 700,
+    duration: 2800,
   },
   vintage: {
     backgroundImage: '/images/breath/breath-vintage.jpg',
@@ -74,7 +71,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathArabescos',
     textColor: '#FFFFFF',
-    duration: 700,
+    duration: 2800,
   },
   praia: {
     backgroundImage: '/images/breath/breath-praia.jpg',
@@ -82,7 +79,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathOndas',
     textColor: '#FFFFFF',
-    duration: 700,
+    duration: 2800,
   },
   jardim: {
     backgroundImage: '/images/breath/breath-jardim.jpg',
@@ -90,7 +87,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathFolhagem',
     textColor: '#FFFFFF',
-    duration: 700,
+    duration: 2800,
   },
   glam: {
     backgroundImage: '/images/breath/breath-glam.jpg',
@@ -98,7 +95,7 @@ export const BREATH_CONFIG = {
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathGlam',
     textColor: '#FFFFFF',
-    duration: 700,
+    duration: 2800,
   },
 };
 
@@ -123,7 +120,6 @@ export function getBreathConfig(estilo, bloco, perfilCasal) {
   const termos = getTermos(perfilCasal);
   const config = BREATH_CONFIG[estilo] || BREATH_CONFIG['classico'];
   const blockConfig = BREATH_CONFIG_BY_BLOCK[bloco] || {};
-
   return {
     ...config,
     blockLabel: blockConfig.label || '',
