@@ -1,15 +1,7 @@
 /**
- * Utilitários obrigatórios para geração do PDF do Memorial
+ * Utilitários para geração do PDF do Memorial — SEGURO para cliente e servidor
  * @module utils/pdfUtils
  */
-
-import path from 'path';
-
-const BASE_IMAGE_PATH = path.join(process.cwd(), 'public', 'images');
-
-function img(categoria, arquivo) {
-  return path.join(BASE_IMAGE_PATH, categoria, arquivo);
-}
 
 /**
  * Capitaliza nome próprio
@@ -305,7 +297,7 @@ export function extrairChecklist(secoes) {
 }
 
 /**
- * Extrai fornecedores — CORRIGIDO: retorna só categoria + "A definir"
+ * Extrai fornecedores — retorna só categoria + "A definir"
  */
 export function extrairFornecedores(secoes) {
   const categorias = [
@@ -431,114 +423,114 @@ export function getItensOrcamento(cidade, estado) {
 }
 
 /**
- * Retorna imagem de referência por categoria — CAMINHOS LOCAIS ABSOLUTOS
+ * Retorna caminho público da imagem por categoria — CAMINHOS RELATIVOS (seguro para cliente)
  */
 export function getImagem(categoria, chave) {
   const IMAGENS = {
     flores: {
-      'Rosas': img('flores', 'rosas-1.jpg'),
-      'Orquídeas': img('flores', 'flores-default-1.jpg'),
-      'Lírios': img('flores', 'flores-default-2.jpg'),
-      'Tulipas': img('flores', 'flores-default-3.jpg'),
-      'Peônias': img('flores', 'flores-default-4.jpg'),
-      'Flores do campo': img('flores', 'flores-do-campo-1.jpg'),
-      'Flores secas': img('flores', 'flores-secas-1.jpg'),
-      'Eucalipto': img('flores', 'flores-default-5.jpg'),
-      'Hortênsias': img('flores', 'flores-default-6.jpg'),
-      'Gérberas': img('flores', 'flores-default-7.jpg'),
-      'Astilbe': img('flores', 'flores-default-8.jpg'),
-      'Dálias': img('flores', 'flores-default-9.jpg'),
-      'Chuva de ouro': img('flores', 'flores-default-10.jpg'),
-      'Alstroemérias': img('flores', 'flores-default-11.jpg'),
-      'Anêmonas': img('flores', 'flores-default-12.jpg'),
-      'Ranúnculos': img('flores', 'flores-default-13.jpg'),
-      'Lavanda': img('flores', 'flores-default-14.jpg'),
-      'Margaridas': img('flores', 'flores-default-15.jpg'),
-      'Gipsofila': img('flores', 'flores-default-16.jpg'),
-      'Antúrios': img('flores', 'flores-default-17.jpg'),
-      'Bromélias': img('flores', 'flores-default-18.jpg'),
-      'Orquídeas phalaenopsis': img('flores', 'flores-default-19.jpg'),
-      'Crisântemos': img('flores', 'flores-default-20.jpg'),
-      'Cala': img('flores', 'flores-default-21.jpg'),
-      'Proteas': img('flores', 'flores-default-22.jpg'),
-      'Statice': img('flores', 'flores-default-23.jpg'),
-      'Verônicas': img('flores', 'flores-default-24.jpg'),
-      'Amarílis': img('flores', 'flores-default-25.jpg'),
-      default: img('flores', 'flores-default-1.jpg'),
+      'Rosas': '/images/flores/rosas-1.jpg',
+      'Orquídeas': '/images/flores/flores-default-1.jpg',
+      'Lírios': '/images/flores/flores-default-2.jpg',
+      'Tulipas': '/images/flores/flores-default-3.jpg',
+      'Peônias': '/images/flores/flores-default-4.jpg',
+      'Flores do campo': '/images/flores/flores-do-campo-1.jpg',
+      'Flores secas': '/images/flores/flores-secas-1.jpg',
+      'Eucalipto': '/images/flores/flores-default-5.jpg',
+      'Hortênsias': '/images/flores/flores-default-6.jpg',
+      'Gérberas': '/images/flores/flores-default-7.jpg',
+      'Astilbe': '/images/flores/flores-default-8.jpg',
+      'Dálias': '/images/flores/flores-default-9.jpg',
+      'Chuva de ouro': '/images/flores/flores-default-10.jpg',
+      'Alstroemérias': '/images/flores/flores-default-11.jpg',
+      'Anêmonas': '/images/flores/flores-default-12.jpg',
+      'Ranúnculos': '/images/flores/flores-default-13.jpg',
+      'Lavanda': '/images/flores/flores-default-14.jpg',
+      'Margaridas': '/images/flores/flores-default-15.jpg',
+      'Gipsofila': '/images/flores/flores-default-16.jpg',
+      'Antúrios': '/images/flores/flores-default-17.jpg',
+      'Bromélias': '/images/flores/flores-default-18.jpg',
+      'Orquídeas phalaenopsis': '/images/flores/flores-default-19.jpg',
+      'Crisântemos': '/images/flores/flores-default-20.jpg',
+      'Cala': '/images/flores/flores-default-21.jpg',
+      'Proteas': '/images/flores/flores-default-22.jpg',
+      'Statice': '/images/flores/flores-default-23.jpg',
+      'Verônicas': '/images/flores/flores-default-24.jpg',
+      'Amarílis': '/images/flores/flores-default-25.jpg',
+      default: '/images/flores/flores-default-1.jpg',
     },
     vestido: {
-      'Princesa': img('vestidos', 'vestido-default-1.jpg'),
-      'Sereia': img('vestidos', 'vestido-default-2.jpg'),
-      'Minimalista': img('vestidos', 'vestido-minimalista-1.jpg'),
-      'Boho': img('vestidos', 'vestido-boho-1.jpg'),
-      'Romântico': img('vestidos', 'vestido-minimalista-2.jpg'),
-      'Clássico': img('vestidos', 'vestido-minimalista-3.jpg'),
-      'Moderno': img('vestidos', 'vestido-minimalista-4.jpg'),
-      'Rústico': img('vestidos', 'vestido-boho-2.jpg'),
-      default: img('vestidos', 'vestido-default-1.jpg'),
+      'Princesa': '/images/vestidos/vestido-default-1.jpg',
+      'Sereia': '/images/vestidos/vestido-default-2.jpg',
+      'Minimalista': '/images/vestidos/vestido-minimalista-1.jpg',
+      'Boho': '/images/vestidos/vestido-boho-1.jpg',
+      'Romântico': '/images/vestidos/vestido-minimalista-2.jpg',
+      'Clássico': '/images/vestidos/vestido-minimalista-3.jpg',
+      'Moderno': '/images/vestidos/vestido-minimalista-4.jpg',
+      'Rústico': '/images/vestidos/vestido-boho-2.jpg',
+      default: '/images/vestidos/vestido-default-1.jpg',
     },
     mesaPosta: {
-      'classico': img('mesa', 'mesa-classico-1.jpg'),
-      'rustico': img('mesa', 'mesa-rustico-1.jpg'),
-      'romantico': img('mesa', 'mesa-romantico-1.jpg'),
-      'minimalista': img('mesa', 'mesa-minimalista-1.jpg'),
-      'boho': img('mesa', 'mesa-rustico-4.jpg'),
-      'moderno': img('mesa', 'mesa-default-2.jpg'),
-      default: img('mesa', 'mesa-classico-1.jpg'),
+      'classico': '/images/mesa/mesa-classico-1.jpg',
+      'rustico': '/images/mesa/mesa-rustico-1.jpg',
+      'romantico': '/images/mesa/mesa-romantico-1.jpg',
+      'minimalista': '/images/mesa/mesa-minimalista-1.jpg',
+      'boho': '/images/mesa/mesa-rustico-4.jpg',
+      'moderno': '/images/mesa/mesa-default-2.jpg',
+      default: '/images/mesa/mesa-classico-1.jpg',
     },
     decoracao: {
-      'classico': img('decoracao', 'decor-classico-1.jpg'),
-      'rustico': img('decoracao', 'decor-rustico-1.jpg'),
-      'romantico': img('decoracao', 'decor-romantico-1.jpg'),
-      'minimalista': img('decoracao', 'decor-minimalista-1.jpg'),
-      'boho': img('decoracao', 'decor-boho-1.jpg'),
-      'moderno': img('decoracao', 'decor-moderno-1.jpg'),
-      default: img('decoracao', 'decor-classico-1.jpg'),
+      'classico': '/images/decoracao/decor-classico-1.jpg',
+      'rustico': '/images/decoracao/decor-rustico-1.jpg',
+      'romantico': '/images/decoracao/decor-romantico-1.jpg',
+      'minimalista': '/images/decoracao/decor-minimalista-1.jpg',
+      'boho': '/images/decoracao/decor-boho-1.jpg',
+      'moderno': '/images/decoracao/decor-moderno-1.jpg',
+      default: '/images/decoracao/decor-classico-1.jpg',
     },
     cerimonia: {
-      'classico': img('cerimonia', 'cerimonia-altar-1.jpg'),
-      'rustico': img('cerimonia', 'cerimonia-corredor-3.jpg'),
-      'romantico': img('cerimonia', 'cerimonia-beijo-1.jpg'),
-      'minimalista': img('cerimonia', 'cerimonia-aliancas-1.jpg'),
-      'boho': img('cerimonia', 'cerimonia-entrada-noiva-4.jpg'),
-      'moderno': img('cerimonia', 'cerimonia-saida-1.jpg'),
-      default: img('cerimonia', 'cerimonia-altar-1.jpg'),
+      'classico': '/images/cerimonia/cerimonia-altar-1.jpg',
+      'rustico': '/images/cerimonia/cerimonia-corredor-3.jpg',
+      'romantico': '/images/cerimonia/cerimonia-beijo-1.jpg',
+      'minimalista': '/images/cerimonia/cerimonia-aliancas-1.jpg',
+      'boho': '/images/cerimonia/cerimonia-entrada-noiva-4.jpg',
+      'moderno': '/images/cerimonia/cerimonia-saida-1.jpg',
+      default: '/images/cerimonia/cerimonia-altar-1.jpg',
     },
     alimentacao: {
-      'classico': img('alimentacao', 'bolo-casamento-1.jpg'),
-      'rustico': img('alimentacao', 'mesa-doces-1.jpg'),
-      'romantico': img('alimentacao', 'mesa-doces-5.jpg'),
-      'minimalista': img('alimentacao', 'coquetel-drinks-1.jpg'),
-      'boho': img('alimentacao', 'mesa-doces-10.jpg'),
-      'moderno': img('alimentacao', 'bolo-casamento-6.jpg'),
-      default: img('alimentacao', 'bolo-casamento-1.jpg'),
+      'classico': '/images/alimentacao/bolo-casamento-1.jpg',
+      'rustico': '/images/alimentacao/mesa-doces-1.jpg',
+      'romantico': '/images/alimentacao/mesa-doces-5.jpg',
+      'minimalista': '/images/alimentacao/coquetel-drinks-1.jpg',
+      'boho': '/images/alimentacao/mesa-doces-10.jpg',
+      'moderno': '/images/alimentacao/bolo-casamento-6.jpg',
+      default: '/images/alimentacao/bolo-casamento-1.jpg',
     },
     entretenimento: {
-      'classico': img('entretenimento', 'pista-danca-1.jpg'),
-      'rustico': img('entretenimento', 'dj-banda-1.jpg'),
-      'romantico': img('entretenimento', 'pista-danca-3.jpg'),
-      'minimalista': img('entretenimento', 'cabine-fotos-1.jpg'),
-      'boho': img('entretenimento', 'pista-danca-4.jpg'),
-      'moderno': img('entretenimento', 'dj-banda-2.jpg'),
-      default: img('entretenimento', 'pista-danca-1.jpg'),
+      'classico': '/images/entretenimento/pista-danca-1.jpg',
+      'rustico': '/images/entretenimento/dj-banda-1.jpg',
+      'romantico': '/images/entretenimento/pista-danca-3.jpg',
+      'minimalista': '/images/entretenimento/cabine-fotos-1.jpg',
+      'boho': '/images/entretenimento/pista-danca-4.jpg',
+      'moderno': '/images/entretenimento/dj-banda-2.jpg',
+      default: '/images/entretenimento/pista-danca-1.jpg',
     },
     local: {
-      'classico': img('local', 'local-salao-1.jpg'),
-      'rustico': img('local', 'local-sitio-1.jpg'),
-      'romantico': img('local', 'local-jardim-1.jpg'),
-      'minimalista': img('local', 'local-salao-10.jpg'),
-      'boho': img('local', 'local-jardim-3.jpg'),
-      'moderno': img('local', 'local-salao-5.jpg'),
-      default: img('local', 'local-default-1.jpg'),
+      'classico': '/images/local/local-salao-1.jpg',
+      'rustico': '/images/local/local-sitio-1.jpg',
+      'romantico': '/images/local/local-jardim-1.jpg',
+      'minimalista': '/images/local/local-salao-10.jpg',
+      'boho': '/images/local/local-jardim-3.jpg',
+      'moderno': '/images/local/local-salao-5.jpg',
+      default: '/images/local/local-default-1.jpg',
     },
     papelaria: {
-      'classico': img('papelaria', 'convite-1.jpg'),
-      'rustico': img('papelaria', 'placa-boas-vindas-1.jpg'),
-      'romantico': img('papelaria', 'convite-5.jpg'),
-      'minimalista': img('papelaria', 'menu-lugar-1.jpg'),
-      'boho': img('papelaria', 'monograma-1.jpg'),
-      'moderno': img('papelaria', 'convite-3.jpg'),
-      default: img('papelaria', 'convite-1.jpg'),
+      'classico': '/images/papelaria/convite-1.jpg',
+      'rustico': '/images/papelaria/placa-boas-vindas-1.jpg',
+      'romantico': '/images/papelaria/convite-5.jpg',
+      'minimalista': '/images/papelaria/menu-lugar-1.jpg',
+      'boho': '/images/papelaria/monograma-1.jpg',
+      'moderno': '/images/papelaria/convite-3.jpg',
+      default: '/images/papelaria/convite-1.jpg',
     },
   };
 

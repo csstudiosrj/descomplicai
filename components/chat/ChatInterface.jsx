@@ -22,7 +22,7 @@ export default function ChatInterface({ eventoId, modo = 'casal' }) {
   }, [supabase]);
 
   // ─── Carregar mensagens via API ───────────────────────────
-  const carregarMensagens = useCallback(async (silencioso = false) => {
+  const carregarMensagens = useCallback(async (silencioso = false, signal) => {
     if (!eventoId) return;
     if (!silencioso) setCarregando(true);
     setErro(null);
@@ -36,6 +36,7 @@ export default function ChatInterface({ eventoId, modo = 'casal' }) {
 
       const res = await fetch(`/api/mensagens/listar?evento_id=${eventoId}`, {
         headers: { Authorization: `Bearer ${token}` },
+        signal,
       });
 
       const data = await res.json();
@@ -60,6 +61,7 @@ export default function ChatInterface({ eventoId, modo = 'casal' }) {
         ultimoIdRef.current = lista[lista.length - 1].id;
       }
     } catch (err) {
+      if (err.name === 'AbortError') return;
       console.error('[Chat] erro ao carregar:', err);
       setErro('Erro de conexão. Tentando novamente...');
     } finally {
@@ -71,12 +73,16 @@ export default function ChatInterface({ eventoId, modo = 'casal' }) {
   useEffect(() => {
     if (!eventoId) return;
 
+    let isMounted = true;
+
     async function buscarNome() {
       const { data: eventoData } = await supabase
         .from('eventos')
         .select('cerimonialista_id, usuario_id, nome_evento')
         .eq('id', eventoId)
         .single();
+
+      if (!isMounted) return;
 
       if (eventoData) {
         if (modo === 'casal' && eventoData.cerimonialista_id) {
@@ -85,6 +91,8 @@ export default function ChatInterface({ eventoId, modo = 'casal' }) {
             .select('nome_empresa')
             .eq('id', eventoData.cerimonialista_id)
             .single();
+
+          if (!isMounted) return;
           setOutroNome(cerimData?.nome_empresa || 'Cerimonialista');
         } else if (modo === 'cerimonialista' && eventoData.usuario_id) {
           setOutroNome(eventoData.nome_evento || 'Casal');
@@ -93,29 +101,45 @@ export default function ChatInterface({ eventoId, modo = 'casal' }) {
     }
 
     buscarNome();
+
+    return () => {
+      isMounted = false;
+    };
   }, [eventoId, modo, supabase]);
 
   // ─── Carregamento inicial ─────────────────────────────────
   useEffect(() => {
-    carregarMensagens(false);
+    const controller = new AbortController();
+
+    carregarMensagens(false, controller.signal);
+
+    return () => {
+      controller.abort();
+    };
   }, [carregarMensagens]);
 
   // ─── Polling a cada 5 segundos ────────────────────────────
   useEffect(() => {
     if (!eventoId) return;
 
+    const controller = new AbortController();
+
     pollingRef.current = setInterval(() => {
-      carregarMensagens(true);
+      carregarMensagens(true, controller.signal);
     }, 5000);
 
     return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
+      clearInterval(pollingRef.current);
+      controller.abort();
     };
   }, [eventoId, carregarMensagens]);
 
   // ─── Marcar mensagens como lidas ao abrir ─────────────────
   useEffect(() => {
     if (!eventoId || !user?.id || mensagens.length === 0) return;
+
+    const controller = new AbortController();
+    let isMounted = true;
 
     const naoLidas = mensagens.filter(
       (m) => m.remetente_id !== user.id && !m.lida
@@ -126,7 +150,7 @@ export default function ChatInterface({ eventoId, modo = 'casal' }) {
     async function marcarLidas() {
       try {
         const token = await getToken();
-        if (!token) return;
+        if (!token || !isMounted) return;
 
         await fetch('/api/mensagens/lida', {
           method: 'POST',
@@ -135,7 +159,10 @@ export default function ChatInterface({ eventoId, modo = 'casal' }) {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ evento_id: eventoId }),
+          signal: controller.signal,
         });
+
+        if (!isMounted) return;
 
         // Atualizar estado local imediatamente
         setMensagens((prev) =>
@@ -144,11 +171,17 @@ export default function ChatInterface({ eventoId, modo = 'casal' }) {
           )
         );
       } catch (err) {
+        if (err.name === 'AbortError') return;
         console.error('[Chat] erro ao marcar como lida:', err);
       }
     }
 
     marcarLidas();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, [mensagens, eventoId, user, getToken]);
 
   // ─── Auto-scroll ──────────────────────────────────────────

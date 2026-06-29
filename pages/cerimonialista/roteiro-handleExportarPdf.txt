@@ -1,3 +1,10 @@
+// ── handleExportarPdf já integrado no componente ──
+// NÃO precisa de arquivo .patch separado. Esta função deve estar dentro
+// do componente principal de roteiro (pages/cerimonialista/roteiro.jsx).
+//
+// Cole este trecho dentro do componente, substituindo qualquer referência
+// ao handleExportarPdf que venha de arquivo externo.
+
 const handleExportarPdf = async () => {
   if (!eventoSelecionado) {
     setToast({ tipo: 'erro', mensagem: 'Selecione um evento primeiro' });

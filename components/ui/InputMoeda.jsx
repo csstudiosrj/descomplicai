@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
+import { arredondarMoeda } from '../../utils/formatters';
 
-function formatarMoeda(valor) {
+function formatarDisplay(valor) {
   if (!valor && valor !== 0) return '';
   const num = Number(valor);
   if (isNaN(num)) return '';
@@ -10,40 +11,38 @@ function formatarMoeda(valor) {
   });
 }
 
-function parseMoeda(valorStr) {
-  if (!valorStr) return 0;
-  const limpo = valorStr
-    .replace(/R\$/g, '')
-    .replace(/\./g, '')
-    .replace(/,/g, '.');
-  const num = Number(limpo);
-  return isNaN(num) ? 0 : num;
-}
-
 export default function InputMoeda({ value, onChange, placeholder, style, label }) {
-  const [display, setDisplay] = useState('');
+  const [display, setDisplay] = useState(() => formatarDisplay(value));
+  const isEditingRef = useRef(false);
 
-  useEffect(() => {
-    setDisplay(formatarMoeda(value));
-  }, [value]);
+  // Sincroniza display quando value muda EXTERNAmente (não durante digitação)
+  const prevValueRef = useRef(value);
+  if (!isEditingRef.current && value !== prevValueRef.current) {
+    setDisplay(formatarDisplay(value));
+    prevValueRef.current = value;
+  }
 
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     const raw = e.target.value;
     // Remove tudo que não é número
     const digits = raw.replace(/\D/g, '');
-    // Converte para centavos (divide por 100)
-    const num = Number(digits) / 100;
+    // Converte para centavos (divide por 100) e arredonda para evitar imprecisão
+    const num = arredondarMoeda(Number(digits) / 100);
+    isEditingRef.current = true;
     onChange(num);
-    setDisplay(formatarMoeda(num));
-  };
+    setDisplay(formatarDisplay(num));
+  }, [onChange]);
 
-  const handleFocus = () => {
-    setDisplay(formatarMoeda(value));
-  };
+  const handleFocus = useCallback(() => {
+    isEditingRef.current = true;
+    setDisplay(formatarDisplay(value));
+  }, [value]);
 
-  const handleBlur = () => {
-    setDisplay(formatarMoeda(value));
-  };
+  const handleBlur = useCallback(() => {
+    isEditingRef.current = false;
+    prevValueRef.current = value;
+    setDisplay(formatarDisplay(value));
+  }, [value]);
 
   return (
     <div style={{ marginBottom: '12px' }}>
