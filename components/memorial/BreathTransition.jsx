@@ -3,7 +3,7 @@
 // Framer Motion + imagem de fundo + SVG temático + linguagem inclusiva
 // Duração: 1400ms até troca de etapa · fade-out de 0.8s continua enquanto novo step surge · Fluido
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PropTypes from 'prop-types';
 import styles from './BreathTransition.module.css';
@@ -66,6 +66,9 @@ export default function BreathTransition({
   children,
 }) {
   const [prefersReduced, setPrefersReduced] = useState(false);
+  // Congela config no momento da ativação — não re-renderiza durante fade-out
+  const frozenConfig = useRef(null);
+  const frozenResposta = useRef('');
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -75,10 +78,16 @@ export default function BreathTransition({
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  const config = useMemo(() => {
-    if (!ativa) return null;
-    return getBreathConfig(estiloEscolhido, blocoAtual, perfilCasal);
-  }, [ativa, estiloEscolhido, blocoAtual, perfilCasal]);
+  // Quando ativa=true, congela config e resposta
+  useEffect(() => {
+    if (ativa) {
+      frozenConfig.current = getBreathConfig(estiloEscolhido, blocoAtual, perfilCasal);
+      frozenResposta.current = typeof respostaAtual === 'string' ? respostaAtual : '';
+    }
+  }, [ativa, estiloEscolhido, blocoAtual, perfilCasal, respostaAtual]);
+
+  const config = frozenConfig.current;
+  const resposta = frozenResposta.current;
 
   const SvgComponent = useMemo(() => {
     if (!config?.svgComponent) return null;
@@ -88,11 +97,10 @@ export default function BreathTransition({
   const srMessage = useMemo(() => {
     if (!config) return '';
     const blockName = config.blockLabel || `Bloco ${config.blockLetter}`;
-    const resposta = typeof respostaAtual === 'string' ? respostaAtual : '';
     return resposta
       ? `Avançando para ${blockName}. Você escolheu: ${resposta}`
       : `Avançando para ${blockName}`;
-  }, [config, respostaAtual]);
+  }, [config, resposta]);
 
   if (!ativa) {
     return <>{children}</>;
@@ -169,9 +177,9 @@ export default function BreathTransition({
               >
                 Bloco {config.blockLetter} — {config.blockLabel}
               </p>
-              {respostaAtual && (
+              {resposta && (
                 <p className={styles.responseText} style={{ color: config.textColor }}>
-                  {typeof respostaAtual === 'string' ? respostaAtual : JSON.stringify(respostaAtual)}
+                  {resposta}
                 </p>
               )}
             </div>
