@@ -4,43 +4,38 @@ const withPWA = require("next-pwa")({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
-  maximumFileSizeToCacheInBytes: 5000000, // 5MB
+  maximumFileSizeToCacheInBytes: 5000000,
   buildExcludes: [/middleware-manifest\.json$/],
   runtimeCaching: [
     {
-      // Páginas públicas — NetworkFirst (tenta rede, fallback pro cache)
       urlPattern: /\/$|\/landing$|\/vitrine|\/login$|\/cadastro$|\/fornecedor\/(cadastro|login)$|\/cerimonialista\/(cadastro|login)$|\/convite|\/assinar|\/colaborador/,
       handler: "NetworkFirst",
       options: {
         cacheName: "public-pages",
-        expiration: { maxEntries: 50, maxAgeSeconds: 24 * 60 * 60 }, // 1 dia
+        expiration: { maxEntries: 50, maxAgeSeconds: 24 * 60 * 60 },
       },
     },
     {
-      // Assets estáticos — CacheFirst
       urlPattern: /\/_next\/static/,
       handler: "CacheFirst",
       options: {
         cacheName: "next-static",
-        expiration: { maxEntries: 200, maxAgeSeconds: 365 * 24 * 60 * 60 }, // 1 ano
+        expiration: { maxEntries: 200, maxAgeSeconds: 365 * 24 * 60 * 60 },
       },
     },
     {
-      // Imagens e fontes — CacheFirst
       urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico|woff|woff2|ttf|otf)$/,
       handler: "CacheFirst",
       options: {
         cacheName: "static-assets",
-        expiration: { maxEntries: 100, maxAgeSeconds: 30 * 24 * 60 * 60 }, // 30 dias
+        expiration: { maxEntries: 100, maxAgeSeconds: 30 * 24 * 60 * 60 },
       },
     },
     {
-      // API routes — NUNCA cachear (dados sensíveis)
       urlPattern: /\/api\//,
       handler: "NetworkOnly",
     },
     {
-      // Google Fonts — CacheFirst
       urlPattern: /https:\/\/fonts\.googleapis\.com/,
       handler: "CacheFirst",
       options: {
@@ -62,16 +57,24 @@ const withPWA = require("next-pwa")({
   },
 });
 
-/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ["images.unsplash.com", "lh3.googleusercontent.com"],
+    remotePatterns: [
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+    ],
   },
   env: {
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  },
+  experimental: {
+    optimizePackageImports: [
+      'framer-motion',
+      '@react-pdf/renderer',
+    ],
   },
 };
 
