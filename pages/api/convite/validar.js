@@ -8,14 +8,14 @@ const supabase = createClient(
 
 async function handler(req, res) {
   if (req.method !== "POST" && req.method !== "GET") {
-    return res.status(405).json({ error: "Método não permitido" });
+    return res.status(405).json({ error: "Metodo nao permitido" });
   }
 
   try {
     const { token } = req.method === "GET" ? req.query : req.body;
 
     if (!token) {
-      return res.status(400).json({ error: "Token é obrigatório" });
+      return res.status(400).json({ error: "Token e obrigatorio" });
     }
 
     // Buscar convite pelo token
@@ -26,7 +26,7 @@ async function handler(req, res) {
       .single();
 
     if (error || !convite) {
-      return res.status(404).json({ error: "Convite não encontrado" });
+      return res.status(404).json({ error: "Convite nao encontrado" });
     }
 
     // Verificar se convite expirou
@@ -34,9 +34,9 @@ async function handler(req, res) {
       return res.status(410).json({ error: "Convite expirado" });
     }
 
-    // Verificar se convite já foi usado
+    // Verificar se convite ja foi usado
     if (convite.usado_em) {
-      return res.status(409).json({ error: "Convite já foi utilizado" });
+      return res.status(409).json({ error: "Convite ja foi utilizado" });
     }
 
     return res.status(200).json({
@@ -44,7 +44,7 @@ async function handler(req, res) {
       convite: {
         id: convite.id,
         eventoId: convite.evento_id,
-        nomeEvento: convite.eventos?.nome,
+        nomeEvento: convite.eventos?.nome_evento,
         tipo: convite.tipo,
         expiraEm: convite.expira_em,
       },

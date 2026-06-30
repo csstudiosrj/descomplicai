@@ -13,35 +13,35 @@ const client = new MercadoPagoConfig({
 /**
  * POST /api/pagamento/criar
  * Body: { fornecedor_id, tipo: 'fornecedor', plano: 'basico' | 'premium' | 'vip' }
- * Cria preferência de pagamento no Mercado Pago
+ * Cria preferencia de pagamento no Mercado Pago
  */
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método não permitido' });
+    return res.status(405).json({ error: 'Metodo nao permitido' });
   }
 
   const { fornecedor_id, tipo = 'fornecedor', plano = 'basico' } = req.body;
 
   if (!fornecedor_id) {
-    return res.status(400).json({ error: 'fornecedor_id obrigatório' });
+    return res.status(400).json({ error: 'fornecedor_id obrigatorio' });
   }
 
   if (tipo !== 'fornecedor') {
-    return res.status(400).json({ error: 'Tipo não suportado. Use tipo: "fornecedor"' });
+    return res.status(400).json({ error: 'Tipo nao suportado. Use tipo: "fornecedor"' });
   }
 
   // Busca fornecedor
   const { data: fornecedor, error: fErr } = await supabaseAdmin
     .from('fornecedores')
-    .select('id, email, nome_fantasia, nome_responsavel')
+    .select('id, email, nome, valor_total')
     .eq('id', fornecedor_id)
     .single();
 
   if (fErr || !fornecedor) {
-    return res.status(404).json({ error: 'Fornecedor não encontrado' });
+    return res.status(404).json({ error: 'Fornecedor nao encontrado' });
   }
 
-  // Preços por plano (em reais)
+  // Precos por plano (em reais)
   const precos = {
     basico: 49.90,
     premium: 99.90,
@@ -57,15 +57,15 @@ export default async function handler(req, res) {
       body: {
         items: [
           {
-            title: `Assinatura Descomplicaí — Plano ${plano.charAt(0).toUpperCase() + plano.slice(1)}`,
+            title: `Assinatura Descomplicai — Plano ${plano.charAt(0).toUpperCase() + plano.slice(1)}`,
             quantity: 1,
             unit_price: preco,
             currency_id: 'BRL',
           },
         ],
         payer: {
-          email: fornecedor.email,
-          name: fornecedor.nome_responsavel,
+          email: fornecedor.email || 'nao-informado@descomplicai.com',
+          name: fornecedor.nome || 'Fornecedor',
         },
         back_urls: {
           success: `${process.env.NEXT_PUBLIC_SITE_URL}/fornecedor/pagamento/sucesso`,
@@ -83,16 +83,14 @@ export default async function handler(req, res) {
       },
     });
 
-    // Salva referência do pagamento
+    // Salva referencia do pagamento (coluna mp_payment_id usada como preference_id)
     await supabaseAdmin.from('pagamentos').insert({
       fornecedor_id,
       tipo: 'assinatura',
-      plano,
       valor: preco,
-      mp_preference_id: result.id,
-      mp_init_point: result.init_point,
+      mp_payment_id: result.id,
       status: 'pendente',
-      created_at: new Date().toISOString(),
+      criado_em: new Date().toISOString(),
     });
 
     return res.status(200).json({

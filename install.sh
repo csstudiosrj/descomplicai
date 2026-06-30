@@ -1,81 +1,68 @@
 #!/bin/bash
-# install-pwa-acessibilidade.sh
-# Script de instalação automática — execute da raiz do projeto descomplicai
+# ============================================================
+# INSTALACAO COMPLETA — Testes + Otimizacoes Descomplicai
+# Cole no terminal do IDX (raiz do projeto)
+# ============================================================
 
-set -e
+echo ""
+echo "═══════════════════════════════════════════════════════════════"
+echo "  INSTALACAO DESCOMPLICAI — TESTES + OTIMIZACOES"
+echo "═══════════════════════════════════════════════════════════════"
+echo ""
 
-echo "═══════════════════════════════════════════════════════"
-echo "  Instalando PWA + Acessibilidade no Descomplicaí"
-echo "═══════════════════════════════════════════════════════"
-
-# Verifica se está na pasta certa
+# Verifica se esta na raiz do projeto
 if [ ! -f "package.json" ]; then
-  echo "❌ Erro: execute este script da raiz do projeto descomplicai"
-  exit 1
+    echo "❌ ERRO: Execute este script na raiz do projeto (onde esta package.json)"
+    exit 1
 fi
 
-# 1. Instalar next-pwa
-echo "📦 Instalando next-pwa..."
-npm install next-pwa
-
-# 2. Backup dos arquivos originais
-echo "💾 Fazendo backup..."
-cp next.config.js next.config.js.backup.$(date +%s) 2>/dev/null || true
-cp pages/_document.jsx pages/_document.jsx.backup.$(date +%s) 2>/dev/null || true
-cp pages/_app.jsx pages/_app.jsx.backup.$(date +%s) 2>/dev/null || true
-cp components/ui/Button.jsx components/ui/Button.jsx.backup.$(date +%s) 2>/dev/null || true
-cp components/ui/Input.jsx components/ui/Input.jsx.backup.$(date +%s) 2>/dev/null || true
-cp components/ui/Card.jsx components/ui/Card.jsx.backup.$(date +%s) 2>/dev/null || true
-cp components/ui/Badge.jsx components/ui/Badge.jsx.backup.$(date +%s) 2>/dev/null || true
-
-# 3. Copiar arquivos
-echo "📁 Copiando arquivos..."
-
-# PWA
-cp next.config.js ./
-cp public/manifest.json ./public/
-cp public/offline.html ./public/
-cp public/sw.js ./public/
-mkdir -p ./public/icons
-cp public/icons/icon-192x192.svg ./public/icons/ 2>/dev/null || true
-cp public/icons/icon-512x512.svg ./public/icons/ 2>/dev/null || true
-
-# Componentes UI
-cp components/ui/Button.jsx ./components/ui/
-cp components/ui/Input.jsx ./components/ui/
-cp components/ui/Card.jsx ./components/ui/
-cp components/ui/Badge.jsx ./components/ui/
-cp components/ui/Select.jsx ./components/ui/
-cp components/ui/SkipLink.jsx ./components/ui/
-
-# Hooks
-cp hooks/useReducedMotion.js ./hooks/
-
-# Widget
-cp components/AcessibilidadeWidget.jsx ./components/
-
-# Layout
-cp pages/_document.jsx ./pages/
-cp pages/_app.jsx ./pages/
-
-# CSS patch (adicionar manualmente ao globals.css)
-echo ""
-echo "⚠️  ATENÇÃO: Adicione manualmente o conteúdo de styles/globals.css.patch.css"
-echo "   ao final do arquivo styles/globals.css do projeto."
-echo ""
-
-# 4. Build
-echo "🔨 Executando build..."
-npm run build
+echo "📦 Instalando dependencias de teste..."
+npm install --save-dev jest @playwright/test node-mocks-http
 
 echo ""
-echo "═══════════════════════════════════════════════════════"
-echo "  ✅ Instalação concluída!"
-echo "═══════════════════════════════════════════════════════"
+echo "📁 Descompactando LOTE 1: Testes de Integracao..."
+unzip -o lote1-testes-integracao.zip
+
 echo ""
-echo "Próximos passos:"
-echo "  1. Converter ícones SVG para PNG"
-echo "  2. Adicionar CSS patch ao globals.css"
-echo "  3. Aplicar patch no Icon.jsx (ver Icon.jsx.patch.txt)"
-echo "  4. Testar com Lighthouse PWA"
+echo "📁 Descompactando LOTE 2: Testes E2E..."
+unzip -o lote2-testes-e2e.zip
+
 echo ""
+echo "📁 Descompactando LOTE 3: Otimizacoes..."
+unzip -o lote3-otimizacoes.zip
+
+echo ""
+echo "📁 Descompactando LOTE 4: Correcoes de Bugs..."
+unzip -o lote4-correcoes-bugs.zip
+
+echo ""
+echo "🔧 Instalando Playwright browsers..."
+npx playwright install chromium
+
+echo ""
+echo "═══════════════════════════════════════════════════════════════"
+echo "  ✅ INSTALACAO CONCLUIDA"
+echo "═══════════════════════════════════════════════════════════════"
+echo ""
+echo "📋 Proximos passos:"
+echo ""
+echo "1. Rodar testes de integracao:"
+echo "   npm test"
+echo ""
+echo "2. Rodar testes em watch mode:"
+echo "   npm run test:watch"
+echo ""
+echo "3. Rodar testes com coverage (CI):"
+echo "   npm run test:ci"
+echo ""
+echo "4. Rodar testes E2E:"
+echo "   npm run test:e2e"
+echo ""
+echo "5. Rodar auditoria Lighthouse:"
+echo "   npm run lighthouse"
+echo ""
+echo "6. Aplicar migration SQL no Supabase:"
+echo "   Cole o conteudo de sql/migration_analytics_batch.sql"
+echo "   no SQL Editor do Supabase"
+echo ""
+echo "═══════════════════════════════════════════════════════════════"

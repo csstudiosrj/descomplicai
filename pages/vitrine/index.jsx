@@ -1,9 +1,24 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://descomplicai.com.br';
 const OG_IMAGE = `${SITE_URL}/og-vitrine.jpg`;
+
+function SkeletonCard() {
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden animate-pulse">
+      <div className="h-40 bg-gray-200" />
+      <div className="p-5 space-y-3">
+        <div className="h-5 bg-gray-200 rounded w-3/4" />
+        <div className="h-4 bg-gray-200 rounded w-1/2" />
+        <div className="h-4 bg-gray-200 rounded w-full" />
+        <div className="h-4 bg-gray-200 rounded w-2/3" />
+      </div>
+    </div>
+  );
+}
 
 export default function Vitrine() {
   const [fornecedores, setFornecedores] = useState([]);
@@ -44,19 +59,19 @@ export default function Vitrine() {
   const totalPages = Math.ceil(total / limit);
 
   const pageTitle = categoria
-    ? `Vitrine de ${categoria.charAt(0).toUpperCase() + categoria.slice(1)} — Descomplicaí`
-    : 'Vitrine de Fornecedores — Encontre os melhores profissionais | Descomplicaí';
+    ? `Vitrine de ${categoria.charAt(0).toUpperCase() + categoria.slice(1)} — Descomplicai`
+    : 'Vitrine de Fornecedores — Encontre os melhores profissionais | Descomplicai';
 
   const pageDescription = categoria
-    ? `Encontre os melhores fornecedores de ${categoria} para seu casamento. Compare avaliações, portfólio e solicite orçamentos.`
-    : 'Encontre os melhores fornecedores para seu casamento: buffet, fotografia, música, decoração e muito mais. Compare avaliações e solicite orçamentos.';
+    ? `Encontre os melhores fornecedores de ${categoria} para seu casamento. Compare avaliacoes, portfolio e solicite orcamentos.`
+    : 'Encontre os melhores fornecedores para seu casamento: buffet, fotografia, musica, decoracao e muito mais. Compare avaliacoes e solicite orcamentos.';
 
   const canonicalUrl = `${SITE_URL}/vitrine`;
 
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: 'Vitrine de Fornecedores — Descomplicaí',
+    name: 'Vitrine de Fornecedores — Descomplicai',
     description: pageDescription,
     url: `${SITE_URL}/vitrine`,
     itemListElement: fornecedores.map((f, index) => ({
@@ -96,8 +111,9 @@ export default function Vitrine() {
         <meta name="description" content={pageDescription} />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href={canonicalUrl} />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
 
-        {/* Open Graph */}
         <meta property="og:type" content="website" />
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={pageDescription} />
@@ -106,15 +122,13 @@ export default function Vitrine() {
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:locale" content="pt_BR" />
-        <meta property="og:site_name" content="Descomplicaí" />
+        <meta property="og:site_name" content="Descomplicai" />
 
-        {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={pageTitle} />
         <meta name="twitter:description" content={pageDescription} />
         <meta name="twitter:image" content={OG_IMAGE} />
 
-        {/* JSON-LD */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
@@ -130,7 +144,6 @@ export default function Vitrine() {
         </header>
 
         <main className="max-w-6xl mx-auto px-4 py-8">
-          {/* Filtros */}
           <div className="flex flex-col sm:flex-row gap-4 mb-8">
             <input
               type="text"
@@ -147,27 +160,27 @@ export default function Vitrine() {
               <option value="">Todas as categorias</option>
               <option value="buffet">Buffet</option>
               <option value="fotografia">Fotografia</option>
-              <option value="musica">Música / DJ</option>
-              <option value="decoracao">Decoração</option>
-              <option value="vestuario">Vestuário</option>
+              <option value="musica">Musica / DJ</option>
+              <option value="decoracao">Decoracao</option>
+              <option value="vestuario">Vestuario</option>
               <option value="beleza">Beleza</option>
               <option value="transporte">Transporte</option>
               <option value="cerimonial">Cerimonial</option>
-              <option value="video">Vídeo / Filmagem</option>
+              <option value="video">Video / Filmagem</option>
               <option value="floricultura">Floricultura</option>
               <option value="papelaria">Papelaria</option>
               <option value="bar">Bar / Drinks</option>
-              <option value="iluminacao">Iluminação</option>
-              <option value="animacao">Animação</option>
+              <option value="iluminacao">Iluminacao</option>
+              <option value="animacao">Animacao</option>
               <option value="outros">Outros</option>
             </select>
           </div>
 
-          {/* Grid */}
           {loading ? (
-            <div className="text-center py-20">
-              <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-4" />
-              <p className="text-gray-500">Carregando fornecedores...</p>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
             </div>
           ) : fornecedores.length === 0 ? (
             <div className="text-center py-20">
@@ -181,12 +194,14 @@ export default function Vitrine() {
                   href={`/vitrine/${f.id}`}
                   className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition group"
                 >
-                  <div className="h-40 bg-gray-100 flex items-center justify-center group-hover:bg-gray-50 transition">
+                  <div className="h-40 bg-gray-100 flex items-center justify-center group-hover:bg-gray-50 transition relative">
                     {f.logo_url || (f.fotos && f.fotos[0]) ? (
-                      <img
+                      <Image
                         src={f.logo_url || f.fotos[0]}
                         alt={f.nome_fantasia || f.nome_empresa || f.nome}
-                        className="h-full w-full object-cover"
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover"
                         loading="lazy"
                       />
                     ) : (
@@ -219,7 +234,6 @@ export default function Vitrine() {
             </div>
           )}
 
-          {/* Paginação */}
           {totalPages > 1 && (
             <div className="flex justify-center gap-2 mt-10">
               {Array.from({ length: totalPages }, (_, i) => (

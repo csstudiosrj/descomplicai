@@ -15,7 +15,7 @@ function getSupabaseAdmin() {
 }
 
 /**
- * Verifica se o usuário é admin.
+ * Verifica se o usuario e admin.
  * Tenta extrair do header Authorization (Bearer token) ou do cookie session.
  */
 async function isAdmin(req) {
@@ -23,13 +23,11 @@ async function isAdmin(req) {
     const admin = getSupabaseAdmin();
     let token = null;
 
-    // Tenta extrair do header Authorization
     const authHeader = req.headers.authorization;
     if (authHeader?.startsWith('Bearer ')) {
       token = authHeader.split(' ')[1];
     }
 
-    // Se não tem token no header, tenta extrair do cookie
     if (!token && req.headers.cookie) {
       const match = req.headers.cookie.match(/sb-access-token=([^;]+)/);
       if (match) token = decodeURIComponent(match[1]);
@@ -43,7 +41,7 @@ async function isAdmin(req) {
     const { data, error: adminError } = await admin
       .from('admins')
       .select('id')
-      .eq('id', user.id)
+      .eq('usuario_id', user.id)
       .single();
 
     return !!data && !adminError;
@@ -54,7 +52,7 @@ async function isAdmin(req) {
 
 /**
  * GET /api/admin/dashboard?dias=30
- * Retorna métricas agregadas para o dashboard admin.
+ * Retorna metricas agregadas para o dashboard admin.
  */
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -70,31 +68,27 @@ export default async function handler(req, res) {
     const dias = Math.min(parseInt(req.query.dias) || 30, 360);
     const admin = getSupabaseAdmin();
 
-    // Métricas do dashboard
+    // Metricas do dashboard (RPCs existentes)
     const { data: metrics, error: metricsError } = await admin
       .rpc('dashboard_metrics');
 
     if (metricsError) throw metricsError;
 
-    // Abandono no memorial
     const { data: abandono, error: abandonoError } = await admin
       .rpc('memorial_abandono_ultimos_30_dias');
 
     if (abandonoError) throw abandonoError;
 
-    // Páginas mais acessadas
     const { data: paginas, error: paginasError } = await admin
       .rpc('paginas_mais_acessadas', { p_dias: dias });
 
     if (paginasError) throw paginasError;
 
-    // Tempo médio por página
     const { data: tempo, error: tempoError } = await admin
       .rpc('tempo_medio_por_pagina', { p_dias: dias });
 
     if (tempoError) throw tempoError;
 
-    // Funil de checkout
     const { data: funil, error: funilError } = await admin
       .rpc('funil_checkout_ultimos_30_dias');
 
@@ -108,7 +102,7 @@ export default async function handler(req, res) {
       .order('criado_em', { ascending: false })
       .limit(5);
 
-    // Alertas: eventos sem memorial concluído há +30 dias
+    // Alertas: eventos sem memorial concluido ha +30 dias
     const { data: eventosAlerta, error: alertaError } = await admin
       .from('eventos')
       .select('id, nome_evento, data_evento, memorial_concluido, status, usuario_id, criado_em')
@@ -117,7 +111,7 @@ export default async function handler(req, res) {
       .order('criado_em', { ascending: true })
       .limit(10);
 
-    // Fornecedores com trial expirando (últimos 7 dias de trial, assumindo 30 dias)
+    // Fornecedores com trial expirando
     const { data: trialExpirando, error: trialError } = await admin
       .from('fornecedores_plataforma')
       .select('id, nome_empresa, email, trial_inicio, plano')

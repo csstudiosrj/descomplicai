@@ -9,27 +9,27 @@ const supabase = createClient(
 
 async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método não permitido" });
+    return res.status(405).json({ error: "Metodo nao permitido" });
   }
 
   try {
     const { nome, email, telefone, senha, cidade, estado } = req.body;
 
-    // Validações
+    // Validacoes
     if (!nome || !email || !senha) {
-      return res.status(400).json({ error: "Nome, email e senha são obrigatórios" });
+      return res.status(400).json({ error: "Nome, email e senha sao obrigatorios" });
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: "Email inválido" });
+      return res.status(400).json({ error: "Email invalido" });
     }
 
     if (senha.length < 6) {
-      return res.status(400).json({ error: "Senha deve ter no mínimo 6 caracteres" });
+      return res.status(400).json({ error: "Senha deve ter no minimo 6 caracteres" });
     }
 
-    // Verificar se email já existe
+    // Verificar se email ja existe
     const { data: existente } = await supabase
       .from("cerimonialistas")
       .select("id")
@@ -37,7 +37,7 @@ async function handler(req, res) {
       .single();
 
     if (existente) {
-      return res.status(409).json({ error: "Email já cadastrado" });
+      return res.status(409).json({ error: "Email ja cadastrado" });
     }
 
     // Hash da senha
@@ -47,14 +47,15 @@ async function handler(req, res) {
     const { data, error } = await supabase
       .from("cerimonialistas")
       .insert({
-        nome,
+        nome_empresa: nome,
         email,
         telefone: telefone || null,
         senha_hash: senhaHash,
         cidade: cidade || null,
         estado: estado || null,
-        status: "ativo",
-        created_at: new Date().toISOString(),
+        ativo: true,
+        plano: 'trial',
+        criado_em: new Date().toISOString(),
       })
       .select()
       .single();
