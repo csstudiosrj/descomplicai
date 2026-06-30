@@ -40,7 +40,7 @@ export default async function handler(req, res) {
     add('fail', 'Tabela email_logs faltando — rode migration 001');
   }
 
-  // 4. Templates de e-mail
+  // 4. Templates de e-mail (CORRIGIDO: usa maybeSingle em vez de single)
   const templates = [
     'email_template_bem_vindo_casal',
     'email_template_bem_vindo_fornecedor',
@@ -49,9 +49,16 @@ export default async function handler(req, res) {
     'email_template_lembrete_pagamento',
   ];
   for (const t of templates) {
-    const { data } = await supabase.from('configuracoes').select('chave').eq('chave', t).single();
-    if (data) add('ok', `Template '${t}' configurado`);
-    else add('fail', `Template '${t}' faltando — rode migration 003`);
+    const { data, error } = await supabase
+      .from('configuracoes')
+      .select('chave')
+      .eq('chave', t)
+      .maybeSingle();
+    if (data && data.chave) {
+      add('ok', `Template '${t}' configurado`);
+    } else {
+      add('fail', `Template '${t}' faltando — rode migration 003`);
+    }
   }
 
   // 5. Resend
