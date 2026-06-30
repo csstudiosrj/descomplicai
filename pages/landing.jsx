@@ -5,6 +5,9 @@ import { useRouter } from 'next/router';
 import Icon from '../components/ui/Icon';
 import Logo from '../components/ui/Logo';
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://descomplicai.com.br';
+const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
+
 export default function LandingPage() {
   const router = useRouter();
   const [dropdownAberto, setDropdownAberto] = useState(false);
@@ -30,354 +33,173 @@ export default function LandingPage() {
     router.push('/memorial');
   };
 
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': `${SITE_URL}/#organization`,
+        name: 'Descomplicaí',
+        url: SITE_URL,
+        logo: {
+          '@type': 'ImageObject',
+          url: `${SITE_URL}/logo.png`,
+        },
+        description:
+          'Plataforma completa para planejamento de casamentos. Organize fornecedores, convidados, cronograma e muito mais.',
+        sameAs: [
+          'https://instagram.com/descomplicai',
+          'https://facebook.com/descomplicai',
+        ],
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${SITE_URL}/#website`,
+        url: SITE_URL,
+        name: 'Descomplicaí',
+        publisher: { '@id': `${SITE_URL}/#organization` },
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${SITE_URL}/vitrine?busca={search_term_string}`,
+          'query-input': 'required name=search_term_string',
+        },
+      },
+    ],
+  };
+
   return (
     <>
       <Head>
-        <title>Descomplicaí — Planeje seu casamento</title>
-        <meta name="description" content="O jeito mais simples de organizar o casamento dos seus sonhos." />
+        <title>Descomplicaí — Planeje seu casamento sem estresse</title>
+        <meta
+          name="description"
+          content="Organize seu casamento em um só lugar: fornecedores, convidados, cronograma, checklist e muito mais. Descomplicaí torna o planejamento do seu grande dia simples e divertido."
+        />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={`${SITE_URL}/`} />
+
+        {/* Open Graph */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Descomplicaí — Planeje seu casamento sem estresse" />
+        <meta
+          property="og:description"
+          content="Organize seu casamento em um só lugar: fornecedores, convidados, cronograma, checklist e muito mais."
+        />
+        <meta property="og:url" content={`${SITE_URL}/`} />
+        <meta property="og:image" content={OG_IMAGE} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:locale" content="pt_BR" />
+        <meta property="og:site_name" content="Descomplicaí" />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Descomplicaí — Planeje seu casamento sem estresse" />
+        <meta
+          name="twitter:description"
+          content="Organize seu casamento em um só lugar: fornecedores, convidados, cronograma, checklist e muito mais."
+        />
+        <meta name="twitter:image" content={OG_IMAGE} />
+
+        {/* JSON-LD */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
       </Head>
 
-      <header style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: '52px',
-        background: scrolled ? 'var(--color-white)' : 'transparent',
-        borderBottom: scrolled ? '1px solid var(--color-border)' : '1px solid transparent',
-        zIndex: 'var(--z-sticky)',
-        transition: 'background 0.2s, border-color 0.2s',
-      }}>
-        <div style={{
-          maxWidth: '960px',
-          margin: '0 auto',
-          height: '100%',
-          padding: '0 var(--space-4)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
-          <Link href="/" legacyBehavior>
-            <a style={{ textDecoration: 'none' }}>
-              <Logo />
-            </a>
-          </Link>
-
-          <nav style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-            <div className="dropdown-profissionais" style={{ position: 'relative' }}>
-              <button
-                type="button"
-                onClick={() => setDropdownAberto(!dropdownAberto)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 'var(--text-sm)',
-                  color: 'var(--color-text-secondary)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-1)',
-                  padding: 'var(--space-2)',
-                }}
-              >
-                Para profissionais
-                <Icon name={dropdownAberto ? 'chevronUp' : 'chevronDown'} size={16} />
-              </button>
-
-              {dropdownAberto && (
-                <div style={{
-                  position: 'absolute',
-                  top: 'calc(100% + var(--space-2))',
-                  right: 0,
-                  background: 'var(--color-white)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-md)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                  minWidth: '200px',
-                  padding: 'var(--space-2)',
-                  zIndex: 'var(--z-dropdown)',
-                }}>
-                  <Link href="/cerimonialista/login" legacyBehavior>
-                    <a style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--space-2)',
-                      padding: 'var(--space-3) var(--space-4)',
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 'var(--text-sm)',
-                      color: 'var(--color-text-primary)',
-                      textDecoration: 'none',
-                      borderRadius: 'var(--radius-sm)',
-                    }}>
-                      <Icon name="briefcase" size={18} />
-                      Sou cerimonialista
-                    </a>
-                  </Link>
-                  <Link href="/fornecedor/login" legacyBehavior>
-                    <a style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--space-2)',
-                      padding: 'var(--space-3) var(--space-4)',
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 'var(--text-sm)',
-                      color: 'var(--color-text-primary)',
-                      textDecoration: 'none',
-                      borderRadius: 'var(--radius-sm)',
-                    }}>
-                      <Icon name="store" size={18} />
-                      Sou fornecedor
-                    </a>
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            <Link href="/login" legacyBehavior>
-              <a style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-sm)',
-                color: 'var(--color-brand)',
-                textDecoration: 'none',
-                fontWeight: 'var(--font-medium)',
-              }}>
-                Entrar
-              </a>
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      <section style={{
-        minHeight: '100dvh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textAlign: 'center',
-        padding: 'var(--space-8) var(--space-4)',
-        paddingTop: '72px',
-        background: 'linear-gradient(135deg, var(--color-brand-light) 0%, var(--color-off-white) 100%)',
-      }}>
-        <h1 style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 'var(--text-4xl)',
-          color: 'var(--color-text-primary)',
-          marginBottom: 'var(--space-4)',
-          lineHeight: 1.2,
-        }}>
-          Porque casar é pra ser lembrado,<br />não sofrido.
-        </h1>
-        <p style={{
-          fontFamily: 'var(--font-body)',
-          fontSize: 'var(--text-lg)',
-          color: 'var(--color-text-secondary)',
-          marginBottom: 'var(--space-8)',
-          maxWidth: '480px',
-        }}>
-          Organize tudo em um só lugar: fornecedores, convidados, cronograma e muito mais.
-        </p>
-        <button
-          onClick={scrollToMemorial}
-          style={{
-            backgroundColor: 'var(--color-brand)',
-            color: 'var(--color-white)',
-            fontFamily: 'var(--font-body)',
-            fontSize: 'var(--text-lg)',
-            fontWeight: 'var(--font-medium)',
-            padding: 'var(--space-4) var(--space-8)',
-            borderRadius: 'var(--radius-lg)',
-            border: 'none',
-            cursor: 'pointer',
-          }}
+      <div className="min-h-screen bg-white">
+        {/* Navbar */}
+        <nav
+          className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+            scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm' : 'bg-transparent'
+          }`}
         >
-          Comece seu memorial
-        </button>
-      </section>
-
-      <section style={{
-        padding: 'var(--space-12) var(--space-4)',
-        maxWidth: '960px',
-        margin: '0 auto',
-      }}>
-        <h2 style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 'var(--text-2xl)',
-          color: 'var(--color-text-primary)',
-          textAlign: 'center',
-          marginBottom: 'var(--space-8)',
-        }}>
-          Tudo que você precisa
-        </h2>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: 'var(--space-6)',
-        }}>
-          {[
-            { icon: 'checklist', title: 'Checklist inteligente', desc: 'Acompanhe cada etapa do planejamento' },
-            { icon: 'fornecedores', title: 'Fornecedores', desc: 'Organize orçamentos e contratos' },
-            { icon: 'convidados', title: 'Lista de convidados', desc: 'Controle confirmações e mesas' },
-            { icon: 'financeiro', title: 'Financeiro', desc: 'Gerencie pagamentos e saldos' },
-          ].map((f) => (
-            <div key={f.title} style={{
-              padding: 'var(--space-6)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--color-border)',
-              backgroundColor: 'var(--color-white)',
-            }}>
-              <div style={{ marginBottom: 'var(--space-3)' }}>
-                <Icon name={f.icon} size={32} color="var(--color-brand)" />
-              </div>
-              <h3 style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-lg)',
-                fontWeight: 'var(--font-medium)',
-                color: 'var(--color-text-primary)',
-                marginBottom: 'var(--space-2)',
-              }}>{f.title}</h3>
-              <p style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-sm)',
-                color: 'var(--color-text-secondary)',
-              }}>{f.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section style={{
-        padding: 'var(--space-12) var(--space-4)',
-        backgroundColor: 'var(--color-off-white)',
-      }}>
-        <div style={{ maxWidth: '960px', margin: '0 auto' }}>
-          <h2 style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'var(--text-2xl)',
-            color: 'var(--color-text-primary)',
-            textAlign: 'center',
-            marginBottom: 'var(--space-8)',
-          }}>
-            Você também pode crescer com a gente
-          </h2>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: 'var(--space-6)',
-          }}>
-            <div style={{
-              padding: 'var(--space-8)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--color-border)',
-              backgroundColor: 'var(--color-white)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              textAlign: 'center',
-            }}>
-              <div style={{ marginBottom: 'var(--space-4)' }}>
-                <Icon name="briefcase" size={48} color="var(--color-brand)" />
-              </div>
-              <h3 style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-xl)',
-                fontWeight: 'var(--font-medium)',
-                color: 'var(--color-text-primary)',
-                marginBottom: 'var(--space-3)',
-              }}>
-                Cerimonialista
-              </h3>
-              <p style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-sm)',
-                color: 'var(--color-text-secondary)',
-                marginBottom: 'var(--space-6)',
-                lineHeight: 1.6,
-              }}>
-                Gerencie seus eventos, acompanhe leads e organize cada detalhe do seu escritório em um só lugar.
-              </p>
-              <Link href="/cerimonialista/cadastro" legacyBehavior>
-                <a style={{
-                  display: 'inline-block',
-                  backgroundColor: 'var(--color-brand)',
-                  color: 'var(--color-white)',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 'var(--text-sm)',
-                  fontWeight: 'var(--font-medium)',
-                  padding: 'var(--space-3) var(--space-6)',
-                  borderRadius: 'var(--radius-md)',
-                  textDecoration: 'none',
-                }}>
-                  Cadastrar como cerimonialista
-                </a>
+          <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <Logo className="h-8 w-auto" />
+            </Link>
+            <div className="flex items-center gap-4">
+              <Link href="/vitrine" className="text-sm font-medium text-gray-700 hover:text-amber-600 transition">
+                Vitrine
               </Link>
+              <Link href="/login" className="text-sm font-medium text-gray-700 hover:text-amber-600 transition">
+                Entrar
+              </Link>
+              <button
+                onClick={scrollToMemorial}
+                className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+              >
+                Começar agora
+              </button>
             </div>
+          </div>
+        </nav>
 
-            <div style={{
-              padding: 'var(--space-8)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--color-border)',
-              backgroundColor: 'var(--color-white)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              textAlign: 'center',
-            }}>
-              <div style={{ marginBottom: 'var(--space-4)' }}>
-                <Icon name="store" size={48} color="var(--color-brand)" />
+        {/* Hero */}
+        <section className="pt-32 pb-20 px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+              Porque casar é pra ser lembrado,{' '}
+              <span className="text-amber-600">não sofrido.</span>
+            </h1>
+            <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+              Organize tudo em um só lugar: fornecedores, convidados, cronograma e muito mais.
+            </p>
+            <button
+              onClick={scrollToMemorial}
+              className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-xl text-lg font-semibold transition shadow-lg shadow-amber-500/25"
+            >
+              Criar meu memorial
+            </button>
+          </div>
+        </section>
+
+        {/* Features */}
+        <section className="py-20 bg-gray-50">
+          <div className="max-w-6xl mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Tudo que você precisa</h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { icon: 'checklist', title: 'Checklist inteligente', desc: 'Acompanhe cada etapa do planejamento' },
+                { icon: 'fornecedores', title: 'Fornecedores', desc: 'Organize orçamentos e contratos' },
+                { icon: 'convidados', title: 'Lista de convidados', desc: 'Controle confirmações e mesas' },
+                { icon: 'financeiro', title: 'Financeiro', desc: 'Gerencie pagamentos e saldos' },
+              ].map((f) => (
+                <div key={f.title} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                  <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center mb-4">
+                    <Icon name={f.icon} className="w-6 h-6 text-amber-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-2">{f.title}</h3>
+                  <p className="text-sm text-gray-600">{f.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Profissionais */}
+        <section className="py-20">
+          <div className="max-w-6xl mx-auto px-4 text-center">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Você também pode crescer com a gente</h2>
+            <div className="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Icon name="briefcase" className="w-8 h-8 text-amber-600" />
               </div>
-              <h3 style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-xl)',
-                fontWeight: 'var(--font-medium)',
-                color: 'var(--color-text-primary)',
-                marginBottom: 'var(--space-3)',
-              }}>
-                Fornecedor
-              </h3>
-              <p style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-sm)',
-                color: 'var(--color-text-secondary)',
-                marginBottom: 'var(--space-6)',
-                lineHeight: 1.6,
-              }}>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Fornecedor</h3>
+              <p className="text-gray-600 mb-6">
                 Seja encontrado por casais que estão planejando o casamento. Aumente sua visibilidade e receba novos leads.
               </p>
-              <Link href="/fornecedor/cadastro" legacyBehavior>
-                <a style={{
-                  display: 'inline-block',
-                  backgroundColor: 'var(--color-brand)',
-                  color: 'var(--color-white)',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 'var(--text-sm)',
-                  fontWeight: 'var(--font-medium)',
-                  padding: 'var(--space-3) var(--space-6)',
-                  borderRadius: 'var(--radius-md)',
-                  textDecoration: 'none',
-                }}>
-                  Cadastrar como fornecedor
-                </a>
+              <Link
+                href="/fornecedor/cadastro"
+                className="inline-block bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-lg font-medium transition"
+              >
+                Cadastrar como fornecedor
               </Link>
             </div>
           </div>
-        </div>
-      </section>
-
-      <footer style={{
-        padding: 'var(--space-6) var(--space-4)',
-        textAlign: 'center',
-        borderTop: '1px solid var(--color-border)',
-      }}>
-        <p style={{
-          fontFamily: 'var(--font-body)',
-          fontSize: 'var(--text-xs)',
-          color: 'var(--color-text-muted)',
-        }}>
-          Descomplicaí — Todos os direitos reservados
-        </p>
-      </footer>
+        </section>
+      </div>
     </>
   );
 }

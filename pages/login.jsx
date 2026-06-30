@@ -2,200 +2,141 @@ import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useAuth } from '../hooks/useAuth';
-import { useAnalytics } from '../hooks/useAnalytics';
-import Input from '../components/ui/Input';
-import Button from '../components/ui/Button';
+import { supabase } from '../lib/supabase';
+import Icon from '../components/ui/Icon';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://descomplicai.com.br';
+const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
-  const { trackLogin } = useAnalytics();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
-  const [enviando, setEnviando] = useState(false);
-  const [msgRecuperacao, setMsgRecuperacao] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const redirect = router.query.redirect || '/painel';
-
-  const handleSubmit = async (e) => {
+  async function handleLogin(e) {
     e.preventDefault();
     setErro('');
-    setMsgRecuperacao('');
-    setEnviando(true);
-
-    const { data, error } = await login(email, senha);
-
-    if (error) {
-      setEnviando(false);
-      trackLogin(false);
-      if (error.message.includes('Invalid login credentials')) {
-        setErro('Email ou senha incorretos.');
-      } else if (error.message.includes('Email not confirmed')) {
-        setErro('Confirme seu email antes de entrar.');
-      } else {
-        setErro(error.message || 'Erro ao fazer login.');
-      }
-      return;
-    }
-
-    if (!data?.session?.user) {
-      setEnviando(false);
-      trackLogin(false);
-      setErro('Erro ao fazer login.');
-      return;
-    }
-
-    trackLogin(true);
-    const userId = data.session.user.id;
-
+    setLoading(true);
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      const supabaseClient = createClient(supabaseUrl, supabaseKey, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      });
-
-      const [cerimRes, fornRes] = await Promise.all([
-        supabaseClient
-          .from('cerimonialistas')
-          .select('id')
-          .eq('usuario_id', userId)
-          .single(),
-        supabaseClient
-          .from('fornecedores_plataforma')
-          .select('id')
-          .eq('usuario_id', userId)
-          .single(),
-      ]);
-
-      setEnviando(false);
-
-      if (!cerimRes.error && cerimRes.data) {
-        router.push('/cerimonialista/painel');
-        return;
-      }
-
-      if (!fornRes.error && fornRes.data) {
-        router.push('/fornecedor/painel');
-        return;
-      }
-
-      router.push(redirect);
+      const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+      if (error) throw error;
+      router.push('/painel');
     } catch (err) {
-      setEnviando(false);
-      console.error('[login] erro ao detectar tipo:', err);
-      router.push(redirect);
+      setErro(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
+    } finally {
+      setLoading(false);
     }
-  };
+  }
 
-  const handleRecuperarSenha = async () => {
-    setErro('');
-    setMsgRecuperacao('');
-    if (!email) {
-      setErro('Digite seu e-mail para recuperar a senha.');
-      return;
-    }
-    const { supabase } = await import('../lib/supabase');
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: typeof window !== 'undefined' ? window.location.origin + '/login' : undefined,
-    });
-    if (error) {
-      setErro(error.message);
-    } else {
-      setMsgRecuperacao('Enviamos um link de recuperação para seu e-mail.');
-    }
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: 'Entrar — Descomplicaí',
+    description: 'Acesse seu memorial e continue a planejar o casamento dos seus sonhos.',
+    url: `${SITE_URL}/login`,
+    isPartOf: {
+      '@type': 'WebSite',
+      '@id': `${SITE_URL}/#website`,
+    },
   };
 
   return (
     <>
       <Head>
         <title>Entrar — Descomplicaí</title>
-        <meta name="description" content="Acesse seu memorial de casamento no Descomplicaí." />
+        <meta
+          name="description"
+          content="Acesse seu memorial e continue a planejar o casamento dos seus sonhos. Login seguro e rápido."
+        />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={`${SITE_URL}/login`} />
+
+        {/* Open Graph */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Entrar — Descomplicaí" />
+        <meta
+          property="og:description"
+          content="Acesse seu memorial e continue a planejar o casamento dos seus sonhos."
+        />
+        <meta property="og:url" content={`${SITE_URL}/login`} />
+        <meta property="og:image" content={OG_IMAGE} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:locale" content="pt_BR" />
+        <meta property="og:site_name" content="Descomplicaí" />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Entrar — Descomplicaí" />
+        <meta
+          name="twitter:description"
+          content="Acesse seu memorial e continue a planejar o casamento dos seus sonhos."
+        />
+        <meta name="twitter:image" content={OG_IMAGE} />
+
+        {/* JSON-LD */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
       </Head>
 
-      <div style={{
-        minHeight: '100dvh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 'var(--space-4)',
-        backgroundColor: 'var(--color-off-white)',
-      }}>
-        <div style={{ width: '100%', maxWidth: '400px' }}>
-          <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
-            <h1 style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'var(--text-3xl)',
-              color: 'var(--color-text-primary)',
-              marginBottom: 'var(--space-2)',
-            }}>
-              Descomplicaí
-            </h1>
-            <p style={{
-              fontFamily: 'var(--font-body)',
-              color: 'var(--color-text-secondary)',
-            }}>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <Link href="/" className="inline-block">
+              <h1 className="text-2xl font-bold text-gray-900">Descomplicaí</h1>
+            </Link>
+            <p className="text-gray-500 mt-2">
               Acesse seu memorial e continue a planejar o casamento dos seus sonhos
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-            <Input label="E-mail" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            <Input label="Senha" type="password" placeholder="Sua senha" value={senha} onChange={(e) => setSenha(e.target.value)} required />
-
+          <form onSubmit={handleLogin} className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                placeholder="seu@email.com"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+              <input
+                type="password"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                placeholder="Sua senha"
+              />
+            </div>
             {erro && (
-              <div role="alert" style={{
-                padding: 'var(--space-3)',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--color-danger-light)',
-                color: 'var(--color-danger)',
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-sm)',
-              }}>{erro}</div>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+                {erro}
+              </div>
             )}
-
-            {msgRecuperacao && (
-              <div role="status" style={{
-                padding: 'var(--space-3)',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--color-success-light)',
-                color: 'var(--color-success)',
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-sm)',
-              }}>{msgRecuperacao}</div>
-            )}
-
-            <Button type="submit" variant="primary" size="lg" fullWidth loading={enviando}>Entrar</Button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-lg font-medium transition disabled:opacity-50"
+            >
+              {loading ? 'Entrando...' : 'Entrar'}
+            </button>
           </form>
 
-          <div style={{ textAlign: 'center', marginTop: 'var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-              <button
-                type="button"
-                onClick={handleRecuperarSenha}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--color-brand)',
-                  fontWeight: 'var(--font-medium)',
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 'var(--text-sm)',
-                }}
-              >
-                Esqueci minha senha
-              </button>
-            </p>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-              Ainda não começou?{' '}
-              <Link href="/" legacyBehavior>
-                <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Comece seu memorial</a>
-              </Link>
-            </p>
-          </div>
+          <p className="text-center text-sm text-gray-500 mt-6">
+            Não tem conta?{' '}
+            <Link href="/cadastro" className="text-amber-600 hover:text-amber-700 font-medium">
+              Cadastre-se
+            </Link>
+          </p>
         </div>
       </div>
     </>

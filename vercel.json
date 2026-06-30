@@ -1,10 +1,24 @@
 {
-    "functions": {
-      "pages/api/teste-pdf.js": {
-        "maxDuration": 60
-      },
-      "pages/api/gerar-pdf.js": {
-        "maxDuration": 60
-      }
+  "crons": [
+    {
+      "path": "/api/cron/lembrete-trial",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/tarefas-pendentes",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/resumo-semanal",
+      "schedule": "0 9 * * 1"
+    }
+  ],
+  "functions": {
+    "pages/api/teste-pdf.js": {
+      "maxDuration": 60
+    },
+    "pages/api/gerar-pdf.js": {
+      "maxDuration": 60
     }
   }
+}

@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /painel/
+Disallow: /admin/
+Disallow: /api/
+Disallow: /memorial/conclusao
+Disallow: /assinar/
+Disallow: /colaborador/
+Disallow: /convite/
+Disallow: /cerimonialista/
+Disallow: /fornecedor/
+
+Sitemap: https://descomplicai.com.br/api/sitemap.xml

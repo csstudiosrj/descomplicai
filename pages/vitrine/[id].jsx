@@ -1,6 +1,5 @@
 // pages/vitrine/[id].jsx
-// Vitrine pública do cerimonialista — 3 níveis de acesso
-// Público: dados básicos | Logado: contato parcial + CTA assinatura | Assinante: contato completo
+// Vitrine pública do fornecedor — SEO otimizado com Schema.org LocalBusiness
 
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
@@ -8,6 +7,8 @@ import { useRouter } from 'next/router';
 import { supabase } from '../../lib/supabase';
 import Icon from '../../components/ui/Icon';
 import ContatoCard from '../../components/vitrine/ContatoCard';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://descomplicai.com.br';
 
 function formatarTelefoneParcial(telefone) {
   if (!telefone) return null;
@@ -23,11 +24,11 @@ function formatarAvaliacao(media, total) {
   return { estrelas, total: total || 0 };
 }
 
-export default function VitrineCerimonialista({ cerimonialista: initialData, error: serverError }) {
+export default function VitrineFornecedor({ fornecedor: initialData, error: serverError }) {
   const router = useRouter();
   const { id } = router.query;
 
-  const [cerimonialista, setCerimonialista] = useState(initialData);
+  const [fornecedor, setFornecedor] = useState(initialData);
   const [loading, setLoading] = useState(!initialData && !serverError);
   const [error, setError] = useState(serverError || null);
   const [user, setUser] = useState(null);
@@ -51,7 +52,6 @@ export default function VitrineCerimonialista({ cerimonialista: initialData, err
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
-        // Busca evento do usuário para verificar assinatura
         const { data: evento } = await supabase
           .from('eventos')
           .select('assinatura_ativa')
@@ -59,49 +59,52 @@ export default function VitrineCerimonialista({ cerimonialista: initialData, err
           .order('criado_em', { ascending: false })
           .limit(1)
           .single();
-        if (evento) {
-          setAssinaturaAtiva(evento.assinatura_ativa === true);
-        }
+        if (evento?.assinatura_ativa) setAssinaturaAtiva(true);
       }
     }
     verificarUsuario();
   }, []);
 
-  // Se não veio SSR, busca no client
+  // Fallback: busca cliente se SSR falhou
   useEffect(() => {
-    if (!initialData && id && !serverError) {
-      async function buscar() {
-        try {
-          const res = await fetch(`/api/vitrine/${id}`);
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.erro || 'Erro ao carregar vitrine');
-          setCerimonialista(data);
-        } catch (err) {
-          setError(err.message);
-        } finally {
-          setLoading(false);
-        }
+    if (initialData || serverError || !id) return;
+    async function buscarFornecedor() {
+      try {
+        const { data, error } = await supabase
+          .from('fornecedores')
+          .select('*')
+          .eq('id', id)
+          .eq('status', 'aprovado')
+          .single();
+        if (error || !data) throw new Error('Fornecedor não encontrado');
+        setFornecedor(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
-      buscar();
     }
+    buscarFornecedor();
   }, [id, initialData, serverError]);
 
-  const handleSubmitOrcamento = async (e) => {
+  async function enviarOrcamento(e) {
     e.preventDefault();
-    setEnviandoOrcamento(true);
     setErroOrcamento('');
-
+    if (!formOrcamento.nome_lead || !formOrcamento.email || !formOrcamento.tipo_evento) {
+      setErroOrcamento('Preencha nome, e-mail e tipo de evento.');
+      return;
+    }
+    setEnviandoOrcamento(true);
     try {
       const res = await fetch('/api/vitrine/orcamento', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          fornecedor_id: id,
           ...formOrcamento,
-          cerimonialista_id: cerimonialista.id,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.erro || 'Erro ao enviar orçamento');
+      if (!res.ok) throw new Error('Erro ao enviar orçamento');
       setSucessoOrcamento(true);
       setFormOrcamento({ nome_lead: '', email: '', telefone: '', tipo_evento: '', data_prevista: '', notas: '' });
     } catch (err) {
@@ -109,652 +112,344 @@ export default function VitrineCerimonialista({ cerimonialista: initialData, err
     } finally {
       setEnviandoOrcamento(false);
     }
-  };
+  }
 
   if (loading) {
     return (
-      <div style={{
-        minHeight: '100dvh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'var(--color-off-white)',
-      }}>
-        <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>
-          Carregando vitrine...
-        </p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full" />
       </div>
     );
   }
 
-  if (error || !cerimonialista) {
+  if (error || !fornecedor) {
     return (
-      <div style={{
-        minHeight: '100dvh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'var(--color-off-white)',
-        padding: 'var(--space-4)',
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <Icon name="alertCircle" size={48} color="var(--color-danger)" />
-          <h1 style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'var(--text-xl)',
-            color: 'var(--color-text-primary)',
-            marginTop: 'var(--space-4)',
-          }}>
-            {error || 'Cerimonialista não encontrado'}
-          </h1>
-          <p style={{
-            fontFamily: 'var(--font-body)',
-            color: 'var(--color-text-secondary)',
-            marginTop: 'var(--space-2)',
-          }}>
-            Verifique o link ou tente novamente mais tarde.
-          </p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Fornecedor não encontrado</h1>
+          <p className="text-gray-500">O fornecedor que você procura não está disponível no momento.</p>
+          <button
+            onClick={() => router.push('/vitrine')}
+            className="mt-6 text-amber-600 hover:text-amber-700 font-medium"
+          >
+            ← Voltar para vitrine
+          </button>
         </div>
       </div>
     );
   }
 
-  const { estrelas, total } = formatarAvaliacao(cerimonialista.avaliacao_media, cerimonialista.total_avaliacoes);
-  const portfolio = Array.isArray(cerimonialista.portfolio_urls) ? cerimonialista.portfolio_urls : [];
-
-  // Nível de acesso
+  const f = fornecedor;
+  const nome = f.nome_fantasia || f.nome_empresa || f.nome;
+  const { estrelas, total } = formatarAvaliacao(f.media_avaliacao, f.total_avaliacoes);
+  const isLogado = !!user;
   const isPublico = !user;
-  const isLogado = user && !assinaturaAtiva;
-  const isAssinante = user && assinaturaAtiva;
+  const isAssinante = isLogado && assinaturaAtiva;
+  const telefoneCompleto = f.telefone;
+  const telefoneParcial = formatarTelefoneParcial(f.telefone);
+  const portfolio = f.portfolio_urls || f.fotos || [];
+
+  const pageTitle = `${nome} — ${f.categoria} em ${f.cidade || 'Brasil'} | Descomplicaí`;
+  const pageDescription = f.descricao
+    ? `${f.descricao.slice(0, 155)}${f.descricao.length > 155 ? '...' : ''}`
+    : `Encontre ${nome}, fornecedor de ${f.categoria} para seu casamento. Veja avaliações, portfólio e solicite orçamento.`;
+  const canonicalUrl = `${SITE_URL}/vitrine/${f.id}`;
+  const ogImage = f.logo_url || (portfolio[0]) || `${SITE_URL}/og-vitrine.jpg`;
+
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    '@id': `${SITE_URL}/vitrine/${f.id}`,
+    name: nome,
+    description: f.descricao || `${f.categoria} — ${f.subcategoria || ''}`,
+    url: canonicalUrl,
+    image: ogImage,
+    telephone: f.telefone || undefined,
+    email: f.email || undefined,
+    address: f.cidade
+      ? {
+          '@type': 'PostalAddress',
+          addressLocality: f.cidade,
+          addressRegion: f.estado,
+          addressCountry: 'BR',
+        }
+      : undefined,
+    priceRange: f.plano === 'premium' ? '$$$$' : f.plano === 'vip' ? '$$$$$' : '$$',
+    aggregateRating:
+      f.media_avaliacao > 0
+        ? {
+            '@type': 'AggregateRating',
+            ratingValue: f.media_avaliacao,
+            reviewCount: f.total_avaliacoes,
+            bestRating: 5,
+            worstRating: 1,
+          }
+        : undefined,
+    areaServed: f.regiao_atuacao || f.cidade || 'Brasil',
+    serviceType: f.categoria,
+  };
 
   return (
     <>
       <Head>
-        <title>{cerimonialista.nome_empresa} — Descomplicaí</title>
-        <meta name="description" content={`${cerimonialista.nome_empresa} — Cerimonialista em ${cerimonialista.cidade}, ${cerimonialista.estado}`} />
-        <meta property="og:title" content={cerimonialista.nome_empresa} />
-        <meta property="og:description" content={cerimonialista.bio || `Cerimonialista em ${cerimonialista.cidade}, ${cerimonialista.estado}`} />
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={canonicalUrl} />
+
+        {/* Open Graph */}
+        <meta property="og:type" content="profile" />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:locale" content="pt_BR" />
+        <meta property="og:site_name" content="Descomplicaí" />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDescription} />
+        <meta name="twitter:image" content={ogImage} />
+
+        {/* JSON-LD */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
       </Head>
 
-      <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-off-white)' }}>
-        {/* Hero */}
-        <section style={{
-          backgroundColor: 'var(--color-surface)',
-          borderBottom: '1px solid var(--color-border)',
-          padding: 'var(--space-8) var(--space-4)',
-        }}>
-          <div style={{ maxWidth: '960px', margin: '0 auto' }}>
-            {/* Badge plano */}
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 'var(--space-1)',
-              padding: 'var(--space-1) var(--space-3)',
-              borderRadius: 'var(--radius-full)',
-              backgroundColor: 'var(--color-brand-light)',
-              color: 'var(--color-brand-dark)',
-              fontFamily: 'var(--font-body)',
-              fontSize: 'var(--text-xs)',
-              fontWeight: 'var(--font-medium)',
-              marginBottom: 'var(--space-4)',
-            }}>
-              <Icon name="shieldCheck" size={14} />
-              {cerimonialista.plano === 'trial' ? 'Trial ativo' : 'Profissional verificado'}
-            </div>
-
-            <h1 style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'var(--text-3xl)',
-              color: 'var(--color-text-primary)',
-              marginBottom: 'var(--space-2)',
-              lineHeight: 'var(--leading-tight)',
-            }}>
-              {cerimonialista.nome_empresa}
-            </h1>
-
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-2)',
-              flexWrap: 'wrap',
-            }}>
-              <Icon name="mapPin" size={16} color="var(--color-text-muted)" />
-              <span style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-sm)',
-                color: 'var(--color-text-secondary)',
-              }}>
-                {cerimonialista.cidade}, {cerimonialista.estado}
-                {cerimonialista.regiao_atuacao && ` — Atua em ${cerimonialista.regiao_atuacao}`}
-              </span>
-            </div>
-
-            {/* Avaliação */}
-            {total > 0 && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-2)',
-                marginTop: 'var(--space-3)',
-              }}>
-                <div style={{ display: 'flex', gap: '2px' }}>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Icon
-                      key={i}
-                      name={i < estrelas ? 'starFill' : 'star'}
-                      size={18}
-                      color={i < estrelas ? 'var(--color-warning)' : 'var(--color-border-strong)'}
-                    />
-                  ))}
-                </div>
-                <span style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 'var(--text-sm)',
-                  color: 'var(--color-text-secondary)',
-                }}>
-                  {cerimonialista.avaliacao_media?.toFixed(1)} ({total} avaliaç{total === 1 ? 'ão' : 'ões'})
-                </span>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-4xl mx-auto px-4 py-8">
+            <button
+              onClick={() => router.push('/vitrine')}
+              className="text-sm text-gray-500 hover:text-gray-900 mb-4 flex items-center gap-1"
+            >
+              <Icon name="arrowLeft" className="w-4 h-4" /> Vitrine
+            </button>
+            <div className="flex items-start gap-6">
+              <div className="w-20 h-20 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                {f.logo_url ? (
+                  <img src={f.logo_url} alt={nome} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-3xl font-bold text-gray-300">{nome.charAt(0).toUpperCase()}</span>
+                )}
               </div>
-            )}
-
-            {/* Bio */}
-            {cerimonialista.bio && (
-              <p style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-base)',
-                color: 'var(--color-text-secondary)',
-                lineHeight: 'var(--leading-relaxed)',
-                marginTop: 'var(--space-4)',
-                maxWidth: '640px',
-              }}>
-                {cerimonialista.bio}
-              </p>
-            )}
-          </div>
-        </section>
-
-        {/* Conteúdo principal */}
-        <main style={{ maxWidth: '960px', margin: '0 auto', padding: 'var(--space-6) var(--space-4)' }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr',
-            gap: 'var(--space-6)',
-          }}>
-            {/* Portfólio */}
-            {portfolio.length > 0 && (
-              <section>
-                <h2 style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: 'var(--text-xl)',
-                  color: 'var(--color-text-primary)',
-                  marginBottom: 'var(--space-4)',
-                }}>
-                  Portfólio
-                </h2>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                  gap: 'var(--space-3)',
-                }}>
-                  {portfolio.map((url, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        position: 'relative',
-                        paddingBottom: '75%',
-                        borderRadius: 'var(--radius-lg)',
-                        overflow: 'hidden',
-                        backgroundColor: 'var(--color-surface)',
-                      }}
-                    >
-                      <img
-                        src={url}
-                        alt={`Foto ${idx + 1} do portfólio de ${cerimonialista.nome_empresa}`}
-                        loading="lazy"
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                        }}
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-gray-900">{nome}</h1>
+                <p className="text-gray-500 mt-1">
+                  {f.categoria} {f.subcategoria ? `— ${f.subcategoria}` : ''}
+                  {f.cidade && ` • ${f.cidade}${f.estado ? `, ${f.estado}` : ''}`}
+                </p>
+                {f.media_avaliacao > 0 && (
+                  <div className="flex items-center gap-1 mt-2">
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <Icon
+                        key={i}
+                        name={i < estrelas ? 'star' : 'starOutline'}
+                        className={`w-4 h-4 ${i < estrelas ? 'text-amber-400' : 'text-gray-300'}`}
                       />
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
+                    ))}
+                    <span className="text-sm text-gray-600 ml-1">
+                      {f.media_avaliacao.toFixed(1)} ({total} avaliações)
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
 
-            {/* Dados de contato */}
-            <section>
-              <h2 style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 'var(--text-xl)',
-                color: 'var(--color-text-primary)',
-                marginBottom: 'var(--space-4)',
-              }}>
-                Contato
-              </h2>
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          {/* Bio */}
+          {f.bio && (
+            <div className="bg-white rounded-xl p-6 mb-6 shadow-sm border border-gray-100">
+              <h2 className="font-semibold text-gray-900 mb-2">Sobre</h2>
+              <p className="text-gray-600 leading-relaxed">{f.bio}</p>
+            </div>
+          )}
 
-              <ContatoCard
-                telefone={cerimonialista.telefone}
-                instagram={cerimonialista.instagram}
-                site={cerimonialista.site}
-                email={null} // email do cerimonialista não expomos
-                isPublico={isPublico}
-                isLogado={isLogado}
-                isAssinante={isAssinante}
-                telefoneParcial={formatarTelefoneParcial(cerimonialista.telefone)}
-              />
+          {/* Portfólio */}
+          {portfolio.length > 0 && (
+            <div className="bg-white rounded-xl p-6 mb-6 shadow-sm border border-gray-100">
+              <h2 className="font-semibold text-gray-900 mb-4">Portfólio</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {portfolio.map((url, idx) => (
+                  <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                    <img
+                      src={url}
+                      alt={`Portfólio ${nome} — ${idx + 1}`}
+                      className="w-full h-full object-cover hover:scale-105 transition duration-300"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-              {/* Banner CTA para logado não assinante */}
-              {isLogado && (
-                <div style={{
-                  marginTop: 'var(--space-4)',
-                  padding: 'var(--space-5)',
-                  borderRadius: 'var(--radius-lg)',
-                  backgroundColor: 'var(--color-brand-lighter)',
-                  border: '1.5px solid var(--color-brand-light)',
-                  textAlign: 'center',
-                }}>
-                  <Icon name="award" size={32} color="var(--color-brand)" />
-                  <h3 style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 'var(--text-lg)',
-                    color: 'var(--color-brand-dark)',
-                    marginTop: 'var(--space-3)',
-                  }}>
-                    Desbloqueie o contato completo
-                  </h3>
-                  <p style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 'var(--text-sm)',
-                    color: 'var(--color-text-secondary)',
-                    marginTop: 'var(--space-2)',
-                  }}>
-                    Assine o Descomplicaí Pro para ver telefone, Instagram e site completos de todos os cerimonialistas.
-                  </p>
-                  <button
-                    onClick={() => router.push('/painel/financeiro')}
-                    style={{
-                      marginTop: 'var(--space-4)',
-                      padding: 'var(--space-3) var(--space-6)',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: 'var(--color-brand)',
-                      color: 'var(--color-white)',
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 'var(--text-sm)',
-                      fontWeight: 'var(--font-medium)',
-                      border: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Ver planos de assinatura
-                  </button>
+          {/* Dados de contato */}
+          <div className="bg-white rounded-xl p-6 mb-6 shadow-sm border border-gray-100">
+            <h2 className="font-semibold text-gray-900 mb-4">Contato</h2>
+            <div className="space-y-3">
+              {isAssinante && telefoneCompleto && (
+                <ContatoCard tipo="telefone" valor={telefoneCompleto} />
+              )}
+              {isAssinante && f.email && (
+                <ContatoCard tipo="email" valor={f.email} />
+              )}
+              {isAssinante && f.instagram && (
+                <ContatoCard tipo="instagram" valor={f.instagram} />
+              )}
+              {isAssinante && f.site && (
+                <ContatoCard tipo="site" valor={f.site} />
+              )}
+              {(isPublico || (isLogado && !isAssinante)) && telefoneParcial && (
+                <div className="flex items-center gap-3 text-gray-500">
+                  <Icon name="phone" className="w-5 h-5" />
+                  <span>{telefoneParcial}</span>
+                  <span className="text-xs bg-gray-100 px-2 py-1 rounded">assinante</span>
                 </div>
               )}
-
-              {/* CTA para público criar conta */}
-              {isPublico && (
-                <div style={{
-                  marginTop: 'var(--space-4)',
-                  padding: 'var(--space-5)',
-                  borderRadius: 'var(--radius-lg)',
-                  backgroundColor: 'var(--color-surface)',
-                  border: '1.5px solid var(--color-border)',
-                  textAlign: 'center',
-                }}>
-                  <Icon name="user" size={32} color="var(--color-brand)" />
-                  <h3 style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 'var(--text-lg)',
-                    color: 'var(--color-text-primary)',
-                    marginTop: 'var(--space-3)',
-                  }}>
-                    Crie sua conta gratuita
-                  </h3>
-                  <p style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 'var(--text-sm)',
-                    color: 'var(--color-text-secondary)',
-                    marginTop: 'var(--space-2)',
-                  }}>
-                    Cadastre-se no Descomplicaí para ver dados de contato e solicitar orçamentos de cerimonialistas.
-                  </p>
-                  <button
-                    onClick={() => router.push('/cadastro')}
-                    style={{
-                      marginTop: 'var(--space-4)',
-                      padding: 'var(--space-3) var(--space-6)',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: 'var(--color-brand)',
-                      color: 'var(--color-white)',
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 'var(--text-sm)',
-                      fontWeight: 'var(--font-medium)',
-                      border: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Criar conta grátis
-                  </button>
-                </div>
+              {!isAssinante && !telefoneParcial && !f.email && !f.instagram && !f.site && (
+                <p className="text-gray-500 text-sm">Dados de contato disponíveis para assinantes.</p>
               )}
-            </section>
+            </div>
+          </div>
 
-            {/* Solicitar orçamento */}
-            <section style={{
-              backgroundColor: 'var(--color-surface)',
-              borderRadius: 'var(--radius-lg)',
-              padding: 'var(--space-6)',
-              border: '1px solid var(--color-border)',
-            }}>
-              <h2 style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 'var(--text-xl)',
-                color: 'var(--color-text-primary)',
-                marginBottom: 'var(--space-2)',
-              }}>
-                Solicitar orçamento
-              </h2>
-              <p style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-sm)',
-                color: 'var(--color-text-secondary)',
-                marginBottom: 'var(--space-5)',
-              }}>
-                Preencha seus dados e {cerimonialista.nome_empresa} entrará em contato.
+          {/* Banner CTA para logado não assinante */}
+          {isLogado && !isAssinante && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-6">
+              <h3 className="font-semibold text-amber-900 mb-2">Desbloqueie o contato completo</h3>
+              <p className="text-amber-800 text-sm mb-4">
+                Assine o Descomplicaí Pro para ver telefone, Instagram e site completos de todos os fornecedores.
               </p>
+              <button
+                onClick={() => router.push('/painel/financeiro')}
+                className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+              >
+                Ver planos
+              </button>
+            </div>
+          )}
 
-              {sucessoOrcamento ? (
-                <div
-                  role="alert"
-                  style={{
-                    padding: 'var(--space-5)',
-                    borderRadius: 'var(--radius-lg)',
-                    backgroundColor: 'var(--color-success-light)',
-                    color: 'var(--color-success)',
-                    textAlign: 'center',
-                  }}
+          {/* CTA para público criar conta */}
+          {isPublico && (
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 mb-6">
+              <h3 className="font-semibold text-gray-900 mb-2">Crie sua conta gratuita</h3>
+              <p className="text-gray-600 text-sm mb-4">
+                Cadastre-se no Descomplicaí para ver dados de contato e solicitar orçamentos de fornecedores.
+              </p>
+              <button
+                onClick={() => router.push('/cadastro')}
+                className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+              >
+                Criar conta
+              </button>
+            </div>
+          )}
+
+          {/* Solicitar orçamento */}
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <h2 className="font-semibold text-gray-900 mb-4">Solicitar orçamento</h2>
+            <p className="text-gray-500 text-sm mb-4">
+              Preencha seus dados e {nome} entrará em contato.
+            </p>
+            {sucessoOrcamento ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-800 text-sm">
+                ✅ Orçamento enviado com sucesso! {nome} entrará em contato em breve.
+              </div>
+            ) : (
+              <form onSubmit={enviarOrcamento} className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Nome completo"
+                  value={formOrcamento.nome_lead}
+                  onChange={(e) => setFormOrcamento(p => ({ ...p, nome_lead: e.target.value }))}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                />
+                <input
+                  type="email"
+                  placeholder="E-mail"
+                  value={formOrcamento.email}
+                  onChange={(e) => setFormOrcamento(p => ({ ...p, email: e.target.value }))}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                />
+                <input
+                  type="tel"
+                  placeholder="Telefone"
+                  value={formOrcamento.telefone}
+                  onChange={(e) => setFormOrcamento(p => ({ ...p, telefone: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                />
+                <input
+                  type="text"
+                  placeholder="Tipo de evento"
+                  value={formOrcamento.tipo_evento}
+                  onChange={(e) => setFormOrcamento(p => ({ ...p, tipo_evento: e.target.value }))}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                />
+                <input
+                  type="date"
+                  placeholder="Data prevista"
+                  value={formOrcamento.data_prevista}
+                  onChange={(e) => setFormOrcamento(p => ({ ...p, data_prevista: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                />
+                <textarea
+                  placeholder="Detalhes adicionais"
+                  value={formOrcamento.notas}
+                  onChange={(e) => setFormOrcamento(p => ({ ...p, notas: e.target.value }))}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                />
+                {erroOrcamento && (
+                  <p className="text-red-600 text-sm">{erroOrcamento}</p>
+                )}
+                <button
+                  type="submit"
+                  disabled={enviandoOrcamento}
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-lg font-medium transition disabled:opacity-50"
                 >
-                  <Icon name="checkCircle" size={40} />
-                  <h3 style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 'var(--text-lg)',
-                    marginTop: 'var(--space-3)',
-                  }}>
-                    Orçamento enviado!
-                  </h3>
-                  <p style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>
-                    {cerimonialista.nome_empresa} receberá seus dados e entrará em contato em breve.
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmitOrcamento} style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 'var(--space-4)',
-                }}>
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 'var(--text-sm)',
-                      fontWeight: 'var(--font-medium)',
-                      color: 'var(--color-text-primary)',
-                      marginBottom: 'var(--space-1)',
-                    }}>
-                      Nome completo
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formOrcamento.nome_lead}
-                      onChange={(e) => setFormOrcamento(p => ({ ...p, nome_lead: e.target.value }))}
-                      placeholder="Seu nome"
-                      style={{
-                        width: '100%',
-                        padding: 'var(--space-3) var(--space-4)',
-                        fontFamily: 'var(--font-body)',
-                        fontSize: 'var(--text-base)',
-                        color: 'var(--color-text-primary)',
-                        backgroundColor: 'var(--color-white)',
-                        border: '1.5px solid var(--color-border)',
-                        borderRadius: 'var(--radius-md)',
-                        outline: 'none',
-                      }}
-                    />
-                  </div>
-
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: 'var(--space-3)',
-                  }}>
-                    <div>
-                      <label style={{
-                        display: 'block',
-                        fontFamily: 'var(--font-body)',
-                        fontSize: 'var(--text-sm)',
-                        fontWeight: 'var(--font-medium)',
-                        color: 'var(--color-text-primary)',
-                        marginBottom: 'var(--space-1)',
-                      }}>
-                        E-mail
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        value={formOrcamento.email}
-                        onChange={(e) => setFormOrcamento(p => ({ ...p, email: e.target.value }))}
-                        placeholder="seu@email.com"
-                        style={{
-                          width: '100%',
-                          padding: 'var(--space-3) var(--space-4)',
-                          fontFamily: 'var(--font-body)',
-                          fontSize: 'var(--text-base)',
-                          color: 'var(--color-text-primary)',
-                          backgroundColor: 'var(--color-white)',
-                          border: '1.5px solid var(--color-border)',
-                          borderRadius: 'var(--radius-md)',
-                          outline: 'none',
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{
-                        display: 'block',
-                        fontFamily: 'var(--font-body)',
-                        fontSize: 'var(--text-sm)',
-                        fontWeight: 'var(--font-medium)',
-                        color: 'var(--color-text-primary)',
-                        marginBottom: 'var(--space-1)',
-                      }}>
-                        Telefone
-                      </label>
-                      <input
-                        type="tel"
-                        value={formOrcamento.telefone}
-                        onChange={(e) => setFormOrcamento(p => ({ ...p, telefone: e.target.value }))}
-                        placeholder="(00) 00000-0000"
-                        style={{
-                          width: '100%',
-                          padding: 'var(--space-3) var(--space-4)',
-                          fontFamily: 'var(--font-body)',
-                          fontSize: 'var(--text-base)',
-                          color: 'var(--color-text-primary)',
-                          backgroundColor: 'var(--color-white)',
-                          border: '1.5px solid var(--color-border)',
-                          borderRadius: 'var(--radius-md)',
-                          outline: 'none',
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: 'var(--space-3)',
-                  }}>
-                    <div>
-                      <label style={{
-                        display: 'block',
-                        fontFamily: 'var(--font-body)',
-                        fontSize: 'var(--text-sm)',
-                        fontWeight: 'var(--font-medium)',
-                        color: 'var(--color-text-primary)',
-                        marginBottom: 'var(--space-1)',
-                      }}>
-                        Tipo de evento
-                      </label>
-                      <input
-                        type="text"
-                        value={formOrcamento.tipo_evento}
-                        onChange={(e) => setFormOrcamento(p => ({ ...p, tipo_evento: e.target.value }))}
-                        placeholder="Casamento, aniversário..."
-                        style={{
-                          width: '100%',
-                          padding: 'var(--space-3) var(--space-4)',
-                          fontFamily: 'var(--font-body)',
-                          fontSize: 'var(--text-base)',
-                          color: 'var(--color-text-primary)',
-                          backgroundColor: 'var(--color-white)',
-                          border: '1.5px solid var(--color-border)',
-                          borderRadius: 'var(--radius-md)',
-                          outline: 'none',
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{
-                        display: 'block',
-                        fontFamily: 'var(--font-body)',
-                        fontSize: 'var(--text-sm)',
-                        fontWeight: 'var(--font-medium)',
-                        color: 'var(--color-text-primary)',
-                        marginBottom: 'var(--space-1)',
-                      }}>
-                        Data prevista
-                      </label>
-                      <input
-                        type="date"
-                        value={formOrcamento.data_prevista}
-                        onChange={(e) => setFormOrcamento(p => ({ ...p, data_prevista: e.target.value }))}
-                        style={{
-                          width: '100%',
-                          padding: 'var(--space-3) var(--space-4)',
-                          fontFamily: 'var(--font-body)',
-                          fontSize: 'var(--text-base)',
-                          color: 'var(--color-text-primary)',
-                          backgroundColor: 'var(--color-white)',
-                          border: '1.5px solid var(--color-border)',
-                          borderRadius: 'var(--radius-md)',
-                          outline: 'none',
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 'var(--text-sm)',
-                      fontWeight: 'var(--font-medium)',
-                      color: 'var(--color-text-primary)',
-                      marginBottom: 'var(--space-1)',
-                    }}>
-                      Detalhes adicionais
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={formOrcamento.notas}
-                      onChange={(e) => setFormOrcamento(p => ({ ...p, notas: e.target.value }))}
-                      placeholder="Conte um pouco sobre o evento..."
-                      style={{
-                        width: '100%',
-                        padding: 'var(--space-3) var(--space-4)',
-                        fontFamily: 'var(--font-body)',
-                        fontSize: 'var(--text-base)',
-                        color: 'var(--color-text-primary)',
-                        backgroundColor: 'var(--color-white)',
-                        border: '1.5px solid var(--color-border)',
-                        borderRadius: 'var(--radius-md)',
-                        outline: 'none',
-                        resize: 'vertical',
-                      }}
-                    />
-                  </div>
-
-                  {erroOrcamento && (
-                    <div role="alert" style={{
-                      padding: 'var(--space-3)',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: 'var(--color-danger-light)',
-                      color: 'var(--color-danger)',
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 'var(--text-sm)',
-                    }}>
-                      {erroOrcamento}
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={enviandoOrcamento}
-                    style={{
-                      width: '100%',
-                      padding: 'var(--space-4)',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: enviandoOrcamento ? 'var(--color-border-strong)' : 'var(--color-brand)',
-                      color: 'var(--color-white)',
-                      fontFamily: 'var(--font-body)',
-                      fontSize: 'var(--text-base)',
-                      fontWeight: 'var(--font-medium)',
-                      border: 'none',
-                      cursor: enviandoOrcamento ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    {enviandoOrcamento ? 'Enviando...' : 'Solicitar orçamento'}
-                  </button>
-                </form>
-              )}
-            </section>
+                  {enviandoOrcamento ? 'Enviando...' : 'Enviar orçamento'}
+                </button>
+              </form>
+            )}
           </div>
-        </main>
-
-        {/* Footer */}
-        <footer style={{
-          textAlign: 'center',
-          padding: 'var(--space-8) var(--space-4)',
-          borderTop: '1px solid var(--color-border)',
-        }}>
-          <p style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 'var(--text-xs)',
-            color: 'var(--color-text-muted)',
-          }}>
-            Vitrine criada com Descomplicaí
-          </p>
-        </footer>
+        </div>
       </div>
     </>
   );
 }
 
-export async function getServerSideProps({ params }) {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/vitrine/${params.id}`);
-    const data = await res.json();
+export async function getServerSideProps({ params, req }) {
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
 
-    if (!res.ok) {
-      return { props: { cerimonialista: null, error: data.erro || 'Não encontrado' } };
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('fornecedores')
+      .select('*')
+      .eq('id', params.id)
+      .eq('status', 'aprovado')
+      .single();
+
+    if (error || !data) {
+      return { props: { fornecedor: null, error: 'Fornecedor não encontrado' } };
     }
 
-    return { props: { cerimonialista: data, error: null } };
-  } catch {
-    return { props: { cerimonialista: null, error: 'Erro ao carregar vitrine' } };
+    return { props: { fornecedor: data, error: null } };
+  } catch (err) {
+    return { props: { fornecedor: null, error: err.message } };
   }
 }
