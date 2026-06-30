@@ -1,0 +1,110 @@
+name: Backup Supabase Database
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      backup_type:
+        description: "Tipo de backup (schema, data, full)"
+        required: true
+        default: "full"
+        type: choice
+        options:
+          - schema
+          - data
+          - full
+
+env:
+  PG_VERSION: "16"
+
+jobs:
+  backup:
+    name: Backup Supabase
+    runs-on: ubuntu-latest
+    if: ${{ vars.SUPABASE_URL != '' || secrets.SUPABASE_URL != '' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-${{ env.PG_VERSION }}
+          pg_dump --version
+
+      - name: Extract database connection
+        id: db
+        run: |
+          URL="${{ secrets.SUPABASE_URL || vars.SUPABASE_URL }}"
+          PROJECT_REF=$(echo "$URL" | sed -E 's|https?://||' | sed -E 's/\.supabase\.co.*//')
+          DB_HOST="db.${PROJECT_REF}.supabase.co"
+          echo "host=$DB_HOST" >> "$GITHUB_OUTPUT"
+          echo "ref=$PROJECT_REF" >> "$GITHUB_OUTPUT"
+
+      - name: Backup Schema
+        if: ${{ github.event.inputs.backup_type == 'schema' || github.event.inputs.backup_type == 'full' || github.event_name == 'schedule' }}
+        run: |
+          mkdir -p backup
+          PGPASSWORD="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" pg_dump \
+            --host="${{ steps.db.outputs.host }}" \
+            --port="5432" \
+            --username="postgres" \
+            --dbname="postgres" \
+            --clean \
+            --if-exists \
+            --quote-all-identifiers \
+            --schema-only \
+            --no-owner \
+            --no-privileges \
+            > backup/schema.sql
+          echo "Schema: $(wc -l < backup/schema.sql) lines"
+
+      - name: Backup Data
+        if: ${{ github.event.inputs.backup_type == 'data' || github.event.inputs.backup_type == 'full' || github.event_name == 'schedule' }}
+        run: |
+          mkdir -p backup
+          PGPASSWORD="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" pg_dump \
+            --host="${{ steps.db.outputs.host }}" \
+            --port="5432" \
+            --username="postgres" \
+            --dbname="postgres" \
+            --clean \
+            --if-exists \
+            --quote-all-identifiers \
+            --data-only \
+            --no-owner \
+            --no-privileges \
+            --disable-triggers \
+            > backup/data.sql
+          echo "Data: $(wc -l < backup/data.sql) lines"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-backup-${{ steps.db.outputs.ref }}-${{ github.run_id }}
+          path: backup/
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Commit schema to branch
+        if: ${{ github.event.inputs.backup_type == 'schema' || github.event_name == 'schedule' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BRANCH="backup/$(date +%Y-%m-%d)"
+          git checkout -b "$BRANCH" || git checkout "$BRANCH"
+          mkdir -p backups/schema
+          cp backup/schema.sql "backups/schema/schema-$(date +%Y-%m-%d).sql"
+          git add backups/schema/
+          git commit -m "ci: backup schema $(date +%Y-%m-%d)" || echo "Nada para commitar"
+          git push origin "$BRANCH" --force-with-lease || echo "Branch ja existe, artefato salvo"
+
+      - name: Summary
+        run: |
+          echo "## Backup Supabase Concluido" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Projeto:** ${{ steps.db.outputs.ref }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Data:** $(date +%Y-%m-%d\ %H:%M:%S)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Tipo:** ${{ github.event.inputs.backup_type || 'full (scheduled)' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Retencao:** 90 dias" >> "$GITHUB_STEP_SUMMARY"
