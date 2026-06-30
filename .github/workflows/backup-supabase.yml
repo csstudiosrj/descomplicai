@@ -22,8 +22,6 @@ jobs:
   backup:
     name: Backup Supabase
     runs-on: ubuntu-latest
-    if: ${{ vars.SUPABASE_URL != '' || secrets.SUPABASE_URL != '' }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
