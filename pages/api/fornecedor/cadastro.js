@@ -1,81 +1,130 @@
-import { withRateLimit, cadastroLimiter } from "../../../lib/ratelimit";
-import { createClient } from "@supabase/supabase-js";
-import bcrypt from "bcryptjs";
+import { createClient } from '@supabase/supabase-js';
+import { enviarEmailTemplate } from '@/lib/email';
 
-const supabase = createClient(
+const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método não permitido" });
+/**
+ * POST /api/fornecedor/cadastro
+ * Body: { email, senha, nome_fantasia, nome_responsavel, categoria, subcategoria, telefone, cnpj }
+ * Cria usuário no Auth, perfil na tabela fornecedores com trial de 7 dias
+ */
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Método não permitido' });
   }
 
-  try {
-    const { nome, email, telefone, senha, categoria, cidade, estado } = req.body;
+  const {
+    email,
+    senha,
+    nome_fantasia,
+    nome_responsavel,
+    categoria,
+    subcategoria,
+    telefone,
+    cnpj,
+  } = req.body;
 
-    // Validações
-    if (!nome || !email || !senha || !categoria) {
-      return res.status(400).json({ 
-        error: "Nome, email, senha e categoria são obrigatórios" 
-      });
-    }
+  // Validações básicas
+  if (!email || !senha || !nome_fantasia || !nome_responsavel || !categoria || !subcategoria) {
+    return res.status(400).json({ error: 'Campos obrigatórios faltando' });
+  }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: "Email inválido" });
-    }
+  if (senha.length < 6) {
+    return res.status(400).json({ error: 'Senha deve ter no mínimo 6 caracteres' });
+  }
 
-    if (senha.length < 6) {
-      return res.status(400).json({ error: "Senha deve ter no mínimo 6 caracteres" });
-    }
+  // Verifica se e-mail já existe
+  const { data: existente } = await supabaseAdmin
+    .from('fornecedores')
+    .select('id')
+    .eq('email', email)
+    .single();
 
-    // Verificar se email já existe
-    const { data: existente } = await supabase
-      .from("fornecedores")
-      .select("id")
-      .eq("email", email)
-      .single();
+  if (existente) {
+    return res.status(409).json({ error: 'E-mail já cadastrado' });
+  }
 
-    if (existente) {
-      return res.status(409).json({ error: "Email já cadastrado" });
-    }
+  // Cria usuário no Supabase Auth
+  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    email,
+    password: senha,
+    email_confirm: true, // Confirma e-mail automaticamente (ou false se quiser verificação)
+  });
 
-    // Hash da senha
-    const senhaHash = await bcrypt.hash(senha, 12);
+  if (authError) {
+    return res.status(500).json({ error: 'Erro ao criar usuário', detalhe: authError.message });
+  }
 
-    // Criar fornecedor
-    const { data, error } = await supabase
-      .from("fornecedores")
-      .insert({
-        nome,
-        email,
-        telefone: telefone || null,
-        senha_hash: senhaHash,
+  const userId = authData.user.id;
+
+  // Calcula trial: 7 dias a partir de agora
+  const trialExpira = new Date();
+  trialExpira.setDate(trialExpira.getDate() + 7);
+
+  // Cria registro na tabela fornecedores
+  const { data: fornecedor, error: insertError } = await supabaseAdmin
+    .from('fornecedores')
+    .insert({
+      user_id: userId,
+      email,
+      nome_fantasia,
+      nome_responsavel,
+      categoria,
+      subcategoria,
+      telefone: telefone || null,
+      cnpj: cnpj || null,
+      status: 'trial',
+      trial_expira_em: trialExpira.toISOString(),
+      pagamento_status: 'pendente',
+      plano: 'basico',
+      created_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (insertError) {
+    // Rollback: deleta usuário do Auth
+    await supabaseAdmin.auth.admin.deleteUser(userId);
+    return res.status(500).json({ error: 'Erro ao criar fornecedor', detalhe: insertError.message });
+  }
+
+  // Envia e-mail de boas-vindas (versão trial)
+  const resultado = await enviarEmailTemplate(
+    {
+      para: email,
+      template: 'bem_vindo_fornecedor',
+      variaveis: {
+        nome_fantasia,
+        nome_responsavel,
         categoria,
-        cidade: cidade || null,
-        estado: estado || null,
-        status: "pendente",
-        created_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
+        subcategoria,
+        link_painel: `${process.env.NEXT_PUBLIC_SITE_URL}/fornecedor/painel`,
+      },
+    },
+    supabaseAdmin
+  );
 
-    if (error) throw error;
+  // Log do e-mail
+  await supabaseAdmin.from('email_logs').insert({
+    destinatario: email,
+    template: 'bem_vindo_fornecedor',
+    status: resultado.error ? 'erro' : 'enviado',
+    erro: resultado.error?.message || null,
+    provider_id: resultado.id || null,
+  });
 
-    // Remover senha_hash da resposta
-    const { senha_hash, ...fornecedor } = data;
-
-    return res.status(201).json({
-      success: true,
-      fornecedor,
-    });
-  } catch (error) {
-    console.error("[Cadastro Fornecedor] Erro:", error);
-    return res.status(500).json({ error: "Erro ao criar conta" });
-  }
+  return res.status(201).json({
+    success: true,
+    fornecedor: {
+      id: fornecedor.id,
+      email: fornecedor.email,
+      nome_fantasia: fornecedor.nome_fantasia,
+      status: fornecedor.status,
+      trial_expira_em: fornecedor.trial_expira_em,
+    },
+    message: 'Cadastro realizado. Trial ativo por 7 dias.',
+  });
 }
-
-// Aplicar rate limit: 5 req/min por IP
-export default withRateLimit(handler, cadastroLimiter);

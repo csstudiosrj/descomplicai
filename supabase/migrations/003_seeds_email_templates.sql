@@ -1,0 +1,32 @@
+
+-- Migration: seeds de templates de e-mail na tabela configuracoes
+-- Criada: 2026-06-30
+
+INSERT INTO configuracoes (chave, valor, descricao, updated_at) VALUES
+  ('email_remetente', 'nao-responder@descomplicai.com.br', 'E-mail padrão de remetente', now()),
+  ('email_nome_remetente', 'Descomplicaí', 'Nome do remetente padrão', now()),
+
+  ('email_template_bem_vindo_casal', '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;background:#f9f9f9;padding:20px}.container{max-width:600px;margin:auto;background:#fff;border-radius:12px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}h1{color:#d4a373}p{color:#555;line-height:1.6}.btn{display:inline-block;padding:12px 24px;background:#d4a373;color:#fff;text-decoration:none;border-radius:8px;margin-top:20px}.footer{margin-top:40px;font-size:12px;color:#999}</style></head><body><div class="container"><h1>Bem-vindo ao Descomplicaí, {{casal}}! 💍</h1><p>Estamos muito felizes em fazer parte da organização do seu grande dia.</p><p><strong>Data do evento:</strong> {{data_casamento}}</p><p>Acesse seu painel para começar a planejar:</p><a href="{{link_painel}}" class="btn">Acessar Painel</a><div class="footer"><p>Descomplicaí — Organize seu casamento sem estresse.</p></div></div></body></html>', 'Template de boas-vindas para casal', now()),
+
+  ('email_assunto_bem_vindo_casal', 'Bem-vindo ao Descomplicaí, {{casal}}! 💍', 'Assunto do e-mail de boas-vindas casal', now()),
+
+  ('email_template_bem_vindo_fornecedor', '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;background:#f9f9f9;padding:20px}.container{max-width:600px;margin:auto;background:#fff;border-radius:12px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}h1{color:#d4a373}p{color:#555;line-height:1.6}.btn{display:inline-block;padding:12px 24px;background:#d4a373;color:#fff;text-decoration:none;border-radius:8px;margin-top:20px}.footer{margin-top:40px;font-size:12px;color:#999}</style></head><body><div class="container"><h1>Parabéns, {{nome_fantasia}}! 🎉</h1><p>Sua conta foi aprovada e agora você faz parte da vitrine do Descomplicaí.</p><p><strong>Categoria:</strong> {{categoria}} — {{subcategoria}}</p><p>Acesse seu painel de fornecedor:</p><a href="{{link_painel}}" class="btn">Acessar Painel</a><div class="footer"><p>Descomplicaí — Conectando fornecedores e casais.</p></div></div></body></html>', 'Template de boas-vindas para fornecedor aprovado', now()),
+
+  ('email_assunto_bem_vindo_fornecedor', 'Sua conta foi aprovada no Descomplicaí! 🎉', 'Assunto do e-mail de boas-vindas fornecedor', now()),
+
+  ('email_template_convite_colaborador', '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;background:#f9f9f9;padding:20px}.container{max-width:600px;margin:auto;background:#fff;border-radius:12px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}h1{color:#d4a373}p{color:#555;line-height:1.6}.btn{display:inline-block;padding:12px 24px;background:#d4a373;color:#fff;text-decoration:none;border-radius:8px;margin-top:20px}.footer{margin-top:40px;font-size:12px;color:#999}</style></head><body><div class="container"><h1>Você foi convidado! 💌</h1><p><strong>{{casal}}</strong> te convidou para colaborar no planejamento do casamento.</p><p><strong>Função:</strong> {{funcao}}</p><p><strong>Data do evento:</strong> {{data_casamento}}</p><p>Aceite o convite e comece a ajudar:</p><a href="{{link}}" class="btn">Aceitar Convite</a><div class="footer"><p>Descomplicaí — Organize seu casamento sem estresse.</p></div></div></body></html>', 'Template de convite de colaborador', now()),
+
+  ('email_assunto_convite_colaborador', '{{casal}} te convidou para colaborar 💌', 'Assunto do convite de colaborador', now()),
+
+  ('email_template_recuperacao_senha', '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;background:#f9f9f9;padding:20px}.container{max-width:600px;margin:auto;background:#fff;border-radius:12px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}h1{color:#d4a373}p{color:#555;line-height:1.6}.btn{display:inline-block;padding:12px 24px;background:#d4a373;color:#fff;text-decoration:none;border-radius:8px;margin-top:20px}.footer{margin-top:40px;font-size:12px;color:#999}.alert{background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px;margin-top:20px;font-size:14px}</style></head><body><div class="container"><h1>Recuperação de senha 🔐</h1><p>Recebemos uma solicitação para redefinir a senha da conta <strong>{{email}}</strong>.</p><a href="{{link}}" class="btn">Redefinir Senha</a><div class="alert"><p>⚠️ Este link expira em {{expira_em}}. Se não foi você, ignore este e-mail.</p></div><div class="footer"><p>Descomplicaí — Segurança em primeiro lugar.</p></div></div></body></html>', 'Template de recuperação de senha', now()),
+
+  ('email_assunto_recuperacao_senha', 'Recupere sua senha do Descomplicaí 🔐', 'Assunto da recuperação de senha', now()),
+
+  ('email_template_lembrete_pagamento', '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;background:#f9f9f9;padding:20px}.container{max-width:600px;margin:auto;background:#fff;border-radius:12px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}h1{color:#d4a373}p{color:#555;line-height:1.6}.btn{display:inline-block;padding:12px 24px;background:#d4a373;color:#fff;text-decoration:none;border-radius:8px;margin-top:20px}.alert{background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px;margin-top:20px;font-size:14px}.footer{margin-top:40px;font-size:12px;color:#999}</style></head><body><div class="container"><h1>Seu trial expira em breve ⏰</h1><p>Olá, <strong>{{nome_fantasia}}</strong>!</p><p>Seu período de teste gratuito do Descomplicaí expira em <strong>{{data_expiracao}}</strong>.</p><p>Para continuar aparecendo na vitrine e recebendo leads, faça o pagamento da assinatura:</p><a href="{{link_pagamento}}" class="btn">Pagar Assinatura</a><div class="alert"><p>⚠️ Após a expiração, seu perfil será ocultado da vitrine até a confirmação do pagamento.</p></div><div class="footer"><p>Descomplicaí — Conectando fornecedores e casais.</p></div></div></body></html>', 'Template de lembrete de pagamento', now()),
+
+  ('email_assunto_lembrete_pagamento', 'Seu trial expira em 3 dias — {{nome_fantasia}} ⏰', 'Assunto do lembrete de pagamento', now())
+
+ON CONFLICT (chave) DO UPDATE SET 
+  valor = EXCLUDED.valor,
+  descricao = EXCLUDED.descricao,
+  updated_at = now();
