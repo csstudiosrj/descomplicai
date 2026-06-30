@@ -1,100 +1,78 @@
-import { createClient } from '@supabase/supabase-js';
-import { trackServerEvent } from '../../../utils/trackServerEvent';
+import { withRateLimit, cadastroLimiter } from "../../../lib/ratelimit";
+import { createClient } from "@supabase/supabase-js";
+import bcrypt from "bcryptjs";
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ erro: 'Metodo nao permitido.' });
-  }
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return res.status(500).json({ erro: 'Configuracao do servidor incompleta.' });
-  }
-
-  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-
-  const {
-    nome_empresa,
-    cnpj,
-    nome_responsavel,
-    email,
-    telefone,
-    cidade,
-    estado,
-    senha,
-  } = req.body;
-
-  if (!nome_empresa || !nome_responsavel || !email || !cidade || !estado || !senha) {
-    return res.status(400).json({ erro: 'Campos obrigatorios nao preenchidos.' });
-  }
-
-  if (senha.length < 6) {
-    return res.status(400).json({ erro: 'A senha deve ter no minimo 6 caracteres.' });
+async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Método não permitido" });
   }
 
   try {
-    const { data: existingUser } = await supabaseAdmin
-      .from('cerimonialistas')
-      .select('id')
-      .eq('nome_empresa', nome_empresa)
-      .limit(1);
+    const { nome, email, telefone, senha, cidade, estado } = req.body;
 
-    if (existingUser && existingUser.length > 0) {
-      return res.status(409).json({ erro: 'Ja existe uma empresa com este nome cadastrada.' });
+    // Validações
+    if (!nome || !email || !senha) {
+      return res.status(400).json({ error: "Nome, email e senha são obrigatórios" });
     }
 
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password: senha,
-      email_confirm: true,
-      user_metadata: { nome: nome_responsavel, tipo: 'cerimonialista' },
-    });
-
-    if (authError) {
-      if (authError.message && authError.message.includes('already been registered')) {
-        return res.status(409).json({ erro: 'Este e-mail ja esta cadastrado.' });
-      }
-      console.error('Erro ao criar usuario no Auth:', authError);
-      return res.status(500).json({ erro: 'Erro ao criar conta. Tente novamente.' });
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: "Email inválido" });
     }
 
-    const usuario_id = authData.user.id;
-
-    const { error: insertError } = await supabaseAdmin.from('cerimonialistas').insert({
-      usuario_id,
-      nome_empresa,
-      cnpj: cnpj || null,
-      telefone: telefone || null,
-      cidade,
-      estado,
-      regiao_atuacao: cidade + ' — ' + estado,
-      ativo: false,
-      plano: 'trial',
-      trial_inicio: new Date().toISOString(),
-    });
-
-    if (insertError) {
-      console.error('Erro ao inserir cerimonialista:', insertError);
-      await supabaseAdmin.auth.admin.deleteUser(usuario_id);
-      return res.status(500).json({ erro: 'Erro ao salvar dados. Tente novamente.' });
+    if (senha.length < 6) {
+      return res.status(400).json({ error: "Senha deve ter no mínimo 6 caracteres" });
     }
 
-    // Track analytics
-    await trackServerEvent({
-      tipo: 'acao',
-      categoria: 'auth',
-      acao: 'cadastro_cerimonialista',
-      usuario_id,
-      req,
-    });
+    // Verificar se email já existe
+    const { data: existente } = await supabase
+      .from("cerimonialistas")
+      .select("id")
+      .eq("email", email)
+      .single();
 
-    return res.status(201).json({ sucesso: true });
-  } catch (err) {
-    console.error('Erro inesperado no cadastro:', err);
-    return res.status(500).json({ erro: 'Erro interno. Tente novamente.' });
+    if (existente) {
+      return res.status(409).json({ error: "Email já cadastrado" });
+    }
+
+    // Hash da senha
+    const senhaHash = await bcrypt.hash(senha, 12);
+
+    // Criar cerimonialista
+    const { data, error } = await supabase
+      .from("cerimonialistas")
+      .insert({
+        nome,
+        email,
+        telefone: telefone || null,
+        senha_hash: senhaHash,
+        cidade: cidade || null,
+        estado: estado || null,
+        status: "ativo",
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Remover senha_hash da resposta
+    const { senha_hash, ...cerimonialista } = data;
+
+    return res.status(201).json({
+      success: true,
+      cerimonialista,
+    });
+  } catch (error) {
+    console.error("[Cadastro Cerimonialista] Erro:", error);
+    return res.status(500).json({ error: "Erro ao criar conta" });
   }
 }
+
+// Aplicar rate limit: 5 req/min por IP
+export default withRateLimit(handler, cadastroLimiter);

@@ -1,62 +1,59 @@
-import { createClient } from '@supabase/supabase-js';
-import { trackServerEvent } from '../../../utils/trackServerEvent';
+import { withRateLimit, conviteLimiter } from "../../../lib/ratelimit";
+import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ erro: 'Método não permitido' });
-  }
-
-  const { token } = req.body;
-  if (!token) {
-    return res.status(400).json({ erro: 'Token não informado' });
+async function handler(req, res) {
+  if (req.method !== "POST" && req.method !== "GET") {
+    return res.status(405).json({ error: "Método não permitido" });
   }
 
   try {
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    const { token } = req.method === "GET" ? req.query : req.body;
 
-    const { data: convite, error } = await supabaseAdmin
-      .from('convites')
-      .select('*')
-      .eq('token', token)
+    if (!token) {
+      return res.status(400).json({ error: "Token é obrigatório" });
+    }
+
+    // Buscar convite pelo token
+    const { data: convite, error } = await supabase
+      .from("convites")
+      .select("*, eventos(*)")
+      .eq("token", token)
       .single();
 
     if (error || !convite) {
-      return res.status(404).json({ erro: 'Convite não encontrado' });
+      return res.status(404).json({ error: "Convite não encontrado" });
     }
 
+    // Verificar se convite expirou
+    if (convite.expira_em && new Date(convite.expira_em) < new Date()) {
+      return res.status(410).json({ error: "Convite expirado" });
+    }
+
+    // Verificar se convite já foi usado
     if (convite.usado_em) {
-      return res.status(400).json({ erro: 'Convite já foi utilizado' });
+      return res.status(409).json({ error: "Convite já foi utilizado" });
     }
-
-    if (new Date(convite.expira_em) < new Date()) {
-      return res.status(400).json({ erro: 'Convite expirado' });
-    }
-
-    // Track analytics
-    await trackServerEvent({
-      tipo: 'acao',
-      categoria: 'auth',
-      acao: 'convite_validado',
-      usuario_id: convite.usuario_id,
-      req,
-    });
 
     return res.status(200).json({
-      sucesso: true,
+      valido: true,
       convite: {
         id: convite.id,
+        eventoId: convite.evento_id,
+        nomeEvento: convite.eventos?.nome,
         tipo: convite.tipo,
-        evento_id: convite.evento_id,
-        email: convite.email,
+        expiraEm: convite.expira_em,
       },
     });
-  } catch (err) {
-    console.error('[convite/validar] erro:', err);
-    return res.status(500).json({ erro: 'Erro interno' });
+  } catch (error) {
+    console.error("[Validar Convite] Erro:", error);
+    return res.status(500).json({ error: "Erro ao validar convite" });
   }
 }
+
+// Aplicar rate limit: 10 req/min por IP
+export default withRateLimit(handler, conviteLimiter);
