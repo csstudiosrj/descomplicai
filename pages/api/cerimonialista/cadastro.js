@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { trackServerEvent } from '../../../utils/trackServerEvent';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -81,6 +82,15 @@ export default async function handler(req, res) {
       await supabaseAdmin.auth.admin.deleteUser(usuario_id);
       return res.status(500).json({ erro: 'Erro ao salvar dados. Tente novamente.' });
     }
+
+    // Track analytics
+    await trackServerEvent({
+      tipo: 'acao',
+      categoria: 'auth',
+      acao: 'cadastro_cerimonialista',
+      usuario_id,
+      req,
+    });
 
     return res.status(201).json({ sucesso: true });
   } catch (err) {

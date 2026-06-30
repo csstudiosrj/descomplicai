@@ -1,5 +1,6 @@
 import { calcularNovaExpiracao } from '../../../utils/acesso'
 import { createClient } from '@supabase/supabase-js'
+import { trackServerEvent } from '../../../utils/trackServerEvent'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
@@ -101,6 +102,17 @@ export default async function handler(req, res) {
       mp_payment_id: String(pagamento.id),
       duracao_meses: duracaoMeses || null,
       aceite_termo_em: null,
+    })
+
+    // Track analytics
+    await trackServerEvent({
+      tipo: 'checkout',
+      categoria: 'pagamento',
+      acao: 'pagou',
+      valor: pagamento.transaction_amount,
+      usuario_id: usuarioId,
+      evento_id: eventoId,
+      req,
     })
 
     res.status(200).json({ sucesso: true, eventoId, tipo, plano: novoPlano })

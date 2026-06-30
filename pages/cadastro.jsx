@@ -1,15 +1,16 @@
-// pages/cadastro.jsx
 import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../hooks/useAuth';
+import { useAnalytics } from '../hooks/useAnalytics';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 
 export default function CadastroPage() {
   const router = useRouter();
   const { cadastrar, carregando } = useAuth();
+  const { trackEvent } = useAnalytics();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -27,6 +28,7 @@ export default function CadastroPage() {
     if (error) {
       setErro(error.message || 'Erro ao criar conta.');
     } else {
+      trackEvent('acao', 'auth', 'cadastro_sucesso');
       router.push(redirect);
     }
   };

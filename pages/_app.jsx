@@ -1,8 +1,8 @@
-// pages/_app.jsx
 import React from 'react';
 import { useRouter } from 'next/router';
 import { AuthProvider } from '../context/AuthContext';
 import MainLayout from '../components/layout/MainLayout';
+import AnalyticsProvider from '../components/analytics/AnalyticsProvider';
 import '../styles/tokens.css';
 import '../styles/globals.css';
 
@@ -22,7 +22,13 @@ function MyApp({ Component, pageProps }) {
     </MainLayout>
   );
 
-  return <AuthProvider>{content}</AuthProvider>;
+  return (
+    <AuthProvider>
+      <AnalyticsProvider>
+        {content}
+      </AnalyticsProvider>
+    </AuthProvider>
+  );
 }
 
 export default MyApp;

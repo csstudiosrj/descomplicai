@@ -1,70 +1,62 @@
 import { createClient } from '@supabase/supabase-js';
+import { trackServerEvent } from '../../../utils/trackServerEvent';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', ['GET']);
-    return res.status(405).json({ error: `Método ${req.method} não permitido` });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ erro: 'Método não permitido' });
   }
 
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return res.status(500).json({ error: 'Configuração do Supabase incompleta' });
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-
-  const { token } = req.query;
-
+  const { token } = req.body;
   if (!token) {
-    return res.status(400).json({ error: 'Token é obrigatório' });
+    return res.status(400).json({ erro: 'Token não informado' });
   }
 
   try {
-    const { data: evento, error: eventoError } = await supabase
-      .from('eventos')
-      .select('id, nome_evento, data_evento, cidade, cerimonialista_id, casal_confirmado, convite_revogado')
-      .eq('id', token)
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    const { data: convite, error } = await supabaseAdmin
+      .from('convites')
+      .select('*')
+      .eq('token', token)
       .single();
 
-    if (eventoError || !evento) {
-      return res.status(404).json({ error: 'Convite não encontrado' });
+    if (error || !convite) {
+      return res.status(404).json({ erro: 'Convite não encontrado' });
     }
 
-    if (!evento.cerimonialista_id) {
-      return res.status(404).json({ error: 'Convite não encontrado' });
+    if (convite.usado_em) {
+      return res.status(400).json({ erro: 'Convite já foi utilizado' });
     }
 
-    if (evento.convite_revogado) {
-      return res.status(410).json({ error: 'Convite revogado' });
+    if (new Date(convite.expira_em) < new Date()) {
+      return res.status(400).json({ erro: 'Convite expirado' });
     }
 
-    const { data: cerimonialista, error: cerimError } = await supabase
-      .from('cerimonialistas')
-      .select('id, nome_empresa, cidade, estado')
-      .eq('id', evento.cerimonialista_id)
-      .single();
-
-    if (cerimError) {
-      console.error('[validar] erro ao buscar cerimonialista:', cerimError);
-    }
+    // Track analytics
+    await trackServerEvent({
+      tipo: 'acao',
+      categoria: 'auth',
+      acao: 'convite_validado',
+      usuario_id: convite.usuario_id,
+      req,
+    });
 
     return res.status(200).json({
-      evento: {
-        id: evento.id,
-        nome_evento: evento.nome_evento,
-        data_evento: evento.data_evento,
-        cidade: evento.cidade,
-        casal_confirmado: evento.casal_confirmado,
+      sucesso: true,
+      convite: {
+        id: convite.id,
+        tipo: convite.tipo,
+        evento_id: convite.evento_id,
+        email: convite.email,
       },
-      cerimonialista: cerimonialista || null,
-      status: evento.casal_confirmado ? 'ja_confirmado' : 'pendente',
     });
   } catch (err) {
-    console.error('[API convite/validar]', err);
-    return res.status(500).json({ error: err.message || 'Erro interno' });
+    console.error('[convite/validar] erro:', err);
+    return res.status(500).json({ erro: 'Erro interno' });
   }
 }

@@ -1,5 +1,6 @@
 import { gerarMemorialLocal } from '../../../utils/gerador-templates';
 import { supabase } from '../../../lib/supabase';
+import { trackServerEvent } from '../../../utils/trackServerEvent';
 
 export default async function handler(req, res) {
   const authHeader = req.headers.authorization;
@@ -25,6 +26,16 @@ export default async function handler(req, res) {
     }
 
     const memorial = gerarMemorialLocal(dados);
+
+    // Track analytics
+    await trackServerEvent({
+      tipo: 'acao',
+      categoria: 'memorial',
+      acao: 'gerado_ia',
+      usuario_id: user.id,
+      req,
+    });
+
     return res.status(200).json({ sucesso: true, memorial });
   } catch (error) {
     console.error('Erro em ia/gerar-memorial:', error.message);

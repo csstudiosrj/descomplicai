@@ -5,6 +5,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import useMemorial from '../../hooks/useMemorial';
 import { useAuth } from '../../hooks/useAuth';
+import { useAnalytics } from '../../hooks/useAnalytics';
 import useAutoSave from '../../hooks/useAutoSave';
 import { calcularProximaEtapa, calcularEtapasTotais, deveExibirLoginAgora, getEtapaPorIndice } from '../../utils/algoritmo';
 import BreathTransition from './BreathTransition';
@@ -190,6 +191,7 @@ export default function MemorialOrchestrator() {
   const router = useRouter();
   const { estado, setRespostas, carregarEstado, irParaEtapa, voltarEtapa } = useMemorial();
   const { user, evento, loading: carregandoAuth, supabase } = useAuth();
+  const { trackStep } = useAnalytics();
   const { temDraft, carregarDraft, limparDraft, salvandoAgora } = useAutoSave(estado, user, evento);
 
   const [transicionando, setTransicionando] = useState(false);
@@ -199,6 +201,32 @@ export default function MemorialOrchestrator() {
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
   const restauracaoFeita = useRef(false);
+  const stepCompletedRef = useRef(false);
+  const currentStepIdRef = useRef(null);
+
+  // Rastreia início e abandono de steps
+  useEffect(() => {
+    const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
+    const stepId = etapaAtualObj?.id || etapaAtualObj?.componente;
+
+    if (stepId && stepId !== currentStepIdRef.current) {
+      // Registra abandono do step anterior se não completou
+      if (currentStepIdRef.current && !stepCompletedRef.current) {
+        trackStep(currentStepIdRef.current, 'abandonou');
+      }
+      // Inicia novo step
+      stepCompletedRef.current = false;
+      currentStepIdRef.current = stepId;
+      trackStep(stepId, 'iniciou');
+    }
+
+    return () => {
+      // Cleanup: se o componente desmontar, registra abandono do step atual
+      if (currentStepIdRef.current && !stepCompletedRef.current) {
+        trackStep(currentStepIdRef.current, 'abandonou');
+      }
+    };
+  }, [estado.etapaAtual, trackStep]);
 
   useEffect(() => {
     if (!user) return;

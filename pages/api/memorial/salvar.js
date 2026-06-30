@@ -7,6 +7,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { gerarLinhasFinanceiro } from '../../../utils/gerador-financeiro';
+import { trackServerEvent } from '../../../utils/trackServerEvent';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -152,6 +153,16 @@ export default async function handler(req, res) {
       }
     }
 
+    // Track analytics
+    await trackServerEvent({
+      tipo: 'acao',
+      categoria: 'memorial',
+      acao: 'salvo',
+      usuario_id: user.id,
+      evento_id,
+      req,
+    });
+
     return res.status(200).json({
       sucesso: true,
       memorial_id: memorialUpsert.id,
@@ -177,5 +188,6 @@ function gerarTextoMemorialSimples(estado) {
   linhas.push('');
   linhas.push('---');
   linhas.push('*Gerado automaticamente pelo Descomplicaí*');
-  return linhas.join('\n');
+  return linhas.join('
+');
 }

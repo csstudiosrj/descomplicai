@@ -3,12 +3,14 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../hooks/useAuth';
+import { useAnalytics } from '../hooks/useAnalytics';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const { trackLogin } = useAnalytics();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
@@ -27,6 +29,7 @@ export default function LoginPage() {
 
     if (error) {
       setEnviando(false);
+      trackLogin(false);
       if (error.message.includes('Invalid login credentials')) {
         setErro('Email ou senha incorretos.');
       } else if (error.message.includes('Email not confirmed')) {
@@ -39,10 +42,12 @@ export default function LoginPage() {
 
     if (!data?.session?.user) {
       setEnviando(false);
+      trackLogin(false);
       setErro('Erro ao fazer login.');
       return;
     }
 
+    trackLogin(true);
     const userId = data.session.user.id;
 
     try {

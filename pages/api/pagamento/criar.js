@@ -1,12 +1,13 @@
 import { client, Preference } from '../../../lib/mercadopago';
 import { supabase } from '../../../lib/supabase';
+import { trackServerEvent } from '../../../utils/trackServerEvent';
 
 const PLANOS = {
-  mensal: { duracao_meses: 1, preco: 29.9, titulo: 'Descomplicai — Plano Mensal' },
-  '3_meses': { duracao_meses: 3, preco: 79.9, titulo: 'Descomplicai — Plano 3 Meses' },
-  '6_meses': { duracao_meses: 6, preco: 149.9, titulo: 'Descomplicai — Plano 6 Meses' },
-  '12_meses': { duracao_meses: 12, preco: 249.9, titulo: 'Descomplicai — Plano 12 Meses' },
-  '18_meses': { duracao_meses: 18, preco: 349.9, titulo: 'Descomplicai — Plano 18 Meses' },
+  mensal: { duracao_meses: 1, preco: 29.9, titulo: 'Descomplicaí — Plano Mensal' },
+  '3_meses': { duracao_meses: 3, preco: 79.9, titulo: 'Descomplicaí — Plano 3 Meses' },
+  '6_meses': { duracao_meses: 6, preco: 149.9, titulo: 'Descomplicaí — Plano 6 Meses' },
+  '12_meses': { duracao_meses: 12, preco: 249.9, titulo: 'Descomplicaí — Plano 12 Meses' },
+  '18_meses': { duracao_meses: 18, preco: 349.9, titulo: 'Descomplicaí — Plano 18 Meses' },
 };
 
 export default async function handler(req, res) {
@@ -39,12 +40,14 @@ export default async function handler(req, res) {
     let item;
     let duracaoMeses = 0;
     let metadata = {};
+    let valor = 0;
 
     if (tipo === 'memorial_pdf') {
+      valor = 197;
       item = {
         title: 'Memorial do Casamento — PDF Completo',
         quantity: 1,
-        unit_price: 197,
+        unit_price: valor,
         currency_id: 'BRL',
       };
       metadata = { duracao_meses: 0 };
@@ -53,10 +56,11 @@ export default async function handler(req, res) {
       if (!planoConfig) {
         return res.status(400).json({ erro: 'Plano de assinatura invalido' });
       }
+      valor = planoConfig.preco;
       item = {
         title: planoConfig.titulo,
         quantity: 1,
-        unit_price: planoConfig.preco,
+        unit_price: valor,
         currency_id: 'BRL',
       };
       duracaoMeses = planoConfig.duracao_meses;
@@ -64,6 +68,17 @@ export default async function handler(req, res) {
     } else {
       return res.status(400).json({ erro: 'Tipo de pagamento invalido' });
     }
+
+    // Track analytics
+    await trackServerEvent({
+      tipo: 'checkout',
+      categoria: 'pagamento',
+      acao: 'iniciou',
+      valor,
+      usuario_id: user.id,
+      evento_id: eventoId,
+      req,
+    });
 
     const externalReference = JSON.stringify({ usuarioId, eventoId, tipo, duracao_meses: duracaoMeses });
     console.log('Criar preference: external_reference =', externalReference);
