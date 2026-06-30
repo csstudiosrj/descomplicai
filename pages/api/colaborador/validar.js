@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '../../../lib/supabaseAdmin';
+import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -10,6 +10,25 @@ export default async function handler(req, res) {
   if (!token || typeof token !== 'string') {
     return res.status(400).json({ erro: 'Token inválido' });
   }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('[API Colaborador] Variáveis de ambiente do Supabase não configuradas');
+    return res.status(500).json({
+      valido: false,
+      erro: 'Erro interno de configuração do servidor',
+    });
+  }
+
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
 
   try {
     // ── Tenta tabela colaboradores ───────────────────────
