@@ -1,5 +1,5 @@
 // Componente Card genérico — container reutilizável com variantes visuais
-// ARIA: role="article" para item de lista, role="button" quando interativo
+// Dependências diretas: React, PropTypes
 
 import React from 'react';
 import PropTypes from 'prop-types';
@@ -12,7 +12,6 @@ export default function Card({
   onClick,
   children,
   className = '',
-  ariaLabel,
   ...rest
 }) {
   const isInteractive = interactive || !!onClick;
@@ -65,10 +64,9 @@ export default function Card({
 
   return (
     <div
-      role={isInteractive ? 'button' : 'article'}
+      role={isInteractive ? 'button' : undefined}
       tabIndex={isInteractive ? 0 : undefined}
       aria-pressed={isInteractive ? selected : undefined}
-      aria-label={ariaLabel}
       onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -95,7 +93,6 @@ Card.propTypes = {
   onClick: PropTypes.func,
   children: PropTypes.node,
   className: PropTypes.string,
-  ariaLabel: PropTypes.string,
 };
 
 export { Card };

@@ -1,5 +1,5 @@
 // Componente Badge — indicadores de status e categorias
-// ARIA: aria-label indicando o que o badge representa
+// Dependências diretas: React, PropTypes
 
 import React from 'react';
 import PropTypes from 'prop-types';
@@ -13,15 +13,10 @@ const VARIANTS = {
   info: { bg: 'var(--color-info-light)', color: 'var(--color-info)', border: 'var(--color-info)' },
 };
 
-export default function Badge({ children, variant = 'default', size = 'sm', pill = false, ariaLabel }) {
+export default function Badge({ children, variant = 'default', size = 'sm', pill = false }) {
   const style = VARIANTS[variant];
-
-  // Gera aria-label automático se não fornecido
-  const autoLabel = ariaLabel || (typeof children === 'string' ? `Status: ${children}` : undefined);
-
   return (
     <span
-      aria-label={autoLabel}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -47,7 +42,6 @@ Badge.propTypes = {
   variant: PropTypes.oneOf(['default', 'primary', 'success', 'warning', 'danger', 'info']),
   size: PropTypes.oneOf(['sm', 'md']),
   pill: PropTypes.bool,
-  ariaLabel: PropTypes.string,
 };
 
 export { Badge };

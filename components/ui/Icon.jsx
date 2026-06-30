@@ -1,5 +1,5 @@
 // Icon.jsx — Descomplicaí Design System
-// API: <Icon name="edit" size={20} color="#8B6F5E" className="" />
+// API: <Icon name="edit" size={20} color="#8B6F5E" className="" ariaLabel="Editar" />
 // viewBox 24×24 · stroke-width 1.5 · strokeLinecap round · strokeLinejoin round · outline only
 
 const icons = {
@@ -889,8 +889,6 @@ const icons = {
     </g>
   ),
 
-  // ─── UTILITÁRIOS ─────────────────────────────────────────────────────────
-
   // ─── ROTEIRO ───────────────────────────────────────────────────────────
 
   timeline: (
@@ -948,9 +946,20 @@ const icons = {
     </g>
   ),
 
+  // ─── ACESSIBILIDADE ─────────────────────────────────────────────────────
+
+  libras: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0" />
+      <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2" />
+      <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8" />
+      <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
+    </g>
+  ),
+
 };
 
-export default function Icon({ name, size = 24, color = 'currentColor', className = '' }) {
+export default function Icon({ name, size = 24, color = 'currentColor', className = '', ariaLabel }) {
   const icon = icons[name];
 
   if (!icon) {
@@ -968,7 +977,9 @@ export default function Icon({ name, size = 24, color = 'currentColor', classNam
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       style={{ color, display: 'inline-block', flexShrink: 0 }}
-      aria-hidden="true"
+      aria-hidden={!ariaLabel}
+      aria-label={ariaLabel}
+      role={ariaLabel ? 'img' : undefined}
     >
       {icon}
     </svg>

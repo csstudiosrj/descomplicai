@@ -3,7 +3,6 @@ import { useRouter } from 'next/router';
 import { AuthProvider } from '../context/AuthContext';
 import MainLayout from '../components/layout/MainLayout';
 import AnalyticsProvider from '../components/analytics/AnalyticsProvider';
-import AcessibilidadeWidget from '../components/AcessibilidadeWidget';
 import '../styles/tokens.css';
 import '../styles/globals.css';
 
@@ -27,7 +26,6 @@ function MyApp({ Component, pageProps }) {
     <AuthProvider>
       <AnalyticsProvider>
         {content}
-        <AcessibilidadeWidget />
       </AnalyticsProvider>
     </AuthProvider>
   );
