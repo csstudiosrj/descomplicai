@@ -38,12 +38,12 @@ function extrairDenormalizados(estado) {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método não permitido' });
+    return res.status(405).json({ error: 'Metodo nao permitido' });
   }
 
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Autenticação necessária' });
+    return res.status(401).json({ error: 'Autenticacao necessaria' });
   }
 
   const token = authHeader.replace('Bearer ', '');
@@ -54,20 +54,20 @@ export default async function handler(req, res) {
   // Valida token e extrai user
   const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
   if (authError || !user) {
-    return res.status(401).json({ error: 'Token inválido' });
+    return res.status(401).json({ error: 'Token invalido' });
   }
 
   const { evento_id, estado, conteudo } = req.body;
 
   if (!evento_id) {
-    return res.status(400).json({ error: 'evento_id é obrigatório' });
+    return res.status(400).json({ error: 'evento_id e obrigatorio' });
   }
   if (!estado || typeof estado !== 'object') {
-    return res.status(400).json({ error: 'Estado inválido' });
+    return res.status(400).json({ error: 'Estado invalido' });
   }
 
   try {
-    // 1. Verifica se o evento pertence ao usuário + pega orçamento
+    // 1. Verifica se o evento pertence ao usuario + pega orcamento
     const { data: evento, error: evtErr } = await supabaseAdmin
       .from('eventos')
       .select('id, usuario_id, orcamento')
@@ -75,13 +75,13 @@ export default async function handler(req, res) {
       .single();
 
     if (evtErr || !evento) {
-      return res.status(404).json({ error: 'Evento não encontrado' });
+      return res.status(404).json({ error: 'Evento nao encontrado' });
     }
     if (evento.usuario_id !== user.id) {
       return res.status(403).json({ error: 'Acesso negado ao evento' });
     }
 
-    // 2. Gera texto markdown se não vier do cliente
+    // 2. Gera texto markdown se nao vier do cliente
     const conteudoFinal = conteudo || gerarTextoMemorialSimples(estado);
 
     // 3. Upsert na tabela memoriais (por evento_id)
@@ -114,16 +114,14 @@ export default async function handler(req, res) {
 
     if (syncErr) {
       console.error('[memorial/salvar] Erro ao sincronizar eventos:', syncErr);
-      // Não falha a requisição, apenas loga
     }
 
-    // 5. GERA FINANCEIRO SUGERIDO (novo)
+    // 5. GERA FINANCEIRO SUGERIDO
     const orcamentoTotal = Number(evento.orcamento) || Number(estado.orcamentoTotal) || 0;
     if (orcamentoTotal > 0) {
       const linhasFinanceiro = gerarLinhasFinanceiro(estado, orcamentoTotal);
 
       if (linhasFinanceiro.length > 0) {
-        // Remove linhas financeiro geradas_auto antigas deste evento
         const { error: delFinErr } = await supabaseAdmin
           .from('financeiro')
           .delete()
@@ -135,7 +133,6 @@ export default async function handler(req, res) {
           console.error('[memorial/salvar] Erro ao limpar financeiro antigo:', delFinErr);
         }
 
-        // Insere novas linhas sugeridas
         const linhasCompletas = linhasFinanceiro.map((l) => ({
           ...l,
           evento_id,
@@ -148,7 +145,6 @@ export default async function handler(req, res) {
 
         if (finErr) {
           console.error('[memorial/salvar] Erro ao inserir financeiro:', finErr);
-          // Não falha a requisição, apenas loga
         }
       }
     }
@@ -174,20 +170,18 @@ export default async function handler(req, res) {
   }
 }
 
-/** Fallback simples de geração de texto caso o cliente não envie conteudo */
 function gerarTextoMemorialSimples(estado) {
   const linhas = [];
   linhas.push('# Memorial do Casamento');
   linhas.push('');
   if (estado.nomeCasal) linhas.push(`**Casal:** ${estado.nomeCasal}`);
   if (estado.dataEvento) linhas.push(`**Data:** ${estado.dataEvento}`);
-  if (estado.tipoCerimonia) linhas.push(`**Cerimônia:** ${estado.tipoCerimonia}`);
+  if (estado.tipoCerimonia) linhas.push(`**Cerimonia:** ${estado.tipoCerimonia}`);
   if (estado.tipoLocal) linhas.push(`**Local:** ${estado.tipoLocal}`);
   if (estado.estilo) linhas.push(`**Estilo:** ${estado.estilo}`);
   if (estado.totalConvidados) linhas.push(`**Convidados:** ${estado.totalConvidados}`);
   linhas.push('');
   linhas.push('---');
-  linhas.push('*Gerado automaticamente pelo Descomplicaí*');
-  return linhas.join('
-');
+  linhas.push('*Gerado automaticamente pelo Descomplicai*');
+  return linhas.join('\n');
 }
