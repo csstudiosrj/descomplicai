@@ -57,8 +57,6 @@ jobs:
           mkdir -p backup
           docker run --rm -e PGPASSWORD="$PGPASSWORD" postgres:17-alpine pg_dump \
             "postgresql://$DB_USER:$PGPASSWORD@$DB_HOST:$DB_PORT/$DB_NAME" \
-            --clean \
-            --if-exists \
             --quote-all-identifiers \
             --data-only \
             --no-owner \
