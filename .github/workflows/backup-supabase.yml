@@ -41,7 +41,7 @@ jobs:
         if: ${{ github.event.inputs.backup_type == 'schema' || github.event.inputs.backup_type == 'full' || github.event_name == 'schedule' }}
         run: |
           mkdir -p backup
-          PGPASSWORD="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" pg_dump \
+          PGPASSWORD="${{ secrets.SUPABASE_DB_PASSWORD }}" pg_dump \
             --host="${{ env.DB_HOST }}" \
             --port="${{ env.DB_PORT }}" \
             --username="${{ env.DB_USER }}" \
@@ -59,7 +59,7 @@ jobs:
         if: ${{ github.event.inputs.backup_type == 'data' || github.event.inputs.backup_type == 'full' || github.event_name == 'schedule' }}
         run: |
           mkdir -p backup
-          PGPASSWORD="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" pg_dump \
+          PGPASSWORD="${{ secrets.SUPABASE_DB_PASSWORD }}" pg_dump \
             --host="${{ env.DB_HOST }}" \
             --port="${{ env.DB_PORT }}" \
             --username="${{ env.DB_USER }}" \
@@ -99,6 +99,6 @@ jobs:
         run: |
           echo "## Backup Supabase Concluido" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Host:** ${{ env.DB_HOST }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Data:** $(date +%Y-%m-%d\ %H:%M:%S)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Data:** $(date +%Y-%m-%d %H:%M:%S)" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Tipo:** ${{ github.event.inputs.backup_type || 'full (scheduled)' }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Retencao:** 90 dias" >> "$GITHUB_STEP_SUMMARY"
