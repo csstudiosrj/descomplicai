@@ -58,6 +58,7 @@ const withPWA = require("next-pwa")({
 });
 
 const nextConfig = {
+  basePath: '/descomplicai',
   reactStrictMode: true,
   images: {
     remotePatterns: [
