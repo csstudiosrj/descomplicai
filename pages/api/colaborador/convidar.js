@@ -1,3 +1,4 @@
+import { withRateLimit, conviteLimiter } from "../../lib/ratelimit";
 import { enviarEmailTemplate } from '@/lib/email';
 import { createClient } from '@supabase/supabase-js';
 
@@ -11,7 +12,7 @@ const supabaseAdmin = createClient(
  * Body: { email, perfil_id, funcao }
  * Envia e-mail de convite + cria registro na tabela colaboradores
  */
-export default async function handler(req, res) {
+async function _handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido' });
   }
@@ -96,3 +97,6 @@ export default async function handler(req, res) {
 
   return res.status(200).json({ success: true, convite, email_id: resultado.id });
 }
+
+// Rate limit: conviteLimiter
+export default withRateLimit(_handler, conviteLimiter);

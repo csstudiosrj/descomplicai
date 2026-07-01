@@ -1,3 +1,4 @@
+import { withRateLimit, cadastroLimiter } from "../../lib/ratelimit";
 import { createClient } from '@supabase/supabase-js';
 import { enviarEmailTemplate } from '@/lib/email';
 
@@ -11,7 +12,7 @@ const supabaseAdmin = createClient(
  * Body: { email, senha, nome_fantasia, nome_responsavel, categoria, subcategoria, telefone, cnpj }
  * Cria usuário no Auth, perfil na tabela fornecedores com trial de 7 dias
  */
-export default async function handler(req, res) {
+async function _handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido' });
   }
@@ -128,3 +129,6 @@ export default async function handler(req, res) {
     message: 'Cadastro realizado. Trial ativo por 7 dias.',
   });
 }
+
+// Rate limit: cadastroLimiter
+export default withRateLimit(_handler, cadastroLimiter);

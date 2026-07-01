@@ -1,6 +1,7 @@
+import { withRateLimit, conviteLimiter } from "../../lib/ratelimit";
 import { createClient } from '@supabase/supabase-js';
 
-export default async function handler(req, res) {
+async function _handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).json({ erro: 'Método não permitido' });
@@ -70,3 +71,6 @@ export default async function handler(req, res) {
     });
   }
 }
+
+// Rate limit: conviteLimiter
+export default withRateLimit(_handler, conviteLimiter);

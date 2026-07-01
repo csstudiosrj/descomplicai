@@ -1,8 +1,9 @@
+import { withRateLimit, cadastroLimiter } from "../../lib/ratelimit";
 import { gerarMemorialLocal } from '../../../utils/gerador-templates';
 import { supabase } from '../../../lib/supabase';
 import { trackServerEvent } from '../../../utils/trackServerEvent';
 
-export default async function handler(req, res) {
+async function _handler(req, res) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ erro: 'Não autorizado' });
@@ -44,3 +45,6 @@ export default async function handler(req, res) {
     });
   }
 }
+
+// Rate limit: cadastroLimiter
+export default withRateLimit(_handler, cadastroLimiter);

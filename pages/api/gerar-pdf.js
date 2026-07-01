@@ -1,3 +1,4 @@
+import { withRateLimit, pagamentoLimiter } from "../lib/ratelimit";
 import React from 'react';
 import { renderToStream } from '@react-pdf/renderer';
 import { createClient } from '@supabase/supabase-js';
@@ -14,7 +15,7 @@ import { MemorialPDFDocument } from '../../components/pdf/MemorialPDFDocument';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export default async function handler(req, res) {
+async function _handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ erro: 'Método não permitido. Use POST.' });
   }
@@ -181,3 +182,6 @@ export default async function handler(req, res) {
     res.status(500).json({ erro: err.message || 'Erro interno ao gerar PDF.' });
   }
 }
+
+// Rate limit: pagamentoLimiter
+export default withRateLimit(_handler, pagamentoLimiter);

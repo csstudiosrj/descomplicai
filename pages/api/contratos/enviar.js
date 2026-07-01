@@ -1,3 +1,4 @@
+import { withRateLimit, pagamentoLimiter } from "../../lib/ratelimit";
 import { createClient } from '@supabase/supabase-js';
 import { enviarEmailContratoParaFornecedor } from '../../../lib/email';
 import { supabase } from '../../../lib/supabase';
@@ -7,7 +8,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-export default async function handler(req, res) {
+async function _handler(req, res) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ erro: 'Não autorizado' });
@@ -90,3 +91,6 @@ export default async function handler(req, res) {
     });
   }
 }
+
+// Rate limit: pagamentoLimiter
+export default withRateLimit(_handler, pagamentoLimiter);

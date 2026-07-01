@@ -1,3 +1,4 @@
+import { withRateLimit, pagamentoLimiter } from "../../lib/ratelimit";
 import { enviarEmailTemplate } from '@/lib/email';
 import { createClient } from '@supabase/supabase-js';
 
@@ -11,7 +12,7 @@ const supabaseAdmin = createClient(
  * Body: { para, template, variaveis }
  * Requer: x-api-key (opcional, se configurado) ou autenticacao
  */
-export default async function handler(req, res) {
+async function _handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Metodo nao permitido' });
   }
@@ -55,3 +56,6 @@ export default async function handler(req, res) {
 
   return res.status(200).json({ success: true, id: resultado.id });
 }
+
+// Rate limit: pagamentoLimiter
+export default withRateLimit(_handler, pagamentoLimiter);

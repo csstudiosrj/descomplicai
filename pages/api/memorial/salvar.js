@@ -1,3 +1,4 @@
+import { withRateLimit, strictLimiter } from "../../lib/ratelimit";
 /**
  * API Route — Persiste memorial no Supabase + gera financeiro sugerido
  * POST /api/memorial/salvar
@@ -36,7 +37,7 @@ function extrairDenormalizados(estado) {
   };
 }
 
-export default async function handler(req, res) {
+async function _handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Metodo nao permitido' });
   }
@@ -185,3 +186,5 @@ function gerarTextoMemorialSimples(estado) {
   linhas.push('*Gerado automaticamente pelo Descomplicai*');
   return linhas.join('\n');
 }
+// Rate limit: strictLimiter
+export default withRateLimit(_handler, strictLimiter);

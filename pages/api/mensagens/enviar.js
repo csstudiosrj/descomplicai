@@ -1,8 +1,9 @@
+import { withRateLimit, strictLimiter } from "../../lib/ratelimit";
 import { supabaseAdmin } from '../../../lib/supabaseAdmin'
 import { supabase } from '../../../lib/supabase'
 import { enviarEmailNotificacaoChat } from '../../../lib/email'
 
-export default async function handler(req, res) {
+async function _handler(req, res) {
   try {
     if (req.method !== 'POST') {
       return res.status(405).json({ erro: 'Método não permitido' })
@@ -155,3 +156,6 @@ export default async function handler(req, res) {
     })
   }
 }
+
+// Rate limit: strictLimiter
+export default withRateLimit(_handler, strictLimiter);

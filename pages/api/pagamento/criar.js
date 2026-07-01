@@ -1,3 +1,4 @@
+import { withRateLimit, pagamentoLimiter } from "../../lib/ratelimit";
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { createClient } from '@supabase/supabase-js';
 
@@ -15,7 +16,7 @@ const client = new MercadoPagoConfig({
  * Body: { fornecedor_id, tipo: 'fornecedor', plano: 'basico' | 'premium' | 'vip' }
  * Cria preferencia de pagamento no Mercado Pago
  */
-export default async function handler(req, res) {
+async function _handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Metodo nao permitido' });
   }
@@ -103,3 +104,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Erro ao criar pagamento', detalhe: err.message });
   }
 }
+
+// Rate limit: pagamentoLimiter
+export default withRateLimit(_handler, pagamentoLimiter);
