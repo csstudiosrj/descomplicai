@@ -44,7 +44,7 @@ jobs:
           PGPASSWORD="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" pg_dump \
             --host="${{ env.DB_HOST }}" \
             --port="${{ env.DB_PORT }}" \
-            --username="postgres.xzcgkfutboidjjreskfy" \
+            --username="${{ env.DB_USER }}" \
             --dbname="${{ env.DB_NAME }}" \
             --clean \
             --if-exists \
@@ -62,7 +62,7 @@ jobs:
           PGPASSWORD="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" pg_dump \
             --host="${{ env.DB_HOST }}" \
             --port="${{ env.DB_PORT }}" \
-            --username="postgres.xzcgkfutboidjjreskfy" \
+            --username="${{ env.DB_USER }}" \
             --dbname="${{ env.DB_NAME }}" \
             --clean \
             --if-exists \
