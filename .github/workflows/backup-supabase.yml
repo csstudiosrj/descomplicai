@@ -16,7 +16,7 @@ on:
           - full
 
 env:
-  PG_VERSION: "16"
+  PG_VERSION: "17"
   DB_HOST: "aws-1-sa-east-1.pooler.supabase.com"
   DB_PORT: "5432"
   DB_USER: "postgres.xzcgkfutboidjjreskfy"
