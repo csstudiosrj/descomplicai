@@ -3,6 +3,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { enviarEmail } from '../../../lib/email';
+import { emailIcon } from '../../../utils/emailIcons';
 
 const CRON_SECRET = process.env.CRON_SECRET;
 
@@ -43,7 +44,7 @@ export default async function handler(req, res) {
 
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #f59e0b;">⏰ Seu trial expira em ${diasRestantes} dia${diasRestantes > 1 ? 's' : ''}</h2>
+          <h2 style="color: #f59e0b;">${emailIcon('clock')} Seu trial expira em ${diasRestantes} dia${diasRestantes > 1 ? 's' : ''}</h2>
           <p>Olá, <strong>${nome}</strong>!</p>
           <p>Seu período de teste gratuito no Descomplicaí expira em <strong>${diasRestantes} dia${diasRestantes > 1 ? 's' : ''}</strong> (${new Date(f.trial_expira_em).toLocaleDateString('pt-BR')}).</p>
           <p>Para continuar aparecendo na vitrine e recebendo leads, renove seu plano agora:</p>

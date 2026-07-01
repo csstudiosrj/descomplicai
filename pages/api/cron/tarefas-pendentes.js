@@ -3,6 +3,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { enviarEmail } from '../../../lib/email';
+import { emailIcon } from '../../../utils/emailIcons';
 
 const CRON_SECRET = process.env.CRON_SECRET;
 
@@ -52,17 +53,17 @@ export default async function handler(req, res) {
         .join('');
 
       const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
-        <h2 style="color:#dc2626;">⚠️ Você tem tarefas atrasadas</h2>
+        <h2 style="color:#dc2626;">${emailIcon('alert')} Você tem tarefas atrasadas</h2>
         <p>Olá!</p>
         <p>Identificamos <strong>${dados.tarefas.length} tarefa${dados.tarefas.length > 1 ? 's' : ''} atrasada${dados.tarefas.length > 1 ? 's' : ''}</strong> no planejamento de <strong>${nomeEvento}</strong>${dataEvento ? ' (' + dataEvento + ')' : ''}.</p>
         <ul style="list-style:none;padding:0;">${listaTarefas}</ul>
         <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://descomplicai.com.br'}/painel/checklist" style="display:inline-block;background:#f59e0b;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0;">Ver checklist</a>
-        <p style="color:#666;font-size:14px;">Não deixe o planejamento acumular. Cada tarefa concluída é um passo mais perto do grande dia! 💍</p>
+        <p style="color:#666;font-size:14px;">Não deixe o planejamento acumular. Cada tarefa concluída é um passo mais perto do grande dia! ${emailIcon('rings')}</p>
       </div>`;
 
       const { id: emailId, error: emailError } = await enviarEmail({
         para: email,
-        assunto: `⚠️ ${dados.tarefas.length} tarefa${dados.tarefas.length > 1 ? 's' : ''} atrasada${dados.tarefas.length > 1 ? 's' : ''} — ${nomeEvento}`,
+        assunto: `${emailIcon('alert')} ${dados.tarefas.length} tarefa${dados.tarefas.length > 1 ? 's' : ''} atrasada${dados.tarefas.length > 1 ? 's' : ''} — ${nomeEvento}`,
         html,
         texto: `Você tem ${dados.tarefas.length} tarefa(s) atrasada(s) no planejamento de ${nomeEvento}. Acesse ${process.env.NEXT_PUBLIC_SITE_URL || 'https://descomplicai.com.br'}/painel/checklist`,
       });

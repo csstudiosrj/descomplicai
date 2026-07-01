@@ -3,6 +3,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { enviarEmail } from '../../../lib/email';
+import { emailIcon } from '../../../utils/emailIcons';
 
 const CRON_SECRET = process.env.CRON_SECRET;
 
@@ -60,23 +61,23 @@ export default async function handler(req, res) {
         .slice(0, 5) || [];
 
       const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
-        <h2 style="color:#f59e0b;">📅 Resumo semanal — ${ev.nome_evento || 'Seu casamento'}</h2>
-        ${diasAteEvento !== null ? `<p style="font-size:18px;">Faltam <strong style="color:#f59e0b;">${diasAteEvento} dia${diasAteEvento !== 1 ? 's' : ''}</strong> para o grande dia! 🎉</p>` : ''}
+        <h2 style="color:#f59e0b;">${emailIcon('calendar')} Resumo semanal — ${ev.nome_evento || 'Seu casamento'}</h2>
+        ${diasAteEvento !== null ? `<p style="font-size:18px;">Faltam <strong style="color:#f59e0b;">${diasAteEvento} dia${diasAteEvento !== 1 ? 's' : ''}</strong> para o grande dia! ${emailIcon('sparkle')}</p>` : ''}
         <div style="background:#f9fafb;border-radius:8px;padding:16px;margin:16px 0;">
           <p><strong>Progresso do checklist:</strong></p>
           <div style="background:#e5e7eb;border-radius:4px;height:20px;overflow:hidden;margin:8px 0;">
             <div style="background:#f59e0b;height:100%;width:${totalTarefas > 0 ? Math.round((concluidas / totalTarefas) * 100) : 0}%;"></div>
           </div>
-          <p style="font-size:14px;color:#666;">${concluidas} de ${totalTarefas} tarefas concluídas • ${pendentes} pendentes${atrasadas > 0 ? ` • <span style="color:#dc2626;">${atrasadas} atrasadas</span>` : ''}</p>
+          <p style="font-size:14px;color:#666;">${concluidas} de ${totalTarefas} tarefas concluídas ${emailIcon('check')} • ${pendentes} pendentes${atrasadas > 0 ? ` • <span style="color:#dc2626;">${atrasadas} atrasadas ${emailIcon('warning')}</span>` : ''}</p>
         </div>
-        ${proximas.length > 0 ? `<h3 style="color:#374151;">Próximos passos (próximos 7 dias):</h3><ul style="padding-left:20px;">${proximas.map(t => `<li style="margin-bottom:6px;">${t.titulo} <span style="color:#666;font-size:12px;">(${new Date(t.prazo).toLocaleDateString('pt-BR')})</span></li>`).join('')}</ul>` : '<p style="color:#666;">Nenhuma tarefa com prazo nos próximos 7 dias. Aproveite para adiantar o planejamento! ✨</p>'}
+        ${proximas.length > 0 ? `<h3 style="color:#374151;">Próximos passos (próximos 7 dias):</h3><ul style="padding-left:20px;">${proximas.map(t => `<li style="margin-bottom:6px;">${t.titulo} <span style="color:#666;font-size:12px;">(${new Date(t.prazo).toLocaleDateString('pt-BR')})</span></li>`).join('')}</ul>` : '<p style="color:#666;">Nenhuma tarefa com prazo nos próximos 7 dias. Aproveite para adiantar o planejamento! ' + emailIcon('sparkle') + '</p>'}
         <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://descomplicai.com.br'}/painel" style="display:inline-block;background:#f59e0b;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0;">Acessar painel</a>
-        <p style="color:#666;font-size:12px;margin-top:20px;">Este é um resumo automático enviado toda segunda-feira. Boa semana de planejamento! 💍</p>
+        <p style="color:#666;font-size:12px;margin-top:20px;">Este é um resumo automático enviado toda segunda-feira. Boa semana de planejamento! ${emailIcon('rings')}</p>
       </div>`;
 
       const { id: emailId, error: emailError } = await enviarEmail({
         para: email,
-        assunto: `📅 Resumo semanal — ${ev.nome_evento || 'Seu casamento'}${diasAteEvento !== null ? ` (faltam ${diasAteEvento} dias)` : ''}`,
+        assunto: `Resumo semanal — ${ev.nome_evento || 'Seu casamento'}${diasAteEvento !== null ? ` (faltam ${diasAteEvento} dias)` : ''}`,
         html,
         texto: `Resumo semanal: ${concluidas}/${totalTarefas} tarefas concluídas. ${pendentes} pendentes${atrasadas > 0 ? ', ' + atrasadas + ' atrasadas' : ''}. Acesse ${process.env.NEXT_PUBLIC_SITE_URL || 'https://descomplicai.com.br'}/painel`,
       });
