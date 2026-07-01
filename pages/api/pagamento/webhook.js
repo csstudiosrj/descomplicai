@@ -1,9 +1,14 @@
 import { calcularNovaExpiracao } from '../../../utils/acesso'
 import { createClient } from '@supabase/supabase-js'
 import { trackServerEvent } from '../../../utils/trackServerEvent'
+import { validarWebhookSeguro } from '../../../lib/mercadopago'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
+
+  // ─── VALIDAÇÃO DE ASSINATURA DO WEBHOOK ───
+  const podeContinuar = validarWebhookSeguro(req, res)
+  if (!podeContinuar) return
 
   const { type, data } = req.body
   if (type !== 'payment') return res.status(200).end()
@@ -12,7 +17,7 @@ export default async function handler(req, res) {
     // Busca payment direto na API REST do Mercado Pago
     const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${data.id}`, {
       headers: {
-        'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+        'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
       },
     })

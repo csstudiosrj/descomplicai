@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { enviarEmailTemplate } from '@/lib/email';
+import { validarWebhookSeguro } from '@/lib/mercadopago';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -8,7 +9,7 @@ const supabaseAdmin = createClient(
 );
 
 const client = new MercadoPagoConfig({
-  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN,
+  accessToken: process.env.MP_ACCESS_TOKEN,
 });
 
 /**
@@ -19,6 +20,10 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido' });
   }
+
+  // ─── VALIDAÇÃO DE ASSINATURA DO WEBHOOK ───
+  const podeContinuar = validarWebhookSeguro(req, res)
+  if (!podeContinuar) return
 
   // Mercado Pago envia query params: type, data.id
   const { type, 'data.id': dataId } = req.query;
