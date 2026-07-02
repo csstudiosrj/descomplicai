@@ -1,7 +1,7 @@
 import { useCallback, useRef, useEffect } from 'react';
 
 const SESSION_KEY = 'analytics_session_id';
-const API_ENDPOINT = '/api/analytics/track';
+const API_ENDPOINT = '/descomplicai/api/analytics/track';
 const BATCH_INTERVAL_MS = 30000; // 30 segundos
 const BATCH_MAX_SIZE = 10;
 
