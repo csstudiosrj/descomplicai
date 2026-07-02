@@ -33,8 +33,8 @@ export default function ImageUpload({
 }) {
   const [arquivos, setArquivos] = useState([]);
   const [previews, setPreviews] = useState([]);
-  [uploading, setUploading] = useState(false);
-  [progresso, setProgresso] = useState({ atual: 0, total: 0 });
+  const [uploading, setUploading] = useState(false);
+  const [progresso, setProgresso] = useState({ atual: 0, total: 0 });
   const inputRef = useRef(null);
 
   const gerarPreview = (file) => {
@@ -276,7 +276,7 @@ export default function ImageUpload({
                   border: 'none',
                   cursor: 'pointer',
                   display: 'flex',
-                    alignItems: 'center',
+                  alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
