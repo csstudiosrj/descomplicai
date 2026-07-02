@@ -27,9 +27,9 @@ export default function Step21Backdrop({ onSelect, estadoAtual }) {
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
-    setCardPulsando(o.valor);
+    setCardPulsando(opcao.valor);
     setTimeout(() => {
-      onSelect(o.campo || o.valor, o.valor, o.cor);
+      onSelect(o.campo || opcao.valor, opcao.valor, opcao.cor);
       setCardPulsando(null);
     }, 350);
   };
@@ -70,19 +70,19 @@ export default function Step21Backdrop({ onSelect, estadoAtual }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: 'var(--space-4)' }}>
         {OPCOES.map((opcao) => {
-          const isSelected = selecionado === o.valor;
+          const isSelected = selecionado === opcao.valor;
           return (
             <div
-      key={o.valor}
+      key={opcao.valor}
       style={{
         transition: 'transform 300ms ease, box-shadow 300ms ease',
-        transform: cardPulsando === o.valor ? 'scale(1.03)' : 'scale(1)',
-        boxShadow: cardPulsando === o.valor ? `0 0 0 3px ${o.cor || 'var(--color-brand)'}` : 'none',
+        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
         borderRadius: 'var(--radius-lg)',
       }}
     >
       <Card
-              key={String(o.valor)}
+              key={String(opcao.valor)}
               interactive
               selected={isSelected}
               padding="lg"
@@ -93,7 +93,7 @@ export default function Step21Backdrop({ onSelect, estadoAtual }) {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  onSelect('backdrop', o.valor);
+                  onSelect('backdrop', opcao.valor);
                 }
               }}
             >
@@ -109,14 +109,14 @@ export default function Step21Backdrop({ onSelect, estadoAtual }) {
                   color: isSelected ? 'var(--color-brand)' : 'var(--color-text-muted)',
                   flexShrink: 0,
                 }}>
-                  <Icon name={o.icone} size={24} ariaHidden={true} />
+                  <Icon name={opcao.icone} size={24} ariaHidden={true} />
                 </div>
                 <div>
                   <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>
-                    {o.label}
+                    {opcao.label}
                   </div>
                   <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
-                    {o.subtexto}
+                    {opcao.subtexto}
                   </div>
                 </div>
               </div>

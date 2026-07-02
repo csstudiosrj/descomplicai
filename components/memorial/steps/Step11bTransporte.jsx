@@ -30,7 +30,7 @@ export default function Step11bTransporte({ onSelect, estadoAtual }) {
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-        {['Ônibus/van fretado', 'Transporte individual (carros/uber)', 'Curta distância (a pé)', 'Ainda não sei'].map(o => (
+        {['Ônibus/van fretado', 'Transporte individual (carros/uber)', 'Curta distância (a pé)', 'Ainda não sei'].map(opcao => (
           <Card key={o} interactive selected={transporte === o} padding="md" onClick={() => setTransporte(o)} role="radio" aria-checked={transporte === o}>
             <span style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)' }}>{o}</span>
           </Card>
@@ -40,9 +40,9 @@ export default function Step11bTransporte({ onSelect, estadoAtual }) {
       {transporte === 'Ônibus/van fretado' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Ônibus para {termos.pessoa1} e {termos.pessoa2} também?</label>
-          {[{v:true,l:'Sim'}, {v:false,l:'Não, carro separado'}].map(o => (
-            <Card key={String(o.v)} interactive selected={onibus === o.v} padding="sm" onClick={() => setOnibus(o.v)} role="radio" aria-checked={onibus === o.v}>
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)' }}>{o.l}</span>
+          {[{v:true,l:'Sim'}, {v:false,l:'Não, carro separado'}].map(opcao => (
+            <Card key={String(opcao.v)} interactive selected={onibus === opcao.v} padding="sm" onClick={() => setOnibus(opcao.v)} role="radio" aria-checked={onibus === opcao.v}>
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)' }}>{opcao.l}</span>
             </Card>
           ))}
         </div>

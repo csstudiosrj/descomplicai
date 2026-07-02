@@ -30,9 +30,9 @@ export default function Step07bEvangelica({ onSelect, estadoAtual }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Já tem igreja definida?</label>
-          {[{v:true,l:'Sim'}, {v:false,l:'Ainda não'}].map(o => (
-            <Card key={String(o.v)} interactive selected={igrejaDefinida === o.v} padding="md" onClick={() => setIgrejaDefinida(o.v)} role="radio" aria-checked={igrejaDefinida === o.v}>
-              <span style={{ fontFamily: 'var(--font-body)' }}>{o.l}</span>
+          {[{v:true,l:'Sim'}, {v:false,l:'Ainda não'}].map(opcao => (
+            <Card key={String(opcao.v)} interactive selected={igrejaDefinida === opcao.v} padding="md" onClick={() => setIgrejaDefinida(opcao.v)} role="radio" aria-checked={igrejaDefinida === opcao.v}>
+              <span style={{ fontFamily: 'var(--font-body)' }}>{opcao.l}</span>
             </Card>
           ))}
         </div>
@@ -45,9 +45,9 @@ export default function Step07bEvangelica({ onSelect, estadoAtual }) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Música ao vivo na cerimônia?</label>
-          {[{v:true,l:'Sim, banda/coral'}, {v:false,l:'Playlist/Spotify'}].map(o => (
-            <Card key={String(o.v)} interactive selected={musicaAoVivo === o.v} padding="md" onClick={() => setMusicaAoVivo(o.v)} role="radio" aria-checked={musicaAoVivo === o.v}>
-              <span style={{ fontFamily: 'var(--font-body)' }}>{o.l}</span>
+          {[{v:true,l:'Sim, banda/coral'}, {v:false,l:'Playlist/Spotify'}].map(opcao => (
+            <Card key={String(opcao.v)} interactive selected={musicaAoVivo === opcao.v} padding="md" onClick={() => setMusicaAoVivo(opcao.v)} role="radio" aria-checked={musicaAoVivo === opcao.v}>
+              <span style={{ fontFamily: 'var(--font-body)' }}>{opcao.l}</span>
             </Card>
           ))}
         </div>

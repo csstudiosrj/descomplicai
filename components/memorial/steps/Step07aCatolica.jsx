@@ -36,9 +36,9 @@ export default function Step07aCatolica({ onSelect, estadoAtual }) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Já tem paróquia definida?</label>
-          {[{v:true,l:'Sim'}, {v:false,l:'Ainda não'}].map(o => (
-            <Card key={String(o.v)} interactive selected={paroquiaDefinida === o.v} padding="md" onClick={() => setParoquiaDefinida(o.v)} role="radio" aria-checked={paroquiaDefinida === o.v}>
-              <span style={{ fontFamily: 'var(--font-body)' }}>{o.l}</span>
+          {[{v:true,l:'Sim'}, {v:false,l:'Ainda não'}].map(opcao => (
+            <Card key={String(opcao.v)} interactive selected={paroquiaDefinida === opcao.v} padding="md" onClick={() => setParoquiaDefinida(opcao.v)} role="radio" aria-checked={paroquiaDefinida === opcao.v}>
+              <span style={{ fontFamily: 'var(--font-body)' }}>{opcao.l}</span>
             </Card>
           ))}
         </div>

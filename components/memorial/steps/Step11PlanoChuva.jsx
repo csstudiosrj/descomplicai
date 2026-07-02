@@ -26,7 +26,7 @@ export default function Step11PlanoChuva({ onSelect, estadoAtual }) {
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-        {['Tenda/cobertura completa', 'Espaço interno reserva', 'Data reserva', 'Decidir no dia', 'Ainda não sei'].map(o => (
+        {['Tenda/cobertura completa', 'Espaço interno reserva', 'Data reserva', 'Decidir no dia', 'Ainda não sei'].map(opcao => (
           <Card key={o} interactive selected={plano === o} padding="md" onClick={() => setPlano(o)} role="radio" aria-checked={plano === o}>
             <span style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)' }}>{o}</span>
           </Card>
@@ -36,9 +36,9 @@ export default function Step11PlanoChuva({ onSelect, estadoAtual }) {
       {plano === 'Tenda/cobertura completa' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Tenda já contratada?</label>
-          {[{v:true,l:'Sim'}, {v:false,l:'Ainda não'}].map(o => (
-            <Card key={String(o.v)} interactive selected={tenda === o.v} padding="sm" onClick={() => setTenda(o.v)} role="radio" aria-checked={tenda === o.v}>
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)' }}>{o.l}</span>
+          {[{v:true,l:'Sim'}, {v:false,l:'Ainda não'}].map(opcao => (
+            <Card key={String(opcao.v)} interactive selected={tenda === opcao.v} padding="sm" onClick={() => setTenda(opcao.v)} role="radio" aria-checked={tenda === opcao.v}>
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)' }}>{opcao.l}</span>
             </Card>
           ))}
         </div>

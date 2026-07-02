@@ -68,30 +68,30 @@ export default function Step33RituaisSaida({ onSelect, estadoAtual }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: 'var(--space-4)' }}>
         {OPCOES.map((opcao) => {
-          const isSelected = selecionados.includes(o.valor);
+          const isSelected = selecionados.includes(opcao.valor);
           return (
             <div
-      key={o.valor}
+      key={opcao.valor}
       style={{
         transition: 'transform 300ms ease, box-shadow 300ms ease',
-        transform: cardPulsando === o.valor ? 'scale(1.03)' : 'scale(1)',
-        boxShadow: cardPulsando === o.valor ? `0 0 0 3px ${o.cor || 'var(--color-brand)'}` : 'none',
+        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
         borderRadius: 'var(--radius-lg)',
       }}
     >
       <Card
-              key={o.valor}
+              key={opcao.valor}
               interactive
               selected={isSelected}
               padding="lg"
-              onClick={() => toggle(o.valor)}
+              onClick={() => toggle(opcao.valor)}
               role="checkbox"
               aria-checked={isSelected}
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  toggle(o.valor);
+                  toggle(opcao.valor);
                 }
               }}
             >
@@ -107,14 +107,14 @@ export default function Step33RituaisSaida({ onSelect, estadoAtual }) {
                   color: isSelected ? 'var(--color-brand)' : 'var(--color-text-muted)',
                   flexShrink: 0,
                 }}>
-                  <Icon name={o.icone} size={24} ariaHidden={true} />
+                  <Icon name={opcao.icone} size={24} ariaHidden={true} />
                 </div>
                 <div>
                   <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>
-                    {o.label}
+                    {opcao.label}
                   </div>
                   <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
-                    {o.subtexto}
+                    {opcao.subtexto}
                   </div>
                 </div>
               </div>
