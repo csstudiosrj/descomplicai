@@ -156,7 +156,7 @@ export default async function handler(req, res) {
                 criado_em: new Date().toISOString(),
               });
           } catch (emailErr) {
-            console.log('[leads] notificação de email não registrada:', emailErr.message);
+
           }
         }
 

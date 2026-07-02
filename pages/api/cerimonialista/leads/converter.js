@@ -71,7 +71,7 @@ export default async function handler(req, res) {
         criado_em: new Date().toISOString(),
       });
     } catch (emailErr) {
-      console.log('[leads/converter] notificacao nao registrada:', emailErr.message);
+
     }
     return res.status(200).json({ lead: data, evento: novoEvento });
   } catch (err) {

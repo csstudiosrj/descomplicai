@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   }
 
   const { eventoId } = req.body;
-  console.log('Trial API: eventoId recebido:', eventoId, 'tipo:', typeof eventoId);
+
 
   if (!eventoId) {
     return res.status(400).json({ erro: 'eventoId obrigatorio', recebido: eventoId });
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
       .eq('id', eventoId)
       .maybeSingle();
 
-    console.log('Trial API: busca evento:', { evento, error: fetchError?.message });
+
 
     if (fetchError) {
       console.error('Trial API: erro na busca:', fetchError);

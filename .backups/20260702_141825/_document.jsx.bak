@@ -17,7 +17,7 @@ export default function Document() {
         />
 
         {/* PWA — Manifest e Theme Color */}
-        <link rel="manifest" href="/descomplicai/manifest.json" />
+        <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#8B6F5E" />
         <meta name="msapplication-TileColor" content="#8B6F5E" />
 

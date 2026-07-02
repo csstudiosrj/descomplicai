@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       
       // Se payment não existe (404), retorna 200 para o MP não reenviar
       if (status === 404) {
-        console.log(`Webhook: payment ${data.id} não encontrado na API MP (provavelmente teste). Ignorando.`)
+
         return res.status(200).end()
       }
       
