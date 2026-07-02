@@ -1,4 +1,4 @@
-import { withRateLimit, conviteLimiter } from "../../lib/ratelimit";
+import { withRateLimit, conviteLimiter } from '@/lib/rateLimit.js';
 import { enviarEmailTemplate } from '@/lib/email';
 import { createClient } from '@supabase/supabase-js';
 

@@ -1,4 +1,4 @@
-import { withRateLimit, conviteLimiter } from "../../../lib/ratelimit";
+import { withRateLimit, conviteLimiter } from '@/lib/rateLimit.js';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

@@ -1,4 +1,4 @@
-import { withRateLimit, strictLimiter } from "../../lib/ratelimit";
+import { withRateLimit, strictLimiter } from '@/lib/rateLimit.js';
 /**
  * API Route — Persiste memorial no Supabase + gera financeiro sugerido
  * POST /api/memorial/salvar

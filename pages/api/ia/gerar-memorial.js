@@ -1,4 +1,4 @@
-import { withRateLimit, cadastroLimiter } from "../../lib/ratelimit";
+import { withRateLimit, cadastroLimiter } from '@/lib/rateLimit.js';
 import { gerarMemorialLocal } from '../../../utils/gerador-templates';
 import { supabase } from '../../../lib/supabase';
 import { trackServerEvent } from '../../../utils/trackServerEvent';

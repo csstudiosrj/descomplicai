@@ -1,4 +1,4 @@
-import { withRateLimit, pagamentoLimiter } from "../../lib/ratelimit";
+import { withRateLimit, pagamentoLimiter } from '@/lib/rateLimit.js';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { createClient } from '@supabase/supabase-js';
 

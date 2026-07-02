@@ -1,4 +1,4 @@
-import { withRateLimit, conviteLimiter } from "../../lib/ratelimit";
+import { withRateLimit, conviteLimiter } from '@/lib/rateLimit.js';
 import { createClient } from '@supabase/supabase-js';
 
 async function _handler(req, res) {

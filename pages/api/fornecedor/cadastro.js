@@ -1,4 +1,4 @@
-import { withRateLimit, cadastroLimiter } from "../../lib/ratelimit";
+import { withRateLimit, cadastroLimiter } from '@/lib/rateLimit.js';
 import { createClient } from '@supabase/supabase-js';
 import { enviarEmailTemplate } from '@/lib/email';
 

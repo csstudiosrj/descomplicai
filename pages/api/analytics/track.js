@@ -1,4 +1,4 @@
-import { withRateLimit, analyticsLimiter } from "../../../lib/ratelimit";
+import { withRateLimit, analyticsLimiter } from '@/lib/rateLimit.js';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(

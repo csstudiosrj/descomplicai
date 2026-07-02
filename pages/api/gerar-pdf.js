@@ -1,4 +1,4 @@
-import { withRateLimit, pagamentoLimiter } from "../lib/ratelimit";
+import { withRateLimit, pagamentoLimiter } from "@/lib/rateLimit.js";
 import React from 'react';
 import { renderToStream } from '@react-pdf/renderer';
 import { createClient } from '@supabase/supabase-js';

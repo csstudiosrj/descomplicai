@@ -1,4 +1,4 @@
-import { withRateLimit, strictLimiter } from "../../lib/ratelimit";
+import { withRateLimit, strictLimiter } from '@/lib/rateLimit.js';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin'
 import { supabase } from '../../../lib/supabase'
 import { enviarEmailNotificacaoChat } from '../../../lib/email'

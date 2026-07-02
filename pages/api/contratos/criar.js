@@ -1,4 +1,4 @@
-import { withRateLimit, pagamentoLimiter } from "../../lib/ratelimit";
+import { withRateLimit, pagamentoLimiter } from '@/lib/rateLimit.js';
 import { createClient } from '@supabase/supabase-js';
 import { SUBCATEGORIAS_FLAT } from '../../../utils/catalogoFornecedores';
 import { supabase } from '../../../lib/supabase';
