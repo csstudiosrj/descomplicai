@@ -53,21 +53,21 @@ export default function StepA5Padrinhos({ onSelect, estadoAtual }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: 'var(--space-4)' }}>
         {OPCOES_PADRINHOS.map((opcao) => {
-          const isSelected = escolhidos === o.valor;
+          const isSelected = escolhidos === opcaopcao.valor;
           return (
             <Card
-              key={String(o.valor)}
+              key={String(opcaopcao.valor)}
               interactive
               selected={isSelected}
               padding="lg"
-              onClick={() => handleSelecionar(o.valor)}
+              onClick={() => handleSelecionar(opcaopcao.valor)}
               role="radio"
               aria-checked={isSelected}
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  handleSelecionar(o.valor);
+                  handleSelecionar(opcaopcao.valor);
                 }
               }}
             >
@@ -83,14 +83,14 @@ export default function StepA5Padrinhos({ onSelect, estadoAtual }) {
                   color: isSelected ? 'var(--color-brand)' : 'var(--color-text-muted)',
                   flexShrink: 0,
                 }}>
-                  <Icon name={o.icone} size={24} ariaHidden={true} />
+                  <Icon name={opcao.icone} size={24} ariaHidden={true} />
                 </div>
                 <div>
                   <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>
-                    {o.label}
+                    {opcaopcao.label}
                   </div>
                   <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
-                    {o.subtexto}
+                    {opcao.subtexto}
                   </div>
                 </div>
               </div>

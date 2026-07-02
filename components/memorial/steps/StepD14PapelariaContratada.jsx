@@ -18,9 +18,9 @@ export default function StepD14PapelariaContratada({ onSelect, estadoAtual }) {
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
-    setCardPulsando(o.valor);
+    setCardPulsando(opcaopcao.valor);
     setTimeout(() => {
-      onSelect(o.campo || o.valor, o.valor, o.cor);
+      onSelect(opcao.campo || opcaopcao.valor, opcaopcao.valor, opcao.cor);
       setCardPulsando(null);
     }, 350);
   };
@@ -39,21 +39,21 @@ export default function StepD14PapelariaContratada({ onSelect, estadoAtual }) {
       </h1>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--space-4)' }}>
-        {OPCOES.map((o) => {
-          const isSelected = selecionado === o.valor;
+        {OPCOES.map((opcao) => {
+          const isSelected = selecionado === opcaopcao.valor;
           return (
             <div
-      key={o.valor}
+      key={opcaopcao.valor}
       style={{
         transition: 'transform 300ms ease, box-shadow 300ms ease',
-        transform: cardPulsando === o.valor ? 'scale(1.03)' : 'scale(1)',
-        boxShadow: cardPulsando === o.valor ? `0 0 0 3px ${o.cor || 'var(--color-brand)'}` : 'none',
+        transform: cardPulsando === opcaopcao.valor ? 'scale(1.03)' : 'scale(1)',
+        boxShadow: cardPulsando === opcaopcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
         borderRadius: 'var(--radius-lg)',
       }}
     >
-      <Card key={o.valor} interactive selected={isSelected} padding="lg" onClick={() => handleCardClick(o)} role="radio" aria-checked={isSelected} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(o); } }}>
+      <Card key={opcaopcao.valor} interactive selected={isSelected} padding="lg" onClick={() => handleCardClick(o)} role="radio" aria-checked={isSelected} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(o); } }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }}>{o.label}</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }}>{opcaopcao.label}</span>
                 {o.desc && <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>{o.desc}</span>}
               </div>
             </Card>

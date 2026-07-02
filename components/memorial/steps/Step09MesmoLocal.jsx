@@ -16,9 +16,9 @@ export default function Step09MesmoLocal({ onSelect, estadoAtual }) {
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
-    setCardPulsando(o.valor);
+    setCardPulsando(opcaopcao.valor);
     setTimeout(() => {
-      onSelect('ceremoniaFestaMesmoLocal', o.valor, o.cor);
+      onSelect('ceremoniaFestaMesmoLocal', opcaopcao.valor, opcao.cor);
       setCardPulsando(null);
     }, 350);
   };
@@ -40,14 +40,14 @@ export default function Step09MesmoLocal({ onSelect, estadoAtual }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-4)' }}>
         {OPCOES.map((opcao) => {
-          const isSelected = selecionado === o.valor;
+          const isSelected = selecionado === opcaopcao.valor;
           return (
             <div
-              key={String(o.valor)}
+              key={String(opcaopcao.valor)}
               style={{
                 transition: 'transform 300ms ease, box-shadow 300ms ease',
-                transform: cardPulsando === o.valor ? 'scale(1.03)' : 'scale(1)',
-                boxShadow: cardPulsando === o.valor ? `0 0 0 3px ${o.cor || 'var(--color-brand)'}` : 'none',
+                transform: cardPulsando === opcaopcao.valor ? 'scale(1.03)' : 'scale(1)',
+                boxShadow: cardPulsando === opcaopcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
                 borderRadius: 'var(--radius-lg)',
               }}
             >
@@ -61,7 +61,7 @@ export default function Step09MesmoLocal({ onSelect, estadoAtual }) {
                 tabIndex={0}
                 onKeyDown={(e) => handleKeyDown(e, opcao)}
               >
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-medium)' }}>{o.label}</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-medium)' }}>{opcaopcao.label}</span>
               </Card>
             </div>
           );

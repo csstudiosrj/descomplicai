@@ -22,9 +22,9 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
-    setCardPulsando(opcao.valor);
+    setCardPulsando(opcaopcao.valor);
     setTimeout(() => {
-      onSelect(opcao.campo || opcao.valor, opcao.valor, opcao.cor);
+      onSelect(opcao.campo || opcaopcao.valor, opcaopcao.valor, opcaopcao.cor);
       setCardPulsando(null);
     }, 350);
   };
@@ -70,14 +70,14 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
         }}
       >
         {OPCOES.map((opcao) => {
-          const isSelected = selecionado === o.valor;
+          const isSelected = selecionado === opcao.valor;
           return (
             <div
-              key={o.valor}
+              key={opcao.valor}
               style={{
                 transition: 'transform 300ms ease, box-shadow 300ms ease',
-                transform: cardPulsando === o.valor ? 'scale(1.03)' : 'scale(1)',
-                boxShadow: cardPulsando === o.valor ? `0 0 0 3px ${o.cor || 'var(--color-brand)'}` : 'none',
+                transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+                boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
                 borderRadius: 'var(--radius-lg)',
               }}
             >
@@ -88,12 +88,12 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
                 onClick={() => handleCardClick(opcao)}
                 role="radio"
                 aria-checked={isSelected}
-                aria-label={o.label}
+                aria-label={opcao.label}
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    onSelect('perfilCasal', o.valor, o.cor);
+                    onSelect('perfilCasal', opcao.valor, opcao.cor);
                   }
                 }}
               >
@@ -109,7 +109,7 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
                       width: '48px',
                       height: '48px',
                       borderRadius: 'var(--radius-lg)',
-                      backgroundColor: isSelected ? o.cor : 'var(--color-surface)',
+                      backgroundColor: isSelected ? opcao.cor : 'var(--color-surface)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -117,7 +117,7 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
                       flexShrink: 0,
                     }}
                   >
-                    <Icon name={o.icone} size={24} ariaHidden={true} />
+                    <Icon name={opcao.icone} size={24} ariaHidden={true} />
                   </div>
                   <span
                     style={{
@@ -127,7 +127,7 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
                       color: 'var(--color-text-primary)',
                     }}
                   >
-                    {o.label}
+                    {opcao.label}
                   </span>
                 </div>
               </Card>

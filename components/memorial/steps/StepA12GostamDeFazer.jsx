@@ -45,21 +45,21 @@ export default function StepA12GostamDeFazer({ onSelect, estadoAtual }) {
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--space-4)' }}>
-        {OPCOES.map((o) => {
-          const isSelected = selecionadas.includes(o.valor);
+        {OPCOES.map((opcao) => {
+          const isSelected = selecionadas.includes(opcaopcao.valor);
           return (
             <div
-      key={o.valor}
+      key={opcaopcao.valor}
       style={{
         transition: 'transform 300ms ease, box-shadow 300ms ease',
-        transform: cardPulsando === o.valor ? 'scale(1.03)' : 'scale(1)',
-        boxShadow: cardPulsando === o.valor ? `0 0 0 3px ${o.cor || 'var(--color-brand)'}` : 'none',
+        transform: cardPulsando === opcaopcao.valor ? 'scale(1.03)' : 'scale(1)',
+        boxShadow: cardPulsando === opcaopcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
         borderRadius: 'var(--radius-lg)',
       }}
     >
-      <Card key={o.valor} interactive selected={isSelected} padding="lg" onClick={() => toggle(o.valor)} role="checkbox" aria-checked={isSelected} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(o.valor); } }}>
+      <Card key={opcaopcao.valor} interactive selected={isSelected} padding="lg" onClick={() => toggle(opcaopcao.valor)} role="checkbox" aria-checked={isSelected} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(opcaopcao.valor); } }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }}>{o.label}</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }}>{opcaopcao.label}</span>
                 {o.desc && <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>{o.desc}</span>}
               </div>
             </Card>

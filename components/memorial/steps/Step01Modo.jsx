@@ -35,10 +35,10 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
   const handleClick = (opcao) => {
     if (cardPulsando) return;
 
-    setCardPulsando(o.valor);
+    setCardPulsando(opcaopcao.valor);
 
     setTimeout(() => {
-      onSelect('modoPlanejamento', o.valor, o.cor);
+      onSelect('modoPlanejamento', opcaopcao.valor, opcao.cor);
       setCardPulsando(null);
     }, 350);
   };
@@ -84,17 +84,17 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
         }}
       >
         {OPCOES.map((opcao) => {
-          const isSelected = selecionado === o.valor;
-          const isPulsando = cardPulsando === o.valor;
+          const isSelected = selecionado === opcaopcao.valor;
+          const isPulsando = cardPulsando === opcaopcao.valor;
 
           return (
             <div
-              key={o.valor}
+              key={opcaopcao.valor}
               style={{
                 transition: 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1)',
                 transform: isPulsando ? 'scale(1.03)' : 'scale(1)',
                 boxShadow: isPulsando 
-                  ? `0 0 0 3px ${o.corPulso}, 0 6px 24px ${o.corPulso}` 
+                  ? `0 0 0 3px ${opcao.corPulso}, 0 6px 24px ${opcao.corPulso}` 
                   : 'none',
                 borderRadius: 'var(--radius-lg)',
                 border: isPulsando ? 'none' : 'transparent',
@@ -107,7 +107,7 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
                 onClick={() => handleClick(opcao)}
                 role="radio"
                 aria-checked={isSelected}
-                aria-label={`${o.label}: ${o.subtexto}`}
+                aria-label={`${opcaopcao.label}: ${opcao.subtexto}`}
                 tabIndex={0}
                 onKeyDown={(e) => handleKeyDown(e, opcao)}
               >
@@ -123,7 +123,7 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
                       width: '48px',
                       height: '48px',
                       borderRadius: 'var(--radius-lg)',
-                      backgroundColor: isSelected ? o.cor : 'var(--color-surface)',
+                      backgroundColor: isSelected ? opcao.cor : 'var(--color-surface)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -131,7 +131,7 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
                       transition: 'background-color 200ms ease, color 200ms ease',
                     }}
                   >
-                    <Icon name={o.icone} size={24} ariaHidden={true} />
+                    <Icon name={opcao.icone} size={24} ariaHidden={true} />
                   </div>
                   <div>
                     <div
@@ -143,7 +143,7 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
                         marginBottom: 'var(--space-1)',
                       }}
                     >
-                      {o.label}
+                      {opcaopcao.label}
                     </div>
                     <div
                       style={{
@@ -153,7 +153,7 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
                         lineHeight: 'var(--leading-relaxed)',
                       }}
                     >
-                      {o.subtexto}
+                      {opcao.subtexto}
                     </div>
                   </div>
                 </div>
