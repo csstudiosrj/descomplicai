@@ -86,13 +86,13 @@ function ContratosContent() {
 
     const fornecedor = fornecedores.find(f => f.id === fornecedorId);
     if (!fornecedor) {
-      setToast({ tipo: 'erro', mensagem: 'Fornecedor não encontrado.' });
+      setToast({ tipo: 'erro', mensagem: 'Fornecedor nao encontrado.' });
       return;
     }
 
     const catPrincipal = getCategoriaPrincipal(fornecedor.categoria)?.id;
     if (!catPrincipal) {
-      setToast({ tipo: 'erro', mensagem: 'Categoria não mapeada para template.' });
+      setToast({ tipo: 'erro', mensagem: 'Categoria nao mapeada para template.' });
       return;
     }
 
@@ -115,7 +115,7 @@ function ContratosContent() {
 
     const template = gerarContrato(catPrincipal, dados);
     if (!template) {
-      setToast({ tipo: 'erro', mensagem: 'Template não encontrado para esta categoria.' });
+      setToast({ tipo: 'erro', mensagem: 'Template nao encontrado para esta categoria.' });
       return;
     }
 
@@ -166,7 +166,7 @@ function ContratosContent() {
     if (readOnly) return;
     if (!confirm('Excluir este contrato?')) return;
     await supabase.from('contratos').delete().eq('id', id);
-    setToast({ tipo: 'sucesso', mensagem: 'Contrato excluído.' });
+    setToast({ tipo: 'sucesso', mensagem: 'Contrato excluido.' });
     carregarDados();
   };
 
@@ -292,7 +292,7 @@ function ContratosContent() {
                 <Icon name="fileText" size={48} color="#D4C8C0" />
                 <p style={emptyTextStyle}>Nenhum contrato encontrado.</p>
                 {!readOnly && fornecedoresSemContrato.length === 0 && (
-                  <p style={emptySubStyle}>Adicione fornecedores na página de Fornecedores para criar contratos.</p>
+                  <p style={emptySubStyle}>Adicione fornecedores na pagina de Fornecedores para criar contratos.</p>
                 )}
               </div>
             ) : (

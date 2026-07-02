@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/ui/Icon';
+import ImageUpload from '../../components/ui/ImageUpload';
 import { CATEGORIAS_PRINCIPAIS } from '../../utils/catalogoFornecedores';
 
 const UFS = [
@@ -26,6 +27,7 @@ export default function CadastroFornecedorPage() {
     senha: '',
     confirmacao_senha: '',
   });
+  const [logoUrl, setLogoUrl] = useState('');
   const [erros, setErros] = useState({});
   const [enviando, setEnviando] = useState(false);
   const [sucesso, setSucesso] = useState(false);
@@ -44,23 +46,23 @@ export default function CadastroFornecedorPage() {
 
   const validar = () => {
     const next = {};
-    if (!form.nome_empresa.trim()) next.nome_empresa = 'Nome da empresa é obrigatório.';
-    if (!form.categoria) next.categoria = 'Categoria é obrigatória.';
-    if (!form.cidade.trim()) next.cidade = 'Cidade é obrigatória.';
-    if (!form.estado) next.estado = 'Estado é obrigatório.';
+    if (!form.nome_empresa.trim()) next.nome_empresa = 'Nome da empresa e obrigatorio.';
+    if (!form.categoria) next.categoria = 'Categoria e obrigatoria.';
+    if (!form.cidade.trim()) next.cidade = 'Cidade e obrigatoria.';
+    if (!form.estado) next.estado = 'Estado e obrigatorio.';
     if (!form.email.trim()) {
-      next.email = 'E-mail é obrigatório.';
+      next.email = 'E-mail e obrigatorio.';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      next.email = 'E-mail inválido.';
+      next.email = 'E-mail invalido.';
     }
-    if (!form.telefone.trim()) next.telefone = 'Telefone é obrigatório.';
+    if (!form.telefone.trim()) next.telefone = 'Telefone e obrigatorio.';
     if (!form.senha) {
-      next.senha = 'Senha é obrigatória.';
+      next.senha = 'Senha e obrigatoria.';
     } else if (form.senha.length < 6) {
-      next.senha = 'Senha deve ter no mínimo 6 caracteres.';
+      next.senha = 'Senha deve ter no minimo 6 caracteres.';
     }
     if (form.senha !== form.confirmacao_senha) {
-      next.confirmacao_senha = 'As senhas não conferem.';
+      next.confirmacao_senha = 'As senhas nao conferem.';
     }
     return next;
   };
@@ -77,10 +79,13 @@ export default function CadastroFornecedorPage() {
     setErros({});
 
     try {
+      const payload = { ...form };
+      if (logoUrl) payload.logo_url = logoUrl;
+
       const res = await fetch('/api/fornecedor/cadastro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -96,7 +101,7 @@ export default function CadastroFornecedorPage() {
         router.push('/fornecedor/login');
       }, 2500);
     } catch (err) {
-      setErros({ geral: 'Erro de conexão. Tente novamente.' });
+      setErros({ geral: 'Erro de conexao. Tente novamente.' });
       setEnviando(false);
     }
   };
@@ -104,8 +109,8 @@ export default function CadastroFornecedorPage() {
   return (
     <>
       <Head>
-        <title>Cadastro de Fornecedor — Descomplicaí</title>
-        <meta name="description" content="Cadastre sua empresa no Descomplicaí e seja encontrado por noivas." />
+        <title>Cadastro de Fornecedor — Descomplicai</title>
+        <meta name="description" content="Cadastre sua empresa no Descomplicai e seja encontrado por noivas." />
       </Head>
 
       <div
@@ -160,6 +165,22 @@ export default function CadastroFornecedorPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+              {/* Logo da empresa */}
+              <ImageUpload
+                onUpload={(urls) => setLogoUrl(urls[0])}
+                onError={(msg) => setErros(prev => ({ ...prev, logo: msg }))}
+                maxFiles={1}
+                tipo="perfil"
+                label="Logo da empresa (opcional)"
+                urlsExistentes={logoUrl ? [logoUrl] : []}
+                onRemoverExistente={() => setLogoUrl('')}
+              />
+              {erros.logo && (
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-danger)' }}>
+                  {erros.logo}
+                </span>
+              )}
+
               <Input
                 label="Nome da empresa *"
                 name="nome_empresa"
@@ -314,12 +335,12 @@ export default function CadastroFornecedorPage() {
                     marginBottom: 'var(--space-1)',
                   }}
                 >
-                  Descrição (opcional)
+                  Descricao (opcional)
                 </label>
                 <textarea
                   name="descricao"
                   rows={3}
-                  placeholder="Conte um pouco sobre seus serviços..."
+                  placeholder="Conte um pouco sobre seus servicos..."
                   value={form.descricao}
                   onChange={handleChange}
                   style={{
@@ -340,11 +361,11 @@ export default function CadastroFornecedorPage() {
                 label="Senha *"
                 name="senha"
                 type="password"
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Minimo 6 caracteres"
                 value={form.senha}
                 onChange={handleChange}
                 required
-                hint="Mínimo 6 caracteres"
+                hint="Minimo 6 caracteres"
               />
 
               <Input
@@ -377,9 +398,9 @@ export default function CadastroFornecedorPage() {
           )}
 
           <p style={{ textAlign: 'center', marginTop: 'var(--space-6)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-            Já tem conta?{' '}
+            Ja tem conta?{' '}
             <Link href="/fornecedor/login" legacyBehavior>
-              <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Faça login</a>
+              <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Faca login</a>
             </Link>
           </p>
         </div>

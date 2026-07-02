@@ -1,17 +1,38 @@
 import { useState, useEffect } from 'react';
 import Icon from '../ui/Icon';
+import PDFUpload from '../ui/PDFUpload';
 
 export default function ContratoEditor({ contrato, fornecedor, onSalvar, onFechar, readOnly }) {
   const [conteudo, setConteudo] = useState(contrato?.conteudo || '');
   const [status, setStatus] = useState(contrato?.status || 'rascunho');
+  const [anexoUrl, setAnexoUrl] = useState(contrato?.anexo_url || '');
+  const [anexoNome, setAnexoNome] = useState(contrato?.anexo_nome || '');
 
   useEffect(() => {
     setConteudo(contrato?.conteudo || '');
     setStatus(contrato?.status || 'rascunho');
+    setAnexoUrl(contrato?.anexo_url || '');
+    setAnexoNome(contrato?.anexo_nome || '');
   }, [contrato]);
 
   const handleSalvar = () => {
-    onSalvar({ ...contrato, conteudo, status });
+    onSalvar({ 
+      ...contrato, 
+      conteudo, 
+      status,
+      anexo_url: anexoUrl,
+      anexo_nome: anexoNome,
+    });
+  };
+
+  const handleUploadAnexo = (url) => {
+    setAnexoUrl(url);
+    setAnexoNome('Contrato anexado');
+  };
+
+  const handleRemoverAnexo = () => {
+    setAnexoUrl('');
+    setAnexoNome('');
   };
 
   const nomeFornecedor = fornecedor?.nome || 'Fornecedor';
@@ -46,8 +67,49 @@ export default function ContratoEditor({ contrato, fornecedor, onSalvar, onFecha
             </select>
           </div>
 
+          {/* Anexo de PDF */}
+          {!readOnly && (
+            <div style={formGroupStyle}>
+              <label style={labelStyle}>Anexo PDF</label>
+              <PDFUpload
+                onUpload={handleUploadAnexo}
+                onError={(msg) => console.error('Erro upload PDF:', msg)}
+                urlExistente={anexoUrl}
+                onRemover={handleRemoverAnexo}
+              />
+            </div>
+          )}
+
+          {/* Anexo existente em modo readOnly */}
+          {readOnly && anexoUrl && (
+            <div style={formGroupStyle}>
+              <label style={labelStyle}>Anexo PDF</label>
+              <a
+                href={anexoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  borderRadius: '8px',
+                  backgroundColor: '#E8F5E9',
+                  color: '#10B981',
+                  textDecoration: 'none',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                }}
+              >
+                <Icon name="fileText" size={18} />
+                Visualizar PDF anexado
+              </a>
+            </div>
+          )}
+
           <div style={formGroupStyle}>
-            <label style={labelStyle}>Conteúdo do contrato</label>
+            <label style={labelStyle}>Conteudo do contrato</label>
             <textarea
               style={textareaEditorStyle}
               value={conteudo}
@@ -58,7 +120,7 @@ export default function ContratoEditor({ contrato, fornecedor, onSalvar, onFecha
           </div>
 
           <div style={variaveisBoxStyle}>
-            <span style={variaveisLabelStyle}>Variáveis disponíveis:</span>
+            <span style={variaveisLabelStyle}>Variaveis disponiveis:</span>
             <div style={variaveisTagsStyle}>
               {['nome_noivos', 'data_evento', 'local_evento', 'cidade_evento', 'nome_responsavel', 'nome_empresa', 'telefone', 'email', 'valor_total', 'valor_entrada', 'data_entrada', 'valor_saldo', 'data_saldo', 'data_contrato'].map(v => (
                 <span key={v} style={variavelTagStyle}>{`{${v}}`}</span>

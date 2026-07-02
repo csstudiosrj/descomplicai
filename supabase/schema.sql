@@ -1175,3 +1175,47 @@ CREATE POLICY "tarefas_select" ON public.tarefas FOR SELECT USING (((EXISTS ( SE
 CREATE POLICY "tarefas_insert" ON public.tarefas FOR INSERT WITH CHECK (true);
 CREATE POLICY "tarefas_update" ON public.tarefas FOR UPDATE USING (((EXISTS ( SELECT 1 FROM eventos WHERE ((eventos.id = tarefas.evento_id) AND (eventos.usuario_id = auth.uid())))) OR is_colaborador_evento_editor(evento_id)));
 CREATE POLICY "tarefas_delete" ON public.tarefas FOR DELETE USING (((EXISTS ( SELECT 1 FROM eventos WHERE ((eventos.id = tarefas.evento_id) AND (eventos.usuario_id = auth.uid())))) OR is_colaborador_evento_editor(evento_id)));
+
+-- ============================================================
+-- MIGRATION: Campos de upload (UploadThing) — adicionado em 2026-07-02
+-- ============================================================
+
+-- Adiciona campos de imagem a fornecedores_plataforma
+ALTER TABLE public.fornecedores_plataforma
+ADD COLUMN IF NOT EXISTS logo_url text;
+
+ALTER TABLE public.fornecedores_plataforma
+ADD COLUMN IF NOT EXISTS capa_url text;
+
+-- Adiciona referencias_uploads a memoriais (imagens de referencia do memorial)
+ALTER TABLE public.memoriais
+ADD COLUMN IF NOT EXISTS referencias_uploads jsonb DEFAULT '[]'::jsonb;
+
+-- Adiciona campos de anexo a contratos (PDFs)
+ALTER TABLE public.contratos
+ADD COLUMN IF NOT EXISTS anexo_url text;
+
+ALTER TABLE public.contratos
+ADD COLUMN IF NOT EXISTS anexo_nome text;
+
+-- ============================================================
+-- INDICES
+-- ============================================================
+
+CREATE INDEX IF NOT EXISTS idx_fornecedores_plataforma_logo 
+ON public.fornecedores_plataforma(logo_url) 
+WHERE logo_url IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_contratos_anexo 
+ON public.contratos(anexo_url) 
+WHERE anexo_url IS NOT NULL;
+
+-- ============================================================
+-- COMENTARIOS
+-- ============================================================
+
+COMMENT ON COLUMN public.fornecedores_plataforma.logo_url IS 'URL da logo no UploadThing (max 200KB)';
+COMMENT ON COLUMN public.fornecedores_plataforma.capa_url IS 'URL da imagem de capa no UploadThing (max 500KB)';
+COMMENT ON COLUMN public.memoriais.referencias_uploads IS 'Array de URLs de imagens de referencia no UploadThing';
+COMMENT ON COLUMN public.contratos.anexo_url IS 'URL do PDF anexado no UploadThing (max 10MB)';
+COMMENT ON COLUMN public.contratos.anexo_nome IS 'Nome original do arquivo PDF anexado';

@@ -1,5 +1,5 @@
 // Perfil publico do fornecedor — dados e portfolio
-// Dependencias diretas: React, next/head, next/router, Card, Badge, Icon, EstrelasAvaliacao
+// Dependencias diretas: React, next/head, next/router, Card, Badge, Icon, EstrelasAvaliacao, ImageUpload
 
 import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
@@ -7,6 +7,7 @@ import { useRouter } from 'next/router';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Icon from '../../components/ui/Icon';
+import ImageUpload from '../../components/ui/ImageUpload';
 import EstrelasAvaliacao from '../../components/fornecedores/EstrelasAvaliacao';
 import { supabase } from '../../lib/supabase';
 import { getLabelSubcategoria } from '../../utils/catalogoFornecedores';
@@ -17,6 +18,8 @@ export default function FornecedorPerfilPage() {
   const [fornecedor, setFornecedor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [avaliacoes, setAvaliacoes] = useState([]);
+  const [fotos, setFotos] = useState([]);
+  const [erroUpload, setErroUpload] = useState(null);
 
   useEffect(() => {
     if (!id) return;
@@ -31,6 +34,7 @@ export default function FornecedorPerfilPage() {
 
         if (f) {
           setFornecedor(f);
+          setFotos(f.fotos || []);
 
           await supabase
             .from('fornecedores_plataforma')
@@ -88,6 +92,34 @@ export default function FornecedorPerfilPage() {
     }
   };
 
+  const handleUploadFotos = (novasUrls) => {
+    const novasFotos = [...fotos, ...novasUrls];
+    setFotos(novasFotos);
+    setErroUpload(null);
+
+    // Salva no banco
+    supabase
+      .from('fornecedores_plataforma')
+      .update({ fotos: novasFotos })
+      .eq('id', id)
+      .then(({ error }) => {
+        if (error) console.error('Erro ao salvar fotos:', error);
+      });
+  };
+
+  const handleRemoverFoto = (url) => {
+    const novasFotos = fotos.filter(f => f !== url);
+    setFotos(novasFotos);
+
+    supabase
+      .from('fornecedores_plataforma')
+      .update({ fotos: novasFotos })
+      .eq('id', id)
+      .then(({ error }) => {
+        if (error) console.error('Erro ao remover foto:', error);
+      });
+  };
+
   if (loading) {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-off-white)' }}>
@@ -111,13 +143,42 @@ export default function FornecedorPerfilPage() {
     <>
       <Head><title>{fornecedor.nome_empresa} — Descomplicai</title></Head>
       <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-off-white)' }}>
-        <div style={{ height: '200px', background: 'linear-gradient(135deg, var(--color-brand-lighter) 0%, var(--color-brand-light) 100%)' }} />
+        {/* Capa */}
+        <div style={{ 
+          height: '200px', 
+          background: fornecedor.capa_url 
+            ? `url(${fornecedor.capa_url}) center/cover no-repeat`
+            : 'linear-gradient(135deg, var(--color-brand-lighter) 0%, var(--color-brand-light) 100%)' 
+        }} />
+
         <div style={{ maxWidth: '800px', margin: '-60px auto 0', padding: '0 var(--space-4) var(--space-8)' }}>
           <Card variant="elevated" padding="lg">
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-6)', flexWrap: 'wrap' }}>
-              <div style={{ width: '120px', height: '120px', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--color-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Icon name="store" size={48} color="var(--color-text-muted)" />
+              {/* Logo */}
+              <div style={{ 
+                width: '120px', 
+                height: '120px', 
+                borderRadius: 'var(--radius-xl)', 
+                backgroundColor: 'var(--color-surface)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                flexShrink: 0,
+                overflow: 'hidden',
+                border: '3px solid var(--color-white)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              }}>
+                {fornecedor.logo_url ? (
+                  <img 
+                    src={fornecedor.logo_url} 
+                    alt={`Logo ${fornecedor.nome_empresa}`}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <Icon name="store" size={48} color="var(--color-text-muted)" />
+                )}
               </div>
+
               <div style={{ flex: 1 }}>
                 <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>
                   {fornecedor.nome_empresa}
@@ -134,6 +195,7 @@ export default function FornecedorPerfilPage() {
             </div>
           </Card>
 
+          {/* Metricas */}
           <div style={{ marginTop: 'var(--space-6)', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--space-4)' }}>
             <Card variant="flat" padding="md">
               <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Avaliacao media</div>
@@ -154,6 +216,35 @@ export default function FornecedorPerfilPage() {
             </Card>
           </div>
 
+          {/* Galeria de fotos */}
+          {contatosVisiveis && (
+            <div style={{ marginTop: 'var(--space-6)' }}>
+              <Card variant="elevated" padding="lg">
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-lg)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                  <Icon name="image" size={20} color="var(--color-brand)" />
+                  Portfolio
+                </h2>
+
+                <ImageUpload
+                  onUpload={handleUploadFotos}
+                  onError={(msg) => setErroUpload(msg)}
+                  maxFiles={20}
+                  tipo="galeria"
+                  label="Adicionar fotos ao portfolio"
+                  urlsExistentes={fotos}
+                  onRemoverExistente={handleRemoverFoto}
+                />
+
+                {erroUpload && (
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-danger)', marginTop: 'var(--space-2)' }}>
+                    {erroUpload}
+                  </p>
+                )}
+              </Card>
+            </div>
+          )}
+
+          {/* Contato */}
           <div style={{ marginTop: 'var(--space-6)' }}>
             <Card variant="elevated" padding="lg">
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-lg)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
@@ -218,6 +309,7 @@ export default function FornecedorPerfilPage() {
             </Card>
           </div>
 
+          {/* Avaliacoes */}
           {avaliacoes.length > 0 && (
             <div style={{ marginTop: 'var(--space-6)' }}>
               <Card variant="elevated" padding="lg">
