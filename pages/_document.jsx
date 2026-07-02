@@ -25,8 +25,8 @@ export default function Document() {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Descomplicaí" />
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-        <link rel="mask-icon" href="/icons/icon-192x192.png" color="#8B6F5E" />
+        <link rel="apple-touch-icon" href="/descomplicai/icons/icon-192x192.png" />
+        <link rel="mask-icon" href="/descomplicai/icons/icon-192x192.png" color="#8B6F5E" />
 
         {/* Microsoft */}
         <meta name="msapplication-config" content="none" />
