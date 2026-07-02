@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/nextjs";
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
@@ -11,4 +10,4 @@ export async function register() {
 }
 
 // Captura erros de Server Components, middleware e proxies
-export const onRequestError = Sentry.captureRequestError;
+export const onRequestError = ;

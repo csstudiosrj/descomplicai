@@ -1,4 +1,3 @@
-import * as Sentry from "@sentry/nextjs";
 import NextErrorComponent from "next/error";
 
 function CustomError({ statusCode }) {
@@ -7,8 +6,7 @@ function CustomError({ statusCode }) {
 
 CustomError.getInitialProps = async (contextData) => {
   // Captura erro no Sentry
-  await Sentry.captureUnderscoreErrorException(contextData);
-
+  
   // Fallback: log no Supabase se Sentry não estiver configurado
   const { err, asPath, req, res } = contextData;
   if (err) {
