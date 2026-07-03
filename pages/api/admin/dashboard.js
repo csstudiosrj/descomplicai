@@ -30,43 +30,37 @@ function decodeJwtPayload(token) {
   }
 }
 
-function extractTokenFromCookie(req) {
-  // 1. Tenta req.cookies (Next.js já parseia)
-  const cookieName = 'sb-rsecwglbswiixuxbdbkk-auth-token.0';
-  let rawCookie = req.cookies?.[cookieName];
-  
-  // 2. Se não achou, tenta parsear manual do header
-  if (!rawCookie && req.headers.cookie) {
-    const match = req.headers.cookie.match(new RegExp(`${cookieName}=([^;]+)`));
-    if (match) rawCookie = decodeURIComponent(match[1]);
-  }
-
-  if (!rawCookie) return null;
-
-  try {
-    const base64Data = rawCookie.startsWith('base64-') ? rawCookie.replace('base64-', '') : rawCookie;
-    const sessionData = JSON.parse(Buffer.from(base64Data, 'base64').toString('utf-8'));
-    return sessionData.access_token || (Array.isArray(sessionData) ? sessionData[0]?.access_token : null);
-  } catch (err) {
-    console.error("Erro ao parsear cookie:", err);
-    return null;
-  }
-}
-
 async function isAdmin(req) {
   try {
     let token = null;
 
+    // 1. Tenta o header primeiro
     const authHeader = req.headers.authorization;
-    if (authHeader?.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.split(' ')[1];
     }
 
-    if (!token) {
-      token = extractTokenFromCookie(req);
+    // 2. Caçada dinâmica ao cookie do Supabase
+    if (!token && req.cookies) {
+      const cookieKey = Object.keys(req.cookies).find(k => k.startsWith('sb-') && k.includes('-auth-token'));
+      const rawCookie = cookieKey ? req.cookies[cookieKey] : null;
+
+      if (rawCookie) {
+        try {
+          const base64Data = rawCookie.startsWith('base64-') ? rawCookie.replace('base64-', '') : rawCookie;
+          const sessionData = JSON.parse(Buffer.from(base64Data, 'base64').toString('utf-8'));
+          token = sessionData.access_token || (Array.isArray(sessionData) ? sessionData[0] : null);
+        } catch (err) {
+          console.error("Erro ao decodificar o cookie:", err);
+        }
+      }
     }
 
-    if (!token) return false;
+    if (!token) {
+      console.log("ALERTA: Token ausente. Headers recebidos:", req.headers);
+      console.log("ALERTA: Cookies recebidos:", req.cookies);
+      return false;
+    }
 
     const payload = decodeJwtPayload(token);
     if (!payload || !payload.sub) return false;

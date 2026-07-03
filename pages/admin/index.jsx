@@ -37,6 +37,7 @@ export default function AdminDashboard() {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`,
           },
+          credentials: 'include', // OBRIGATORIO pro cookie viajar
         });
         if (!res.ok) {
           if (res.status === 403) {
@@ -69,6 +70,7 @@ export default function AdminDashboard() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${accessToken}`,
       },
+      credentials: 'include',
       body: JSON.stringify({ id, ativo: true }),
     });
     if (!res.ok) throw new Error('Erro ao aprovar');
@@ -77,6 +79,7 @@ export default function AdminDashboard() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${accessToken}`,
       },
+      credentials: 'include',
     });
     const dashData = await dashRes.json();
     setData(dashData);
@@ -89,6 +92,7 @@ export default function AdminDashboard() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${accessToken}`,
       },
+      credentials: 'include',
       body: JSON.stringify({ id, ativo: false }),
     });
     if (!res.ok) throw new Error('Erro ao suspender');
@@ -97,6 +101,7 @@ export default function AdminDashboard() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${accessToken}`,
       },
+      credentials: 'include',
     });
     const dashData = await dashRes.json();
     setData(dashData);
@@ -157,7 +162,6 @@ export default function AdminDashboard() {
         </div>
       ) : (
         <>
-          {/* Cards de metricas */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
@@ -208,7 +212,6 @@ export default function AdminDashboard() {
             />
           </div>
 
-          {/* Graficos */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
@@ -223,7 +226,6 @@ export default function AdminDashboard() {
             />
           </div>
 
-          {/* Paginas mais acessadas + Fornecedores pendentes */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
@@ -238,7 +240,6 @@ export default function AdminDashboard() {
             />
           </div>
 
-          {/* Alertas */}
           {(data?.alertas?.eventosSemMemorial?.length > 0 || data?.alertas?.trialExpirando?.length > 0) && (
             <div style={{
               padding: 'var(--space-6)',
