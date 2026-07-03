@@ -40,7 +40,7 @@ async function isAdmin(req) {
       token = authHeader.split(' ')[1];
     }
 
-    // 2. Montador de Cookie Chunked (cola os pedacos do Supabase)
+    // 2. Montador de Cookie Chunked
     if (!token && req.cookies) {
       const baseCookieNames = new Set();
       Object.keys(req.cookies).forEach(k => {
@@ -64,7 +64,12 @@ async function isAdmin(req) {
 
         if (fullCookieString) {
           try {
-            const cleanBase64 = fullCookieString.startsWith('base64-') ? fullCookieString.replace('base64-', '') : fullCookieString;
+            // Tira base64- do inicio (se existir) - so uma vez no inicio
+            let cleanBase64 = fullCookieString;
+            if (cleanBase64.startsWith('base64-')) {
+              cleanBase64 = cleanBase64.substring(7);
+            }
+
             const jsonStr = Buffer.from(cleanBase64, 'base64').toString('utf-8');
             const sessionData = JSON.parse(jsonStr);
             const foundToken = sessionData.access_token || (Array.isArray(sessionData) ? sessionData[0] : null);
@@ -74,7 +79,7 @@ async function isAdmin(req) {
               break;
             }
           } catch (err) {
-            console.error(`Erro ao decodificar a base ${baseName}:`, err.message);
+            console.error(`Erro ao decodificar ${baseName}:`, err.message);
           }
         }
       }
@@ -84,7 +89,6 @@ async function isAdmin(req) {
       return false;
     }
 
-    // 3. Valida o token e verifica se e admin
     const payload = decodeJwtPayload(token);
     if (!payload || !payload.sub) return false;
 
