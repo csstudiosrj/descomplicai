@@ -5,6 +5,7 @@ import FunilMemorial from '@/components/admin/FunilMemorial';
 import GraficoReceita from '@/components/admin/GraficoReceita';
 import PaginaMaisAcessada from '@/components/admin/PaginaMaisAcessada';
 import FornecedorAprovacao from '@/components/admin/FornecedorAprovacao';
+import { apiPath } from '@/utils/apiPath';
 
 export default function AdminDashboard() {
   const [data, setData] = useState(null);
@@ -16,7 +17,7 @@ export default function AdminDashboard() {
     async function loadDashboard() {
       try {
         setLoading(true);
-        const res = await fetch(`/api/admin/dashboard?dias=${periodo}`);
+        const res = await fetch(apiPath(`/admin/dashboard?dias=${periodo}`));
         if (!res.ok) {
           if (res.status === 403) {
             window.location.href = '/login';
@@ -42,25 +43,25 @@ export default function AdminDashboard() {
   };
 
   const handleAprovar = async (id) => {
-    const res = await fetch('/api/admin/fornecedores', {
+    const res = await fetch(apiPath('/admin/fornecedores'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, ativo: true }),
     });
     if (!res.ok) throw new Error('Erro ao aprovar');
-    const dashRes = await fetch(`/api/admin/dashboard?dias=${periodo}`);
+    const dashRes = await fetch(apiPath(`/admin/dashboard?dias=${periodo}`));
     const dashData = await dashRes.json();
     setData(dashData);
   };
 
   const handleSuspender = async (id) => {
-    const res = await fetch('/api/admin/fornecedores', {
+    const res = await fetch(apiPath('/admin/fornecedores'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, ativo: false }),
     });
     if (!res.ok) throw new Error('Erro ao suspender');
-    const dashRes = await fetch(`/api/admin/dashboard?dias=${periodo}`);
+    const dashRes = await fetch(apiPath(`/admin/dashboard?dias=${periodo}`));
     const dashData = await dashRes.json();
     setData(dashData);
   };
@@ -120,7 +121,7 @@ export default function AdminDashboard() {
         </div>
       ) : (
         <>
-          {/* Cards de métricas */}
+          {/* Cards de metricas */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
@@ -171,7 +172,7 @@ export default function AdminDashboard() {
             />
           </div>
 
-          {/* Gráficos */}
+          {/* Graficos */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
@@ -186,7 +187,7 @@ export default function AdminDashboard() {
             />
           </div>
 
-          {/* Páginas mais acessadas + Fornecedores pendentes */}
+          {/* Paginas mais acessadas + Fornecedores pendentes */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
@@ -226,7 +227,7 @@ export default function AdminDashboard() {
                     color: 'var(--color-text-primary)',
                   }}>
                     <span role="img" aria-label="evento">📅</span>
-                    <span>Evento <strong>{ev.nome_evento}</strong> sem memorial concluído há mais de 30 dias</span>
+                    <span>Evento <strong>{ev.nome_evento}</strong> sem memorial concluido ha mais de 30 dias</span>
                   </div>
                 ))}
                 {data.alertas.trialExpirando?.map((f) => (
