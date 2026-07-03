@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
 import { supabase } from '../../lib/supabase';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
@@ -46,7 +45,6 @@ function limparTentativas() {
 }
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
@@ -104,7 +102,6 @@ export default function AdminLoginPage() {
       const accessToken = authData.session.access_token;
 
       // 2. Verificar se e admin via API server-side (bypass RLS)
-      // fetch precisa do basePath completo porque o navegador nao sabe do basePath do Next.js
       const res = await fetch('/descomplicai/api/admin/verificar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -120,17 +117,16 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // 3. E admin: limpar tentativas e redirecionar
+      // 3. E admin: limpar tentativas e redirecionar via navegador (full reload)
       limparTentativas();
-      // router.push NAO precisa do basePath — o Next.js adiciona automaticamente
-      router.push('/admin');
+      window.location.href = '/descomplicai/admin';
     } catch (err) {
       registrarTentativaFalha();
       setErro('Erro ao processar login. Tente novamente.');
     } finally {
       setLoading(false);
     }
-  }, [email, senha, router]);
+  }, [email, senha]);
 
   const minutosBloqueio = Math.floor(tempoBloqueio / 60);
   const segundosBloqueio = tempoBloqueio % 60;
