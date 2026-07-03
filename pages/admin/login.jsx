@@ -53,7 +53,6 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [tempoBloqueio, setTempoBloqueio] = useState(0);
 
-  // Atualiza contador de bloqueio na UI
   useEffect(() => {
     if (!estaBloqueado()) return;
     const interval = setInterval(() => {
@@ -85,7 +84,7 @@ export default function AdminLoginPage() {
 
     setLoading(true);
 
-    // Delay artificial para dificultar brute-force
+    // Delay artificial anti-brute-force
     await new Promise((resolve) => setTimeout(resolve, DELAY_ENTRE_TENTATIVAS_MS));
 
     try {
@@ -95,23 +94,24 @@ export default function AdminLoginPage() {
         password: senha,
       });
 
-      if (authError || !authData?.user) {
+      if (authError || !authData?.session?.access_token) {
         registrarTentativaFalha();
-        // Mensagem generica: nunca revela se email existe, senha errada, etc.
         setErro('Credenciais invalidas ou acesso negado.');
         setLoading(false);
         return;
       }
 
-      // 2. Verificar se e admin na tabela admins
-      const { data: adminData, error: adminError } = await supabase
-        .from('admins')
-        .select('id')
-        .eq('usuario_id', authData.user.id)
-        .single();
+      const accessToken = authData.session.access_token;
 
-      // Se nao for admin: signOut imediato, limpar sessao, mensagem generica
-      if (adminError || !adminData) {
+      // 2. Verificar se e admin via API server-side (bypass RLS)
+      const res = await fetch('/api/admin/verificar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: accessToken }),
+      });
+
+      if (!res.ok) {
+        // Nao e admin: deslogar imediatamente
         await supabase.auth.signOut();
         registrarTentativaFalha();
         setErro('Credenciais invalidas ou acesso negado.');
