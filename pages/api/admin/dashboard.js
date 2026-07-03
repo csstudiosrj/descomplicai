@@ -17,10 +17,19 @@ function getSupabaseAdmin() {
   return supabaseAdmin;
 }
 
-/**
- * Verifica se o usuario e admin.
- * Tenta extrair do header Authorization (Bearer token) ou do cookie session.
- */
+function decodeJwtPayload(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    let payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    while (payload.length % 4) payload += '=';
+    const decoded = Buffer.from(payload, 'base64').toString('utf-8');
+    return JSON.parse(decoded);
+  } catch {
+    return null;
+  }
+}
+
 async function isAdmin(req) {
   try {
     const admin = getSupabaseAdmin();
@@ -38,13 +47,16 @@ async function isAdmin(req) {
 
     if (!token) return false;
 
-    const { data: { user }, error } = await admin.auth.getUser(token);
-    if (error || !user) return false;
+    // Decode JWT localmente (sem chamar auth.getUser)
+    const payload = decodeJwtPayload(token);
+    if (!payload || !payload.sub) return false;
+
+    const userId = payload.sub;
 
     const { data, error: adminError } = await admin
       .from('admins')
       .select('id')
-      .eq('usuario_id', user.id)
+      .eq('usuario_id', userId)
       .single();
 
     return !!data && !adminError;
@@ -53,10 +65,6 @@ async function isAdmin(req) {
   }
 }
 
-/**
- * GET /api/admin/dashboard?dias=30
- * Retorna metricas agregadas para o dashboard admin.
- */
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -71,33 +79,26 @@ export default async function handler(req, res) {
     const dias = Math.min(parseInt(req.query.dias) || 30, 360);
     const admin = getSupabaseAdmin();
 
-    // Metricas do dashboard (RPCs existentes)
     const { data: metrics, error: metricsError } = await admin
       .rpc('dashboard_metrics');
-
     if (metricsError) throw metricsError;
 
     const { data: abandono, error: abandonoError } = await admin
       .rpc('memorial_abandono_ultimos_30_dias');
-
     if (abandonoError) throw abandonoError;
 
     const { data: paginas, error: paginasError } = await admin
       .rpc('paginas_mais_acessadas', { p_dias: dias });
-
     if (paginasError) throw paginasError;
 
     const { data: tempo, error: tempoError } = await admin
       .rpc('tempo_medio_por_pagina', { p_dias: dias });
-
     if (tempoError) throw tempoError;
 
     const { data: funil, error: funilError } = await admin
       .rpc('funil_checkout_ultimos_30_dias');
-
     if (funilError) throw funilError;
 
-    // Fornecedores pendentes (top 5)
     const { data: fornecedoresPendentes, error: fpError } = await admin
       .from('fornecedores_plataforma')
       .select('id, nome_empresa, cidade, estado, email, criado_em, ativo, plano, trial_inicio')
@@ -105,7 +106,6 @@ export default async function handler(req, res) {
       .order('criado_em', { ascending: false })
       .limit(5);
 
-    // Alertas: eventos sem memorial concluido ha +30 dias
     const { data: eventosAlerta, error: alertaError } = await admin
       .from('eventos')
       .select('id, nome_evento, data_evento, memorial_concluido, status, usuario_id, criado_em')
@@ -114,7 +114,6 @@ export default async function handler(req, res) {
       .order('criado_em', { ascending: true })
       .limit(10);
 
-    // Fornecedores com trial expirando
     const { data: trialExpirando, error: trialError } = await admin
       .from('fornecedores_plataforma')
       .select('id, nome_empresa, email, trial_inicio, plano')
