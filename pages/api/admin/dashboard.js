@@ -30,19 +30,41 @@ function decodeJwtPayload(token) {
   }
 }
 
+/**
+ * Extrai o access_token do cookie do Supabase.
+ * O cookie tem formato: sb-[ref]-auth-token.0=base64-eyJhY2Nlc3NfdG9rZW4iOi... ou
+ * sb-[ref]-auth-token=base64-...
+ */
+function extractTokenFromCookie(cookieHeader) {
+  if (!cookieHeader) return null;
+
+  // Procura cookie sb-xxx-auth-token.0=base64-... ou sb-xxx-auth-token=base64-...
+  const match = cookieHeader.match(/sb-[a-z0-9]+-auth-token(?:\.0)?=base64-([^;]+)/);
+  if (!match) return null;
+
+  try {
+    const base64Payload = decodeURIComponent(match[1]);
+    const decoded = Buffer.from(base64Payload, 'base64').toString('utf-8');
+    const parsed = JSON.parse(decoded);
+    return parsed.access_token || null;
+  } catch {
+    return null;
+  }
+}
+
 async function isAdmin(req) {
   try {
-    const admin = getSupabaseAdmin();
     let token = null;
 
+    // 1. Tenta header Authorization
     const authHeader = req.headers.authorization;
     if (authHeader?.startsWith('Bearer ')) {
       token = authHeader.split(' ')[1];
     }
 
+    // 2. Tenta extrair do cookie do Supabase
     if (!token && req.headers.cookie) {
-      const match = req.headers.cookie.match(/sb-access-token=([^;]+)/);
-      if (match) token = decodeURIComponent(match[1]);
+      token = extractTokenFromCookie(req.headers.cookie);
     }
 
     if (!token) return false;
@@ -53,6 +75,7 @@ async function isAdmin(req) {
 
     const userId = payload.sub;
 
+    const admin = getSupabaseAdmin();
     const { data, error: adminError } = await admin
       .from('admins')
       .select('id')
