@@ -7,6 +7,9 @@ let supabaseAdmin = null;
 
 function getSupabaseAdmin() {
   if (!supabaseAdmin) {
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Variaveis de ambiente Supabase nao configuradas');
+    }
     supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });

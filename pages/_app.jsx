@@ -7,7 +7,7 @@ import AcessibilidadeWidget from '../components/AcessibilidadeWidget';
 import '../styles/tokens.css';
 import '../styles/globals.css';
 
-const NO_HEADER_ROUTES = ['/memorial', '/memorial/[...slug]'];
+const NO_HEADER_ROUTES = ['/memorial', '/memorial/[...slug]', '/admin', '/admin/[...slug]'];
 
 function MyApp({ Component, pageProps }) {
   const router = useRouter();
