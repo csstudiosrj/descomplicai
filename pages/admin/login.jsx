@@ -105,7 +105,10 @@ export default function AdminLoginPage() {
       // 2. Verificar se e admin via API server-side (bypass RLS)
       const res = await fetch(apiPath('/admin/verificar'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
         body: JSON.stringify({ token: accessToken }),
       });
 
