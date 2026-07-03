@@ -40,28 +40,51 @@ async function isAdmin(req) {
       token = authHeader.split(' ')[1];
     }
 
-    // 2. Caçada dinâmica ao cookie do Supabase
+    // 2. Montador de Cookie Chunked (cola os pedacos do Supabase)
     if (!token && req.cookies) {
-      const cookieKey = Object.keys(req.cookies).find(k => k.startsWith('sb-') && k.includes('-auth-token'));
-      const rawCookie = cookieKey ? req.cookies[cookieKey] : null;
+      const baseCookieNames = new Set();
+      Object.keys(req.cookies).forEach(k => {
+        if (k.startsWith('sb-') && k.includes('-auth-token')) {
+          baseCookieNames.add(k.split('.')[0]);
+        }
+      });
 
-      if (rawCookie) {
-        try {
-          const base64Data = rawCookie.startsWith('base64-') ? rawCookie.replace('base64-', '') : rawCookie;
-          const sessionData = JSON.parse(Buffer.from(base64Data, 'base64').toString('utf-8'));
-          token = sessionData.access_token || (Array.isArray(sessionData) ? sessionData[0] : null);
-        } catch (err) {
-          console.error("Erro ao decodificar o cookie:", err);
+      for (let baseName of baseCookieNames) {
+        let fullCookieString = '';
+        let i = 0;
+
+        if (req.cookies[baseName]) {
+          fullCookieString = req.cookies[baseName];
+        } else {
+          while (req.cookies[`${baseName}.${i}`]) {
+            fullCookieString += req.cookies[`${baseName}.${i}`];
+            i++;
+          }
+        }
+
+        if (fullCookieString) {
+          try {
+            const cleanBase64 = fullCookieString.startsWith('base64-') ? fullCookieString.replace('base64-', '') : fullCookieString;
+            const jsonStr = Buffer.from(cleanBase64, 'base64').toString('utf-8');
+            const sessionData = JSON.parse(jsonStr);
+            const foundToken = sessionData.access_token || (Array.isArray(sessionData) ? sessionData[0] : null);
+
+            if (foundToken) {
+              token = foundToken;
+              break;
+            }
+          } catch (err) {
+            console.error(`Erro ao decodificar a base ${baseName}:`, err.message);
+          }
         }
       }
     }
 
     if (!token) {
-      console.log("ALERTA: Token ausente. Headers recebidos:", req.headers);
-      console.log("ALERTA: Cookies recebidos:", req.cookies);
       return false;
     }
 
+    // 3. Valida o token e verifica se e admin
     const payload = decodeJwtPayload(token);
     if (!payload || !payload.sub) return false;
 
