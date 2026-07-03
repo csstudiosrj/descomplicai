@@ -30,24 +30,25 @@ function decodeJwtPayload(token) {
   }
 }
 
-/**
- * Extrai o access_token do cookie do Supabase.
- * O cookie tem formato: sb-[ref]-auth-token.0=base64-eyJhY2Nlc3NfdG9rZW4iOi... ou
- * sb-[ref]-auth-token=base64-...
- */
-function extractTokenFromCookie(cookieHeader) {
-  if (!cookieHeader) return null;
+function extractTokenFromCookie(req) {
+  // 1. Tenta req.cookies (Next.js já parseia)
+  const cookieName = 'sb-rsecwglbswiixuxbdbkk-auth-token.0';
+  let rawCookie = req.cookies?.[cookieName];
+  
+  // 2. Se não achou, tenta parsear manual do header
+  if (!rawCookie && req.headers.cookie) {
+    const match = req.headers.cookie.match(new RegExp(`${cookieName}=([^;]+)`));
+    if (match) rawCookie = decodeURIComponent(match[1]);
+  }
 
-  // Procura cookie sb-xxx-auth-token.0=base64-... ou sb-xxx-auth-token=base64-...
-  const match = cookieHeader.match(/sb-[a-z0-9]+-auth-token(?:\.0)?=base64-([^;]+)/);
-  if (!match) return null;
+  if (!rawCookie) return null;
 
   try {
-    const base64Payload = decodeURIComponent(match[1]);
-    const decoded = Buffer.from(base64Payload, 'base64').toString('utf-8');
-    const parsed = JSON.parse(decoded);
-    return parsed.access_token || null;
-  } catch {
+    const base64Data = rawCookie.startsWith('base64-') ? rawCookie.replace('base64-', '') : rawCookie;
+    const sessionData = JSON.parse(Buffer.from(base64Data, 'base64').toString('utf-8'));
+    return sessionData.access_token || (Array.isArray(sessionData) ? sessionData[0]?.access_token : null);
+  } catch (err) {
+    console.error("Erro ao parsear cookie:", err);
     return null;
   }
 }
@@ -56,20 +57,17 @@ async function isAdmin(req) {
   try {
     let token = null;
 
-    // 1. Tenta header Authorization
     const authHeader = req.headers.authorization;
     if (authHeader?.startsWith('Bearer ')) {
       token = authHeader.split(' ')[1];
     }
 
-    // 2. Tenta extrair do cookie do Supabase
-    if (!token && req.headers.cookie) {
-      token = extractTokenFromCookie(req.headers.cookie);
+    if (!token) {
+      token = extractTokenFromCookie(req);
     }
 
     if (!token) return false;
 
-    // Decode JWT localmente (sem chamar auth.getUser)
     const payload = decodeJwtPayload(token);
     if (!payload || !payload.sub) return false;
 
@@ -102,34 +100,29 @@ export default async function handler(req, res) {
     const dias = Math.min(parseInt(req.query.dias) || 30, 360);
     const admin = getSupabaseAdmin();
 
-    const { data: metrics, error: metricsError } = await admin
-      .rpc('dashboard_metrics');
+    const { data: metrics, error: metricsError } = await admin.rpc('dashboard_metrics');
     if (metricsError) throw metricsError;
 
-    const { data: abandono, error: abandonoError } = await admin
-      .rpc('memorial_abandono_ultimos_30_dias');
+    const { data: abandono, error: abandonoError } = await admin.rpc('memorial_abandono_ultimos_30_dias');
     if (abandonoError) throw abandonoError;
 
-    const { data: paginas, error: paginasError } = await admin
-      .rpc('paginas_mais_acessadas', { p_dias: dias });
+    const { data: paginas, error: paginasError } = await admin.rpc('paginas_mais_acessadas', { p_dias: dias });
     if (paginasError) throw paginasError;
 
-    const { data: tempo, error: tempoError } = await admin
-      .rpc('tempo_medio_por_pagina', { p_dias: dias });
+    const { data: tempo, error: tempoError } = await admin.rpc('tempo_medio_por_pagina', { p_dias: dias });
     if (tempoError) throw tempoError;
 
-    const { data: funil, error: funilError } = await admin
-      .rpc('funil_checkout_ultimos_30_dias');
+    const { data: funil, error: funilError } = await admin.rpc('funil_checkout_ultimos_30_dias');
     if (funilError) throw funilError;
 
-    const { data: fornecedoresPendentes, error: fpError } = await admin
+    const { data: fornecedoresPendentes } = await admin
       .from('fornecedores_plataforma')
       .select('id, nome_empresa, cidade, estado, email, criado_em, ativo, plano, trial_inicio')
       .or('ativo.eq.false,plano.eq.trial')
       .order('criado_em', { ascending: false })
       .limit(5);
 
-    const { data: eventosAlerta, error: alertaError } = await admin
+    const { data: eventosAlerta } = await admin
       .from('eventos')
       .select('id, nome_evento, data_evento, memorial_concluido, status, usuario_id, criado_em')
       .eq('memorial_concluido', false)
@@ -137,7 +130,7 @@ export default async function handler(req, res) {
       .order('criado_em', { ascending: true })
       .limit(10);
 
-    const { data: trialExpirando, error: trialError } = await admin
+    const { data: trialExpirando } = await admin
       .from('fornecedores_plataforma')
       .select('id, nome_empresa, email, trial_inicio, plano')
       .eq('plano', 'trial')
