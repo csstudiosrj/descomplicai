@@ -25,14 +25,13 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      // Pega o token da sessao atual
       const { data: { session } } = await supabase.auth.getSession();
       const accessToken = session?.access_token;
 
-      // 1. Verificar se e admin via API (bypass RLS)
+      // 1. Verificar se é admin via API que já existe
       let userIsAdmin = false;
       try {
-        const res = await fetch('/api/auth/verificar-admin', {
+        const res = await fetch('/api/admin/verificar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token: accessToken }),
@@ -42,12 +41,12 @@ export function AuthProvider({ children }) {
           userIsAdmin = data.isAdmin === true;
         }
       } catch (apiErr) {
-        console.error('Erro ao verificar admin via API:', apiErr);
+        console.error('Erro ao verificar admin:', apiErr);
       }
 
       setIsAdmin(userIsAdmin);
 
-      // 2. Se for admin, nao busca eventos/cerimonialistas
+      // 2. Se for admin, não busca mais nada
       if (userIsAdmin) {
         setCerimonialista(null);
         setIsCerimonialista(false);
@@ -56,7 +55,7 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      // 3. Se nao for admin, busca dados normais
+      // 3. Se não for admin, busca dados normais
       const [cerimRes, eventoRes] = await Promise.all([
         supabase
           .from('cerimonialistas')
@@ -86,7 +85,7 @@ export function AuthProvider({ children }) {
         setEvento(null);
       }
     } catch (err) {
-      console.error('Erro ao buscar dados do usuario:', err);
+      console.error('Erro ao buscar dados:', err);
       setCerimonialista(null);
       setIsCerimonialista(false);
       setEvento(null);
@@ -122,7 +121,7 @@ export function AuthProvider({ children }) {
           setCarregando(false);
         }
       } catch (err) {
-        console.error('Erro ao recuperar sessao:', err);
+        console.error('Erro ao recuperar sessão:', err);
         setCarregando(false);
       }
     };
