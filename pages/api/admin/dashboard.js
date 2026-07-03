@@ -126,6 +126,11 @@ export default async function handler(req, res) {
   }
 
   const adminCheck = await isAdmin(req);
+
+  // LOG TEMPORARIO
+  console.log('[dashboard] adminCheck:', JSON.stringify(adminCheck));
+  console.log('[dashboard] auth header:', req.headers.authorization?.substring(0, 30));
+
   if (!adminCheck.valid) {
     return res.status(403).json({
       error: 'Acesso negado. Apenas administradores.',
