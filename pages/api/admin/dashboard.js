@@ -64,7 +64,6 @@ async function isAdmin(req) {
 
         if (fullCookieString) {
           try {
-            // Tira base64- do inicio (se existir) - so uma vez no inicio
             let cleanBase64 = fullCookieString;
             if (cleanBase64.startsWith('base64-')) {
               cleanBase64 = cleanBase64.substring(7);
@@ -86,24 +85,38 @@ async function isAdmin(req) {
     }
 
     if (!token) {
-      return false;
+      return { valid: false, reason: 'no_token', debug: { hasCookies: !!req.headers.cookie, cookieKeys: req.cookies ? Object.keys(req.cookies) : [] } };
     }
 
-    const payload = decodeJwtPayload(token);
-    if (!payload || !payload.sub) return false;
-
-    const userId = payload.sub;
-
+    // === VALIDAÇÃO PRIMÁRIA: supabaseAdmin.auth.getUser (igual verificar.js) ===
     const admin = getSupabaseAdmin();
+    const { data: userData, error: userError } = await admin.auth.getUser(token);
+
+    if (userError || !userData?.user) {
+      // Fallback: decode JWT local
+      const payload = decodeJwtPayload(token);
+      if (!payload || !payload.sub) {
+        return { valid: false, reason: 'token_invalid', debug: { getUserError: userError?.message, jwtDecode: !!payload } };
+      }
+      const userId = payload.sub;
+      const { data, error: adminError } = await admin
+        .from('admins')
+        .select('id')
+        .eq('usuario_id', userId)
+        .single();
+      return { valid: !!data && !adminError, reason: !!data && !adminError ? null : 'not_admin', debug: { fallback: 'jwt_decode', userId } };
+    }
+
+    const userId = userData.user.id;
     const { data, error: adminError } = await admin
       .from('admins')
       .select('id')
       .eq('usuario_id', userId)
       .single();
 
-    return !!data && !adminError;
-  } catch {
-    return false;
+    return { valid: !!data && !adminError, reason: !!data && !adminError ? null : 'not_admin', debug: { method: 'getUser', userId } };
+  } catch (err) {
+    return { valid: false, reason: 'exception', debug: { message: err.message } };
   }
 }
 
@@ -113,8 +126,12 @@ export default async function handler(req, res) {
   }
 
   const adminCheck = await isAdmin(req);
-  if (!adminCheck) {
-    return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
+  if (!adminCheck.valid) {
+    return res.status(403).json({
+      error: 'Acesso negado. Apenas administradores.',
+      reason: adminCheck.reason,
+      debug: adminCheck.debug,
+    });
   }
 
   try {

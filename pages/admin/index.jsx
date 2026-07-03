@@ -37,10 +37,12 @@ export default function AdminDashboard() {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`,
           },
-          credentials: 'include', // OBRIGATORIO pro cookie viajar
+          credentials: 'include',
         });
         if (!res.ok) {
           if (res.status === 403) {
+            const body = await res.json().catch(() => ({}));
+            console.error('[AdminDashboard] 403 response:', body);
             window.location.href = appPath('/login');
             return;
           }
