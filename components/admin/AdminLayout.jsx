@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/hooks/useAuth';
 import { apiPath } from '@/utils/apiPath';
+import { supabase } from '@/lib/supabase';
 
 const menuItems = [
   { href: '/admin', label: 'Dashboard', icon: 'dashboard' },
@@ -99,11 +100,34 @@ export default function AdminLayout({ children, title = 'Admin' }) {
   useEffect(() => {
     async function checkAdmin() {
       try {
-        const res = await fetch(apiPath('/admin/dashboard'));
+        const { data: { session } } = await supabase.auth.getSession();
+        const accessToken = session?.access_token;
+
+        if (!accessToken) {
+          router.push('/login');
+          return;
+        }
+
+        const res = await fetch(apiPath('/admin/verificar'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ token: accessToken }),
+        });
+
         if (!res.ok) {
           router.push('/login');
           return;
         }
+
+        const data = await res.json();
+        if (!data.isAdmin) {
+          router.push('/login');
+          return;
+        }
+
         setIsAdmin(true);
       } catch {
         router.push('/login');
