@@ -33,7 +33,10 @@ export function AuthProvider({ children }) {
       try {
         const res = await fetch(apiPath('/admin/verificar'), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
           body: JSON.stringify({ token: accessToken }),
         });
         if (res.ok) {
