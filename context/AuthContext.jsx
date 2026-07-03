@@ -12,6 +12,7 @@ export function AuthProvider({ children }) {
   const [cerimonialista, setCerimonialista] = useState(null);
   const [isCerimonialista, setIsCerimonialista] = useState(false);
   const [evento, setEvento] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // ── Aliases para compatibilidade com consumidores antigos do hook useAuth ──
   const user = usuario;
@@ -22,11 +23,32 @@ export function AuthProvider({ children }) {
       setCerimonialista(null);
       setIsCerimonialista(false);
       setEvento(null);
+      setIsAdmin(false);
       setCarregando(false);
       return;
     }
 
     try {
+      // 1. Verificar se é admin primeiro
+      const { data: adminData, error: adminErr } = await supabase
+        .from('admins')
+        .select('id')
+        .eq('usuario_id', usuarioId)
+        .single();
+
+      const userIsAdmin = !adminErr && adminData;
+      setIsAdmin(userIsAdmin);
+
+      // 2. Se for admin, não busca eventos/cerimonialistas (evita 406 do RLS)
+      if (userIsAdmin) {
+        setCerimonialista(null);
+        setIsCerimonialista(false);
+        setEvento(null);
+        setCarregando(false);
+        return;
+      }
+
+      // 3. Se não for admin, busca dados normais
       const [cerimRes, eventoRes] = await Promise.all([
         supabase
           .from('cerimonialistas')
@@ -60,13 +82,14 @@ export function AuthProvider({ children }) {
       setCerimonialista(null);
       setIsCerimonialista(false);
       setEvento(null);
+      setIsAdmin(false);
     } finally {
       setCarregando(false);
     }
   }, []);
 
   const refreshCerimonialista = useCallback(async () => {
-    if (usuario?.id) {
+    if (usuario?.id && !isAdmin) {
       const { data, error } = await supabase
         .from('cerimonialistas')
         .select('*')
@@ -77,7 +100,7 @@ export function AuthProvider({ children }) {
         setIsCerimonialista(true);
       }
     }
-  }, [usuario]);
+  }, [usuario, isAdmin]);
 
   useEffect(() => {
     // Tenta recuperar a sessão ao montar
@@ -110,6 +133,7 @@ export function AuthProvider({ children }) {
           setCerimonialista(null);
           setIsCerimonialista(false);
           setEvento(null);
+          setIsAdmin(false);
           setCarregando(false);
         }
       }
@@ -126,6 +150,7 @@ export function AuthProvider({ children }) {
     setCerimonialista(null);
     setIsCerimonialista(false);
     setEvento(null);
+    setIsAdmin(false);
   }, []);
 
   const logout = signOut;
@@ -173,9 +198,11 @@ export function AuthProvider({ children }) {
 
   const assinaturaAtiva = usuario?.user_metadata?.assinatura_ativa === true;
 
-  // hasAccess: compatibilidade com páginas do painel que consomem do useAuth
-  // Ajuste a lógica conforme regras de negócio reais se necessário.
-  const hasAccess = useMemo(() => !!usuario && !!evento, [usuario, evento]);
+  // hasAccess: admin sempre tem acesso; casal precisa de evento
+  const hasAccess = useMemo(() => {
+    if (isAdmin) return true;
+    return !!usuario && !!evento;
+  }, [usuario, evento, isAdmin]);
 
   const valor = {
     // ── Compatibilidade total com antigo hooks/useAuth.js ──
@@ -197,6 +224,7 @@ export function AuthProvider({ children }) {
     cadastrar,
     logout,
     loginSocial,
+    isAdmin,
   };
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;
