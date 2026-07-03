@@ -151,7 +151,12 @@ export function AuthProvider({ children }) {
   }, [buscarDadosUsuario]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Erro no signOut:', err);
+    }
+    // Limpa estado independente de sucesso ou falha
     setUsuario(null);
     setCerimonialista(null);
     setIsCerimonialista(false);
@@ -159,7 +164,13 @@ export function AuthProvider({ children }) {
     setIsAdmin(false);
   }, []);
 
-  const logout = signOut;
+  const logout = useCallback(async () => {
+    await signOut();
+    // Força redirect após logout
+    if (typeof window !== 'undefined') {
+      window.location.href = '/descomplicai/login';
+    }
+  }, [signOut]);
 
   const login = useCallback(async (email, senha) => {
     setCarregando(true);
