@@ -1,5 +1,12 @@
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { createClient } from '@supabase/supabase-js';
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+/**
+ * Decodifica o payload de um JWT (base64url) sem verificar assinatura.
+ * Usado apenas para extrair o user ID (sub) do token do Supabase Auth.
+ */
 function decodeJwtPayload(token) {
   try {
     const parts = token.split('.');
@@ -14,6 +21,7 @@ function decodeJwtPayload(token) {
 }
 
 export default async function handler(req, res) {
+  // Apenas POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -25,6 +33,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    // 1. Extrair user ID do JWT localmente (sem chamar auth.getUser)
     const payload = decodeJwtPayload(token);
 
     if (!payload || !payload.sub) {
@@ -33,7 +42,13 @@ export default async function handler(req, res) {
 
     const userId = payload.sub;
 
-    const { data: adminData, error: adminError } = await supabaseAdmin
+    // 2. Criar client admin local (sem global.headers.Authorization)
+    const admin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    // 3. Verificar se o usuario e admin na tabela admins (bypass RLS via service_role)
+    const { data: adminData, error: adminError } = await admin
       .from('admins')
       .select('id')
       .eq('usuario_id', userId)
@@ -43,6 +58,7 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'Acesso negado' });
     }
 
+    // E admin
     return res.status(200).json({ isAdmin: true, userId });
   } catch (err) {
     console.error('[admin/verificar] Erro:', err);
