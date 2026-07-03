@@ -5,19 +5,39 @@ import FunilMemorial from '@/components/admin/FunilMemorial';
 import GraficoReceita from '@/components/admin/GraficoReceita';
 import PaginaMaisAcessada from '@/components/admin/PaginaMaisAcessada';
 import FornecedorAprovacao from '@/components/admin/FornecedorAprovacao';
+import Icon from '@/components/ui/Icon';
 import { apiPath, appPath } from '@/utils/apiPath';
+import { supabase } from '@/lib/supabase';
 
 export default function AdminDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [periodo, setPeriodo] = useState(30);
   const [error, setError] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
 
   useEffect(() => {
+    async function getToken() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        setAccessToken(session.access_token);
+      }
+    }
+    getToken();
+  }, []);
+
+  useEffect(() => {
+    if (!accessToken) return;
+
     async function loadDashboard() {
       try {
         setLoading(true);
-        const res = await fetch(apiPath(`/admin/dashboard?dias=${periodo}`));
+        const res = await fetch(apiPath(`/admin/dashboard?dias=${periodo}`), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
         if (!res.ok) {
           if (res.status === 403) {
             window.location.href = appPath('/login');
@@ -34,7 +54,7 @@ export default function AdminDashboard() {
       }
     }
     loadDashboard();
-  }, [periodo]);
+  }, [periodo, accessToken]);
 
   const getMetricValue = (key) => {
     if (!data?.metrics) return 0;
@@ -45,11 +65,19 @@ export default function AdminDashboard() {
   const handleAprovar = async (id) => {
     const res = await fetch(apiPath('/admin/fornecedores'), {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({ id, ativo: true }),
     });
     if (!res.ok) throw new Error('Erro ao aprovar');
-    const dashRes = await fetch(apiPath(`/admin/dashboard?dias=${periodo}`));
+    const dashRes = await fetch(apiPath(`/admin/dashboard?dias=${periodo}`), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
     const dashData = await dashRes.json();
     setData(dashData);
   };
@@ -57,11 +85,19 @@ export default function AdminDashboard() {
   const handleSuspender = async (id) => {
     const res = await fetch(apiPath('/admin/fornecedores'), {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({ id, ativo: false }),
     });
     if (!res.ok) throw new Error('Erro ao suspender');
-    const dashRes = await fetch(apiPath(`/admin/dashboard?dias=${periodo}`));
+    const dashRes = await fetch(apiPath(`/admin/dashboard?dias=${periodo}`), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
     const dashData = await dashRes.json();
     setData(dashData);
   };
@@ -226,7 +262,7 @@ export default function AdminDashboard() {
                     fontSize: 'var(--text-sm)',
                     color: 'var(--color-text-primary)',
                   }}>
-                    <span role="img" aria-label="evento">📅</span>
+                    <Icon name="calendar" size={16} color="var(--color-warning)" ariaLabel="Evento" />
                     <span>Evento <strong>{ev.nome_evento}</strong> sem memorial concluido ha mais de 30 dias</span>
                   </div>
                 ))}
@@ -239,7 +275,7 @@ export default function AdminDashboard() {
                     fontSize: 'var(--text-sm)',
                     color: 'var(--color-text-primary)',
                   }}>
-                    <span role="img" aria-label="fornecedor">🏢</span>
+                    <Icon name="store" size={16} color="var(--color-warning)" ariaLabel="Fornecedor" />
                     <span>Fornecedor <strong>{f.nome_empresa}</strong> com trial expirando</span>
                   </div>
                 ))}
