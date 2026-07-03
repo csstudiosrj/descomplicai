@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback, useContext, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
+import { apiPath } from '../utils/apiPath';
 
 export const AuthContext = createContext(null);
 
@@ -28,10 +29,9 @@ export function AuthProvider({ children }) {
       const { data: { session } } = await supabase.auth.getSession();
       const accessToken = session?.access_token;
 
-      // 1. Verificar se é admin via API que já existe
       let userIsAdmin = false;
       try {
-        const res = await fetch('/api/admin/verificar', {
+        const res = await fetch(apiPath('/admin/verificar'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token: accessToken }),
@@ -46,7 +46,6 @@ export function AuthProvider({ children }) {
 
       setIsAdmin(userIsAdmin);
 
-      // 2. Se for admin, não busca mais nada
       if (userIsAdmin) {
         setCerimonialista(null);
         setIsCerimonialista(false);
@@ -55,7 +54,6 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      // 3. Se não for admin, busca dados normais
       const [cerimRes, eventoRes] = await Promise.all([
         supabase
           .from('cerimonialistas')
