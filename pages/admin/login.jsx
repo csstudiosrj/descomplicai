@@ -104,7 +104,8 @@ export default function AdminLoginPage() {
       const accessToken = authData.session.access_token;
 
       // 2. Verificar se e admin via API server-side (bypass RLS)
-      const res = await fetch('/api/admin/verificar', {
+      // NOTA: usar basePath do next.config.js (/descomplicai)
+      const res = await fetch('/descomplicai/api/admin/verificar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: accessToken }),
@@ -121,7 +122,7 @@ export default function AdminLoginPage() {
 
       // 3. E admin: limpar tentativas e redirecionar
       limparTentativas();
-      router.push('/admin');
+      router.push('/descomplicai/admin');
     } catch (err) {
       registrarTentativaFalha();
       setErro('Erro ao processar login. Tente novamente.');
