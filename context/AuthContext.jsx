@@ -4,17 +4,13 @@ import { supabase } from '../lib/supabase';
 export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  // ── Estados de autenticação base ──
   const [usuario, setUsuario] = useState(null);
   const [carregando, setCarregando] = useState(true);
-
-  // ── Estados de enriquecimento (movidos do hooks/useAuth.js) ──
   const [cerimonialista, setCerimonialista] = useState(null);
   const [isCerimonialista, setIsCerimonialista] = useState(false);
   const [evento, setEvento] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // ── Aliases para compatibilidade com consumidores antigos do hook useAuth ──
   const user = usuario;
   const loading = carregando;
 
@@ -29,17 +25,29 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      // 1. Verificar se é admin primeiro
-      const { data: adminData, error: adminErr } = await supabase
-        .from('admins')
-        .select('id')
-        .eq('usuario_id', usuarioId)
-        .single();
+      // Pega o token da sessao atual
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
 
-      const userIsAdmin = !adminErr && adminData;
+      // 1. Verificar se e admin via API (bypass RLS)
+      let userIsAdmin = false;
+      try {
+        const res = await fetch('/api/auth/verificar-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: accessToken }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          userIsAdmin = data.isAdmin === true;
+        }
+      } catch (apiErr) {
+        console.error('Erro ao verificar admin via API:', apiErr);
+      }
+
       setIsAdmin(userIsAdmin);
 
-      // 2. Se for admin, não busca eventos/cerimonialistas (evita 406 do RLS)
+      // 2. Se for admin, nao busca eventos/cerimonialistas
       if (userIsAdmin) {
         setCerimonialista(null);
         setIsCerimonialista(false);
@@ -48,7 +56,7 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      // 3. Se não for admin, busca dados normais
+      // 3. Se nao for admin, busca dados normais
       const [cerimRes, eventoRes] = await Promise.all([
         supabase
           .from('cerimonialistas')
@@ -78,7 +86,7 @@ export function AuthProvider({ children }) {
         setEvento(null);
       }
     } catch (err) {
-      console.error('Erro ao buscar dados do usuário:', err);
+      console.error('Erro ao buscar dados do usuario:', err);
       setCerimonialista(null);
       setIsCerimonialista(false);
       setEvento(null);
@@ -103,7 +111,6 @@ export function AuthProvider({ children }) {
   }, [usuario, isAdmin]);
 
   useEffect(() => {
-    // Tenta recuperar a sessão ao montar
     const carregarSessao = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -115,14 +122,13 @@ export function AuthProvider({ children }) {
           setCarregando(false);
         }
       } catch (err) {
-        console.error('Erro ao recuperar sessão:', err);
+        console.error('Erro ao recuperar sessao:', err);
         setCarregando(false);
       }
     };
 
     carregarSessao();
 
-    // ── ÚNICO listener de onAuthStateChange em toda a aplicação ──
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         const currentUser = session?.user ?? null;
@@ -198,14 +204,12 @@ export function AuthProvider({ children }) {
 
   const assinaturaAtiva = usuario?.user_metadata?.assinatura_ativa === true;
 
-  // hasAccess: admin sempre tem acesso; casal precisa de evento
   const hasAccess = useMemo(() => {
     if (isAdmin) return true;
     return !!usuario && !!evento;
   }, [usuario, evento, isAdmin]);
 
   const valor = {
-    // ── Compatibilidade total com antigo hooks/useAuth.js ──
     user,
     loading,
     cerimonialista,
@@ -215,8 +219,6 @@ export function AuthProvider({ children }) {
     refreshCerimonialista,
     supabase,
     hasAccess,
-
-    // ── Compatibilidade total com antigo context/AuthContext.jsx ──
     usuario,
     carregando,
     assinaturaAtiva,
@@ -230,7 +232,6 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;
 }
 
-// ── Hook unificado — apenas consome o contexto centralizado ──
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
