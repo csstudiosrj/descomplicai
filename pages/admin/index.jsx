@@ -5,7 +5,7 @@ import FunilMemorial from '@/components/admin/FunilMemorial';
 import GraficoReceita from '@/components/admin/GraficoReceita';
 import PaginaMaisAcessada from '@/components/admin/PaginaMaisAcessada';
 import FornecedorAprovacao from '@/components/admin/FornecedorAprovacao';
-import { apiPath } from '@/utils/apiPath';
+import { apiPath, appPath } from '@/utils/apiPath';
 
 export default function AdminDashboard() {
   const [data, setData] = useState(null);
@@ -20,7 +20,7 @@ export default function AdminDashboard() {
         const res = await fetch(apiPath(`/admin/dashboard?dias=${periodo}`));
         if (!res.ok) {
           if (res.status === 403) {
-            window.location.href = '/login';
+            window.location.href = appPath('/login');
             return;
           }
           throw new Error('Erro ao carregar dashboard');

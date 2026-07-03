@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import { supabase } from '../../lib/supabase';
+import { apiPath, appPath } from '../../utils/apiPath';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 
@@ -102,7 +103,7 @@ export default function AdminLoginPage() {
       const accessToken = authData.session.access_token;
 
       // 2. Verificar se e admin via API server-side (bypass RLS)
-      const res = await fetch('/descomplicai/api/admin/verificar', {
+      const res = await fetch(apiPath('/admin/verificar'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: accessToken }),
@@ -119,7 +120,7 @@ export default function AdminLoginPage() {
 
       // 3. E admin: limpar tentativas e redirecionar via navegador (full reload)
       limparTentativas();
-      window.location.href = '/descomplicai/admin';
+      window.location.href = appPath('/admin');
     } catch (err) {
       registrarTentativaFalha();
       setErro('Erro ao processar login. Tente novamente.');
