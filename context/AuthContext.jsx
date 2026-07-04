@@ -62,14 +62,14 @@ export function AuthProvider({ children }) {
           .from('cerimonialistas')
           .select('*')
           .eq('usuario_id', usuarioId)
-          .single(),
+          .maybeSingle(),
         supabase
           .from('eventos')
           .select('*')
           .eq('usuario_id', usuarioId)
           .order('criado_em', { ascending: false })
           .limit(1)
-          .single(),
+          .maybeSingle(),
       ]);
 
       if (!cerimRes.error && cerimRes.data) {
@@ -102,7 +102,7 @@ export function AuthProvider({ children }) {
         .from('cerimonialistas')
         .select('*')
         .eq('usuario_id', usuario.id)
-        .single();
+        .maybeSingle();
       if (!error && data) {
         setCerimonialista(data);
         setIsCerimonialista(true);
@@ -156,7 +156,6 @@ export function AuthProvider({ children }) {
     } catch (err) {
       console.error('Erro no signOut:', err);
     }
-    // Limpa estado independente de sucesso ou falha
     setUsuario(null);
     setCerimonialista(null);
     setIsCerimonialista(false);
@@ -166,7 +165,6 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     await signOut();
-    // Força redirect após logout
     if (typeof window !== 'undefined') {
       window.location.href = '/descomplicai/login';
     }
