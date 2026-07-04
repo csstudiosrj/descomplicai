@@ -69,6 +69,7 @@ export default function BreathTransition({
   // Congela config no momento da ativação — não re-renderiza durante fade-out
   const frozenConfig = useRef(null);
   const frozenResposta = useRef('');
+  const wasActive = useRef(false);
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -78,12 +79,13 @@ export default function BreathTransition({
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  // Quando ativa=true, congela config e resposta
+  // Quando ativa muda de false para true, congela config e resposta
   useEffect(() => {
-    if (ativa) {
+    if (ativa && !wasActive.current) {
       frozenConfig.current = getBreathConfig(estiloEscolhido, blocoAtual, perfilCasal);
       frozenResposta.current = typeof respostaAtual === 'string' ? respostaAtual : '';
     }
+    wasActive.current = ativa;
   }, [ativa, estiloEscolhido, blocoAtual, perfilCasal, respostaAtual]);
 
   const config = frozenConfig.current;

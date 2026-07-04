@@ -266,7 +266,17 @@ export default function MemorialOrchestrator() {
 
   const handleSelect = useCallback((campo, valor, cor) => {
     setRespostas(campo, valor);
-    setRespostaTransicao(typeof valor === 'string' ? valor : '');
+    
+    // Formata data para exibição na animação (DD/MM/AAAA)
+    let valorDisplay = valor;
+    if (campo === 'dataEvento' && valor && typeof valor === 'string') {
+      const [ano, mes, dia] = valor.split('-');
+      if (ano && mes && dia) {
+        valorDisplay = `${dia}/${mes}/${ano}`;
+      }
+    }
+    
+    setRespostaTransicao(typeof valorDisplay === 'string' ? valorDisplay : '');
     setCampoTransicao(campo);
     setTransicionando(true);
     if (cor) setCorTransicao(cor);
@@ -322,7 +332,13 @@ export default function MemorialOrchestrator() {
   }, [estado, setRespostas, router, user, evento, supabase]);
 
   const handleBack = useCallback(() => {
-    if (estado.historicoEtapas?.length > 0) voltarEtapa();
+    if (estado.historicoEtapas?.length > 0) {
+      // Limpa resposta de transição ao voltar para evitar animação com valor stale
+      setRespostaTransicao('');
+      setCampoTransicao('');
+      setCorTransicao(null);
+      voltarEtapa();
+    }
   }, [estado.historicoEtapas, voltarEtapa]);
 
   const handleContinuarDraft = () => {
@@ -375,7 +391,7 @@ export default function MemorialOrchestrator() {
                 cor={corTransicao}
                 blocoAtual={blocoAtual}
                 estiloEscolhido={estado.estilo || ''}
-                respostaAtual={respostaTransicao || estado[campoTransicao] || ''}
+                respostaAtual={respostaTransicao}
                 perfilCasal={estado.perfilCasal || ''}
               >
                 <ProgressBar progress={progress} blockName={blockName} />
