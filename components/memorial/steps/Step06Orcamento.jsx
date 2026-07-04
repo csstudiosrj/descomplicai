@@ -62,7 +62,7 @@ export default function Step06Orcamento({ onSelect, estadoAtual }) {
       <Card key={opcao.valor} interactive selected={isSelected} padding="md" onClick={() => handleCardClick(opcao)} role="radio" aria-checked={isSelected} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(opcao); } }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
                 <span style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }}>{opcao.label}</span>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>{o.desc}</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>{opcao.desc}</span>
               </div>
             </Card>
     </div>
