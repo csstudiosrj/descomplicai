@@ -8,7 +8,7 @@
  * Response: { url: string, fields: object }
  */
 
-import { gerarPresignedURL } from '../../../lib/uploadthing';
+import { gerarPresignedURL } from '../../lib/uploadthing';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
