@@ -1,7 +1,7 @@
 /**
  * ImageUpload.jsx
  * Componente generico de upload de imagens com compressao e preview
- * Usa UploadThing (lib/uploadthing.js) no backend
+ * Usa UploadThing via API interna /api/uploadthing (browser-safe)
  * 
  * Props:
  * - onUpload: (urls: string[]) => void — chamado quando upload completa
@@ -17,7 +17,7 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { uploadArquivo, uploadMultiplo } from '../../lib/uploadthing';
+import { uploadMultiploViaAPI } from '../../lib/uploadthing';
 import Icon from './Icon';
 
 export default function ImageUpload({
@@ -81,7 +81,7 @@ export default function ImageUpload({
         setProgresso({ atual, total });
       };
 
-      const resultados = await uploadMultiplo(arquivos, { tipo }, onProgress);
+      const resultados = await uploadMultiploViaAPI(arquivos, { tipo }, onProgress);
       const urls = resultados.map(r => r.url);
 
       onUpload?.(urls);

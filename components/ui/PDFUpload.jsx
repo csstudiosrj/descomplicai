@@ -1,7 +1,7 @@
 /**
  * PDFUpload.jsx
  * Componente de upload de PDFs para contratos e anexos
- * Usa UploadThing (lib/uploadthing.js)
+ * Usa UploadThing via API interna /api/uploadthing (browser-safe)
  * 
  * Props:
  * - onUpload: (url: string) => void — chamado quando upload completa
@@ -13,7 +13,7 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { uploadArquivo } from '../../lib/uploadthing';
+import { uploadArquivoViaAPI } from '../../lib/uploadthing';
 import Icon from './Icon';
 
 export default function PDFUpload({
@@ -55,7 +55,7 @@ export default function PDFUpload({
     setUploading(true);
 
     try {
-      const resultado = await uploadArquivo(arquivo, { tipo: 'pdf' });
+      const resultado = await uploadArquivoViaAPI(arquivo, { tipo: 'pdf' });
       onUpload?.(resultado.url);
 
       // Limpa estado
