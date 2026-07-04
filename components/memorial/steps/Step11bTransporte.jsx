@@ -32,7 +32,7 @@ export default function Step11bTransporte({ onSelect, estadoAtual }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
         {['Ônibus/van fretado', 'Transporte individual (carros/uber)', 'Curta distância (a pé)', 'Ainda não sei'].map(opcao => (
           <Card key={opcao} interactive selected={transporte === opcao} padding="md" onClick={() => setTransporte(opcao)} role="radio" aria-checked={transporte === opcao}>
-            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)' }}>{o}</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)' }}>{opcao}</span>
           </Card>
         ))}
       </div>
