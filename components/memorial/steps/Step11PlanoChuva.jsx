@@ -27,7 +27,7 @@ export default function Step11PlanoChuva({ onSelect, estadoAtual }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
         {['Tenda/cobertura completa', 'Espaço interno reserva', 'Data reserva', 'Decidir no dia', 'Ainda não sei'].map(opcao => (
-          <Card key={o} interactive selected={plano === o} padding="md" onClick={() => setPlano(o)} role="radio" aria-checked={plano === o}>
+          <Card key={opcao} interactive selected={plano === opcao} padding="md" onClick={() => setPlano(opcao)} role="radio" aria-checked={plano === opcao}>
             <span style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)' }}>{o}</span>
           </Card>
         ))}

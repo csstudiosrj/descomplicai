@@ -18,9 +18,9 @@ export default function Step06Horario({ onSelect, estadoAtual }) {
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
-    setCardPulsando(opcaopcaopcao.valor);
+    setCardPulsando(opcao.valor);
     setTimeout(() => {
-      onSelect(opcao.campo || opcaopcaopcao.valor, opcaopcaopcao.valor, opcaopcao.cor);
+      onSelect(opcao.campo || opcao.valor, opcao.valor, opcao.cor);
       setCardPulsando(null);
     }, 350);
   };
@@ -60,19 +60,19 @@ export default function Step06Horario({ onSelect, estadoAtual }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
         {OPCOES.map((opcao) => {
-          const isSelected = selecionado === opcaopcaopcao.valor;
+          const isSelected = selecionado === opcao.valor;
           return (
             <div
-      key={opcaopcaopcao.valor}
+      key={opcao.valor}
       style={{
         transition: 'transform 300ms ease, box-shadow 300ms ease',
-        transform: cardPulsando === opcaopcaopcao.valor ? 'scale(1.03)' : 'scale(1)',
-        boxShadow: cardPulsando === opcaopcaopcao.valor ? `0 0 0 3px ${opcaopcao.cor || 'var(--color-brand)'}` : 'none',
+        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
         borderRadius: 'var(--radius-lg)',
       }}
     >
       <Card
-              key={opcaopcaopcao.valor}
+              key={opcao.valor}
               interactive
               selected={isSelected}
               padding="lg"
@@ -83,7 +83,7 @@ export default function Step06Horario({ onSelect, estadoAtual }) {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  onSelect('horarioCasamento', opcaopcaopcao.valor);
+                  onSelect('horarioCasamento', opcao.valor);
                 }
               }}
             >
@@ -100,16 +100,16 @@ export default function Step06Horario({ onSelect, estadoAtual }) {
                   flexShrink: 0,
                 }}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    {opcaopcao.icone === 'sol' && <circle cx="12" cy="12" r="5" />}
-                    {opcaopcao.icone === 'sol' && <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />}
-                    {opcaopcao.icone === 'horizonte' && <path d="M12 2v4M12 18v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M2 12h4M18 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />}
-                    {opcaopcao.icone === 'horizonte' && <path d="M17 18H7l5-8 5 8z" />}
-                    {opcaopcao.icone === 'lua' && <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />}
+                    {opcao.icone === 'sol' && <circle cx="12" cy="12" r="5" />}
+                    {opcao.icone === 'sol' && <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />}
+                    {opcao.icone === 'horizonte' && <path d="M12 2v4M12 18v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M2 12h4M18 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />}
+                    {opcao.icone === 'horizonte' && <path d="M17 18H7l5-8 5 8z" />}
+                    {opcao.icone === 'lua' && <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />}
                   </svg>
                 </div>
                 <div>
                   <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }}>
-                    {opcaopcaopcao.label}
+                    {opcao.label}
                   </div>
                   <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
                     {opcao.sub}

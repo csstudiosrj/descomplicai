@@ -35,10 +35,10 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
   const handleClick = (opcao) => {
     if (cardPulsando) return;
 
-    setCardPulsando(opcaopcao.valor);
+    setCardPulsando(opcao.valor);
 
     setTimeout(() => {
-      onSelect('modoPlanejamento', opcaopcao.valor, opcao.cor);
+      onSelect('modoPlanejamento', opcao.valor, opcao.cor);
       setCardPulsando(null);
     }, 350);
   };
@@ -84,12 +84,12 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
         }}
       >
         {OPCOES.map((opcao) => {
-          const isSelected = selecionado === opcaopcao.valor;
-          const isPulsando = cardPulsando === opcaopcao.valor;
+          const isSelected = selecionado === opcao.valor;
+          const isPulsando = cardPulsando === opcao.valor;
 
           return (
             <div
-              key={opcaopcao.valor}
+              key={opcao.valor}
               style={{
                 transition: 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1)',
                 transform: isPulsando ? 'scale(1.03)' : 'scale(1)',
@@ -107,7 +107,7 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
                 onClick={() => handleClick(opcao)}
                 role="radio"
                 aria-checked={isSelected}
-                aria-label={`${opcaopcao.label}: ${opcao.subtexto}`}
+                aria-label={`${opcao.label}: ${opcao.subtexto}`}
                 tabIndex={0}
                 onKeyDown={(e) => handleKeyDown(e, opcao)}
               >
@@ -143,7 +143,7 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
                         marginBottom: 'var(--space-1)',
                       }}
                     >
-                      {opcaopcao.label}
+                      {opcao.label}
                     </div>
                     <div
                       style={{

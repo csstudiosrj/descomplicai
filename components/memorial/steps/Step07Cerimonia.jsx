@@ -63,9 +63,9 @@ export default function Step02Cerimonia({ onSelect, estadoAtual }) {
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
-    setCardPulsando(opcaopcao.valor);
+    setCardPulsando(opcao.valor);
     setTimeout(() => {
-      onSelect(opcao.campo || opcaopcao.valor, opcaopcao.valor, opcao.cor);
+      onSelect(opcao.campo || opcao.valor, opcao.valor, opcao.cor);
       setCardPulsando(null);
     }, 350);
   };
@@ -113,19 +113,19 @@ export default function Step02Cerimonia({ onSelect, estadoAtual }) {
 
       <div className="cerimonia-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: 'var(--space-4)' }}>
         {OPCOES.map((opcao) => {
-          const isSelected = selecionado === opcaopcao.valor;
+          const isSelected = selecionado === opcao.valor;
           return (
             <div
-      key={opcaopcao.valor}
+      key={opcao.valor}
       style={{
         transition: 'transform 300ms ease, box-shadow 300ms ease',
-        transform: cardPulsando === opcaopcao.valor ? 'scale(1.03)' : 'scale(1)',
-        boxShadow: cardPulsando === opcaopcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
         borderRadius: 'var(--radius-lg)',
       }}
     >
       <Card
-              key={opcaopcao.valor}
+              key={opcao.valor}
               interactive
               selected={isSelected}
               padding="md"
@@ -136,7 +136,7 @@ export default function Step02Cerimonia({ onSelect, estadoAtual }) {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  onSelect('tipoCerimonia', opcaopcao.valor);
+                  onSelect('tipoCerimonia', opcao.valor);
                 }
               }}
             >
@@ -145,7 +145,7 @@ export default function Step02Cerimonia({ onSelect, estadoAtual }) {
                   {opcao.icone}
                 </div>
                 <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-primary)' }}>
-                  {opcaopcao.label}
+                  {opcao.label}
                 </span>
               </div>
             </Card>

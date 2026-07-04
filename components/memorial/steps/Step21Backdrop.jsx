@@ -29,7 +29,7 @@ export default function Step21Backdrop({ onSelect, estadoAtual }) {
     if (cardPulsando) return;
     setCardPulsando(opcao.valor);
     setTimeout(() => {
-      onSelect(o.campo || opcao.valor, opcao.valor, opcao.cor);
+      onSelect(opcao.campo || opcao.valor, opcao.valor, opcao.cor);
       setCardPulsando(null);
     }, 350);
   };
