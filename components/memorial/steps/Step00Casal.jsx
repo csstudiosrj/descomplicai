@@ -22,9 +22,9 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
-    setCardPulsando(opcaopcao.valor);
+    setCardPulsando(opcao.valor);
     setTimeout(() => {
-      onSelect(opcao.campo || opcaopcao.valor, opcaopcao.valor, opcaopcao.cor);
+      onSelect(opcao.campo || opcao.valor, opcao.valor, opcao.cor);
       setCardPulsando(null);
     }, 350);
   };
