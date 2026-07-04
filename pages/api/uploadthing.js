@@ -1,10 +1,10 @@
 /**
  * API Route: /api/uploadthing
- * Rota compativel com UploadThing v6+ (moderno)
+ * Rota compativel com UploadThing v7+ (moderno)
  * Usa presigned URLs para upload direto
  * 
  * POST /api/uploadthing — gera presigned URL
- * Body: { filename: string, filetype: string }
+ * Body: { filename: string, filetype: string, filesize: number }
  * Response: { url: string, fields: object }
  */
 
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { filename, filetype } = req.body;
+    const { filename, filetype, filesize } = req.body;
 
     if (!filename || !filetype) {
       return res.status(400).json({ 
@@ -37,7 +37,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const resultado = await gerarPresignedURL(filename, filetype);
+    const resultado = await gerarPresignedURL(filename, filetype, filesize || 0);
 
     return res.status(200).json(resultado);
   } catch (err) {
