@@ -1,8 +1,9 @@
+import { getAssetPath } from './getAssetPath';
 import { getTermos } from './linguagemCasal';
 
 export const BREATH_CONFIG = {
   classico: {
-    backgroundImage: '/images/breath/breath-classico.jpg',
+    backgroundImage: getAssetPath('/images/breath/breath-classico.jpg'),
     overlayColor: 'rgba(139, 111, 94, 0.50)',
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathArabescos',
@@ -10,7 +11,7 @@ export const BREATH_CONFIG = {
     duration: 1400,
   },
   romantico: {
-    backgroundImage: '/images/breath/breath-romantico.jpg',
+    backgroundImage: getAssetPath('/images/breath/breath-romantico.jpg'),
     overlayColor: 'rgba(196, 168, 152, 0.50)',
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathArabescos',
@@ -18,7 +19,7 @@ export const BREATH_CONFIG = {
     duration: 1400,
   },
   boho: {
-    backgroundImage: '/images/breath/breath-boho.jpg',
+    backgroundImage: getAssetPath('/images/breath/breath-boho.jpg'),
     overlayColor: 'rgba(168, 139, 111, 0.50)',
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathFolhagem',
@@ -26,7 +27,7 @@ export const BREATH_CONFIG = {
     duration: 1400,
   },
   industrial: {
-    backgroundImage: '/images/breath/breath-industrial.jpg',
+    backgroundImage: getAssetPath('/images/breath/breath-industrial.jpg'),
     overlayColor: 'rgba(92, 83, 74, 0.55)',
     fontFamily: 'var(--font-mono)',
     svgComponent: 'BreathGeometria',
@@ -34,7 +35,7 @@ export const BREATH_CONFIG = {
     duration: 1400,
   },
   minimalista: {
-    backgroundImage: '/images/breath/breath-minimalista.jpg',
+    backgroundImage: getAssetPath('/images/breath/breath-minimalista.jpg'),
     overlayColor: 'rgba(243, 240, 236, 0.40)',
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathGeometria',
@@ -42,7 +43,7 @@ export const BREATH_CONFIG = {
     duration: 1400,
   },
   tropical: {
-    backgroundImage: '/images/breath/breath-tropical.jpg',
+    backgroundImage: getAssetPath('/images/breath/breath-tropical.jpg'),
     overlayColor: 'rgba(74, 124, 95, 0.50)',
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathFolhagem',
@@ -50,7 +51,7 @@ export const BREATH_CONFIG = {
     duration: 1400,
   },
   rustico: {
-    backgroundImage: '/images/breath/breath-rustico.jpg',
+    backgroundImage: getAssetPath('/images/breath/breath-rustico.jpg'),
     overlayColor: 'rgba(92, 61, 46, 0.50)',
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathFolhagem',
@@ -58,7 +59,7 @@ export const BREATH_CONFIG = {
     duration: 1400,
   },
   moderno: {
-    backgroundImage: '/images/breath/breath-moderno.jpg',
+    backgroundImage: getAssetPath('/images/breath/breath-moderno.jpg'),
     overlayColor: 'rgba(61, 107, 140, 0.50)',
     fontFamily: 'var(--font-mono)',
     svgComponent: 'BreathGeometria',
@@ -66,7 +67,7 @@ export const BREATH_CONFIG = {
     duration: 1400,
   },
   vintage: {
-    backgroundImage: '/images/breath/breath-vintage.jpg',
+    backgroundImage: getAssetPath('/images/breath/breath-vintage.jpg'),
     overlayColor: 'rgba(139, 111, 94, 0.50)',
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathArabescos',
@@ -74,7 +75,7 @@ export const BREATH_CONFIG = {
     duration: 1400,
   },
   praia: {
-    backgroundImage: '/images/breath/breath-praia.jpg',
+    backgroundImage: getAssetPath('/images/breath/breath-praia.jpg'),
     overlayColor: 'rgba(61, 107, 140, 0.45)',
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathOndas',
@@ -82,7 +83,7 @@ export const BREATH_CONFIG = {
     duration: 1400,
   },
   jardim: {
-    backgroundImage: '/images/breath/breath-jardim.jpg',
+    backgroundImage: getAssetPath('/images/breath/breath-jardim.jpg'),
     overlayColor: 'rgba(74, 124, 95, 0.45)',
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathFolhagem',
@@ -90,7 +91,7 @@ export const BREATH_CONFIG = {
     duration: 1400,
   },
   glam: {
-    backgroundImage: '/images/breath/breath-glam.jpg',
+    backgroundImage: getAssetPath('/images/breath/breath-glam.jpg'),
     overlayColor: 'rgba(139, 111, 94, 0.50)',
     fontFamily: 'var(--font-display)',
     svgComponent: 'BreathGlam',
