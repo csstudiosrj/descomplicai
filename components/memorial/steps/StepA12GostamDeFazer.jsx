@@ -49,23 +49,41 @@ export default function StepA12GostamDeFazer({ onSelect, estadoAtual }) {
           const isSelected = selecionadas.includes(opcao.valor);
           return (
             <div
-      key={opcao.valor}
-      style={{
-        transition: 'transform 300ms ease, box-shadow 300ms ease',
-        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
-        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
-        borderRadius: 'var(--radius-lg)',
-      }}
-    >
-      <Card key={opcao.valor} interactive selected={isSelected} padding="lg" onClick={() => toggle(opcao.valor)} role="checkbox" aria-checked={isSelected} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(opcao.valor); } }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }}>{opcao.label}</span>
-                {o.desc && <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>{o.desc}</span>}
-              </div>
-            </Card>
-    </div>
-  );
-})}
+              key={opcao.valor}
+              style={{
+                transition: 'transform 300ms ease, box-shadow 300ms ease',
+                transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+                boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+                borderRadius: 'var(--radius-lg)',
+              }}
+            >
+              <Card
+                interactive
+                selected={isSelected}
+                padding="lg"
+                onClick={() => toggle(opcao.valor)}
+                role="checkbox"
+                aria-checked={isSelected}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggle(opcao.valor);
+                  }
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                  <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }}>{opcao.label}</span>
+                  {opcao.desc && (
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+                      {opcao.desc}
+                    </span>
+                  )}
+                </div>
+              </Card>
+            </div>
+          );
+        })}
       </div>
 
       <button
