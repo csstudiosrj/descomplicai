@@ -1,10 +1,10 @@
-import { getTermos } from "../../../utils/linguagemCasal";
 // StepB16DefiniramEntrada — {`Já definiu a entrada de ${termos.pessoa1} e ${termos.pessoa2}?`}
 // Dependências diretas: React, PropTypes, Input
 
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Input from '../../ui/Input';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 export default function StepB16DefiniramEntrada({ onSelect, estadoAtual }) {
   const perfil = estadoAtual?.perfilCasal || "nao-especificar";
@@ -29,7 +29,7 @@ export default function StepB16DefiniramEntrada({ onSelect, estadoAtual }) {
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-        <Input label="Entrada" value={valor} onChange={(e) => setValor(e.target.value)} placeholder={`Ex: ${termos.pessoa1} com o pai, ${termos.pessoa2} já no altar`}  />
+        <Input label="Entrada" value={valor} onChange={(e) => setValor(e.target.value)} placeholder={`Ex: ${termos.pessoa1} com o pai, ${termos.pessoa2} já no altar`} />
       </div>
 
       <button
