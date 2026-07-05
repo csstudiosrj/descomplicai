@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import DataTableAdmin from '@/components/admin/DataTableAdmin';
 import Link from 'next/link';
+import fetchAPI from '../../utils/fetchAPI';
 
 export default function AdminUsuarios() {
   const [data, setData] = useState([]);
@@ -22,7 +23,7 @@ export default function AdminUsuarios() {
       if (search) params.append('search', search);
       if (tipo && tipo !== 'todos') params.append('tipo', tipo);
 
-      const res = await fetch(`/api/admin/usuarios?${params}`);
+      const res = await fetchAPI(`/api/admin/usuarios?${params}`);
       if (!res.ok) throw new Error('Erro ao carregar usuários');
       const json = await res.json();
       setData(json.data || []);

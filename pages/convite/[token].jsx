@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Icon from '../../components/ui/Icon';
 import Button from '../../components/ui/Button';
 import { supabase } from '../../lib/supabase';
+import fetchAPI from '../../utils/fetchAPI';
 
 export default function PaginaConviteEvento() {
   const router = useRouter();
@@ -31,7 +32,7 @@ export default function PaginaConviteEvento() {
 
     async function buscarDados() {
       try {
-        const res = await fetch(`/api/convite/validar?token=${token}`);
+        const res = await fetchAPI(`/api/convite/validar?token=${token}`);
         const data = await res.json();
 
         if (!res.ok) {
@@ -59,7 +60,7 @@ export default function PaginaConviteEvento() {
         return;
       }
 
-      const res = await fetch('/api/convite/aceitar', {
+      const res = await fetchAPI('/api/convite/aceitar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

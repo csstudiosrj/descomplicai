@@ -11,6 +11,7 @@ import Header from '../../components/ui/Header';
 import Icon from '../../components/ui/Icon';
 import MarkdownRenderer from '../../components/ui/MarkdownRenderer';
 import { temAcessoPainel } from '../../utils/acesso';
+import fetchAPI from '../../utils/fetchAPI';
 
 const PLANOS_ASSINATURA = [
   { id: 'mensal', label: 'Mensal', preco: 'R$59,90/mes', duracao: 1 },
@@ -72,7 +73,7 @@ export default function ConclusaoPage() {
     const gerarMemorial = async () => {
       try {
         const payload = montarPayloadMemorial(estado);
-        const resposta = await fetch('/api/ia/gerar-memorial', {
+        const resposta = await fetchAPI('/api/ia/gerar-memorial', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -95,7 +96,7 @@ export default function ConclusaoPage() {
     setBaixandoPDF(true);
     try {
       const dadosEvento = montarPayloadMemorial(estado);
-      const resposta = await fetch('/api/gerar-pdf', {
+      const resposta = await fetchAPI('/api/gerar-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ memorial, dadosEvento }),
@@ -132,7 +133,7 @@ export default function ConclusaoPage() {
     if (!user?.id || !evento?.id) { alert('Faca login primeiro para continuar.'); return; }
     setIniciandoTrial(true);
     try {
-      const resposta = await fetch('/api/trial', {
+      const resposta = await fetchAPI('/api/trial', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ eventoId: evento.id }),
@@ -157,7 +158,7 @@ export default function ConclusaoPage() {
     setPagando(true);
     try {
       const dadosEvento = { ...montarPayloadMemorial(estado), email: user?.email || null };
-      const resposta = await fetch('/api/pagamento/criar', {
+      const resposta = await fetchAPI('/api/pagamento/criar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tipo: 'memorial_pdf', usuarioId: user.id, eventoId: evento.id, dadosEvento }),
@@ -179,7 +180,7 @@ export default function ConclusaoPage() {
     setPagando(true);
     try {
       const dadosEvento = { ...montarPayloadMemorial(estado), email: user?.email || null };
-      const resposta = await fetch('/api/pagamento/criar', {
+      const resposta = await fetchAPI('/api/pagamento/criar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tipo: 'assinatura', plano: planoSelecionado, usuarioId: user.id, eventoId: evento.id, dadosEvento }),

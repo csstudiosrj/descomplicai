@@ -7,6 +7,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Modal from '../../components/ui/Modal';
 import { supabase } from '../../lib/supabase';
+import fetchAPI from '../../utils/fetchAPI';
 
 export default function PerfilCerimonialista() {
   const router = useRouter();
@@ -31,7 +32,7 @@ export default function PerfilCerimonialista() {
     setCarregando(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/cerimonialista/perfil', {
+      const res = await fetchAPI('/api/cerimonialista/perfil', {
         headers: { Authorization: `Bearer ${session?.access_token}` },
       });
       const data = await res.json();
@@ -65,7 +66,7 @@ export default function PerfilCerimonialista() {
     setSalvando(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/cerimonialista/perfil', {
+      const res = await fetchAPI('/api/cerimonialista/perfil', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -124,7 +125,7 @@ export default function PerfilCerimonialista() {
     setConvidando(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/cerimonialista/assistentes/convidar', {
+      const res = await fetchAPI('/api/cerimonialista/assistentes/convidar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -155,7 +156,7 @@ export default function PerfilCerimonialista() {
   const handleRemoverAssistente = async (id) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/cerimonialista/assistentes/deletar', {
+      const res = await fetchAPI('/api/cerimonialista/assistentes/deletar', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

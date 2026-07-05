@@ -12,6 +12,7 @@ import {
   getLabelCategoriaPrincipalPorId,
   STATUS_FORNECEDOR,
 } from '../../utils/catalogoFornecedores';
+import fetchAPI from '../../utils/fetchAPI';
 
 const BRAND_PALETTE = [
   '#8B6F5E', '#10B981', '#B89A8A', '#0D9668',
@@ -49,7 +50,7 @@ function FinanceiroContent({ readOnly }) {
 
   const sincronizarTodos = async () => {
     try {
-      await fetch('/api/financeiro/sincronizar-todos', {
+      await fetchAPI('/api/financeiro/sincronizar-todos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ evento_id: evento.id }),

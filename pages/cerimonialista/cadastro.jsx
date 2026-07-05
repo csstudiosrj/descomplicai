@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/ui/Icon';
+import fetchAPI from '../../utils/fetchAPI';
 
 const UFS = [
   'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'
@@ -74,7 +75,7 @@ export default function CadastroCerimonialistaPage() {
     setErros({});
 
     try {
-      const res = await fetch('/api/cerimonialista/cadastro', {
+      const res = await fetchAPI('/api/cerimonialista/cadastro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),

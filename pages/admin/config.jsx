@@ -3,6 +3,7 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import Input from '@/components/ui/Input';
 import InputMoeda from '@/components/ui/InputMoeda';
 import Button from '@/components/ui/Button';
+import fetchAPI from '../../utils/fetchAPI';
 
 const CATEGORIAS = [
   { id: 'planos', label: 'Planos e Preços', icon: '💰' },
@@ -37,7 +38,7 @@ export default function AdminConfig() {
   const carregar = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/configuracoes');
+      const res = await fetchAPI('/api/admin/configuracoes');
       if (!res.ok) throw new Error('Erro ao carregar');
       const json = await res.json();
       setConfigs(json.data || {});
@@ -78,7 +79,7 @@ export default function AdminConfig() {
     setSalvando(true);
     try {
       const atualizacoes = Object.entries(editados).map(([chave, valor]) => ({ chave, valor: String(valor) }));
-      const res = await fetch('/api/admin/configuracoes', {
+      const res = await fetchAPI('/api/admin/configuracoes', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ atualizacoes }),

@@ -7,6 +7,7 @@ import { montarPayloadParaAPI } from '../../utils/gerador-memorial';
 import { useAuth } from '../../hooks/useAuth';
 import { useMemorial } from '../../hooks/useMemorial';
 import Button from '../../components/ui/Button';
+import fetchAPI from '../../utils/fetchAPI';
 
 export default function ConclusaoPage() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export default function ConclusaoPage() {
     const gerarMemorial = async () => {
       try {
         const payload = montarPayloadParaAPI(estado);
-        const resposta = await fetch('/api/ia/gerar-memorial', {
+        const resposta = await fetchAPI('/api/ia/gerar-memorial', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -53,7 +54,7 @@ export default function ConclusaoPage() {
     setBaixandoPDF(true);
     try {
       const dadosEvento = montarPayloadParaAPI(estado);
-      const response = await fetch('/api/gerar-pdf', {
+      const response = await fetchAPI('/api/gerar-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

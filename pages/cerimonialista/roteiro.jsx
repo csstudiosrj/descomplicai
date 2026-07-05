@@ -7,6 +7,7 @@ import Button from '../../components/ui/Button';
 import RoteiroTimeline from '../../components/cerimonialista/RoteiroTimeline';
 import RoteiroForm from '../../components/cerimonialista/RoteiroForm';
 import { supabase } from '../../lib/supabase';
+import fetchAPI from '../../utils/fetchAPI';
 
 export default function RoteiroPage() {
   const router = useRouter();
@@ -68,7 +69,7 @@ export default function RoteiroPage() {
       setCarregando(true);
       try {
         const token = (await supabase.auth.getSession()).data.session?.access_token;
-        const res = await fetch(`/api/cerimonialista/roteiro?evento_id=${eventoSelecionado}`, {
+        const res = await fetchAPI(`/api/cerimonialista/roteiro?evento_id=${eventoSelecionado}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -99,7 +100,7 @@ export default function RoteiroPage() {
 
     try {
       const token = (await supabase.auth.getSession()).data.session?.access_token;
-      const res = await fetch('/api/cerimonialista/roteiro?acao=gerar', {
+      const res = await fetchAPI('/api/cerimonialista/roteiro?acao=gerar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -160,7 +161,7 @@ export default function RoteiroPage() {
     if (!confirm('Tem certeza que deseja excluir este item?')) return;
 
     const token = (await supabase.auth.getSession()).data.session?.access_token;
-    const res = await fetch(`/api/cerimonialista/roteiro?id=${id}`, {
+    const res = await fetchAPI(`/api/cerimonialista/roteiro?id=${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -175,7 +176,7 @@ export default function RoteiroPage() {
 
   const handleStatusChange = async (id, novoStatus) => {
     const token = (await supabase.auth.getSession()).data.session?.access_token;
-    const res = await fetch('/api/cerimonialista/roteiro', {
+    const res = await fetchAPI('/api/cerimonialista/roteiro', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -197,12 +198,12 @@ export default function RoteiroPage() {
 
     const token = (await supabase.auth.getSession()).data.session?.access_token;
     await Promise.all([
-      fetch('/api/cerimonialista/roteiro', {
+      fetchAPI('/api/cerimonialista/roteiro', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ id: newItens[index - 1].id, ordem: index }),
       }),
-      fetch('/api/cerimonialista/roteiro', {
+      fetchAPI('/api/cerimonialista/roteiro', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ id: newItens[index].id, ordem: index + 1 }),
@@ -219,12 +220,12 @@ export default function RoteiroPage() {
 
     const token = (await supabase.auth.getSession()).data.session?.access_token;
     await Promise.all([
-      fetch('/api/cerimonialista/roteiro', {
+      fetchAPI('/api/cerimonialista/roteiro', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ id: newItens[index].id, ordem: index + 1 }),
       }),
-      fetch('/api/cerimonialista/roteiro', {
+      fetchAPI('/api/cerimonialista/roteiro', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ id: newItens[index + 1].id, ordem: index + 2 }),
@@ -246,7 +247,7 @@ export default function RoteiroPage() {
         setToast({ tipo: 'erro', mensagem: 'Sessao expirada. Faca login novamente.' });
         return;
       }
-      const res = await fetch('/api/roteiro/pdf', {
+      const res = await fetchAPI('/api/roteiro/pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

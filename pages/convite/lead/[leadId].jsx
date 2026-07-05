@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Icon from '../../../components/ui/Icon';
 import Button from '../../../components/ui/Button';
 import { supabase } from '../../../lib/supabase';
+import fetchAPI from '../../../utils/fetchAPI';
 
 export default function PaginaConviteLead() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function PaginaConviteLead() {
 
     async function buscarDados() {
       try {
-        const res = await fetch(`/api/cerimonialista/convites?leadId=${leadId}`);
+        const res = await fetchAPI(`/api/cerimonialista/convites?leadId=${leadId}`);
         const data = await res.json();
 
         if (!res.ok || !data.lead) {
@@ -51,7 +52,7 @@ export default function PaginaConviteLead() {
         return;
       }
 
-      const res = await fetch('/api/cerimonialista/convites', {
+      const res = await fetchAPI('/api/cerimonialista/convites', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ leadId }),

@@ -11,6 +11,7 @@ import ImageUpload from '../../components/ui/ImageUpload';
 import EstrelasAvaliacao from '../../components/fornecedores/EstrelasAvaliacao';
 import { supabase } from '../../lib/supabase';
 import { getLabelSubcategoria } from '../../utils/catalogoFornecedores';
+import fetchAPI from '../../utils/fetchAPI';
 
 export default function FornecedorPerfilPage() {
   const router = useRouter();
@@ -82,7 +83,7 @@ export default function FornecedorPerfilPage() {
   const registrarClique = async (tipo) => {
     if (!id) return;
     try {
-      await fetch('/api/fornecedores/clique', {
+      await fetchAPI('/api/fornecedores/clique', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fornecedorId: id, tipo })

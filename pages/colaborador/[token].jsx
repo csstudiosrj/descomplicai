@@ -3,6 +3,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
+import fetchAPI from '../../utils/fetchAPI';
 
 export default function ColaboradorPage() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function ColaboradorPage() {
 
     async function validarToken() {
       try {
-        const res = await fetch('/api/colaborador/validar', {
+        const res = await fetchAPI('/api/colaborador/validar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token }),

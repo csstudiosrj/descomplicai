@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Icon from '../ui/Icon';
 import Button from '../ui/Button';
 import { supabase } from '../../lib/supabase';
+import fetchAPI from '../../utils/fetchAPI';
 
 const MODULOS = [
   { key: 'fornecedores', label: 'Fornecedores', icone: 'store' },
@@ -32,7 +33,7 @@ export default function PermissoesPainel({ eventoId, cerimonialistaId }) {
       const token = sessionData?.session?.access_token;
       if (!token) return;
 
-      const res = await fetch(`/api/cerimonialista/permissao?evento_id=${eventoId}`, {
+      const res = await fetchAPI(`/api/cerimonialista/permissao?evento_id=${eventoId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -110,7 +111,7 @@ export default function PermissoesPainel({ eventoId, cerimonialistaId }) {
         ver_memorial: true,
       };
 
-      const res = await fetch('/api/cerimonialista/permissao', {
+      const res = await fetchAPI('/api/cerimonialista/permissao', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

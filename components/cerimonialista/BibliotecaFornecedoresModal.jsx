@@ -6,6 +6,7 @@ import Icon from '../ui/Icon';
 import {
   CATEGORIAS_PRINCIPAIS,
 } from '../../utils/catalogoFornecedores';
+import fetchAPI from '../../utils/fetchAPI';
 
 export default function BibliotecaFornecedoresModal({ favorito, cerimonialistaId, onClose, onSalvo }) {
   const [nome, setNome] = useState('');
@@ -66,7 +67,7 @@ export default function BibliotecaFornecedoresModal({ favorito, cerimonialistaId
         notas_internas: notas.trim() || null,
       };
 
-      const res = await fetch('/api/cerimonialista/favoritos/salvar', {
+      const res = await fetchAPI('/api/cerimonialista/favoritos/salvar', {
         method: favorito ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',

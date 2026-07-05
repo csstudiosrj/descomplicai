@@ -7,6 +7,7 @@ import Button from '../../components/ui/Button';
 import Icon from '../../components/ui/Icon';
 import ImageUpload from '../../components/ui/ImageUpload';
 import { CATEGORIAS_PRINCIPAIS } from '../../utils/catalogoFornecedores';
+import fetchAPI from '../../utils/fetchAPI';
 
 const UFS = [
   'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'
@@ -82,7 +83,7 @@ export default function CadastroFornecedorPage() {
       const payload = { ...form };
       if (logoUrl) payload.logo_url = logoUrl;
 
-      const res = await fetch('/api/fornecedor/cadastro', {
+      const res = await fetchAPI('/api/fornecedor/cadastro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

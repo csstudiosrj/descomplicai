@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
+import fetchAPI from '../../utils/fetchAPI';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://descomplicai.com.br';
 const OG_IMAGE = `${SITE_URL}/og-vitrine.jpg`;
@@ -43,7 +44,7 @@ export default function Vitrine() {
     params.append('limit', String(limit));
 
     try {
-      const res = await fetch(`/api/vitrine?${params.toString()}`);
+      const res = await fetchAPI(`/api/vitrine?${params.toString()}`);
       const data = await res.json();
       if (data.success) {
         setFornecedores(data.fornecedores);

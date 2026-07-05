@@ -12,6 +12,7 @@ import BreathTransition from './BreathTransition';
 import ProgressBar from './ProgressBar';
 import BackButton from './BackButton';
 import Footer from '../ui/Footer';
+import fetchAPI from '../../utils/fetchAPI';
 
 const STEP_COMPONENTS = {
   Step00Casal: React.lazy(() => import('./steps/Step00Casal')),
@@ -314,7 +315,7 @@ export default function MemorialOrchestrator() {
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData?.session?.access_token;
         if (token) {
-          const res = await fetch('/api/memorial/salvar', {
+          const res = await fetchAPI('/api/memorial/salvar', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

@@ -7,6 +7,7 @@ import Icon from '../../components/ui/Icon';
 import Toast from '../../components/ui/Toast';
 import { useAuth } from '../../hooks/useAuth';
 import { SUBCATEGORIAS_FLAT } from '../../utils/catalogoFornecedores';
+import fetchAPI from '../../utils/fetchAPI';
 
 export default function ChecklistPage({ readOnly }) {
   return (
@@ -40,7 +41,7 @@ function ChecklistContent({ readOnly }) {
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const res = await fetch('/api/tarefas/gerar', {
+      const res = await fetchAPI('/api/tarefas/gerar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

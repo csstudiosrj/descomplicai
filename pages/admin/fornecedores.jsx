@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import DataTableAdmin from '@/components/admin/DataTableAdmin';
+import fetchAPI from '../../utils/fetchAPI';
 
 export default function AdminFornecedores() {
   const [data, setData] = useState([]);
@@ -23,7 +24,7 @@ export default function AdminFornecedores() {
       if (ativo !== '') params.append('ativo', ativo);
       if (plano) params.append('plano', plano);
 
-      const res = await fetch(`/api/admin/fornecedores?${params}`);
+      const res = await fetchAPI(`/api/admin/fornecedores?${params}`);
       if (!res.ok) throw new Error('Erro ao carregar fornecedores');
       const json = await res.json();
       setData(json.data || []);
@@ -37,7 +38,7 @@ export default function AdminFornecedores() {
 
   async function handleToggleAtivo(id, novoStatus) {
     try {
-      const res = await fetch('/api/admin/fornecedores', {
+      const res = await fetchAPI('/api/admin/fornecedores', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ativo: novoStatus }),

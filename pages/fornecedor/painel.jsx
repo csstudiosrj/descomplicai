@@ -9,6 +9,7 @@ import Icon from '../../components/ui/Icon';
 import GraficoMetricas from '../../components/fornecedores/GraficoMetricas';
 import MetricasCardPainel from '../../components/fornecedores/MetricasCardPainel';
 import EstrelasAvaliacao from '../../components/fornecedores/EstrelasAvaliacao';
+import fetchAPI from '../../utils/fetchAPI';
 
 export default function PainelFornecedorPage() {
   const router = useRouter();
@@ -26,8 +27,8 @@ export default function PainelFornecedorPage() {
       if (!token) return;
 
       const [metricasRes, avaliacoesRes] = await Promise.all([
-        fetch('/api/fornecedores/metricas', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/fornecedores/avaliacoes', { headers: { Authorization: `Bearer ${token}` } })
+        fetchAPI('/api/fornecedores/metricas', { headers: { Authorization: `Bearer ${token}` } }),
+        fetchAPI('/api/fornecedores/avaliacoes', { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       if (metricasRes.ok) {

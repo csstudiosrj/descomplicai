@@ -8,6 +8,7 @@ import {
   CATEGORIAS_PRINCIPAIS,
   getLabelCategoriaPrincipalPorId,
 } from '../../utils/catalogoFornecedores';
+import fetchAPI from '../../utils/fetchAPI';
 
 export default function BibliotecaFornecedores({ cerimonialistaId }) {
   const [favoritos, setFavoritos] = useState([]);
@@ -33,7 +34,7 @@ export default function BibliotecaFornecedores({ cerimonialistaId }) {
         setLoading(false);
         return;
       }
-      const res = await fetch('/api/cerimonialista/favoritos/listar', {
+      const res = await fetchAPI('/api/cerimonialista/favoritos/listar', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
@@ -72,7 +73,7 @@ export default function BibliotecaFornecedores({ cerimonialistaId }) {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) return;
-      const res = await fetch(`/api/cerimonialista/favoritos/deletar?id=${id}`, {
+      const res = await fetchAPI(`/api/cerimonialista/favoritos/deletar?id=${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });

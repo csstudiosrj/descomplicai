@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { supabase } from '../../lib/supabase';
 import Icon from '../../components/ui/Icon';
 import ContatoCard from '../../components/vitrine/ContatoCard';
+import fetchAPI from '../../utils/fetchAPI';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://descomplicai.com.br';
 
@@ -95,7 +96,7 @@ export default function VitrineFornecedor({ fornecedor: initialData, error: serv
     }
     setEnviandoOrcamento(true);
     try {
-      const res = await fetch('/api/vitrine/orcamento', {
+      const res = await fetchAPI('/api/vitrine/orcamento', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fornecedor_id: id, ...formOrcamento }),

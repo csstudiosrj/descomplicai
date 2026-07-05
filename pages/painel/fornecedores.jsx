@@ -15,6 +15,7 @@ import {
   getCategoriaPrincipal,
   STATUS_FORNECEDOR,
 } from '../../utils/catalogoFornecedores';
+import fetchAPI from '../../utils/fetchAPI';
 
 function formatarTelefone(valor) {
   const digits = valor.replace(/\D/g, '').slice(0, 11);
@@ -135,7 +136,7 @@ function FornecedoresContent() {
 
     if (fornecedorAtualizado && (fornecedorAtualizado.status === 'contratado' || fornecedorAtualizado.status === 'pago')) {
       try {
-        await fetch('/api/fornecedores/sincronizar', {
+        await fetchAPI('/api/fornecedores/sincronizar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fornecedor: fornecedorAtualizado }),

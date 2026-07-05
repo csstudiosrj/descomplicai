@@ -1,6 +1,7 @@
 // hooks/useAutoSave.js
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import fetchAPI from '../utils/fetchAPI';
 
 const STORAGE_KEY = 'descomplicai-memorial-draft';
 const DEBOUNCE_MS = 1500;
@@ -61,7 +62,7 @@ export default function useAutoSave(estado, user = null, evento = null) {
         return;
       }
 
-      const res = await fetch('/api/memorial/salvar', {
+      const res = await fetchAPI('/api/memorial/salvar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

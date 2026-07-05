@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks/useAuth';
 import Icon from '../ui/Icon';
 import ChatMensagem from './ChatMensagem';
 import ChatInput from './ChatInput';
+import fetchAPI from '../../utils/fetchAPI';
 
 export default function ChatInterface({ eventoId, modo = 'casal' }) {
   const { user, supabase } = useAuth();
@@ -34,7 +35,7 @@ export default function ChatInterface({ eventoId, modo = 'casal' }) {
         return;
       }
 
-      const res = await fetch(`/api/mensagens/listar?evento_id=${eventoId}`, {
+      const res = await fetchAPI(`/api/mensagens/listar?evento_id=${eventoId}`, {
         headers: { Authorization: `Bearer ${token}` },
         signal,
       });
@@ -152,7 +153,7 @@ export default function ChatInterface({ eventoId, modo = 'casal' }) {
         const token = await getToken();
         if (!token || !isMounted) return;
 
-        await fetch('/api/mensagens/lida', {
+        await fetchAPI('/api/mensagens/lida', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -206,7 +207,7 @@ export default function ChatInterface({ eventoId, modo = 'casal' }) {
         return;
       }
 
-      const res = await fetch('/api/mensagens/enviar', {
+      const res = await fetchAPI('/api/mensagens/enviar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -10,6 +10,7 @@ import { getCategoriaPrincipal } from '../../utils/catalogoFornecedores';
 import ContratoCard from '../../components/contratos/ContratoCard';
 import ContratoEditor from '../../components/contratos/ContratoEditor';
 import ContratoFiltros from '../../components/contratos/ContratoFiltros';
+import fetchAPI from '../../utils/fetchAPI';
 
 const STATUS_CONTRATO = [
   { id: 'todos', label: 'Todos' },
@@ -120,7 +121,7 @@ function ContratosContent() {
     }
 
     try {
-      const res = await fetch('/api/contratos/criar', {
+      const res = await fetchAPI('/api/contratos/criar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -173,7 +174,7 @@ function ContratosContent() {
   const assinarNoivos = async (id) => {
     if (readOnly) return;
     try {
-      const res = await fetch('/api/contratos/assinar-noivos', {
+      const res = await fetchAPI('/api/contratos/assinar-noivos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contrato_id: id }),
@@ -196,7 +197,7 @@ function ContratosContent() {
       return;
     }
     try {
-      const res = await fetch('/api/contratos/enviar', {
+      const res = await fetchAPI('/api/contratos/enviar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contrato_id: id }),

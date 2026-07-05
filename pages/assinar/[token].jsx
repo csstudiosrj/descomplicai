@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Icon from '../../components/ui/Icon';
+import fetchAPI from '../../utils/fetchAPI';
 
 export default function AssinarPage() {
   const router = useRouter();
@@ -26,7 +27,7 @@ export default function AssinarPage() {
 
   const buscarContrato = async () => {
     try {
-      const res = await fetch(`/api/contratos/ver?token=${token}`);
+      const res = await fetchAPI(`/api/contratos/ver?token=${token}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro || 'Erro ao carregar');
       setContrato(data.contrato);
@@ -34,7 +35,7 @@ export default function AssinarPage() {
       if (data.contrato.status === 'assinado') setAssinado(true);
       if (data.contrato.status === 'recusado') setMostrarRecusa(true);
 
-      fetch('/api/contratos/visualizado', {
+      fetchAPI('/api/contratos/visualizado', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
@@ -51,7 +52,7 @@ export default function AssinarPage() {
     setAssinando(true);
     setErro(null);
     try {
-      const res = await fetch('/api/contratos/assinar', {
+      const res = await fetchAPI('/api/contratos/assinar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, nome: nome.trim(), email: email.trim() }),
@@ -72,7 +73,7 @@ export default function AssinarPage() {
     setRecusando(true);
     setErro(null);
     try {
-      const res = await fetch('/api/contratos/recusar', {
+      const res = await fetchAPI('/api/contratos/recusar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, justificativa: justificativa.trim() }),

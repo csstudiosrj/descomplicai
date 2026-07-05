@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import fetchAPI from '../../utils/fetchAPI';
 
 /**
  * Componente cliente para download do Memorial PDF.
@@ -14,7 +15,7 @@ export default function MemorialPDF({ memorial, dadosEvento, qrCodeDataUri = nul
     setLoading(true);
 
     try {
-      const res = await fetch('/api/gerar-pdf', {
+      const res = await fetchAPI('/api/gerar-pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

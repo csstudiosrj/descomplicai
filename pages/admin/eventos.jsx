@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import AdminLayout from '@/components/admin/AdminLayout';
 import DataTableAdmin from '@/components/admin/DataTableAdmin';
+import fetchAPI from '../../utils/fetchAPI';
 
 export default function AdminEventos() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function AdminEventos() {
       if (memorial) params.append('memorial_concluido', memorial);
       if (usuario_id) params.append('usuario_id', usuario_id);
 
-      const res = await fetch(`/api/admin/eventos?${params}`);
+      const res = await fetchAPI(`/api/admin/eventos?${params}`);
       if (!res.ok) throw new Error('Erro ao carregar eventos');
       const json = await res.json();
       setData(json.data || []);

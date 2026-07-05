@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import Icon from '../ui/Icon';
 import Button from '../../components/ui/Button';
+import fetchAPI from '../../utils/fetchAPI';
 
 export default function AssistenteForm({ assistente, cerimonialistaId, acessos, onSalvo, onClose }) {
   const isEditando = !!assistente;
@@ -72,7 +73,7 @@ export default function AssistenteForm({ assistente, cerimonialistaId, acessos, 
           );
         }
 
-        const res = await fetch('/api/cerimonialista/assistentes/convidar', {
+        const res = await fetchAPI('/api/cerimonialista/assistentes/convidar', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import DataTableAdmin from '@/components/admin/DataTableAdmin';
 import GraficoReceita from '@/components/admin/GraficoReceita';
+import fetchAPI from '../../utils/fetchAPI';
 
 export default function AdminPagamentos() {
   const [data, setData] = useState([]);
@@ -34,7 +35,7 @@ export default function AdminPagamentos() {
       if (tipo) params.append('tipo', tipo);
       if (status) params.append('status', status);
 
-      const res = await fetch(`/api/admin/pagamentos?${params}`);
+      const res = await fetchAPI(`/api/admin/pagamentos?${params}`);
       if (!res.ok) throw new Error('Erro ao carregar pagamentos');
       const json = await res.json();
       setData(json.transacoes || []);

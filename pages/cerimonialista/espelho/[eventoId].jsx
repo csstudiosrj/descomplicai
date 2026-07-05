@@ -5,6 +5,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { supabase } from '../../../lib/supabase';
 import Icon from '../../../components/ui/Icon';
 import Button from '../../../components/ui/Button';
+import fetchAPI from '../../../utils/fetchAPI';
 
 export default function EspelhoEvento() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function EspelhoEvento() {
         return;
       }
 
-      const res = await fetch(`/api/cerimonialista/espelho/${eventoId}`, {
+      const res = await fetchAPI(`/api/cerimonialista/espelho/${eventoId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
