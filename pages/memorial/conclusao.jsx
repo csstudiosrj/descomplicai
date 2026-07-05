@@ -24,7 +24,7 @@ const PLANOS_ASSINATURA = [
 export default function ConclusaoPage() {
   const router = useRouter();
   const { estado, carregarEstado } = useMemorial();
-  const { user, evento } = useAuth();
+  const { user, evento, supabase } = useAuth();
   const { isHydrated, carregarDraft } = useAutoSave(estado);
   const [status, setStatus] = useState('carregando');
   const [memorial, setMemorial] = useState('');
@@ -73,9 +73,14 @@ export default function ConclusaoPage() {
     const gerarMemorial = async () => {
       try {
         const payload = montarPayloadMemorial(estado);
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
         const resposta = await fetchAPI('/api/ia/gerar-memorial', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+          },
           body: JSON.stringify(payload),
         });
         const data = await resposta.json();
@@ -96,9 +101,14 @@ export default function ConclusaoPage() {
     setBaixandoPDF(true);
     try {
       const dadosEvento = montarPayloadMemorial(estado);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
       const resposta = await fetchAPI('/api/gerar-pdf', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
         body: JSON.stringify({ memorial, dadosEvento }),
       });
       if (!resposta.ok) {
@@ -133,9 +143,14 @@ export default function ConclusaoPage() {
     if (!user?.id || !evento?.id) { alert('Faca login primeiro para continuar.'); return; }
     setIniciandoTrial(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
       const resposta = await fetchAPI('/api/trial', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
         body: JSON.stringify({ eventoId: evento.id }),
       });
       const data = await resposta.json();
@@ -158,9 +173,14 @@ export default function ConclusaoPage() {
     setPagando(true);
     try {
       const dadosEvento = { ...montarPayloadMemorial(estado), email: user?.email || null };
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
       const resposta = await fetchAPI('/api/pagamento/criar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
         body: JSON.stringify({ tipo: 'memorial_pdf', usuarioId: user.id, eventoId: evento.id, dadosEvento }),
       });
       const data = await resposta.json();
@@ -180,9 +200,14 @@ export default function ConclusaoPage() {
     setPagando(true);
     try {
       const dadosEvento = { ...montarPayloadMemorial(estado), email: user?.email || null };
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
       const resposta = await fetchAPI('/api/pagamento/criar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
         body: JSON.stringify({ tipo: 'assinatura', plano: planoSelecionado, usuarioId: user.id, eventoId: evento.id, dadosEvento }),
       });
       const data = await resposta.json();
