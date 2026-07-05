@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import { supabase } from '../lib/supabase';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import fetchAPI from '../utils/fetchAPI';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://descomplicai.com.br';
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
@@ -22,13 +23,68 @@ export default function CadastroPage() {
     setErro('');
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password: senha,
         options: { data: { nome } },
       });
       if (error) throw error;
-      router.push('/memorial');
+
+      const session = data?.session;
+      if (!session?.access_token) {
+        // Cadastro pode requerer confirmacao de email
+        // Redireciona para memorial de qualquer forma
+        router.push('/memorial');
+        return;
+      }
+
+      // Verifica se veio do memorial (redirect=/memorial)
+      const redirectTo = router.query.redirect;
+      if (redirectTo === '/memorial') {
+        // Le estado salvo do memorial antes do cadastro
+        let estadoMemorial = null;
+        try {
+          const raw = sessionStorage.getItem('descomplicai-pre-login-state');
+          if (raw) {
+            estadoMemorial = JSON.parse(raw);
+          }
+        } catch {
+          // Ignora erro de parse
+        }
+
+        if (estadoMemorial) {
+          // Cria evento + memorial no Supabase
+          try {
+            const res = await fetchAPI('/api/memorial/criar-evento', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({ estado: estadoMemorial }),
+            });
+
+            const result = await res.json();
+            if (!res.ok) {
+              console.warn('[cadastro] Erro ao criar evento:', result.erro || result.error);
+            } else {
+              console.log('[cadastro] Evento criado:', result.evento_id);
+            }
+          } catch (apiErr) {
+            console.warn('[cadastro] Falha na API criar-evento:', apiErr);
+            // Nao bloqueia o cadastro se a API falhar
+          }
+
+          // Limpa sessionStorage
+          try {
+            sessionStorage.removeItem('descomplicai-pre-login-state');
+          } catch {}
+        }
+      }
+
+      // Redireciona para o destino correto
+      const destino = redirectTo || '/memorial';
+      router.push(destino);
     } catch (err) {
       setErro(err.message || 'Erro ao criar conta. Tente novamente.');
     } finally {

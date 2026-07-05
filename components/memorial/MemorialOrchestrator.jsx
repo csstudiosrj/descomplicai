@@ -1,5 +1,6 @@
 // components/memorial/MemorialOrchestrator.jsx
 // HOTFIX: corrigido typo salvandoAgoro -> salvandoAgora
+// CORRECAO 05/07: handleSelect passa proximaEtapaId para deveExibirLoginAgora
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -267,7 +268,7 @@ export default function MemorialOrchestrator() {
 
   const handleSelect = useCallback((campo, valor, cor) => {
     setRespostas(campo, valor);
-    
+
     // Formata data para exibição na animação (DD/MM/AAAA)
     let valorDisplay = valor;
     if (campo === 'dataEvento' && valor && typeof valor === 'string') {
@@ -276,7 +277,7 @@ export default function MemorialOrchestrator() {
         valorDisplay = `${dia}/${mes}/${ano}`;
       }
     }
-    
+
     setRespostaTransicao(typeof valorDisplay === 'string' ? valorDisplay : '');
     setCampoTransicao(campo);
     setTransicionando(true);
@@ -286,12 +287,16 @@ export default function MemorialOrchestrator() {
 
     setTimeout(() => {
       const proxima = calcularProximaEtapa(novoEstado, estado.etapaAtual);
-      const etapaId = getEtapaPorIndice(proxima)?.id;
-      if (!user && deveExibirLoginAgora(novoEstado, etapaId)) {
+      const proximaEtapaObj = getEtapaPorIndice(proxima);
+      const proximaEtapaId = proximaEtapaObj?.id;
+
+      // CORRECAO: gate de login apos Bloco C (antes de entrar no Bloco D)
+      if (!user && deveExibirLoginAgora(novoEstado, proximaEtapaId)) {
         setMostrandoLogin(true);
         setTransicionando(false);
         return;
       }
+
       irParaEtapa(proxima);
       setTransicionando(false);
       setCorTransicao(null);
@@ -381,7 +386,7 @@ export default function MemorialOrchestrator() {
           ) : mostrandoLogin ? (
             <div style={{ padding: 'var(--space-6)', textAlign: 'center' }}>
               <h2>Quase lá!</h2>
-              <p>Para continuar salvando seu progresso, faça login ou crie uma conta.</p>
+              <p>Seu casamento está tomando forma. Salve seu progresso pra continuar de onde parou.</p>
               <button onClick={() => handleIrParaLogin('/login')}>Entrar</button>
               <button onClick={() => handleIrParaLogin('/cadastro')}>Criar conta</button>
             </div>

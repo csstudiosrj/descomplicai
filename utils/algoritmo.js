@@ -2,6 +2,7 @@
 // Algoritmo de navegacao do memorial — fluxo completo com expansao (~145 etapas)
 // CORRECOES: bloco N para Documentacao, campos padronizados, condicionais ajustadas
 // CORRECAO 04/07: step16 (Referencias) so aparece no modo ativo (modoPlanejamento === 'ativo')
+// CORRECAO 05/07: deveExibirLoginAgora agora detecta transicao Bloco C -> D (gate de login)
 
 const ETAPAS = [
   // === BLOCO A: Perfil do Casal ===
@@ -341,11 +342,15 @@ export function calcularEtapasTotais(estado) {
   return count;
 }
 
-export function deveExibirLoginAgora(estado, etapaId) {
-  const etapasBlocoA = ETAPAS.filter(e => e.bloco === 'A').map(e => e.id);
-  const etapaAtualIdx = ETAPAS.findIndex(e => e.id === etapaId);
-  const ultimoBlocoA = ETAPAS.findIndex(e => e.id === etapasBlocoA[etapasBlocoA.length - 1]);
-  return etapaAtualIdx > ultimoBlocoA && !estado.user_id;
+/**
+ * Gate de login: exibe tela de login/cadastro quando o usuario
+ * termina o Bloco C e vai entrar no Bloco D (Identidade Visual).
+ * Segue o PRD: login apos Bloco C para salvar progresso no Supabase.
+ */
+export function deveExibirLoginAgora(estado, proximaEtapaId) {
+  const proximaEtapa = ETAPAS.find(e => e.id === proximaEtapaId);
+  // Gate: transicao do Bloco C para o Bloco D
+  return proximaEtapa?.bloco === 'D';
 }
 
 export { ETAPAS, INDICE_POR_ID };

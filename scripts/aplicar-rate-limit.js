@@ -21,10 +21,11 @@ const LIMITES = {
   'pages/api/colaborador/validar.js': 'conviteLimiter',
 
   // Mensagens (20/min)
-  'pages/api/mensagens/enviar.js': 'strictLimiter', // strictLimiter = 5/min, precisa de um novo
+  'pages/api/mensagens/enviar.js': 'strictLimiter',
 
   // Memorial (30/min)
   'pages/api/memorial/salvar.js': 'strictLimiter',
+  'pages/api/memorial/criar-evento.js': 'strictLimiter',
 
   // IA (5/min)
   'pages/api/ia/gerar-memorial.js': 'cadastroLimiter',
@@ -34,9 +35,6 @@ const LIMITES = {
 
   // E-mail (10/min)
   'pages/api/email/enviar.js': 'pagamentoLimiter',
-
-  // Analytics (100/min) — já tem
-  // 'pages/api/analytics/track.js': 'analyticsLimiter',
 
   // Contratos (10/min cada)
   'pages/api/contratos/criar.js': 'pagamentoLimiter',
@@ -50,18 +48,9 @@ const LIMITES = {
   'pages/api/cerimonialista/modelos/salvar.js': 'conviteLimiter',
 };
 
-// Limiters que precisam ser importados
-const IMPORTS_NEEDED = {
-  cadastroLimiter: 'cadastroLimiter',
-  pagamentoLimiter: 'pagamentoLimiter',
-  conviteLimiter: 'conviteLimiter',
-  strictLimiter: 'strictLimiter',
-  analyticsLimiter: 'analyticsLimiter',
-};
-
 function aplicarRateLimit(filePath, limiterName) {
   const fullPath = path.resolve(filePath);
-  
+
   if (!fs.existsSync(fullPath)) {
     console.log(`⚠️  Arquivo não encontrado: ${filePath}`);
     return false;
@@ -82,25 +71,22 @@ function aplicarRateLimit(filePath, limiterName) {
   }
 
   // Verifica se já importa do ratelimit
-  const hasRatelimitImport = content.includes('lib/ratelimit');
+  const hasRatelimitImport = content.includes('lib/rateLimit') || content.includes('lib/ratelimit');
 
   // Determina o import path relativo
-  const depth = filePath.split('/').length - 2; // pages/api/ = 2 níveis
+  const depth = filePath.split('/').length - 2;
   const importPrefix = '../'.repeat(depth);
 
   // Adiciona import se não existir
   if (!hasRatelimitImport) {
-    const importLine = `import { withRateLimit, ${limiterName} } from "${importPrefix}lib/ratelimit";\n`;
+    const importLine = `import { withRateLimit, ${limiterName} } from "${importPrefix}lib/rateLimit";\n`;
     content = importLine + content;
   }
 
-  // Procura o export default e envolve com withRateLimit
-  // Padrão comum: export default handler; ou export default async function...
-  
-  // Caso 1: export default nomeDaFuncao; (declaração separada)
+  // Caso 1: export default nomeDaFuncao;
   const exportDefaultVarRegex = /export\s+default\s+(\w+);?\s*$/m;
   const matchVar = content.match(exportDefaultVarRegex);
-  
+
   if (matchVar) {
     const funcName = matchVar[1];
     content = content.replace(
@@ -112,33 +98,27 @@ function aplicarRateLimit(filePath, limiterName) {
     return true;
   }
 
-  // Caso 2: export default async function handler(...) ou export default function handler(...)
+  // Caso 2: export default async function handler(...)
   const exportDefaultFuncRegex = /export\s+default\s+(async\s+)?function\s+(\w+)\s*\(/;
   const matchFunc = content.match(exportDefaultFuncRegex);
-  
+
   if (matchFunc) {
     const isAsync = matchFunc[1] || '';
     const funcName = matchFunc[2];
-    
-    // Renomeia a função para não conflitar
     const newFuncName = `_${funcName}`;
     content = content.replace(
       `export default ${isAsync}function ${funcName}`,
       `${isAsync}function ${newFuncName}`
     );
-    
-    // Adiciona o export default com withRateLimit no final
     content += `\n// Rate limit: ${limiterName}\nexport default withRateLimit(${newFuncName}, ${limiterName});\n`;
-    
     fs.writeFileSync(fullPath, content);
     console.log(`✅ Aplicado ${limiterName} em: ${filePath}`);
     return true;
   }
 
-  // Caso 3: export default (req, res) => { ... } (arrow function direto)
+  // Caso 3: arrow function
   const exportDefaultArrowRegex = /export\s+default\s+(async\s*)?\(.*?=>\s*\{/;
   if (exportDefaultArrowRegex.test(content)) {
-    // Para arrow functions, precisamos extrair e renomear
     console.log(`⚠️  Arrow function detectada, precisa de ajuste manual: ${filePath}`);
     return false;
   }
@@ -166,17 +146,19 @@ console.log(`   ✅ Aplicados: ${aplicados}`);
 console.log(`   ⏭️  Pulados (já tinham): ${pulados}`);
 console.log(`   ⚠️  Erros/arquivos não encontrados: ${erros}`);
 
-// Verifica se precisa adicionar novos limiters no lib/ratelimit.js
-const ratelimitPath = path.resolve('lib/ratelimit.js');
-const ratelimitContent = fs.readFileSync(ratelimitPath, 'utf8');
+// Verifica se precisa adicionar novos limiters no lib/rateLimit.js
+const ratelimitPath = path.resolve('lib/rateLimit.js');
+if (fs.existsSync(ratelimitPath)) {
+  const ratelimitContent = fs.readFileSync(ratelimitPath, 'utf8');
+  const limitersUsados = [...new Set(Object.values(LIMITES))];
+  const limitersFaltantes = limitersUsados.filter(l => !ratelimitContent.includes(l));
 
-// Verifica se falta algum limiter que usamos
-const limitersUsados = [...new Set(Object.values(LIMITES))];
-const limitersFaltantes = limitersUsados.filter(l => !ratelimitContent.includes(l));
-
-if (limitersFaltantes.length > 0) {
-  console.log(`\n⚠️  Limiters faltantes em lib/ratelimit.js: ${limitersFaltantes.join(', ')}`);
-  console.log(`   Adicione-os manualmente ou o script vai falhar.`);
+  if (limitersFaltantes.length > 0) {
+    console.log(`\n⚠️  Limiters faltantes em lib/rateLimit.js: ${limitersFaltantes.join(', ')}`);
+    console.log(`   Adicione-os manualmente ou o script vai falhar.`);
+  }
+} else {
+  console.log(`\n⚠️  lib/rateLimit.js não encontrado em: ${ratelimitPath}`);
 }
 
 console.log(`\n💡 Próximo passo: git diff para revisar as mudanças`);
