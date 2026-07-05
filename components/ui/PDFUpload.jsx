@@ -16,7 +16,11 @@ import PropTypes from 'prop-types';
 import { generateReactHelpers } from '@uploadthing/react';
 import Icon from './Icon';
 
-const { useUploadThing } = generateReactHelpers();
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '/descomplicai';
+
+const { useUploadThing } = generateReactHelpers({
+  url: `${basePath}/api/uploadthing`,
+});
 
 export default function PDFUpload({
   onUpload,

@@ -21,7 +21,11 @@ import { generateReactHelpers } from '@uploadthing/react';
 import { comprimirPerfil, comprimirReferencia } from '../../lib/uploadthing';
 import Icon from './Icon';
 
-const { useUploadThing } = generateReactHelpers();
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '/descomplicai';
+
+const { useUploadThing } = generateReactHelpers({
+  url: `${basePath}/api/uploadthing`,
+});
 
 export default function ImageUpload({
   onUpload,
@@ -92,7 +96,6 @@ export default function ImageUpload({
     setProgresso({ atual: 0, total: arquivos.length });
 
     try {
-      // Comprime imagens antes do upload
       const comprimir = tipo === 'perfil' ? comprimirPerfil : comprimirReferencia;
       const arquivosComprimidos = [];
 
@@ -107,7 +110,6 @@ export default function ImageUpload({
         setProgresso({ atual: i + 1, total: arquivos.length });
       }
 
-      // Upload via SDK UploadThing v7
       await startUpload(arquivosComprimidos);
     } catch (err) {
       console.error('Erro no upload:', err);
