@@ -1,11 +1,16 @@
-import { getTermos } from "../../../utils/linguagemCasal";
 // components/memorial/steps/Step32PadrinhosCriancas.jsx
-import React, { useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
+import { getTermos } from '../../../utils/linguagemCasal';
 import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
 
-const OPCOES = [
+export default function Step32PadrinhosCriancas({ onSelect, estadoAtual }) {
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
+  const [cardPulsando, setCardPulsando] = React.useState(null);
+
+  const OPCOES = [
     {
       valor: 'padrinhos',
       label: 'Apenas padrinhos',
@@ -27,15 +32,10 @@ const OPCOES = [
     {
       valor: 'sozinhos',
       label: 'Sozinhos',
-      subtexto: `Entrada apenas de ${termos.pessoa1} e ${termos.pessoa2}`,
+      subtexto: `Entrada apenas de ${termos.pessoa1ComArtigo} e ${termos.pessoa2ComArtigo}`,
       icone: 'user',
     },
-];
-
-export default function Step32PadrinhosCriancas({ onSelect, estadoAtual }) {
-  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
-  const termos = getTermos(perfil);
-  const [cardPulsando, setCardPulsando] = React.useState(null);
+  ];
 
   const selecionado = estadoAtual?.papeisCriancas;
 
@@ -43,16 +43,18 @@ export default function Step32PadrinhosCriancas({ onSelect, estadoAtual }) {
     if (cardPulsando) return;
     setCardPulsando(opcao.valor);
     setTimeout(() => {
-      onSelect(opcao.campo || opcao.valor, opcao.valor, opcao.cor);
+      onSelect('papeisCriancas', opcao.valor);
       setCardPulsando(null);
     }, 350);
   };
+
   const handleKeyDown = (e, opcao) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       handleCardClick(opcao);
     }
   };
+
   return (
     <div
       role="radiogroup"
@@ -87,57 +89,51 @@ export default function Step32PadrinhosCriancas({ onSelect, estadoAtual }) {
           const isSelected = selecionado === opcao.valor;
           return (
             <div
-      key={opcao.valor}
-      style={{
-        transition: 'transform 300ms ease, box-shadow 300ms ease',
-        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
-        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
-        borderRadius: 'var(--radius-lg)',
-      }}
-    >
-      <Card
               key={opcao.valor}
-              interactive
-              selected={isSelected}
-              padding="lg"
-              onClick={() => handleCardClick(opcao)}
-              role="radio"
-              aria-checked={isSelected}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onSelect('papeisCriancas', opcao.valor);
-                }
+              style={{
+                transition: 'transform 300ms ease, box-shadow 300ms ease',
+                transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+                boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+                borderRadius: 'var(--radius-lg)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: 'var(--radius-lg)',
-                  backgroundColor: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-surface)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: isSelected ? 'var(--color-brand)' : 'var(--color-text-muted)',
-                  flexShrink: 0,
-                }}>
-                  <Icon name={opcao.icone} size={24} ariaHidden={true} />
-                </div>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>
-                    {opcao.label}
+              <Card
+                interactive
+                selected={isSelected}
+                padding="lg"
+                onClick={() => handleCardClick(opcao)}
+                role="radio"
+                aria-checked={isSelected}
+                tabIndex={0}
+                onKeyDown={(e) => handleKeyDown(e, opcao)}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: 'var(--radius-lg)',
+                    backgroundColor: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-surface)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: isSelected ? 'var(--color-brand)' : 'var(--color-text-muted)',
+                    flexShrink: 0,
+                  }}>
+                    <Icon name={opcao.icone} size={24} ariaHidden={true} />
                   </div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
-                    {opcao.subtexto}
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>
+                      {opcao.label}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
+                      {opcao.subtexto}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-    </div>
-  );
-})}
+              </Card>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
