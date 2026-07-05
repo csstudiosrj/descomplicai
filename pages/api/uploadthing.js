@@ -1,6 +1,7 @@
 /**
  * API Route: /api/uploadthing
  * File Router do UploadThing v7 para Pages Router (Next.js)
+ * Usa uploadthing/next-legacy com export default (obrigatorio para Pages Router).
  */
 
 import { createRouteHandler } from 'uploadthing/next-legacy';
@@ -27,6 +28,6 @@ const uploadRouter = {
   }),
 };
 
-export const { GET, POST } = createRouteHandler({
+export default createRouteHandler({
   router: uploadRouter,
 });
