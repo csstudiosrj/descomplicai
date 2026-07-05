@@ -4,10 +4,10 @@ import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import { montarPayloadMemorial } from '../../../utils/gerador-memorial';
 
-export default function Step60Fornecedores({ onConcluir, estadoAtual }) {
+export default function Step60Fornecedores({ onConcluir, estado }) {
   const fornecedores = useMemo(
-    () => montarPayloadMemorial(estadoAtual),
-    [estadoAtual]
+    () => montarPayloadMemorial(estado || {}),
+    [estado]
   );
 
   const agrupados = useMemo(() => {
@@ -155,7 +155,7 @@ export default function Step60Fornecedores({ onConcluir, estadoAtual }) {
 
 Step60Fornecedores.propTypes = {
   onConcluir: PropTypes.func.isRequired,
-  estadoAtual: PropTypes.object,
+  estado: PropTypes.object,
 };
 
 export { Step60Fornecedores };
