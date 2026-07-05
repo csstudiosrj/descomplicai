@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
+import { getTermos } from '../../../utils/linguagemCasal';
 
 const OPCOES = [
     {
@@ -10,51 +11,58 @@ const OPCOES = [
       label: 'Natural',
       subtexto: 'Pele leve, olhos suaves',
       icone: 'sun',
+      cor: '#F5A623',
     },
     {
       valor: 'glamour',
       label: 'Glamour',
       subtexto: 'Pele perfeita, olhos marcantes',
       icone: 'star',
+      cor: '#D4AF37',
     },
     {
       valor: 'romantica',
-      label: 'Romântica',
+      label: 'Romantica',
       subtexto: 'Rosados, soft, delicada',
       icone: 'heart',
+      cor: '#E91E63',
     },
     {
       valor: 'vintage',
       label: 'Vintage',
-      subtexto: 'Clássica, anos 20-50',
+      subtexto: 'Classica, anos 20-50',
       icone: 'clock',
+      cor: '#8B6F5E',
     },
 ];
 
-export default function Step55BelezaPadronizacao({ onSelect, estadoAtual }) {
+export default function Step55BelezaPadronizacao({ estado, onSelect }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
 
-  const selecionado = estadoAtual?.estiloMaquiagem;
-
+  const selecionado = estado?.estiloMaquiagem;
+  const perfil = estado?.perfilCasal || {};
+  const termos = getTermos(perfil);
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
     setCardPulsando(opcao.valor);
     setTimeout(() => {
-      onSelect(opcao.campo || opcao.valor, opcao.valor, opcao.cor);
+      onSelect('estiloMaquiagem', opcao.valor, opcao.cor);
       setCardPulsando(null);
     }, 350);
   };
+
   const handleKeyDown = (e, opcao) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       handleCardClick(opcao);
     }
   };
+
   return (
     <div
       role="radiogroup"
-      aria-label="Como será a beleza?"
+      aria-label="Como sera a beleza?"
       style={{
         maxWidth: '640px',
         margin: '0 auto',
@@ -73,10 +81,10 @@ export default function Step55BelezaPadronizacao({ onSelect, estadoAtual }) {
 
       <div>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', lineHeight: 'var(--leading-tight)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>
-          Beleza e padronização
+          Beleza e padronizacao
         </h1>
         <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
-          Como será a beleza?
+          Como sera a beleza?
         </p>
       </div>
 
@@ -85,57 +93,51 @@ export default function Step55BelezaPadronizacao({ onSelect, estadoAtual }) {
           const isSelected = selecionado === opcao.valor;
           return (
             <div
-      key={opcao.valor}
-      style={{
-        transition: 'transform 300ms ease, box-shadow 300ms ease',
-        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
-        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
-        borderRadius: 'var(--radius-lg)',
-      }}
-    >
-      <Card
               key={opcao.valor}
-              interactive
-              selected={isSelected}
-              padding="lg"
-              onClick={() => handleCardClick(opcao)}
-              role="radio"
-              aria-checked={isSelected}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onSelect('estiloMaquiagem', opcao.valor);
-                }
+              style={{
+                transition: 'transform 300ms ease, box-shadow 300ms ease',
+                transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+                boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+                borderRadius: 'var(--radius-lg)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: 'var(--radius-lg)',
-                  backgroundColor: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-surface)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: isSelected ? 'var(--color-brand)' : 'var(--color-text-muted)',
-                  flexShrink: 0,
-                }}>
-                  <Icon name={opcao.icone} size={24} ariaHidden={true} />
-                </div>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>
-                    {opcao.label}
+              <Card
+                interactive
+                selected={isSelected}
+                padding="lg"
+                onClick={() => handleCardClick(opcao)}
+                role="radio"
+                aria-checked={isSelected}
+                tabIndex={0}
+                onKeyDown={(e) => handleKeyDown(e, opcao)}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: 'var(--radius-lg)',
+                    backgroundColor: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-surface)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: isSelected ? 'var(--color-brand)' : 'var(--color-text-muted)',
+                    flexShrink: 0,
+                  }}>
+                    <Icon name={opcao.icone} size={24} ariaHidden={true} />
                   </div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
-                    {opcao.subtexto}
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>
+                      {opcao.label}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
+                      {opcao.subtexto}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-    </div>
-  );
-})}
+              </Card>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -143,7 +145,7 @@ export default function Step55BelezaPadronizacao({ onSelect, estadoAtual }) {
 
 Step55BelezaPadronizacao.propTypes = {
   onSelect: PropTypes.func.isRequired,
-  estadoAtual: PropTypes.object,
+  estado: PropTypes.object,
 };
 
 export { Step55BelezaPadronizacao };

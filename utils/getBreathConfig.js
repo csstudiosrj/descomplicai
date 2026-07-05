@@ -102,23 +102,30 @@ export const BREATH_CONFIG = {
 
 export const BREATH_CONFIG_BY_BLOCK = {
   A: { defaultStyle: 'classico', label: 'Perfil do Casal' },
-  B: { defaultStyle: 'romantico', label: 'Cerimônia' },
+  B: { defaultStyle: 'romantico', label: 'Cerimonia' },
   C: { defaultStyle: 'praia', label: 'Local e Estrutura' },
   D: { defaultStyle: 'boho', label: 'Identidade Visual' },
-  E: { defaultStyle: 'boho', label: 'Decoração' },
+  E: { defaultStyle: 'boho', label: 'Decoracao' },
   F: { defaultStyle: 'rustico', label: 'Mesa Posta' },
-  G: { defaultStyle: 'romantico', label: 'Cerimônia Detalhada' },
-  H: { defaultStyle: 'praia', label: 'Recepção' },
+  G: { defaultStyle: 'romantico', label: 'Cerimonia Detalhada' },
+  H: { defaultStyle: 'praia', label: 'Recepcao' },
   I: { defaultStyle: 'vintage', label: 'Papelaria' },
-  J: { defaultStyle: 'glam', label: 'Vestuário e Beleza' },
+  J: { defaultStyle: 'glam', label: 'Vestuario e Beleza' },
   K: { defaultStyle: 'moderno', label: 'Fornecedores' },
-  L: { defaultStyle: 'industrial', label: 'Logística' },
-  M: { defaultStyle: 'tropical', label: 'Pós-casamento' },
-  N: { defaultStyle: 'minimalista', label: 'Documentação' },
+  L: { defaultStyle: 'industrial', label: 'Logistica' },
+  M: { defaultStyle: 'tropical', label: 'Pos-casamento' },
+  N: { defaultStyle: 'minimalista', label: 'Documentacao' },
 };
 
 export function getBreathConfig(estilo, bloco, perfilCasal) {
-  const termos = getTermos(perfilCasal);
+  // FIX: protege contra perfilCasal undefined/string/invalido
+  let perfilObj;
+  if (perfilCasal && typeof perfilCasal === 'object') {
+    perfilObj = perfilCasal;
+  } else {
+    perfilObj = { perfil: perfilCasal || 'noivos' };
+  }
+  const termos = getTermos(perfilObj);
   const config = BREATH_CONFIG[estilo] || BREATH_CONFIG['classico'];
   const blockConfig = BREATH_CONFIG_BY_BLOCK[bloco] || {};
   return {
