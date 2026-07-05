@@ -1,8 +1,8 @@
 /**
  * ImageUpload.jsx
  * Componente generico de upload de imagens com compressao e preview
- * Usa UploadThing via API interna /api/uploadthing (browser-safe)
- * 
+ * Usa UploadThing v7 via @uploadthing/react (SDK oficial)
+ *
  * Props:
  * - onUpload: (urls: string[]) => void — chamado quando upload completa
  * - onError: (erro: string) => void — chamado em erro
@@ -17,8 +17,11 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { uploadMultiploViaAPI } from '../../lib/uploadthing';
+import { generateReactHelpers } from '@uploadthing/react';
+import { comprimirPerfil, comprimirReferencia } from '../../lib/uploadthing';
 import Icon from './Icon';
+
+const { useUploadThing } = generateReactHelpers();
 
 export default function ImageUpload({
   onUpload,
@@ -37,6 +40,22 @@ export default function ImageUpload({
   const [progresso, setProgresso] = useState({ atual: 0, total: 0 });
   const inputRef = useRef(null);
 
+  const { startUpload } = useUploadThing('imageUploader', {
+    onClientUploadComplete: (res) => {
+      const urls = res.map((r) => r.url);
+      onUpload?.(urls);
+      setArquivos([]);
+      setPreviews([]);
+      setProgresso({ atual: 0, total: 0 });
+      setUploading(false);
+    },
+    onUploadError: (err) => {
+      console.error('[UploadThing] Erro:', err);
+      onError?.(err.message || 'Erro ao fazer upload. Tente novamente.');
+      setUploading(false);
+    },
+  });
+
   const gerarPreview = (file) => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -49,25 +68,21 @@ export default function ImageUpload({
     const files = Array.from(e.target.files);
     if (!files.length) return;
 
-    // Valida quantidade
     const total = urlsExistentes.length + arquivos.length + files.length;
     if (total > maxFiles) {
       onError?.(`Maximo de ${maxFiles} ${maxFiles === 1 ? 'imagem' : 'imagens'} permitidas.`);
       return;
     }
 
-    // Valida tamanho
-    const arquivosGrandes = files.filter(f => f.size > maxSizeMB * 1024 * 1024);
+    const arquivosGrandes = files.filter((f) => f.size > maxSizeMB * 1024 * 1024);
     if (arquivosGrandes.length > 0) {
       onError?.(`Arquivo(s) excedem ${maxSizeMB}MB. Selecione arquivo(s) menor(es).`);
       return;
     }
 
-    // Gera previews
     const novosPreviews = await Promise.all(files.map(gerarPreview));
-
-    setArquivos(prev => [...prev, ...files]);
-    setPreviews(prev => [...prev, ...novosPreviews]);
+    setArquivos((prev) => [...prev, ...files]);
+    setPreviews((prev) => [...prev, ...novosPreviews]);
   }, [arquivos, urlsExistentes, maxFiles, maxSizeMB, onError]);
 
   const handleUpload = useCallback(async () => {
@@ -77,30 +92,33 @@ export default function ImageUpload({
     setProgresso({ atual: 0, total: arquivos.length });
 
     try {
-      const onProgress = ({ atual, total }) => {
-        setProgresso({ atual, total });
-      };
+      // Comprime imagens antes do upload
+      const comprimir = tipo === 'perfil' ? comprimirPerfil : comprimirReferencia;
+      const arquivosComprimidos = [];
 
-      const resultados = await uploadMultiploViaAPI(arquivos, { tipo }, onProgress);
-      const urls = resultados.map(r => r.url);
+      for (let i = 0; i < arquivos.length; i++) {
+        const file = arquivos[i];
+        if (file.type.startsWith('image/')) {
+          const comprimido = await comprimir(file);
+          arquivosComprimidos.push(comprimido);
+        } else {
+          arquivosComprimidos.push(file);
+        }
+        setProgresso({ atual: i + 1, total: arquivos.length });
+      }
 
-      onUpload?.(urls);
-
-      // Limpa estado
-      setArquivos([]);
-      setPreviews([]);
-      setProgresso({ atual: 0, total: 0 });
+      // Upload via SDK UploadThing v7
+      await startUpload(arquivosComprimidos);
     } catch (err) {
       console.error('Erro no upload:', err);
       onError?.(err.message || 'Erro ao fazer upload. Tente novamente.');
-    } finally {
       setUploading(false);
     }
-  }, [arquivos, tipo, onUpload, onError]);
+  }, [arquivos, tipo, startUpload, onError]);
 
   const handleRemover = useCallback((index) => {
-    setArquivos(prev => prev.filter((_, i) => i !== index));
-    setPreviews(prev => prev.filter((_, i) => i !== index));
+    setArquivos((prev) => prev.filter((_, i) => i !== index));
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   const handleRemoverExistente = useCallback((url) => {
@@ -116,14 +134,15 @@ export default function ImageUpload({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-      {/* Label */}
       {label && (
-        <label style={{
-          fontFamily: 'var(--font-body)',
-          fontSize: 'var(--text-sm)',
-          fontWeight: 'var(--font-medium)',
-          color: 'var(--color-text-primary)',
-        }}>
+        <label
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-sm)',
+            fontWeight: 'var(--font-medium)',
+            color: 'var(--color-text-primary)',
+          }}
+        >
           {label}
           {maxFiles > 1 && (
             <span style={{ color: 'var(--color-text-muted)', fontWeight: 'var(--font-normal)' }}>
@@ -133,7 +152,6 @@ export default function ImageUpload({
         </label>
       )}
 
-      {/* Area de upload */}
       {podeAdicionar && (
         <div
           onClick={handleClick}
@@ -142,7 +160,7 @@ export default function ImageUpload({
           onDrop={(e) => {
             e.preventDefault();
             e.currentTarget.style.borderColor = 'var(--color-border)';
-            const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+            const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith('image/'));
             if (files.length) {
               const event = { target: { files } };
               handleFileChange(event);
@@ -168,40 +186,48 @@ export default function ImageUpload({
             aria-label="Selecionar arquivo de imagem"
           />
           <Icon name="upload" size={32} color="var(--color-text-muted)" />
-          <p style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 'var(--text-sm)',
-            color: 'var(--color-text-secondary)',
-            marginTop: 'var(--space-2)',
-          }}>
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-sm)',
+              color: 'var(--color-text-secondary)',
+              marginTop: 'var(--space-2)',
+            }}
+          >
             Clique ou arraste imagens aqui
           </p>
-          <p style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 'var(--text-xs)',
-            color: 'var(--color-text-muted)',
-            marginTop: 'var(--space-1)',
-          }}>
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-xs)',
+              color: 'var(--color-text-muted)',
+              marginTop: 'var(--space-1)',
+            }}
+          >
             {tipo === 'perfil' ? 'Max 200KB · 800x800px recomendado' : 'Max 500KB · JPEG, PNG, WebP'}
           </p>
         </div>
       )}
 
-      {/* Previews — arquivos novos */}
       {previews.length > 0 && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
-          gap: 'var(--space-3)',
-        }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+            gap: 'var(--space-3)',
+          }}
+        >
           {previews.map((preview, index) => (
-            <div key={index} style={{
-              position: 'relative',
-              borderRadius: 'var(--radius-md)',
-              overflow: 'hidden',
-              aspectRatio: '1',
-              border: '1px solid var(--color-border)',
-            }}>
+            <div
+              key={index}
+              style={{
+                position: 'relative',
+                borderRadius: 'var(--radius-md)',
+                overflow: 'hidden',
+                aspectRatio: '1',
+                border: '1px solid var(--color-border)',
+              }}
+            >
               <img
                 src={preview}
                 alt={`Preview ${index + 1}`}
@@ -238,21 +264,25 @@ export default function ImageUpload({
         </div>
       )}
 
-      {/* URLs existentes */}
       {urlsExistentes.length > 0 && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
-          gap: 'var(--space-3)',
-        }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+            gap: 'var(--space-3)',
+          }}
+        >
           {urlsExistentes.map((url, index) => (
-            <div key={`existente-${index}`} style={{
-              position: 'relative',
-              borderRadius: 'var(--radius-md)',
-              overflow: 'hidden',
-              aspectRatio: '1',
-              border: '1px solid var(--color-border)',
-            }}>
+            <div
+              key={`existente-${index}`}
+              style={{
+                position: 'relative',
+                borderRadius: 'var(--radius-md)',
+                overflow: 'hidden',
+                aspectRatio: '1',
+                border: '1px solid var(--color-border)',
+              }}
+            >
               <img
                 src={url}
                 alt={`Imagem existente ${index + 1}`}
@@ -287,7 +317,6 @@ export default function ImageUpload({
         </div>
       )}
 
-      {/* Botao de upload */}
       {arquivos.length > 0 && !uploading && (
         <button
           onClick={handleUpload}
@@ -312,35 +341,42 @@ export default function ImageUpload({
         </button>
       )}
 
-      {/* Progresso */}
       {uploading && (
-        <div style={{
-          padding: 'var(--space-4)',
-          borderRadius: 'var(--radius-md)',
-          backgroundColor: 'var(--color-brand-lighter)',
-          textAlign: 'center',
-        }}>
-          <p style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 'var(--text-sm)',
-            color: 'var(--color-brand-dark)',
-          }}>
+        <div
+          style={{
+            padding: 'var(--space-4)',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'var(--color-brand-lighter)',
+            textAlign: 'center',
+          }}
+        >
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-sm)',
+              color: 'var(--color-brand-dark)',
+            }}
+          >
             Enviando... {progresso.atual} de {progresso.total}
           </p>
-          <div style={{
-            width: '100%',
-            height: '4px',
-            backgroundColor: 'var(--color-brand-light)',
-            borderRadius: 'var(--radius-full)',
-            marginTop: 'var(--space-2)',
-            overflow: 'hidden',
-          }}>
-            <div style={{
-              width: `${progresso.total > 0 ? (progresso.atual / progresso.total) * 100 : 0}%`,
-              height: '100%',
-              backgroundColor: 'var(--color-brand)',
-              transition: 'width 300ms ease',
-            }} />
+          <div
+            style={{
+              width: '100%',
+              height: '4px',
+              backgroundColor: 'var(--color-brand-light)',
+              borderRadius: 'var(--radius-full)',
+              marginTop: 'var(--space-2)',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                width: `${progresso.total > 0 ? (progresso.atual / progresso.total) * 100 : 0}%`,
+                height: '100%',
+                backgroundColor: 'var(--color-brand)',
+                transition: 'width 300ms ease',
+              }}
+            />
           </div>
         </div>
       )}
