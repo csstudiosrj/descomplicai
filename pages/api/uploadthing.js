@@ -1,7 +1,6 @@
 /**
  * API Route: /api/uploadthing
  * File Router do UploadThing v7 para Pages Router (Next.js)
- * Usa uploadthing/next-legacy porque o projeto está em Pages Router.
  */
 
 import { createRouteHandler } from 'uploadthing/next-legacy';
@@ -16,7 +15,15 @@ const uploadRouter = {
       maxFileCount: 5,
     },
   }).onUploadComplete(({ file }) => {
-    console.log('[UploadThing] Upload completo:', file.url);
+    console.log('[UploadThing] Upload imagem completo:', file.url);
+  }),
+  pdfUploader: f({
+    blob: {
+      maxFileSize: '16MB',
+      maxFileCount: 1,
+    },
+  }).onUploadComplete(({ file }) => {
+    console.log('[UploadThing] Upload PDF completo:', file.url);
   }),
 };
 

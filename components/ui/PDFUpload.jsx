@@ -1,8 +1,8 @@
 /**
  * PDFUpload.jsx
  * Componente de upload de PDFs para contratos e anexos
- * Usa UploadThing via API interna /api/uploadthing (browser-safe)
- * 
+ * Usa UploadThing v7 via @uploadthing/react (SDK oficial)
+ *
  * Props:
  * - onUpload: (url: string) => void — chamado quando upload completa
  * - onError: (erro: string) => void — chamado em erro
@@ -13,8 +13,10 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { uploadArquivoViaAPI } from '../../lib/uploadthing';
+import { generateReactHelpers } from '@uploadthing/react';
 import Icon from './Icon';
+
+const { useUploadThing } = generateReactHelpers();
 
 export default function PDFUpload({
   onUpload,
@@ -28,17 +30,32 @@ export default function PDFUpload({
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef(null);
 
+  const { startUpload } = useUploadThing('pdfUploader', {
+    onClientUploadComplete: (res) => {
+      const url = res?.[0]?.url;
+      if (url) {
+        onUpload?.(url);
+      }
+      setArquivo(null);
+      setNomeArquivo('');
+      setUploading(false);
+    },
+    onUploadError: (err) => {
+      console.error('[UploadThing] Erro PDF:', err);
+      onError?.(err.message || 'Erro ao fazer upload do PDF. Tente novamente.');
+      setUploading(false);
+    },
+  });
+
   const handleFileChange = useCallback((e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Valida tipo
     if (file.type !== 'application/pdf') {
       onError?.('Apenas arquivos PDF sao permitidos.');
       return;
     }
 
-    // Valida tamanho (max 10MB)
     const maxSizeMB = 10;
     if (file.size > maxSizeMB * 1024 * 1024) {
       onError?.(`Arquivo excede ${maxSizeMB}MB. Selecione um arquivo menor.`);
@@ -51,23 +68,15 @@ export default function PDFUpload({
 
   const handleUpload = useCallback(async () => {
     if (!arquivo) return;
-
     setUploading(true);
-
     try {
-      const resultado = await uploadArquivoViaAPI(arquivo, { tipo: 'pdf' });
-      onUpload?.(resultado.url);
-
-      // Limpa estado
-      setArquivo(null);
-      setNomeArquivo('');
+      await startUpload([arquivo]);
     } catch (err) {
       console.error('Erro no upload PDF:', err);
       onError?.(err.message || 'Erro ao fazer upload do PDF. Tente novamente.');
-    } finally {
       setUploading(false);
     }
-  }, [arquivo, onUpload, onError]);
+  }, [arquivo, startUpload, onError]);
 
   const handleRemover = useCallback(() => {
     setArquivo(null);
@@ -81,7 +90,6 @@ export default function PDFUpload({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-      {/* Label */}
       {label && (
         <label style={{
           fontFamily: 'var(--font-body)',
@@ -93,7 +101,6 @@ export default function PDFUpload({
         </label>
       )}
 
-      {/* Area de upload ou arquivo selecionado */}
       {!arquivo && !urlExistente && (
         <div
           onClick={handleClick}
@@ -135,7 +142,6 @@ export default function PDFUpload({
         </div>
       )}
 
-      {/* Arquivo selecionado (novo) */}
       {arquivo && (
         <div style={{
           display: 'flex',
@@ -202,7 +208,6 @@ export default function PDFUpload({
         </div>
       )}
 
-      {/* Upload em andamento */}
       {uploading && (
         <div style={{
           padding: 'var(--space-4)',
@@ -235,7 +240,6 @@ export default function PDFUpload({
         </div>
       )}
 
-      {/* URL existente */}
       {urlExistente && !arquivo && (
         <div style={{
           display: 'flex',
