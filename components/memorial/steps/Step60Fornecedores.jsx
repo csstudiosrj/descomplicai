@@ -1,27 +1,46 @@
-// Bloco K — Confirmação da lista automática de fornecedores gerada pelo algoritmo
+// Bloco K — Preview de fornecedores pendentes (antes da conclusão/PDF)
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
-import { montarPayloadMemorial } from '../../../utils/gerador-memorial';
+import { gerarFornecedoresNecessarios } from '../../../utils/fornecedores-inteligente';
 
 export default function Step60Fornecedores({ onConcluir, estado }) {
-  const fornecedores = useMemo(
-    () => montarPayloadMemorial(estado || {}),
+  // Array COMPLETO com todos os status (contratado, pendente, omitido)
+  const todosFornecedores = useMemo(
+    () => gerarFornecedoresNecessarios(estado || {}),
     [estado]
   );
 
+  // Para o preview, exibe apenas os pendentes (não contratados, não omitidos)
+  const pendentes = useMemo(
+    () => todosFornecedores.filter((f) => f.status === 'pendente'),
+    [todosFornecedores]
+  );
+
+  // Resumo para o topo
+  const resumo = useMemo(() => {
+    const total = todosFornecedores.length;
+    const contratados = todosFornecedores.filter((f) => f.status === 'contratado').length;
+    const pendentesCount = todosFornecedores.filter((f) => f.status === 'pendente').length;
+    const omitidos = todosFornecedores.filter((f) => f.status === 'omitido').length;
+    return { total, contratados, pendentesCount, omitidos };
+  }, [todosFornecedores]);
+
+  // Agrupa os pendentes por categoria para exibição
   const agrupados = useMemo(() => {
     const grupos = {};
-    fornecedores.forEach((f) => {
+    pendentes.forEach((f) => {
       if (!grupos[f.categoria]) grupos[f.categoria] = [];
       grupos[f.categoria].push(f.nome);
     });
     return Object.entries(grupos);
-  }, [fornecedores]);
+  }, [pendentes]);
 
   const handleConfirmar = (event) => {
     event.preventDefault();
-    if (onConcluir) onConcluir(fornecedores);
+    // Passa o ARRAY COMPLETO (todos os status) para o onConcluir
+    // O MemorialOrchestrator salva isso em fornecedoresNecessarios no estado
+    if (onConcluir) onConcluir(todosFornecedores);
   };
 
   return (
@@ -57,57 +76,141 @@ export default function Step60Fornecedores({ onConcluir, estado }) {
           color: 'var(--color-text-secondary)',
         }}
       >
-        Com base em todas as suas escolhas, identificamos estas categorias de
-        fornecedores necessários para seu evento:
+        Com base em todas as suas escolhas, identificamos as categorias de
+        fornecedores que ainda precisam ser resolvidos para seu evento:
       </p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-        {agrupados.map(([categoria, nomes]) => (
-          <Card key={categoria} variant="default" padding="md">
-            <div
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontWeight: 'var(--font-semibold)',
-                color: 'var(--color-brand)',
-                fontSize: 'var(--text-sm)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: 'var(--space-2)',
-              }}
-            >
-              {categoria}
-            </div>
-            {nomes.map((nome, i) => (
+      {/* Resumo */}
+      <div
+        style={{
+          display: 'flex',
+          gap: 'var(--space-3)',
+          flexWrap: 'wrap',
+        }}
+      >
+        <div
+          style={{
+            padding: 'var(--space-3) var(--space-4)',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-sm)',
+            color: 'var(--color-text-secondary)',
+          }}
+        >
+          <strong style={{ color: 'var(--color-text-primary)' }}>{resumo.pendentesCount}</strong> pendentes
+        </div>
+        <div
+          style={{
+            padding: 'var(--space-3) var(--space-4)',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-sm)',
+            color: 'var(--color-text-secondary)',
+          }}
+        >
+          <strong style={{ color: 'var(--color-brand)' }}>{resumo.contratados}</strong> já contratados
+        </div>
+        {resumo.omitidos > 0 && (
+          <div
+            style={{
+              padding: 'var(--space-3) var(--space-4)',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-sm)',
+              color: 'var(--color-text-secondary)',
+            }}
+          >
+            <strong style={{ color: 'var(--color-text-muted)' }}>{resumo.omitidos}</strong> não necessários
+          </div>
+        )}
+      </div>
+
+      {/* Lista de pendentes agrupados por categoria */}
+      {agrupados.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          {agrupados.map(([categoria, nomes]) => (
+            <Card key={categoria} variant="default" padding="md">
               <div
-                key={nome}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-3)',
-                  padding: 'var(--space-2) 0',
                   fontFamily: 'var(--font-body)',
-                  color: 'var(--color-text-primary)',
-                  borderBottom:
-                    i < nomes.length - 1
-                      ? '1px solid var(--color-border)'
-                      : 'none',
+                  fontWeight: 'var(--font-semibold)',
+                  color: 'var(--color-brand)',
+                  fontSize: 'var(--text-sm)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: 'var(--space-2)',
                 }}
               >
-                <div
-                  style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: 'var(--radius-full)',
-                    backgroundColor: 'var(--color-brand)',
-                    flexShrink: 0,
-                  }}
-                />
-                <span>{nome}</span>
+                {categoria}
               </div>
-            ))}
-          </Card>
-        ))}
-      </div>
+              {nomes.map((nome, i) => (
+                <div
+                  key={nome}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-3)',
+                    padding: 'var(--space-2) 0',
+                    fontFamily: 'var(--font-body)',
+                    color: 'var(--color-text-primary)',
+                    borderBottom:
+                      i < nomes.length - 1
+                        ? '1px solid var(--color-border)'
+                        : 'none',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: 'var(--radius-full)',
+                      backgroundColor: 'var(--color-brand)',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span>{nome}</span>
+                </div>
+              ))}
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div
+          style={{
+            padding: 'var(--space-6)',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+            textAlign: 'center',
+          }}
+        >
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              color: 'var(--color-text-secondary)',
+              fontSize: 'var(--text-lg)',
+            }}
+          >
+            🎉 Parabéns! Parece que você já resolveu todos os fornecedores principais.
+          </p>
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              color: 'var(--color-text-muted)',
+              fontSize: 'var(--text-sm)',
+              marginTop: 'var(--space-2)',
+            }}
+          >
+            A lista completa estará disponível no PDF e no painel de controle.
+          </p>
+        </div>
+      )}
 
       <div
         style={{
@@ -126,13 +229,14 @@ export default function Step60Fornecedores({ onConcluir, estado }) {
           }}
         >
           Você pode adicionar, remover ou substituir fornecedores depois no
-          painel. Esta é apenas uma lista inicial inteligente.
+          painel. Esta é apenas uma prévia do que ainda falta resolver.
         </p>
       </div>
 
       <button
         type="button"
-        aria-label="Confirmar resposta" onClick={handleConfirmar}
+        aria-label="Confirmar resposta"
+        onClick={handleConfirmar}
         style={{
           alignSelf: 'flex-start',
           padding: 'var(--space-4) var(--space-8)',
