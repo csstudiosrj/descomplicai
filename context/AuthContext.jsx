@@ -150,12 +150,12 @@ export function AuthProvider({ children }) {
     };
   }, [buscarDadosUsuario]);
 
+  // CORREÇÃO 1: signOut limpa localStorage completamente
   const signOut = useCallback(async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (err) {
-      console.error('Erro no signOut:', err);
-    }
+    await supabase.auth.signOut();
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('sb-') || k.includes('supabase'))
+      .forEach(k => localStorage.removeItem(k));
     setUsuario(null);
     setCerimonialista(null);
     setIsCerimonialista(false);

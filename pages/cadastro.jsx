@@ -17,6 +17,9 @@ export default function CadastroPage() {
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
+  // CORREÇÃO 3: estado para tela de confirmação de email
+  const [aguardandoConfirmacao, setAguardandoConfirmacao] = useState(false);
+  const [emailConfirmacao, setEmailConfirmacao] = useState('');
 
   async function handleCadastro(e) {
     e.preventDefault();
@@ -32,16 +35,18 @@ export default function CadastroPage() {
 
       const session = data?.session;
       if (!session?.access_token) {
-        // Cadastro pode requerer confirmacao de email
-        // Redireciona para memorial de qualquer forma
-        router.push('/memorial');
+        // CORREÇÃO 3: Email não confirmado — NÃO redireciona
+        // Mostra tela de confirmação com imagem de segurança
+        setAguardandoConfirmacao(true);
+        setEmailConfirmacao(email);
+        setLoading(false);
         return;
       }
 
       // Verifica se veio do memorial (redirect=/memorial)
       const redirectTo = router.query.redirect;
       if (redirectTo === '/memorial') {
-        // Le estado salvo do memorial antes do cadastro
+        // Lê estado salvo do memorial antes do cadastro
         let estadoMemorial = null;
         try {
           const raw = sessionStorage.getItem('descomplicai-pre-login-state');
@@ -72,7 +77,7 @@ export default function CadastroPage() {
             }
           } catch (apiErr) {
             console.warn('[cadastro] Falha na API criar-evento:', apiErr);
-            // Nao bloqueia o cadastro se a API falhar
+            // Não bloqueia o cadastro se a API falhar
           }
 
           // Limpa sessionStorage
@@ -92,6 +97,46 @@ export default function CadastroPage() {
     }
   }
 
+  // CORREÇÃO 3: Tentar novamente após confirmação de email
+  async function handleVerificarConfirmacao() {
+    setLoading(true);
+    setErro('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        // Email confirmado! Redireciona
+        const redirectTo = router.query.redirect;
+        const destino = redirectTo || '/memorial';
+        router.push(destino);
+      } else {
+        setErro('Email ainda não confirmado. Verifique sua caixa de entrada e clique no link.');
+      }
+    } catch (err) {
+      setErro('Não foi possível verificar. Tente fazer login.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // CORREÇÃO 3: Reenviar email de confirmação
+  async function handleReenviarEmail() {
+    setLoading(true);
+    setErro('');
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: emailConfirmacao,
+      });
+      if (error) throw error;
+      setErro('');
+      alert('Email reenviado! Verifique sua caixa de entrada.');
+    } catch (err) {
+      setErro(err.message || 'Erro ao reenviar email. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
@@ -103,6 +148,167 @@ export default function CadastroPage() {
       '@id': `${SITE_URL}/#website`,
     },
   };
+
+  // CORREÇÃO 3: Tela de confirmação de email
+  if (aguardandoConfirmacao) {
+    return (
+      <>
+        <Head>
+          <title>Confirme seu email — Descomplicaí</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Head>
+
+        <div style={{
+          minHeight: '100dvh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 'var(--space-4)',
+          backgroundColor: 'var(--color-off-white)',
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: '420px',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 'var(--space-6)',
+          }}>
+            {/* Ícone de segurança */}
+            <div style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--color-success-light)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 'var(--space-2)',
+            }}>
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--color-success)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                <circle cx="12" cy="16" r="1" fill="var(--color-success)" />
+              </svg>
+            </div>
+
+            <div>
+              <h1 style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'var(--text-2xl)',
+                color: 'var(--color-text-primary)',
+                marginBottom: 'var(--space-3)',
+              }}>
+                Quase lá!
+              </h1>
+              <p style={{
+                fontFamily: 'var(--font-body)',
+                color: 'var(--color-text-secondary)',
+                lineHeight: 1.6,
+                fontSize: 'var(--text-base)',
+              }}>
+                Enviamos um link de confirmação para{' '}
+                <strong style={{ color: 'var(--color-text-primary)' }}>{emailConfirmacao}</strong>.
+                <br /><br />
+                Clique no link do email para ativar sua conta e continuar planejando seu casamento.
+              </p>
+            </div>
+
+            <div style={{
+              padding: 'var(--space-4)',
+              borderRadius: 'var(--radius-lg)',
+              backgroundColor: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              width: '100%',
+              textAlign: 'left',
+            }}>
+              <p style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--text-sm)',
+                color: 'var(--color-text-muted)',
+                marginBottom: 'var(--space-3)',
+                textAlign: 'center',
+              }}>
+                Dicas:
+              </p>
+              <ul style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--text-sm)',
+                color: 'var(--color-text-secondary)',
+                lineHeight: 1.8,
+                paddingLeft: 'var(--space-5)',
+                margin: 0,
+              }}>
+                <li>Verifique sua caixa de <strong>spam</strong> ou <strong>promoções</strong></li>
+                <li>O link expira em 24 horas</li>
+                <li>Se não recebeu, clique em reenviar abaixo</li>
+              </ul>
+            </div>
+
+            {erro && (
+              <div role="alert" style={{
+                padding: 'var(--space-3)',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--color-danger-light)',
+                color: 'var(--color-danger)',
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--text-sm)',
+                width: '100%',
+              }}>{erro}</div>
+            )}
+
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-3)',
+              width: '100%',
+            }}>
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                loading={loading}
+                onClick={handleVerificarConfirmacao}
+              >
+                {loading ? 'Verificando...' : 'Já confirmei meu email'}
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="md"
+                fullWidth
+                loading={loading}
+                onClick={handleReenviarEmail}
+              >
+                Reenviar email de confirmação
+              </Button>
+            </div>
+
+            <p style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-sm)',
+              color: 'var(--color-text-muted)',
+            }}>
+              Já tem conta?{' '}
+              <Link href="/login" legacyBehavior>
+                <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Entrar</a>
+              </Link>
+            </p>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
