@@ -6,12 +6,9 @@ import { withRateLimit, strictLimiter } from '@/lib/rateLimit.js';
  * Headers: Authorization (JWT do Supabase)
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabaseAdmin.js';
 import { gerarLinhasFinanceiro } from '../../../utils/gerador-financeiro';
 import { trackServerEvent } from '../../../utils/trackServerEvent';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 /** Extrai valores denormalizados do estado para sincronizar em eventos. */
 function extrairDenormalizados(estado) {
@@ -48,9 +45,6 @@ async function _handler(req, res) {
   }
 
   const token = authHeader.replace('Bearer ', '');
-  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
 
   // Valida token e extrai user
   const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
@@ -86,7 +80,6 @@ async function _handler(req, res) {
     const conteudoFinal = conteudo || gerarTextoMemorialSimples(estado);
 
     // 3. Upsert na tabela memoriais (por evento_id)
-    // CORRECAO: coluna 'conteudo' -> 'conteudo_gerado'
     const { data: memorialUpsert, error: memErr } = await supabaseAdmin
       .from('memoriais')
       .upsert(
@@ -187,5 +180,5 @@ function gerarTextoMemorialSimples(estado) {
   linhas.push('*Gerado automaticamente pelo Descomplicai*');
   return linhas.join('\n');
 }
-// Rate limit: strictLimiter
+
 export default withRateLimit(_handler, strictLimiter);
