@@ -13,7 +13,7 @@ import { trackServerEvent } from '../../../utils/trackServerEvent';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-/** Extrai valores denormalizados do estado para sincronizar em eventos.* */
+/** Extrai valores denormalizados do estado para sincronizar em eventos. */
 function extrairDenormalizados(estado) {
   if (!estado || typeof estado !== 'object') return {};
 
@@ -86,6 +86,7 @@ async function _handler(req, res) {
     const conteudoFinal = conteudo || gerarTextoMemorialSimples(estado);
 
     // 3. Upsert na tabela memoriais (por evento_id)
+    // CORRECAO: coluna 'conteudo' -> 'conteudo_gerado'
     const { data: memorialUpsert, error: memErr } = await supabaseAdmin
       .from('memoriais')
       .upsert(
@@ -93,7 +94,7 @@ async function _handler(req, res) {
           user_id: user.id,
           evento_id,
           estado,
-          conteudo: conteudoFinal,
+          conteudo_gerado: conteudoFinal,
           atualizado_em: new Date().toISOString(),
         },
         { onConflict: 'evento_id' }
