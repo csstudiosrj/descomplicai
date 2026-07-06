@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -17,36 +17,72 @@ export default function CadastroPage() {
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
-  // CORREÇÃO 3: estado para tela de confirmação de email
   const [aguardandoConfirmacao, setAguardandoConfirmacao] = useState(false);
   const [emailConfirmacao, setEmailConfirmacao] = useState('');
+  const [verificando, setVerificando] = useState(false);
+  const intervalRef = useRef(null);
 
-  async function handleCadastro(e) {
-    e.preventDefault();
-    setErro('');
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password: senha,
-        options: { data: { nome } },
-      });
-      if (error) throw error;
+  // Polling: verifica a cada 3s se o email foi confirmado em outra aba/dispositivo
+  useEffect(() => {
+    if (!aguardandoConfirmacao) return;
 
-      const session = data?.session;
-      if (!session?.access_token) {
-        // CORREÇÃO 3: Email não confirmado — NÃO redireciona
-        // Mostra tela de confirmação com imagem de segurança
-        setAguardandoConfirmacao(true);
-        setEmailConfirmacao(email);
-        setLoading(false);
-        return;
+    const verificarSessao = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          // Email confirmado! Para o polling e redireciona
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
+          await processarLoginComSessao(session);
+        }
+      } catch (err) {
+        // ignora erro de polling
       }
+    };
 
-      // Verifica se veio do memorial (redirect=/memorial)
+    // Verifica imediatamente e depois a cada 3s
+    verificarSessao();
+    intervalRef.current = setInterval(verificarSessao, 3000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [aguardandoConfirmacao]);
+
+  // Tambem escuta mudancas de auth state (quando o Supabase detecta sessao nova)
+  useEffect(() => {
+    if (!aguardandoConfirmacao) return;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (session?.access_token) {
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
+          await processarLoginComSessao(session);
+        }
+      }
+    );
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [aguardandoConfirmacao]);
+
+  async function processarLoginComSessao(session) {
+    setVerificando(true);
+    setErro('');
+
+    try {
       const redirectTo = router.query.redirect;
+
       if (redirectTo === '/memorial') {
-        // Lê estado salvo do memorial antes do cadastro
         let estadoMemorial = null;
         try {
           const raw = sessionStorage.getItem('descomplicai-pre-login-state');
@@ -54,11 +90,10 @@ export default function CadastroPage() {
             estadoMemorial = JSON.parse(raw);
           }
         } catch {
-          // Ignora erro de parse
+          // ignora
         }
 
         if (estadoMemorial) {
-          // Cria evento + memorial no Supabase
           try {
             const res = await fetchAPI('/api/memorial/criar-evento', {
               method: 'POST',
@@ -77,48 +112,66 @@ export default function CadastroPage() {
             }
           } catch (apiErr) {
             console.warn('[cadastro] Falha na API criar-evento:', apiErr);
-            // Não bloqueia o cadastro se a API falhar
           }
 
-          // Limpa sessionStorage
           try {
             sessionStorage.removeItem('descomplicai-pre-login-state');
           } catch {}
         }
       }
 
-      // Redireciona para o destino correto
       const destino = redirectTo || '/memorial';
       router.push(destino);
     } catch (err) {
+      setErro('Erro ao redirecionar. Tente fazer login.');
+      setVerificando(false);
+    }
+  }
+
+  async function handleCadastro(e) {
+    e.preventDefault();
+    setErro('');
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: senha,
+        options: { data: { nome } },
+      });
+      if (error) throw error;
+
+      const session = data?.session;
+      if (!session?.access_token) {
+        setAguardandoConfirmacao(true);
+        setEmailConfirmacao(email);
+        setLoading(false);
+        return;
+      }
+
+      await processarLoginComSessao(session);
+    } catch (err) {
       setErro(err.message || 'Erro ao criar conta. Tente novamente.');
-    } finally {
       setLoading(false);
     }
   }
 
-  // CORREÇÃO 3: Tentar novamente após confirmação de email
   async function handleVerificarConfirmacao() {
-    setLoading(true);
+    setVerificando(true);
     setErro('');
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.access_token) {
-        // Email confirmado! Redireciona
-        const redirectTo = router.query.redirect;
-        const destino = redirectTo || '/memorial';
-        router.push(destino);
+        await processarLoginComSessao(session);
       } else {
-        setErro('Email ainda não confirmado. Verifique sua caixa de entrada e clique no link.');
+        setErro('Email ainda nao confirmado. Verifique sua caixa de entrada e clique no link.');
+        setVerificando(false);
       }
     } catch (err) {
-      setErro('Não foi possível verificar. Tente fazer login.');
-    } finally {
-      setLoading(false);
+      setErro('Nao foi possivel verificar. Tente fazer login.');
+      setVerificando(false);
     }
   }
 
-  // CORREÇÃO 3: Reenviar email de confirmação
   async function handleReenviarEmail() {
     setLoading(true);
     setErro('');
@@ -149,7 +202,6 @@ export default function CadastroPage() {
     },
   };
 
-  // CORREÇÃO 3: Tela de confirmação de email
   if (aguardandoConfirmacao) {
     return (
       <>
@@ -175,7 +227,6 @@ export default function CadastroPage() {
             alignItems: 'center',
             gap: 'var(--space-6)',
           }}>
-            {/* Ícone de segurança */}
             <div style={{
               width: '80px',
               height: '80px',
@@ -209,7 +260,7 @@ export default function CadastroPage() {
                 color: 'var(--color-text-primary)',
                 marginBottom: 'var(--space-3)',
               }}>
-                Quase lá!
+                Quase la!
               </h1>
               <p style={{
                 fontFamily: 'var(--font-body)',
@@ -217,12 +268,35 @@ export default function CadastroPage() {
                 lineHeight: 1.6,
                 fontSize: 'var(--text-base)',
               }}>
-                Enviamos um link de confirmação para{' '}
+                Enviamos um link de confirmacao para{' '}
                 <strong style={{ color: 'var(--color-text-primary)' }}>{emailConfirmacao}</strong>.
                 <br /><br />
                 Clique no link do email para ativar sua conta e continuar planejando seu casamento.
               </p>
             </div>
+
+            {verificando && (
+              <div style={{
+                padding: 'var(--space-3) var(--space-4)',
+                borderRadius: 'var(--radius-lg)',
+                backgroundColor: 'var(--color-success-light)',
+                color: 'var(--color-success)',
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--text-sm)',
+                width: '100%',
+              }}>
+                <span style={{ display: 'inline-block', marginRight: '8px' }}>Verificando confirmacao...</span>
+                <span style={{
+                  display: 'inline-block',
+                  width: '12px',
+                  height: '12px',
+                  border: '2px solid var(--color-success)',
+                  borderTopColor: 'transparent',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                }} />
+              </div>
+            )}
 
             <div style={{
               padding: 'var(--space-4)',
@@ -249,9 +323,10 @@ export default function CadastroPage() {
                 paddingLeft: 'var(--space-5)',
                 margin: 0,
               }}>
-                <li>Verifique sua caixa de <strong>spam</strong> ou <strong>promoções</strong></li>
+                <li>Verifique sua caixa de <strong>spam</strong> ou <strong>promocoes</strong></li>
                 <li>O link expira em 24 horas</li>
-                <li>Se não recebeu, clique em reenviar abaixo</li>
+                <li>Se nao recebeu, clique em reenviar abaixo</li>
+                <li>Pode confirmar em outro dispositivo — esta pagina detecta automaticamente</li>
               </ul>
             </div>
 
@@ -277,10 +352,10 @@ export default function CadastroPage() {
                 variant="primary"
                 size="lg"
                 fullWidth
-                loading={loading}
+                loading={verificando}
                 onClick={handleVerificarConfirmacao}
               >
-                {loading ? 'Verificando...' : 'Já confirmei meu email'}
+                {verificando ? 'Verificando...' : 'Ja confirmei meu email'}
               </Button>
 
               <Button
@@ -290,7 +365,7 @@ export default function CadastroPage() {
                 loading={loading}
                 onClick={handleReenviarEmail}
               >
-                Reenviar email de confirmação
+                Reenviar email de confirmacao
               </Button>
             </div>
 
@@ -299,7 +374,7 @@ export default function CadastroPage() {
               fontSize: 'var(--text-sm)',
               color: 'var(--color-text-muted)',
             }}>
-              Já tem conta?{' '}
+              Ja tem conta?{' '}
               <Link href="/login" legacyBehavior>
                 <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Entrar</a>
               </Link>
@@ -396,11 +471,11 @@ export default function CadastroPage() {
             <Input
               label="Senha"
               type="password"
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Minimo 6 caracteres"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               required
-              hint="Mínimo 6 caracteres"
+              hint="Minimo 6 caracteres"
             />
 
             {erro && (
@@ -426,7 +501,7 @@ export default function CadastroPage() {
             fontSize: 'var(--text-sm)',
             color: 'var(--color-text-muted)',
           }}>
-            Já tem conta?{' '}
+            Ja tem conta?{' '}
             <Link href="/login" legacyBehavior>
               <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Entrar</a>
             </Link>
