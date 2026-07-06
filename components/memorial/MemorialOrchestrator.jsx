@@ -1,6 +1,7 @@
 // components/memorial/MemorialOrchestrator.jsx
 // HOTFIX: corrigido typo salvandoAgoro -> salvandoAgora
 // CORRECAO 05/07: handleSelect passa proximaEtapaId para deveExibirLoginAgora
+// CORRECAO 06/07: salva draft no Supabase antes de redirecionar para cadastro
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -202,6 +203,7 @@ export default function MemorialOrchestrator() {
   const [campoTransicao, setCampoTransicao] = useState('');
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
+  const [salvandoDraft, setSalvandoDraft] = useState(false);
   const restauracaoFeita = useRef(false);
   const stepCompletedRef = useRef(false);
   const currentStepIdRef = useRef(null);
@@ -212,18 +214,15 @@ export default function MemorialOrchestrator() {
     const stepId = etapaAtualObj?.id || etapaAtualObj?.componente;
 
     if (stepId && stepId !== currentStepIdRef.current) {
-      // Registra abandono do step anterior se não completou
       if (currentStepIdRef.current && !stepCompletedRef.current) {
         trackStep(currentStepIdRef.current, 'abandonou');
       }
-      // Inicia novo step
       stepCompletedRef.current = false;
       currentStepIdRef.current = stepId;
       trackStep(stepId, 'iniciou');
     }
 
     return () => {
-      // Cleanup: se o componente desmontar, registra abandono do step atual
       if (currentStepIdRef.current && !stepCompletedRef.current) {
         trackStep(currentStepIdRef.current, 'abandonou');
       }
@@ -269,7 +268,6 @@ export default function MemorialOrchestrator() {
   const handleSelect = useCallback((campo, valor, cor) => {
     setRespostas(campo, valor);
 
-    // Formata data para exibição na animação (DD/MM/AAAA)
     let valorDisplay = valor;
     if (campo === 'dataEvento' && valor && typeof valor === 'string') {
       const [ano, mes, dia] = valor.split('-');
@@ -290,7 +288,6 @@ export default function MemorialOrchestrator() {
       const proximaEtapaObj = getEtapaPorIndice(proxima);
       const proximaEtapaId = proximaEtapaObj?.id;
 
-      // CORRECAO: gate de login apos Bloco C (antes de entrar no Bloco D)
       if (!user && deveExibirLoginAgora(novoEstado, proximaEtapaId)) {
         setMostrandoLogin(true);
         setTransicionando(false);
@@ -305,11 +302,33 @@ export default function MemorialOrchestrator() {
     }, BREATH_DURATION);
   }, [estado, setRespostas, irParaEtapa, user]);
 
-  const handleIrParaLogin = (destino) => {
+  // CORRECAO 06/07: salva draft no Supabase antes de redirecionar
+  const handleIrParaLogin = async (destino) => {
+    setSalvandoDraft(true);
     try {
-      sessionStorage.setItem('descomplicai-pre-login-state', JSON.stringify(estado));
-    } catch (e) {}
-    router.push(`${destino}?redirect=${encodeURIComponent('/memorial')}`);
+      let draftToken = null;
+      try {
+        const res = await fetchAPI('/api/memorial/salvar-draft', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ estado }),
+        });
+        const result = await res.json();
+        if (result.sucesso) {
+          draftToken = result.draft_token;
+        }
+      } catch (draftErr) {
+        console.warn('[MemorialOrchestrator] Erro ao salvar draft:', draftErr);
+      }
+
+      const query = draftToken ? `?draft_id=${encodeURIComponent(draftToken)}` : '';
+      router.push(`${destino}${query}&redirect=${encodeURIComponent('/descomplicai/memorial')}`);
+    } catch (err) {
+      console.error('[MemorialOrchestrator] Erro ao redirecionar:', err);
+      router.push(`${destino}?redirect=${encodeURIComponent('/descomplicai/memorial')}`);
+    } finally {
+      setSalvandoDraft(false);
+    }
   };
 
   const handleConcluirMemorial = useCallback(async (fornecedores) => {
@@ -331,7 +350,7 @@ export default function MemorialOrchestrator() {
           if (!res.ok) void 0
         }
       }
-      router.push('/memorial/conclusao?concluido=1');
+      router.push('/descomplicai/memorial/conclusao?concluido=1');
     } catch (erro) {
       alert('Falha ao salvar o progresso. Tente novamente.');
     }
@@ -339,7 +358,6 @@ export default function MemorialOrchestrator() {
 
   const handleBack = useCallback(() => {
     if (estado.historicoEtapas?.length > 0) {
-      // Limpa resposta de transição ao voltar para evitar animação com valor stale
       setRespostaTransicao('');
       setCampoTransicao('');
       setCorTransicao(null);
@@ -370,6 +388,32 @@ export default function MemorialOrchestrator() {
         </div>
       )}
 
+      {salvandoDraft && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9998,
+        }}>
+          <div style={{
+            padding: 'var(--space-4) var(--space-6)',
+            backgroundColor: 'white',
+            borderRadius: 'var(--radius-lg)',
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-base)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+          }}>
+            Salvando seu progresso...
+          </div>
+        </div>
+      )}
+
       {carregandoAuth ? (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
           <p>Carregando...</p>
@@ -387,8 +431,8 @@ export default function MemorialOrchestrator() {
             <div style={{ padding: 'var(--space-6)', textAlign: 'center' }}>
               <h2>Quase lá!</h2>
               <p>Seu casamento está tomando forma. Salve seu progresso pra continuar de onde parou.</p>
-              <button onClick={() => handleIrParaLogin('/login')}>Entrar</button>
-              <button onClick={() => handleIrParaLogin('/cadastro')}>Criar conta</button>
+              <button onClick={() => handleIrParaLogin('/descomplicai/login')}>Entrar</button>
+              <button onClick={() => handleIrParaLogin('/descomplicai/cadastro')}>Criar conta</button>
             </div>
           ) : (
             <>

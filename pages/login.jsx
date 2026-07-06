@@ -5,10 +5,9 @@ import { useRouter } from 'next/router';
 import { supabase } from '../lib/supabase';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
-import fetchAPI from '../utils/fetchAPI';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://descomplicai.com.br';
-const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://arxum.csstudios.site';
+const OG_IMAGE = `${SITE_URL}/descomplicai/og-image.jpg`;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,52 +29,9 @@ export default function LoginPage() {
         throw new Error('Sessao nao iniciada');
       }
 
-      // Verifica se veio do memorial (redirect=/memorial)
-      const redirectTo = router.query.redirect;
-      if (redirectTo === '/memorial') {
-        // Le estado salvo do memorial antes do login
-        let estadoMemorial = null;
-        try {
-          const raw = sessionStorage.getItem('descomplicai-pre-login-state');
-          if (raw) {
-            estadoMemorial = JSON.parse(raw);
-          }
-        } catch {
-          // Ignora erro de parse
-        }
-
-        if (estadoMemorial) {
-          // Cria evento + memorial no Supabase
-          try {
-            const res = await fetchAPI('/api/memorial/criar-evento', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.access_token}`,
-              },
-              body: JSON.stringify({ estado: estadoMemorial }),
-            });
-
-            const result = await res.json();
-            if (!res.ok) {
-              console.warn('[login] Erro ao criar evento:', result.erro || result.error);
-            } else {
-              console.log('[login] Evento criado:', result.evento_id);
-            }
-          } catch (apiErr) {
-            console.warn('[login] Falha na API criar-evento:', apiErr);
-            // Nao bloqueia o login se a API falhar
-          }
-
-          // Limpa sessionStorage
-          try {
-            sessionStorage.removeItem('descomplicai-pre-login-state');
-          } catch {}
-        }
-      }
-
       // Redireciona para o destino correto
-      const destino = redirectTo || '/painel';
+      const redirectTo = router.query.redirect;
+      const destino = redirectTo || '/descomplicai/painel';
       router.push(destino);
     } catch (err) {
       setErro(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
@@ -89,10 +45,10 @@ export default function LoginPage() {
     '@type': 'WebPage',
     name: 'Entrar — Descomplicaí',
     description: 'Acesse seu memorial e continue a planejar o casamento dos seus sonhos.',
-    url: `${SITE_URL}/login`,
+    url: `${SITE_URL}/descomplicai/login`,
     isPartOf: {
       '@type': 'WebSite',
-      '@id': `${SITE_URL}/#website`,
+      '@id': `${SITE_URL}/descomplicai/#website`,
     },
   };
 
@@ -105,12 +61,12 @@ export default function LoginPage() {
           content="Acesse seu memorial e continue a planejar o casamento dos seus sonhos. Login seguro e rápido."
         />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href={`${SITE_URL}/login`} />
+        <link rel="canonical" href={`${SITE_URL}/descomplicai/login`} />
 
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Entrar — Descomplicaí" />
         <meta property="og:description" content="Acesse seu memorial e continue a planejar o casamento dos seus sonhos." />
-        <meta property="og:url" content={`${SITE_URL}/login`} />
+        <meta property="og:url" content={`${SITE_URL}/descomplicai/login`} />
         <meta property="og:image" content={OG_IMAGE} />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
@@ -196,7 +152,7 @@ export default function LoginPage() {
             color: 'var(--color-text-muted)',
           }}>
             Não tem conta?{' '}
-            <Link href="/cadastro" legacyBehavior>
+            <Link href="/descomplicai/cadastro" legacyBehavior>
               <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Cadastre-se</a>
             </Link>
           </p>

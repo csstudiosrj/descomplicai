@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -7,8 +7,8 @@ import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import fetchAPI from '../utils/fetchAPI';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://descomplicai.com.br';
-const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://arxum.csstudios.site';
+const OG_IMAGE = `${SITE_URL}/descomplicai/og-image.jpg`;
 
 export default function CadastroPage() {
   const router = useRouter();
@@ -19,73 +19,85 @@ export default function CadastroPage() {
   const [loading, setLoading] = useState(false);
   const [aguardandoConfirmacao, setAguardandoConfirmacao] = useState(false);
   const [emailConfirmacao, setEmailConfirmacao] = useState('');
-  const [verificando, setVerificando] = useState(false);
-  const intervalRef = useRef(null);
 
-  // Polling: verifica a cada 3s se o email foi confirmado em outra aba/dispositivo
+  // Pré-preenche email se veio da query (ex: /descomplicai/cadastro?email=xxx)
   useEffect(() => {
-    if (!aguardandoConfirmacao) return;
+    if (router.query.email) {
+      setEmail(router.query.email);
+    }
+  }, [router.query.email]);
 
-    const verificarSessao = async () => {
+  async function handleCadastro(e) {
+    e.preventDefault();
+    setErro('');
+    setLoading(true);
+
+    try {
+      // 1. Salva draft do memorial no Supabase (se houver estado no localStorage)
+      let draftToken = null;
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.access_token) {
-          // Email confirmado! Para o polling e redireciona
-          if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
+        const estadoRaw = localStorage.getItem('memorial_estado');
+        if (estadoRaw) {
+          const estado = JSON.parse(estadoRaw);
+          const res = await fetchAPI('/api/memorial/salvar-draft', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ estado, email }),
+          });
+          const result = await res.json();
+          if (result.sucesso) {
+            draftToken = result.draft_token;
           }
-          await processarLoginComSessao(session);
         }
-      } catch (err) {
-        // ignora erro de polling
+      } catch (draftErr) {
+        console.warn('[cadastro] Erro ao salvar draft:', draftErr);
+        // Não bloqueia o cadastro se o draft falhar
       }
-    };
 
-    // Verifica imediatamente e depois a cada 3s
-    verificarSessao();
-    intervalRef.current = setInterval(verificarSessao, 3000);
+      // 2. Monta o emailRedirectTo com draft_token se existir
+      // URL absoluta obrigatória para o Supabase Auth
+      const redirectTo = draftToken
+        ? `${SITE_URL}/descomplicai/confirmar?draft_id=${draftToken}`
+        : `${SITE_URL}/descomplicai/confirmar`;
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+      // 3. Cadastra no Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: senha,
+        options: {
+          data: { nome },
+          emailRedirectTo: redirectTo,
+        },
+      });
+
+      if (error) throw error;
+
+      const session = data?.session;
+
+      // Se o email não precisa de confirmação (raro, mas possível), loga direto
+      if (session?.access_token) {
+        await processarLoginComSessao(session);
+        return;
       }
-    };
-  }, [aguardandoConfirmacao]);
 
-  // Tambem escuta mudancas de auth state (quando o Supabase detecta sessao nova)
-  useEffect(() => {
-    if (!aguardandoConfirmacao) return;
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.access_token) {
-          if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-          }
-          await processarLoginComSessao(session);
-        }
-      }
-    );
-
-    return () => {
-      subscription?.unsubscribe();
-    };
-  }, [aguardandoConfirmacao]);
+      // 4. Mostra tela de "aguardando confirmação"
+      setAguardandoConfirmacao(true);
+      setEmailConfirmacao(email);
+      setLoading(false);
+    } catch (err) {
+      setErro(err.message || 'Erro ao criar conta. Tente novamente.');
+      setLoading(false);
+    }
+  }
 
   async function processarLoginComSessao(session) {
-    setVerificando(true);
-    setErro('');
-
     try {
       const redirectTo = router.query.redirect;
 
       if (redirectTo === '/memorial') {
         let estadoMemorial = null;
         try {
-          const raw = sessionStorage.getItem('descomplicai-pre-login-state');
+          const raw = localStorage.getItem('memorial_estado');
           if (raw) {
             estadoMemorial = JSON.parse(raw);
           }
@@ -115,60 +127,15 @@ export default function CadastroPage() {
           }
 
           try {
-            sessionStorage.removeItem('descomplicai-pre-login-state');
+            localStorage.removeItem('memorial_estado');
           } catch {}
         }
       }
 
-      const destino = redirectTo || '/memorial';
+      const destino = redirectTo || '/descomplicai/memorial';
       router.push(destino);
     } catch (err) {
       setErro('Erro ao redirecionar. Tente fazer login.');
-      setVerificando(false);
-    }
-  }
-
-  async function handleCadastro(e) {
-    e.preventDefault();
-    setErro('');
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password: senha,
-        options: { data: { nome } },
-      });
-      if (error) throw error;
-
-      const session = data?.session;
-      if (!session?.access_token) {
-        setAguardandoConfirmacao(true);
-        setEmailConfirmacao(email);
-        setLoading(false);
-        return;
-      }
-
-      await processarLoginComSessao(session);
-    } catch (err) {
-      setErro(err.message || 'Erro ao criar conta. Tente novamente.');
-      setLoading(false);
-    }
-  }
-
-  async function handleVerificarConfirmacao() {
-    setVerificando(true);
-    setErro('');
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        await processarLoginComSessao(session);
-      } else {
-        setErro('Email ainda nao confirmado. Verifique sua caixa de entrada e clique no link.');
-        setVerificando(false);
-      }
-    } catch (err) {
-      setErro('Nao foi possivel verificar. Tente fazer login.');
-      setVerificando(false);
     }
   }
 
@@ -195,10 +162,10 @@ export default function CadastroPage() {
     '@type': 'WebPage',
     name: 'Cadastro — Descomplicaí',
     description: 'Crie sua conta gratuita e comece a planejar seu casamento hoje mesmo.',
-    url: `${SITE_URL}/cadastro`,
+    url: `${SITE_URL}/descomplicai/cadastro`,
     isPartOf: {
       '@type': 'WebSite',
-      '@id': `${SITE_URL}/#website`,
+      '@id': `${SITE_URL}/descomplicai/#website`,
     },
   };
 
@@ -260,7 +227,7 @@ export default function CadastroPage() {
                 color: 'var(--color-text-primary)',
                 marginBottom: 'var(--space-3)',
               }}>
-                Quase la!
+                Quase lá!
               </h1>
               <p style={{
                 fontFamily: 'var(--font-body)',
@@ -268,35 +235,16 @@ export default function CadastroPage() {
                 lineHeight: 1.6,
                 fontSize: 'var(--text-base)',
               }}>
-                Enviamos um link de confirmacao para{' '}
+                Enviamos um link de confirmação para{' '}
                 <strong style={{ color: 'var(--color-text-primary)' }}>{emailConfirmacao}</strong>.
                 <br /><br />
                 Clique no link do email para ativar sua conta e continuar planejando seu casamento.
+                <br /><br />
+                <em style={{ fontSize: 'var(--text-sm)' }}>
+                  Você será redirecionado automaticamente para o memorial.
+                </em>
               </p>
             </div>
-
-            {verificando && (
-              <div style={{
-                padding: 'var(--space-3) var(--space-4)',
-                borderRadius: 'var(--radius-lg)',
-                backgroundColor: 'var(--color-success-light)',
-                color: 'var(--color-success)',
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-sm)',
-                width: '100%',
-              }}>
-                <span style={{ display: 'inline-block', marginRight: '8px' }}>Verificando confirmacao...</span>
-                <span style={{
-                  display: 'inline-block',
-                  width: '12px',
-                  height: '12px',
-                  border: '2px solid var(--color-success)',
-                  borderTopColor: 'transparent',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite',
-                }} />
-              </div>
-            )}
 
             <div style={{
               padding: 'var(--space-4)',
@@ -323,10 +271,10 @@ export default function CadastroPage() {
                 paddingLeft: 'var(--space-5)',
                 margin: 0,
               }}>
-                <li>Verifique sua caixa de <strong>spam</strong> ou <strong>promocoes</strong></li>
+                <li>Verifique sua caixa de <strong>spam</strong> ou <strong>promoções</strong></li>
                 <li>O link expira em 24 horas</li>
-                <li>Se nao recebeu, clique em reenviar abaixo</li>
-                <li>Pode confirmar em outro dispositivo — esta pagina detecta automaticamente</li>
+                <li>Se não recebeu, clique em reenviar abaixo</li>
+                <li>Pode confirmar em qualquer dispositivo — o memorial será restaurado automaticamente</li>
               </ul>
             </div>
 
@@ -349,23 +297,13 @@ export default function CadastroPage() {
               width: '100%',
             }}>
               <Button
-                variant="primary"
-                size="lg"
-                fullWidth
-                loading={verificando}
-                onClick={handleVerificarConfirmacao}
-              >
-                {verificando ? 'Verificando...' : 'Ja confirmei meu email'}
-              </Button>
-
-              <Button
                 variant="ghost"
                 size="md"
                 fullWidth
                 loading={loading}
                 onClick={handleReenviarEmail}
               >
-                Reenviar email de confirmacao
+                Reenviar email de confirmação
               </Button>
             </div>
 
@@ -374,8 +312,8 @@ export default function CadastroPage() {
               fontSize: 'var(--text-sm)',
               color: 'var(--color-text-muted)',
             }}>
-              Ja tem conta?{' '}
-              <Link href="/login" legacyBehavior>
+              Já tem conta?{' '}
+              <Link href="/descomplicai/login" legacyBehavior>
                 <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Entrar</a>
               </Link>
             </p>
@@ -394,12 +332,12 @@ export default function CadastroPage() {
           content="Crie sua conta gratuita no Descomplicaí e comece a planejar seu casamento."
         />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href={`${SITE_URL}/cadastro`} />
+        <link rel="canonical" href={`${SITE_URL}/descomplicai/cadastro`} />
 
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Cadastro — Descomplicaí" />
         <meta property="og:description" content="Crie sua conta gratuita e comece a planejar seu casamento hoje mesmo." />
-        <meta property="og:url" content={`${SITE_URL}/cadastro`} />
+        <meta property="og:url" content={`${SITE_URL}/descomplicai/cadastro`} />
         <meta property="og:image" content={OG_IMAGE} />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
@@ -471,11 +409,11 @@ export default function CadastroPage() {
             <Input
               label="Senha"
               type="password"
-              placeholder="Minimo 6 caracteres"
+              placeholder="Mínimo 6 caracteres"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               required
-              hint="Minimo 6 caracteres"
+              hint="Mínimo 6 caracteres"
             />
 
             {erro && (
@@ -501,8 +439,8 @@ export default function CadastroPage() {
             fontSize: 'var(--text-sm)',
             color: 'var(--color-text-muted)',
           }}>
-            Ja tem conta?{' '}
-            <Link href="/login" legacyBehavior>
+            Já tem conta?{' '}
+            <Link href="/descomplicai/login" legacyBehavior>
               <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Entrar</a>
             </Link>
           </p>
