@@ -27,7 +27,7 @@ export default function Step00Casal({ onSelect, estadoAtual, disabled = false })
     if (cardPulsando) return;
     setCardPulsando(opcao.valor);
     setTimeout(() => {
-      onSelect(opcao.campo || opcao.valor, opcao.valor, opcao.cor);
+      onSelect('perfilCasal', opcao.valor, opcao.cor);
       setCardPulsando(null);
     }, 350);
   };
