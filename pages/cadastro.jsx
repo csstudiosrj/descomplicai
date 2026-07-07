@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -9,6 +9,7 @@ import fetchAPI from '../utils/fetchAPI';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://arxum.csstudios.site';
 const OG_IMAGE = `${SITE_URL}/descomplicai/og-image.jpg`;
+const DRAFT_STORAGE_KEY = 'descomplicai-memorial-draft';
 
 export default function CadastroPage() {
   const router = useRouter();
@@ -21,83 +22,25 @@ export default function CadastroPage() {
   const [emailConfirmacao, setEmailConfirmacao] = useState('');
 
   // Pré-preenche email se veio da query (ex: /cadastro?email=xxx)
+  // FIX ESLINT: usa requestAnimationFrame para evitar setState síncrono no effect
   useEffect(() => {
-    if (router.query.email) {
-      setEmail(router.query.email);
+    const emailFromQuery = router.query.email;
+    if (emailFromQuery) {
+      requestAnimationFrame(() => setEmail(emailFromQuery));
     }
   }, [router.query.email]);
 
-  async function handleCadastro(e) {
-    e.preventDefault();
-    setErro('');
-    setLoading(true);
-
-    try {
-      // 1. Salva draft do memorial no Supabase (se houver estado no localStorage)
-      let draftToken = null;
-      try {
-        const estadoRaw = localStorage.getItem('memorial_estado');
-        if (estadoRaw) {
-          const estado = JSON.parse(estadoRaw);
-          const res = await fetchAPI('/api/memorial/salvar-draft', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ estado, email }),
-          });
-          const result = await res.json();
-          if (result.sucesso) {
-            draftToken = result.draft_token;
-          }
-        }
-      } catch (draftErr) {
-        console.warn('[cadastro] Erro ao salvar draft:', draftErr);
-        // Não bloqueia o cadastro se o draft falhar
-      }
-
-      // 2. Monta o emailRedirectTo com draft_token se existir
-      // URL absoluta obrigatória para o Supabase Auth — DEVE incluir /descomplicai
-      const redirectTo = draftToken
-        ? `${SITE_URL}/descomplicai/confirmar?draft_id=${draftToken}`
-        : `${SITE_URL}/descomplicai/confirmar`;
-
-      // 3. Cadastra no Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password: senha,
-        options: {
-          data: { nome },
-          emailRedirectTo: redirectTo,
-        },
-      });
-
-      if (error) throw error;
-
-      const session = data?.session;
-
-      // Se o email não precisa de confirmação (raro, mas possível), loga direto
-      if (session?.access_token) {
-        await processarLoginComSessao(session);
-        return;
-      }
-
-      // 4. Mostra tela de "aguardando confirmação"
-      setAguardandoConfirmacao(true);
-      setEmailConfirmacao(email);
-      setLoading(false);
-    } catch (err) {
-      setErro(err.message || 'Erro ao criar conta. Tente novamente.');
-      setLoading(false);
-    }
-  }
-
-  async function processarLoginComSessao(session) {
+  // ============================================================
+  // FIX P0: processarLoginComSessao como useCallback (declarado ANTES do polling)
+  // ============================================================
+  const processarLoginComSessao = useCallback(async (session) => {
     try {
       const redirectTo = router.query.redirect;
 
       if (redirectTo === '/memorial') {
         let estadoMemorial = null;
         try {
-          const raw = localStorage.getItem('memorial_estado');
+          const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
           if (raw) {
             estadoMemorial = JSON.parse(raw);
           }
@@ -127,17 +70,99 @@ export default function CadastroPage() {
           }
 
           try {
-            localStorage.removeItem('memorial_estado');
+            localStorage.removeItem(DRAFT_STORAGE_KEY);
           } catch {}
         }
       }
 
-      // CORREÇÃO: basePath: '/descomplicai' já adiciona o prefixo automaticamente.
-      // NUNCA incluir '/descomplicai' manualmente em router.push/Link.
       const destino = redirectTo || '/memorial';
       router.push(destino);
     } catch (err) {
       setErro('Erro ao redirecionar. Tente fazer login.');
+    }
+  }, [router]);
+
+  // ============================================================
+  // FIX P0: Polling de sessão na tela de aguardando confirmação
+  // Detecta quando o usuário confirmou o email em outra aba/dispositivo
+  // ============================================================
+  useEffect(() => {
+    if (!aguardandoConfirmacao) return;
+
+    let intervalId;
+
+    const verificarSessao = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          console.log('[cadastro] Sessão detectada via polling — processando login...');
+          clearInterval(intervalId);
+          await processarLoginComSessao(session);
+        }
+      } catch (e) {
+        console.warn('[cadastro] Erro no polling de sessão:', e);
+      }
+    };
+
+    verificarSessao();
+    intervalId = setInterval(verificarSessao, 2000);
+
+    return () => clearInterval(intervalId);
+  }, [aguardandoConfirmacao, processarLoginComSessao]);
+
+  async function handleCadastro(e) {
+    e.preventDefault();
+    setErro('');
+    setLoading(true);
+
+    try {
+      let draftToken = null;
+      try {
+        const estadoRaw = localStorage.getItem(DRAFT_STORAGE_KEY);
+        if (estadoRaw) {
+          const estado = JSON.parse(estadoRaw);
+          const res = await fetchAPI('/api/memorial/salvar-draft', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ estado, email }),
+          });
+          const result = await res.json();
+          if (result.sucesso) {
+            draftToken = result.draft_token;
+          }
+        }
+      } catch (draftErr) {
+        console.warn('[cadastro] Erro ao salvar draft:', draftErr);
+      }
+
+      const redirectTo = draftToken
+        ? `${SITE_URL}/descomplicai/confirmar?draft_id=${draftToken}`
+        : `${SITE_URL}/descomplicai/confirmar`;
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: senha,
+        options: {
+          data: { nome },
+          emailRedirectTo: redirectTo,
+        },
+      });
+
+      if (error) throw error;
+
+      const session = data?.session;
+
+      if (session?.access_token) {
+        await processarLoginComSessao(session);
+        return;
+      }
+
+      setAguardandoConfirmacao(true);
+      setEmailConfirmacao(email);
+      setLoading(false);
+    } catch (err) {
+      setErro(err.message || 'Erro ao criar conta. Tente novamente.');
+      setLoading(false);
     }
   }
 
@@ -315,8 +340,6 @@ export default function CadastroPage() {
               color: 'var(--color-text-muted)',
             }}>
               Já tem conta?{' '}
-              {/* CORREÇÃO: basePath: '/descomplicai' já adiciona o prefixo automaticamente.
-                  NUNCA incluir '/descomplicai' manualmente em router.push/Link. */}
               <Link href="/login" legacyBehavior>
                 <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Entrar</a>
               </Link>
@@ -444,8 +467,6 @@ export default function CadastroPage() {
             color: 'var(--color-text-muted)',
           }}>
             Já tem conta?{' '}
-            {/* CORREÇÃO: basePath: '/descomplicai' já adiciona o prefixo automaticamente.
-                NUNCA incluir '/descomplicai' manualmente em router.push/Link. */}
             <Link href="/login" legacyBehavior>
               <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Entrar</a>
             </Link>

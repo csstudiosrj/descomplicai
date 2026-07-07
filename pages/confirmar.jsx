@@ -2,15 +2,6 @@
 /**
  * Página de confirmação de email — detecta sessão do Supabase na URL,
  * recupera draft do memorial e cria evento + memorial real.
- *
- * Fluxo:
- * 1. Usuário clica no link de confirmação do email
- * 2. Supabase injeta #access_token=... na URL
- * 3. detectSessionInUrl: true → sessão criada automaticamente
- * 4. Buscamos draft_token da query
- * 5. Buscamos draft no Supabase
- * 6. Chamamos /api/memorial/criar-evento com o estado do draft
- * 7. Redirecionamos para /memorial (basePath: '/descomplicai' cuida do prefixo)
  */
 
 import React, { useState, useEffect } from 'react';
@@ -18,6 +9,8 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { supabase } from '../lib/supabase';
 import fetchAPI from '../utils/fetchAPI';
+
+const DRAFT_STORAGE_KEY = 'descomplicai-memorial-draft';
 
 const ESTADOS = {
   VERIFICANDO: 'verificando',
@@ -91,13 +84,11 @@ export default function ConfirmarPage() {
         }
 
         try {
-          localStorage.removeItem('memorial_estado');
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
         } catch {}
 
         setEstado(ESTADOS.SUCESSO);
         setMensagem('Tudo pronto! Redirecionando...');
-        // CORREÇÃO: basePath: '/descomplicai' já adiciona o prefixo automaticamente.
-        // NUNCA incluir '/descomplicai' manualmente em router.push/Link.
         router.push('/memorial');
       } catch (err) {
         console.error('[confirmar] Erro:', err);

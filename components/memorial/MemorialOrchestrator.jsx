@@ -1,6 +1,7 @@
 // components/memorial/MemorialOrchestrator.jsx
 // HOTFIX: corrigido typo salvandoAgoro -> salvandoAgora
 // CORRECAO 05/07: handleSelect passa proximaEtapaId para deveExibirLoginAgora
+// FIX 07/07: Polling de sessão para detectar login em outra aba/dispositivo
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -202,9 +203,40 @@ export default function MemorialOrchestrator() {
   const [campoTransicao, setCampoTransicao] = useState('');
   const [mostrandoLogin, setMostrandoLogin] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
+  const [sessaoDetectada, setSessaoDetectada] = useState(false);
   const restauracaoFeita = useRef(false);
   const stepCompletedRef = useRef(false);
   const currentStepIdRef = useRef(null);
+
+  // ============================================================
+  // FIX 07/07: Polling de sessão para detectar login em outra aba/dispositivo
+  // Quando o usuário confirma o email no celular/outra aba, a aba atual detecta
+  // a sessão ativa e recarrega os dados do memorial automaticamente
+  // ============================================================
+  useEffect(() => {
+    if (user) return; // Já logado, não precisa polling
+
+    let intervalId;
+
+    const verificarSessao = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          console.log('[MemorialOrchestrator] Sessão detectada via polling — recarregando...');
+          clearInterval(intervalId);
+          setSessaoDetectada(true);
+          // O AuthContext vai detectar a sessão via onAuthStateChange
+          // e atualizar user/evento automaticamente
+        }
+      } catch (e) {
+        // Silencioso — polling não deve quebrar a UX
+      }
+    };
+
+    intervalId = setInterval(verificarSessao, 3000); // a cada 3s
+
+    return () => clearInterval(intervalId);
+  }, [user, supabase]);
 
   // Rastreia início e abandono de steps
   useEffect(() => {
@@ -212,18 +244,15 @@ export default function MemorialOrchestrator() {
     const stepId = etapaAtualObj?.id || etapaAtualObj?.componente;
 
     if (stepId && stepId !== currentStepIdRef.current) {
-      // Registra abandono do step anterior se não completou
       if (currentStepIdRef.current && !stepCompletedRef.current) {
         trackStep(currentStepIdRef.current, 'abandonou');
       }
-      // Inicia novo step
       stepCompletedRef.current = false;
       currentStepIdRef.current = stepId;
       trackStep(stepId, 'iniciou');
     }
 
     return () => {
-      // Cleanup: se o componente desmontar, registra abandono do step atual
       if (currentStepIdRef.current && !stepCompletedRef.current) {
         trackStep(currentStepIdRef.current, 'abandonou');
       }
@@ -269,7 +298,6 @@ export default function MemorialOrchestrator() {
   const handleSelect = useCallback((campo, valor, cor) => {
     setRespostas(campo, valor);
 
-    // Formata data para exibição na animação (DD/MM/AAAA)
     let valorDisplay = valor;
     if (campo === 'dataEvento' && valor && typeof valor === 'string') {
       const [ano, mes, dia] = valor.split('-');
@@ -290,7 +318,6 @@ export default function MemorialOrchestrator() {
       const proximaEtapaObj = getEtapaPorIndice(proxima);
       const proximaEtapaId = proximaEtapaObj?.id;
 
-      // CORRECAO: gate de login apos Bloco C (antes de entrar no Bloco D)
       if (!user && deveExibirLoginAgora(novoEstado, proximaEtapaId)) {
         setMostrandoLogin(true);
         setTransicionando(false);
@@ -339,7 +366,6 @@ export default function MemorialOrchestrator() {
 
   const handleBack = useCallback(() => {
     if (estado.historicoEtapas?.length > 0) {
-      // Limpa resposta de transição ao voltar para evitar animação com valor stale
       setRespostaTransicao('');
       setCampoTransicao('');
       setCorTransicao(null);
@@ -358,9 +384,10 @@ export default function MemorialOrchestrator() {
     setOferecerDraft(false);
   };
 
+  // FIX ESLINT: evita criar componente durante render
   const StepComponent = etapaAtualObj
-    ? (STEP_COMPONENTS[etapaAtualObj.componente] || (() => <PlaceholderStep titulo={etapaAtualObj.titulo} />))
-    : () => null;
+    ? STEP_COMPONENTS[etapaAtualObj.componente] || PlaceholderStep
+    : null;
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh' }}>
@@ -403,11 +430,13 @@ export default function MemorialOrchestrator() {
                 <ProgressBar progress={progress} blockName={blockName} />
                 {estado.etapaAtual > 0 && <BackButton onClick={handleBack} />}
                 <React.Suspense fallback={<div style={{ padding: 'var(--space-6)' }}>Carregando etapa...</div>}>
-                  <StepComponent
-                    estado={estado}
-                    onSelect={handleSelect}
-                    onConcluir={handleConcluirMemorial}
-                  />
+                  {StepComponent && (
+                    <StepComponent
+                      estado={estado}
+                      onSelect={handleSelect}
+                      onConcluir={handleConcluirMemorial}
+                    />
+                  )}
                 </React.Suspense>
                 {estado.etapaAtual === 0 && <Footer />}
               </BreathTransition>
