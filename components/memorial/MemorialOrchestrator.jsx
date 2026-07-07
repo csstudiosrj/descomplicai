@@ -1,7 +1,9 @@
 // components/memorial/MemorialOrchestrator.jsx
-// HOTFIX: corrigido typo salvandoAgoro -> salvandoAgora
-// CORRECAO 05/07: handleSelect passa proximaEtapaId para deveExibirLoginAgora
-// FIX 07/07: Polling de sessão para detectar login em outra aba/dispositivo
+// MUDANCA RADICAL 07/07: Login/Cadastro no inicio do fluxo (Step00)
+// - Remove tela "Quase la!" e redirecionamento para /login / /cadastro
+// - Abre modal de login/cadastro sobre o Step00 ao clicar primeira opcao
+// - Cria evento no banco imediatamente apos login
+// - Remove polling de sessao duplicado (agora esta no LoginCadastroModal)
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -9,11 +11,12 @@ import useMemorial from '../../hooks/useMemorial';
 import { useAuth } from '../../hooks/useAuth';
 import { useAnalytics } from '../../hooks/useAnalytics';
 import useAutoSave from '../../hooks/useAutoSave';
-import { calcularProximaEtapa, calcularEtapasTotais, deveExibirLoginAgora, getEtapaPorIndice } from '../../utils/algoritmo';
+import { calcularProximaEtapa, calcularEtapasTotais, getEtapaPorIndice } from '../../utils/algoritmo';
 import BreathTransition from './BreathTransition';
 import ProgressBar from './ProgressBar';
 import BackButton from './BackButton';
 import Footer from '../ui/Footer';
+import LoginCadastroModal from './LoginCadastroModal';
 import fetchAPI from '../../utils/fetchAPI';
 
 const STEP_COMPONENTS = {
@@ -201,44 +204,18 @@ export default function MemorialOrchestrator() {
   const [corTransicao, setCorTransicao] = useState(null);
   const [respostaTransicao, setRespostaTransicao] = useState('');
   const [campoTransicao, setCampoTransicao] = useState('');
-  const [mostrandoLogin, setMostrandoLogin] = useState(false);
+  const [modalAuthAberto, setModalAuthAberto] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
-  const [sessaoDetectada, setSessaoDetectada] = useState(false);
+  const [eventoCriando, setEventoCriando] = useState(false);
   const restauracaoFeita = useRef(false);
   const stepCompletedRef = useRef(false);
   const currentStepIdRef = useRef(null);
+  const loginPendenteRef = useRef(false);
+  const proximaEtapaPendenteRef = useRef(null);
 
   // ============================================================
-  // FIX 07/07: Polling de sessão para detectar login em outra aba/dispositivo
-  // Quando o usuário confirma o email no celular/outra aba, a aba atual detecta
-  // a sessão ativa e recarrega os dados do memorial automaticamente
+  // Rastreia inicio e abandono de steps
   // ============================================================
-  useEffect(() => {
-    if (user) return; // Já logado, não precisa polling
-
-    let intervalId;
-
-    const verificarSessao = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.access_token) {
-          console.log('[MemorialOrchestrator] Sessão detectada via polling — recarregando...');
-          clearInterval(intervalId);
-          setSessaoDetectada(true);
-          // O AuthContext vai detectar a sessão via onAuthStateChange
-          // e atualizar user/evento automaticamente
-        }
-      } catch (e) {
-        // Silencioso — polling não deve quebrar a UX
-      }
-    };
-
-    intervalId = setInterval(verificarSessao, 3000); // a cada 3s
-
-    return () => clearInterval(intervalId);
-  }, [user, supabase]);
-
-  // Rastreia início e abandono de steps
   useEffect(() => {
     const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
     const stepId = etapaAtualObj?.id || etapaAtualObj?.componente;
@@ -259,6 +236,9 @@ export default function MemorialOrchestrator() {
     };
   }, [estado.etapaAtual, trackStep]);
 
+  // ============================================================
+  // Restaura progresso de usuario logado
+  // ============================================================
   useEffect(() => {
     if (!user) return;
     if (estado.etapaAtual !== 0 || estado.perfilCasal) return;
@@ -287,6 +267,55 @@ export default function MemorialOrchestrator() {
     buscarDoSupabase();
   }, [user, estado.etapaAtual, estado.perfilCasal, carregarEstado, carregarDraft, supabase]);
 
+  // ============================================================
+  // Detecta login e continua fluxo pendente
+  // ============================================================
+  useEffect(() => {
+    if (!user) return;
+    if (!loginPendenteRef.current) return;
+
+    async function continuarAposLogin() {
+      loginPendenteRef.current = false;
+      setModalAuthAberto(false);
+      setEventoCriando(true);
+
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+
+        if (token) {
+          const res = await fetchAPI('/api/memorial/criar-evento', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ estado }),
+          });
+
+          const result = await res.json();
+          if (!res.ok) {
+            console.warn('[MemorialOrchestrator] Erro ao criar evento:', result.erro || result.error);
+          } else {
+            console.log('[MemorialOrchestrator] Evento criado:', result.evento_id);
+          }
+        }
+      } catch (apiErr) {
+        console.warn('[MemorialOrchestrator] Falha na API criar-evento:', apiErr);
+      } finally {
+        setEventoCriando(false);
+      }
+
+      // Avanca para a proxima etapa que estava pendente
+      if (proximaEtapaPendenteRef.current !== null) {
+        irParaEtapa(proximaEtapaPendenteRef.current);
+        proximaEtapaPendenteRef.current = null;
+      }
+    }
+
+    continuarAposLogin();
+  }, [user, estado, supabase, irParaEtapa]);
+
   const etapasTotais = calcularEtapasTotais(estado);
   const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
   const blocoAtual = etapaAtualObj?.bloco || '';
@@ -295,6 +324,9 @@ export default function MemorialOrchestrator() {
 
   const BREATH_DURATION = 1400;
 
+  // ============================================================
+  // handleSelect: NOVO FLUXO — abre modal no primeiro clique
+  // ============================================================
   const handleSelect = useCallback((campo, valor, cor) => {
     setRespostas(campo, valor);
 
@@ -315,12 +347,13 @@ export default function MemorialOrchestrator() {
 
     setTimeout(() => {
       const proxima = calcularProximaEtapa(novoEstado, estado.etapaAtual);
-      const proximaEtapaObj = getEtapaPorIndice(proxima);
-      const proximaEtapaId = proximaEtapaObj?.id;
 
-      if (!user && deveExibirLoginAgora(novoEstado, proximaEtapaId)) {
-        setMostrandoLogin(true);
+      // MUDANCA RADICAL: se nao estiver logado, abre modal em vez de avancar
+      if (!user) {
+        loginPendenteRef.current = true;
+        proximaEtapaPendenteRef.current = proxima;
         setTransicionando(false);
+        setModalAuthAberto(true);
         return;
       }
 
@@ -332,12 +365,10 @@ export default function MemorialOrchestrator() {
     }, BREATH_DURATION);
   }, [estado, setRespostas, irParaEtapa, user]);
 
-  const handleIrParaLogin = (destino) => {
-    try {
-      sessionStorage.setItem('descomplicai-pre-login-state', JSON.stringify(estado));
-    } catch (e) {}
-    router.push(`${destino}?redirect=${encodeURIComponent('/memorial')}`);
-  };
+  const handleLoginSuccess = useCallback(() => {
+    // O useEffect acima detecta user !== null e continua o fluxo
+    // Nao precisa fazer nada aqui — o polling do modal ja parou
+  }, []);
 
   const handleConcluirMemorial = useCallback(async (fornecedores) => {
     setRespostas('fornecedoresNecessarios', fornecedores);
@@ -384,7 +415,6 @@ export default function MemorialOrchestrator() {
     setOferecerDraft(false);
   };
 
-  // FIX ESLINT: evita criar componente durante render
   const StepComponent = etapaAtualObj
     ? STEP_COMPONENTS[etapaAtualObj.componente] || PlaceholderStep
     : null;
@@ -396,6 +426,28 @@ export default function MemorialOrchestrator() {
           Salvando...
         </div>
       )}
+
+      {eventoCriando && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 9998,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'rgba(255,255,255,0.8)',
+        }}>
+          <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
+            Preparando seu memorial...
+          </p>
+        </div>
+      )}
+
+      <LoginCadastroModal
+        isOpen={modalAuthAberto}
+        onLoginSuccess={handleLoginSuccess}
+        onClose={() => setModalAuthAberto(false)}
+      />
 
       {carregandoAuth ? (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -409,13 +461,6 @@ export default function MemorialOrchestrator() {
               <p>Deseja continuar de onde parou?</p>
               <button onClick={handleContinuarDraft}>Continuar</button>
               <button onClick={handleDescartarDraft}>Começar do zero</button>
-            </div>
-          ) : mostrandoLogin ? (
-            <div style={{ padding: 'var(--space-6)', textAlign: 'center' }}>
-              <h2>Quase lá!</h2>
-              <p>Seu casamento está tomando forma. Salve seu progresso pra continuar de onde parou.</p>
-              <button onClick={() => handleIrParaLogin('/login')}>Entrar</button>
-              <button onClick={() => handleIrParaLogin('/cadastro')}>Criar conta</button>
             </div>
           ) : (
             <>
@@ -435,6 +480,7 @@ export default function MemorialOrchestrator() {
                       estado={estado}
                       onSelect={handleSelect}
                       onConcluir={handleConcluirMemorial}
+                      disabled={modalAuthAberto && etapaAtualObj?.componente === 'Step00Casal'}
                     />
                   )}
                 </React.Suspense>

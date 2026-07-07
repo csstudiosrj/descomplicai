@@ -1,15 +1,17 @@
 /* ==========================================
  * ARQUIVO: components/memorial/steps/Step00Casal.jsx
- * ========================================== */
-// Etapa 0 do memorial — coleta dos dados do casal (perfil)
-// Título SEMPRE neutro: a resposta do perfil é a própria pergunta
+ * ==========================================
+ * Etapa 0 do memorial — coleta dos dados do casal (perfil)
+ * MUDANCA 07/07: aceita prop 'disabled' para bloquear interacao
+ * quando modal de login esta aberto
+ */
 
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
 
-export default function Step00Casal({ onSelect, estadoAtual }) {
+export default function Step00Casal({ onSelect, estadoAtual, disabled = false }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
   const OPCOES = [
     { valor: 'noiva-noivo', label: 'Noiva e Noivo', icone: 'heart', cor: 'var(--color-info-light)' },
@@ -21,6 +23,7 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
   const selecionado = estadoAtual?.perfilCasal;
 
   const handleCardClick = (opcao) => {
+    if (disabled) return;
     if (cardPulsando) return;
     setCardPulsando(opcao.valor);
     setTimeout(() => {
@@ -30,6 +33,7 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
   };
 
   const handleKeyDown = (e, opcao) => {
+    if (disabled) return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       handleCardClick(opcao);
@@ -40,12 +44,16 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
     <div
       role="radiogroup"
       aria-label="Quem está se casando?"
+      aria-disabled={disabled}
       style={{
         maxWidth: '640px',
         margin: '0 auto',
         display: 'flex',
         flexDirection: 'column',
         gap: 'var(--space-6)',
+        opacity: disabled ? 0.5 : 1,
+        pointerEvents: disabled ? 'none' : 'auto',
+        transition: 'opacity 300ms ease',
       }}
     >
       <div>
@@ -89,11 +97,11 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
                 role="radio"
                 aria-checked={isSelected}
                 aria-label={opcao.label}
-                tabIndex={0}
+                tabIndex={disabled ? -1 : 0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    onSelect('perfilCasal', opcao.valor, opcao.cor);
+                    if (!disabled) onSelect('perfilCasal', opcao.valor, opcao.cor);
                   }
                 }}
               >
@@ -142,6 +150,7 @@ export default function Step00Casal({ onSelect, estadoAtual }) {
 Step00Casal.propTypes = {
   onSelect: PropTypes.func.isRequired,
   estadoAtual: PropTypes.object,
+  disabled: PropTypes.bool,
 };
 
 export { Step00Casal };
