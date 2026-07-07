@@ -251,3 +251,4 @@ Convite por e-mail → Token de ativacao → Permissoes no evento
 ## Licenca
 
 Proprietaria — Descomplicaí. Todos os direitos reservados.
+# clean deploy Tue Jul  7 12:57:12 AM UTC 2026
