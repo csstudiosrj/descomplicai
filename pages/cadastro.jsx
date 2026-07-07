@@ -20,7 +20,7 @@ export default function CadastroPage() {
   const [aguardandoConfirmacao, setAguardandoConfirmacao] = useState(false);
   const [emailConfirmacao, setEmailConfirmacao] = useState('');
 
-  // Pré-preenche email se veio da query (ex: /descomplicai/cadastro?email=xxx)
+  // Pré-preenche email se veio da query (ex: /cadastro?email=xxx)
   useEffect(() => {
     if (router.query.email) {
       setEmail(router.query.email);
@@ -55,7 +55,7 @@ export default function CadastroPage() {
       }
 
       // 2. Monta o emailRedirectTo com draft_token se existir
-      // URL absoluta obrigatória para o Supabase Auth
+      // URL absoluta obrigatória para o Supabase Auth — DEVE incluir /descomplicai
       const redirectTo = draftToken
         ? `${SITE_URL}/descomplicai/confirmar?draft_id=${draftToken}`
         : `${SITE_URL}/descomplicai/confirmar`;
@@ -132,7 +132,9 @@ export default function CadastroPage() {
         }
       }
 
-      const destino = redirectTo || '/descomplicai/memorial';
+      // CORREÇÃO: basePath: '/descomplicai' já adiciona o prefixo automaticamente.
+      // NUNCA incluir '/descomplicai' manualmente em router.push/Link.
+      const destino = redirectTo || '/memorial';
       router.push(destino);
     } catch (err) {
       setErro('Erro ao redirecionar. Tente fazer login.');
@@ -313,7 +315,9 @@ export default function CadastroPage() {
               color: 'var(--color-text-muted)',
             }}>
               Já tem conta?{' '}
-              <Link href="/descomplicai/login" legacyBehavior>
+              {/* CORREÇÃO: basePath: '/descomplicai' já adiciona o prefixo automaticamente.
+                  NUNCA incluir '/descomplicai' manualmente em router.push/Link. */}
+              <Link href="/login" legacyBehavior>
                 <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Entrar</a>
               </Link>
             </p>
@@ -440,7 +444,9 @@ export default function CadastroPage() {
             color: 'var(--color-text-muted)',
           }}>
             Já tem conta?{' '}
-            <Link href="/descomplicai/login" legacyBehavior>
+            {/* CORREÇÃO: basePath: '/descomplicai' já adiciona o prefixo automaticamente.
+                NUNCA incluir '/descomplicai' manualmente em router.push/Link. */}
+            <Link href="/login" legacyBehavior>
               <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Entrar</a>
             </Link>
           </p>

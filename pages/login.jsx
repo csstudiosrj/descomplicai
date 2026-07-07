@@ -30,8 +30,10 @@ export default function LoginPage() {
       }
 
       // Redireciona para o destino correto
+      // CORREÇÃO: basePath: '/descomplicai' já adiciona o prefixo automaticamente.
+      // NUNCA incluir '/descomplicai' manualmente em router.push/Link.
       const redirectTo = router.query.redirect;
-      const destino = redirectTo || '/descomplicai/painel';
+      const destino = redirectTo || '/painel';
       router.push(destino);
     } catch (err) {
       setErro(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
@@ -152,7 +154,9 @@ export default function LoginPage() {
             color: 'var(--color-text-muted)',
           }}>
             Não tem conta?{' '}
-            <Link href="/descomplicai/cadastro" legacyBehavior>
+            {/* CORREÇÃO: basePath: '/descomplicai' já adiciona o prefixo automaticamente.
+                NUNCA incluir '/descomplicai' manualmente em router.push/Link. */}
+            <Link href="/cadastro" legacyBehavior>
               <a style={{ color: 'var(--color-brand)', fontWeight: 'var(--font-medium)' }}>Cadastre-se</a>
             </Link>
           </p>

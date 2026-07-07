@@ -10,7 +10,7 @@
  * 4. Buscamos draft_token da query
  * 5. Buscamos draft no Supabase
  * 6. Chamamos /api/memorial/criar-evento com o estado do draft
- * 7. Redirecionamos para /descomplicai/memorial
+ * 7. Redirecionamos para /memorial (basePath: '/descomplicai' cuida do prefixo)
  */
 
 import React, { useState, useEffect } from 'react';
@@ -96,7 +96,9 @@ export default function ConfirmarPage() {
 
         setEstado(ESTADOS.SUCESSO);
         setMensagem('Tudo pronto! Redirecionando...');
-        router.push('/descomplicai/memorial');
+        // CORREÇÃO: basePath: '/descomplicai' já adiciona o prefixo automaticamente.
+        // NUNCA incluir '/descomplicai' manualmente em router.push/Link.
+        router.push('/memorial');
       } catch (err) {
         console.error('[confirmar] Erro:', err);
         setEstado(ESTADOS.ERRO);
@@ -202,7 +204,7 @@ export default function ConfirmarPage() {
 
           {estado === ESTADOS.ERRO && (
             <button
-              onClick={() => router.push('/descomplicai/login')}
+              onClick={() => router.push('/login')}
               style={{
                 padding: 'var(--space-3) var(--space-6)',
                 borderRadius: 'var(--radius-lg)',

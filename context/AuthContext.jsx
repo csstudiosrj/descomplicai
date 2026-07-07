@@ -166,6 +166,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     await signOut();
     if (typeof window !== 'undefined') {
+      // window.location.href é navegação full do browser — DEVE incluir o basePath
       window.location.href = '/descomplicai/login';
     }
   }, [signOut]);
@@ -205,7 +206,13 @@ export function AuthProvider({ children }) {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: typeof window !== 'undefined' ? window.location.origin + '/memorial' : undefined,
+        // CORREÇÃO: redirectTo do OAuth é uma URL absoluta que o browser navega
+        // diretamente (fora do router do Next.js). DEVE incluir o basePath '/descomplicai'.
+        // Sem isso, o usuário é redirecionado para https://site.com/memorial (sem /descomplicai)
+        // e recebe 404, pois as rotas do Next.js estão sob /descomplicai/*.
+        redirectTo: typeof window !== 'undefined'
+          ? window.location.origin + '/descomplicai/memorial'
+          : undefined,
       },
     });
     return { data, error };
