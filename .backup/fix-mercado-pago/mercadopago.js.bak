@@ -1,7 +1,7 @@
+// lib/mercadopago.js
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import crypto from 'crypto';
 
-// FIX: padroniza para MP_ACCESS_TOKEN (mesma variável em todo o sistema)
 const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN,
 });
@@ -87,27 +87,27 @@ export function validarWebhookSeguro(req, res) {
 
   if (!secret) {
     console.warn(
-      '[WEBHOOK] MERCADOPAGO_WEBHOOK_SECRET nao configurado. ' +
-      'Webhook vulneravel a requisicoes falsas. Configure no painel do Mercado Pago e na Vercel.'
+      '[WEBHOOK] MERCADOPAGO_WEBHOOK_SECRET não configurado. ' +
+      'Webhook vulnerável a requisições falsas. Configure no painel do Mercado Pago e na Vercel.'
     );
     return true;
   }
 
   const signature = req.headers['x-signature'] || req.headers['X-Signature'];
-
+  
   // Fallback para teste do Mercado Pago: simulação pode não enviar x-signature
   if (!signature && process.env.NODE_ENV !== 'production') {
     console.warn(
-      '[WEBHOOK] x-signature ausente em ambiente NAO-PRODUCAO. ' +
-      'Aceitando requisicao (modo teste). Em producao a assinatura sera obrigatoria.'
+      '[WEBHOOK] x-signature ausente em ambiente NÃO-PRODUÇÃO. ' +
+      'Aceitando requisição (modo teste). Em produção a assinatura será obrigatória.'
     );
     return true;
   }
 
   const valido = verificarAssinaturaWebhook(req, secret);
   if (!valido) {
-    console.error('[WEBHOOK] Assinatura invalida. Requisicao rejeitada.');
-    res.status(401).json({ erro: 'Assinatura do webhook invalida' });
+    console.error('[WEBHOOK] Assinatura inválida. Requisição rejeitada.');
+    res.status(401).json({ erro: 'Assinatura do webhook inválida' });
     return false;
   }
 

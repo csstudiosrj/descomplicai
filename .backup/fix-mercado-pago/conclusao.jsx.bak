@@ -1,5 +1,5 @@
 // pages/memorial/conclusao.jsx
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { montarPayloadMemorial } from '../../utils/gerador-memorial';
@@ -21,9 +21,6 @@ const PLANOS_ASSINATURA = [
   { id: '18_meses', label: '18 Meses', preco: 'R$538,20', duracao: 18 },
 ];
 
-// FIX: timeout para fetch (ms)
-const FETCH_TIMEOUT = 15000;
-
 export default function ConclusaoPage() {
   const router = useRouter();
   const { estado, carregarEstado } = useMemorial();
@@ -40,9 +37,6 @@ export default function ConclusaoPage() {
   const [aceiteTermosAssinatura, setAceiteTermosAssinatura] = useState(false);
   const [planoSelecionado, setPlanoSelecionado] = useState('mensal');
   const [iniciandoTrial, setIniciandoTrial] = useState(false);
-
-  // FIX: flag para evitar múltiplas chamadas do useEffect
-  const gerandoRef = useRef(false);
 
   const { pagamento, tipo: tipoProduto, concluido, collection_status } = router.query;
   const pagamentoAprovado = pagamento === 'sucesso' || collection_status === 'approved';
@@ -74,24 +68,13 @@ export default function ConclusaoPage() {
     }
   }, [isMounted, isHydrated]);
 
-  // FIX: useEffect de geração do memorial com flag anti-loop e timeout
   useEffect(() => {
     if (!estado || !estado.etapaAtual || status !== 'carregando') return;
-    if (gerandoRef.current) return; // já está gerando
-
-    gerandoRef.current = true;
-
     const gerarMemorial = async () => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
-
       try {
         const payload = montarPayloadMemorial(estado);
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData?.session?.access_token;
-
-        console.log('[Conclusao] Gerando memorial...', { hasToken: !!token, estadoKeys: Object.keys(estado).length });
-
         const resposta = await fetchAPI('/api/ia/gerar-memorial', {
           method: 'POST',
           headers: {
@@ -99,44 +82,20 @@ export default function ConclusaoPage() {
             ...(token && { 'Authorization': `Bearer ${token}` }),
           },
           body: JSON.stringify(payload),
-          signal: controller.signal,
         });
-
-        clearTimeout(timeoutId);
-
         const data = await resposta.json();
-
-        if (!resposta.ok) {
-          console.error('[Conclusao] API retornou erro:', resposta.status, data);
-          throw new Error(data.erro || `Erro ${resposta.status} ao gerar memorial`);
+        if (!resposta.ok || !data.sucesso) {
+          throw new Error(data.erro || 'Erro desconhecido');
         }
-
-        if (!data.sucesso) {
-          throw new Error(data.erro || 'Erro desconhecido ao gerar memorial');
-        }
-
-        console.log('[Conclusao] Memorial gerado com sucesso');
         setMemorial(data.memorial);
         setStatus('pronto');
       } catch (err) {
-        clearTimeout(timeoutId);
-
-        if (err.name === 'AbortError') {
-          console.error('[Conclusao] Timeout ao gerar memorial');
-          setErro('O servidor demorou muito para responder. Tente recarregar a página.');
-        } else {
-          console.error('[Conclusao] Erro ao gerar memorial:', err.message);
-          setErro(err.message || 'Erro ao gerar o memorial. Tente novamente.');
-        }
-
+        setErro(err.message);
         setStatus('erro');
-      } finally {
-        gerandoRef.current = false;
       }
     };
-
     gerarMemorial();
-  }, [estado, status, supabase]);
+  }, [estado, status]);
 
   const baixarPDF = async () => {
     setBaixandoPDF(true);
@@ -208,28 +167,14 @@ export default function ConclusaoPage() {
     }
   };
 
-  // FIX: garante que email sempre tem valor válido
   const handleComprarPDF = async () => {
     if (!user?.id || !evento?.id) { alert('Faca login primeiro para continuar.'); return; }
     if (!aceiteTermosPDF) { alert('Aceite os termos para continuar.'); return; }
     setPagando(true);
     try {
-      const payloadMemorial = montarPayloadMemorial(estado);
-      // FIX: garante email válido — usa user.email como fallback principal
-      const dadosEvento = {
-        ...payloadMemorial,
-        email: user?.email || 'teste@email.com',
-        nomes: {
-          noiva: estado.nomeNoiva || estado.nomePessoa1 || 'Noiva',
-          noivo: estado.nomeNoivo || estado.nomePessoa2 || 'Noivo',
-        }
-      };
-
+      const dadosEvento = { ...montarPayloadMemorial(estado), email: user?.email || null };
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
-
-      console.log('[Conclusao] Criando pagamento PDF...', { usuarioId: user.id, eventoId: evento.id });
-
       const resposta = await fetchAPI('/api/pagamento/criar', {
         method: 'POST',
         headers: {
@@ -238,17 +183,11 @@ export default function ConclusaoPage() {
         },
         body: JSON.stringify({ tipo: 'memorial_pdf', usuarioId: user.id, eventoId: evento.id, dadosEvento }),
       });
-
       const data = await resposta.json();
-      console.log('[Conclusao] Resposta pagamento:', { status: resposta.status, hasCheckoutUrl: !!data.checkoutUrl });
-
-      if (data.checkoutUrl) { 
-        window.location.href = data.checkoutUrl; 
-      } else { 
-        alert(data.erro || data.error || 'Erro ao iniciar pagamento'); 
-      }
+      if (data.checkoutUrl) { window.location.href = data.checkoutUrl; }
+      else { alert(data.erro || 'Erro ao iniciar pagamento'); }
     } catch (err) {
-      console.error('[Conclusao] Erro ao comprar PDF:', err);
+      console.error(err);
       alert('Erro ao iniciar pagamento. Tente novamente.');
     } finally {
       setPagando(false);
@@ -260,19 +199,9 @@ export default function ConclusaoPage() {
     if (!aceiteTermosAssinatura) { alert('Aceite os termos para continuar.'); return; }
     setPagando(true);
     try {
-      const payloadMemorial = montarPayloadMemorial(estado);
-      const dadosEvento = {
-        ...payloadMemorial,
-        email: user?.email || 'teste@email.com',
-        nomes: {
-          noiva: estado.nomeNoiva || estado.nomePessoa1 || 'Noiva',
-          noivo: estado.nomeNoivo || estado.nomePessoa2 || 'Noivo',
-        }
-      };
-
+      const dadosEvento = { ...montarPayloadMemorial(estado), email: user?.email || null };
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
-
       const resposta = await fetchAPI('/api/pagamento/criar', {
         method: 'POST',
         headers: {
@@ -281,7 +210,6 @@ export default function ConclusaoPage() {
         },
         body: JSON.stringify({ tipo: 'assinatura', plano: planoSelecionado, usuarioId: user.id, eventoId: evento.id, dadosEvento }),
       });
-
       const data = await resposta.json();
       if (data.checkoutUrl) { window.location.href = data.checkoutUrl; }
       else { alert(data.erro || 'Erro ao iniciar pagamento'); }
@@ -325,10 +253,7 @@ export default function ConclusaoPage() {
           <div style={{ textAlign: 'center', maxWidth: '400px' }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', color: 'var(--color-danger)', marginBottom: 'var(--space-2)' }}>Ops!</h2>
             <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-6)' }}>{erro || 'Nao foi possivel gerar o memorial. Tente novamente.'}</p>
-            <Button variant="primary" onClick={() => { gerandoRef.current = false; setStatus('carregando'); }}>Tentar novamente</Button>
-            <div style={{ marginTop: 'var(--space-4)' }}>
-              <Button variant="ghost" onClick={() => router.push('/memorial')}>Voltar ao memorial</Button>
-            </div>
+            <Button variant="primary" onClick={() => router.push('/memorial')}>Voltar ao memorial</Button>
           </div>
         </div>
       </>

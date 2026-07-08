@@ -8,7 +8,6 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// FIX: padroniza para MP_ACCESS_TOKEN
 const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN,
 });
@@ -16,13 +15,10 @@ const client = new MercadoPagoConfig({
 /**
  * POST /api/webhooks/mercado-pago
  * Recebe notificações do Mercado Pago (IPN / Webhook)
- * 
- * FIX: agora delega pagamentos de casal para o webhook unificado
- * e só processa pagamentos de fornecedor
  */
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Metodo nao permitido' });
+    return res.status(405).json({ error: 'Método não permitido' });
   }
 
   // ─── VALIDAÇÃO DE ASSINATURA DO WEBHOOK ───
@@ -38,7 +34,7 @@ export default async function handler(req, res) {
   const eventType = type || action;
 
   if (!paymentId) {
-    return res.status(400).json({ error: 'ID do pagamento nao encontrado' });
+    return res.status(400).json({ error: 'ID do pagamento não encontrado' });
   }
 
   // Confirma pagamento na API do Mercado Pago
@@ -50,27 +46,12 @@ export default async function handler(req, res) {
     const externalRef = paymentData.external_reference;
     const metadata = paymentData.metadata || {};
 
-    // FIX: detecta se é pagamento de casal (novo formato ou JSON antigo)
-    if (externalRef && (
-      externalRef.startsWith('descomplicai_') || 
-      (externalRef.startsWith('{') && externalRef.includes('usuarioId'))
-    )) {
-      console.log('[WEBHOOK FORNECEDOR] Pagamento de casal detectado. Delegando para /api/pagamento/webhook.', externalRef)
-      return res.status(200).json({ 
-        success: true, 
-        message: 'Pagamento de casal delegado para webhook principal',
-        external_reference: externalRef 
-      });
-    }
-
     // Extrai fornecedor_id do external_reference
     const fornecedorId = metadata.fornecedor_id || 
       (externalRef ? externalRef.match(/fornecedor_(.+?)_/)?.[1] : null);
 
     if (!fornecedorId) {
-      console.log('[WEBHOOK FORNECEDOR] fornecedor_id nao encontrado. Ignorando.', { externalRef, metadata })
-      // FIX: retorna 200 para o MP nao reenviar
-      return res.status(200).end();
+      return res.status(400).json({ error: 'fornecedor_id não encontrado no pagamento' });
     }
 
     // Atualiza pagamento no banco
@@ -81,8 +62,7 @@ export default async function handler(req, res) {
         mp_payment_id: String(paymentId),
         atualizado_em: new Date().toISOString(),
       })
-      .eq('mp_preference_id', paymentData.preference_id)
-      .or(`external_reference.eq.${externalRef}`);
+      .eq('mp_preference_id', paymentData.preference_id);
 
     // Se pagamento aprovado, atualiza fornecedor
     if (status === 'approved') {
@@ -121,7 +101,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true, status, fornecedor_id: fornecedorId });
   } catch (err) {
     console.error('[WEBHOOK] Erro:', err);
-    // FIX: sempre retorna 200 para o MP nao reenviar
-    return res.status(200).json({ error: 'Erro ao processar webhook', detalhe: err.message });
+    return res.status(500).json({ error: 'Erro ao processar webhook', detalhe: err.message });
   }
 }

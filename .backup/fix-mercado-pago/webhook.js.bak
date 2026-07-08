@@ -14,17 +14,10 @@ export default async function handler(req, res) {
   if (type !== 'payment') return res.status(200).end()
 
   try {
-    // FIX: usa a mesma variável padronizada MP_ACCESS_TOKEN
-    const mpToken = process.env.MP_ACCESS_TOKEN
-    if (!mpToken) {
-      console.error('[WEBHOOK] MP_ACCESS_TOKEN não configurado')
-      return res.status(500).end()
-    }
-
     // Busca payment direto na API REST do Mercado Pago
     const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${data.id}`, {
       headers: {
-        'Authorization': `Bearer ${mpToken}`,
+        'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
       },
     })
@@ -32,12 +25,13 @@ export default async function handler(req, res) {
     if (!mpResponse.ok) {
       const erroTexto = await mpResponse.text()
       const status = mpResponse.status
-
+      
       // Se payment não existe (404), retorna 200 para o MP não reenviar
       if (status === 404) {
+
         return res.status(200).end()
       }
-
+      
       console.error('Webhook: erro ao buscar payment na API MP', data.id, status, erroTexto)
       return res.status(500).end()
     }
@@ -52,58 +46,11 @@ export default async function handler(req, res) {
     let ref = {}
     const extRef = pagamento.external_reference
 
-    // FIX: detecta formato do external_reference
     if (extRef && typeof extRef === 'string' && extRef.trim() !== '') {
-      if (extRef.startsWith('fornecedor_')) {
-        // É pagamento de fornecedor — não processa aqui, retorna 200
-        console.log('[WEBHOOK] Pagamento de fornecedor detectado. Ignorando neste endpoint.', extRef)
-        return res.status(200).end()
-      }
-
-      if (extRef.startsWith('descomplicai_')) {
-        // É pagamento do casal no novo formato — busca no banco
-        try {
-          const supabaseAdmin = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL,
-            process.env.SUPABASE_SERVICE_ROLE_KEY
-          )
-
-          const { data: pagamentoDb } = await supabaseAdmin
-            .from('pagamentos')
-            .select('usuario_id, evento_id, tipo, duracao_meses')
-            .eq('external_reference', extRef)
-            .single()
-
-          if (pagamentoDb) {
-            ref = {
-              usuarioId: pagamentoDb.usuario_id,
-              eventoId: pagamentoDb.evento_id,
-              tipo: pagamentoDb.tipo,
-              duracao_meses: pagamentoDb.duracao_meses,
-            }
-          } else {
-            // Fallback: tenta extrair do próprio external_reference
-            const parts = extRef.split('_')
-            if (parts.length >= 3) {
-              ref = {
-                usuarioId: null,
-                eventoId: parts[1],
-                tipo: parts[2],
-                duracao_meses: pagamento.metadata?.duracao_meses ?? 0,
-              }
-            }
-          }
-        } catch (e) {
-          console.error('[WEBHOOK] Erro ao buscar pagamento no banco:', e)
-          ref = { usuarioId: null, eventoId: null, tipo: null, raw: extRef }
-        }
-      } else {
-        // Formato antigo (JSON) — tenta parsear para compatibilidade
-        try {
-          ref = JSON.parse(extRef)
-        } catch (e) {
-          ref = { usuarioId: null, eventoId: null, tipo: null, raw: extRef }
-        }
+      try {
+        ref = JSON.parse(extRef)
+      } catch (e) {
+        ref = { usuarioId: null, eventoId: null, tipo: null, raw: extRef }
       }
     } else if (extRef && typeof extRef === 'object') {
       ref = extRef
@@ -112,15 +59,18 @@ export default async function handler(req, res) {
     const { usuarioId, eventoId, tipo } = ref
     let duracaoMeses = pagamento.metadata?.duracao_meses ?? ref.duracao_meses ?? 0
 
-    if (!eventoId || !tipo) {
+    if (!usuarioId || !eventoId || !tipo) {
       console.error('Webhook: external_reference invalido', {
         external_reference: pagamento.external_reference,
         ref,
         payment_id: pagamento.id,
         metadata: pagamento.metadata,
       })
-      // FIX: retorna 200 mesmo com erro para o MP não reenviar indefinidamente
-      return res.status(200).end()
+      return res.status(400).json({
+        erro: 'external_reference invalido',
+        external_reference: pagamento.external_reference,
+        metadata: pagamento.metadata,
+      })
     }
 
     const supabaseAdmin = createClient(
@@ -144,8 +94,7 @@ export default async function handler(req, res) {
       novaExpiracao = calcularNovaExpiracao(eventoAtual?.acesso_expira_em, 7 / 30)
       novoPlano = 'pdf'
     } else {
-      console.error('Webhook: tipo desconhecido', tipo)
-      return res.status(200).end()
+      return res.status(400).json({ erro: 'tipo desconhecido', tipo })
     }
 
     await supabaseAdmin
@@ -157,15 +106,16 @@ export default async function handler(req, res) {
       })
       .eq('id', eventoId)
 
-    // Atualiza status do pagamento no banco
-    await supabaseAdmin
-      .from('pagamentos')
-      .update({
-        status: 'aprovado',
-        mp_payment_id: String(pagamento.id),
-        atualizado_em: new Date().toISOString(),
-      })
-      .eq('external_reference', pagamento.external_reference)
+    await supabaseAdmin.from('pagamentos').insert({
+      usuario_id: usuarioId,
+      evento_id: eventoId,
+      tipo,
+      valor: pagamento.transaction_amount,
+      status: 'aprovado',
+      mp_payment_id: String(pagamento.id),
+      duracao_meses: duracaoMeses || null,
+      aceite_termo_em: null,
+    })
 
     // Track analytics
     await trackServerEvent({
@@ -181,7 +131,6 @@ export default async function handler(req, res) {
     res.status(200).json({ sucesso: true, eventoId, tipo, plano: novoPlano })
   } catch (erro) {
     console.error('Webhook erro:', erro)
-    // FIX: sempre retorna 200 para o MP não reenviar
-    res.status(200).end()
+    res.status(500).json({ erro: erro.message })
   }
 }

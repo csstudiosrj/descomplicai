@@ -7,9 +7,8 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// ─── PADRONIZAÇÃO: usa apenas MP_ACCESS_TOKEN ───
 const client = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN,
+  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN,
 });
 
 // ─── PREÇOS DO CASAL ───
@@ -58,27 +57,6 @@ async function _handler(req, res) {
     return res.status(400).json({ error: 'tipo obrigatorio (memorial_pdf, assinatura, fornecedor)' });
   }
 
-  // ─── HELPER: email válido para o MP ───
-  function getEmailValido() {
-    // O MP sandbox aceita qualquer email com domínio válido.
-    // Evita domínios genéricos que o MP pode rejeitar.
-    const email = dadosEvento?.email || (fornecedor_id ? null : null);
-    if (email && email.includes('@') && email.includes('.')) return email;
-    // Fallback seguro: usa o email do usuário autenticado ou um de teste válido
-    return 'teste@email.com';
-  }
-
-  // ─── HELPER: nome do pagador ───
-  function getNomePagador() {
-    if (dadosEvento?.nomes?.noiva || dadosEvento?.nomes?.noivo) {
-      return `${dadosEvento.nomes.noiva || ''} e ${dadosEvento.nomes.noivo || ''}`.trim();
-    }
-    if (dadosEvento?.nomePessoa1 && dadosEvento?.nomePessoa2) {
-      return `${dadosEvento.nomePessoa1} e ${dadosEvento.nomePessoa2}`;
-    }
-    return 'Casal';
-  }
-
   // ───────────────────────────────────────────────
   // FLUXO DO CASAL: memorial_pdf ou assinatura
   // ───────────────────────────────────────────────
@@ -94,20 +72,11 @@ async function _handler(req, res) {
       ? `Assinatura Descomplicai — ${plano.replace('_', ' ')}`
       : 'Memorial Personalizado — Descomplicai';
 
-    // FIX: external_reference simples (não JSON) para evitar problemas no MP
-    // Usa prefixo curto + eventoId + tipo + timestamp para unicidade
-    const externalRef = `descomplicai_${eventoId}_${tipo}_${Date.now()}`;
-
-    // FIX: salva metadados no banco para recuperar no webhook
-    await supabaseAdmin.from('pagamentos').insert({
-      usuario_id: usuarioId,
-      evento_id: eventoId,
-      tipo: isAssinatura ? 'assinatura' : 'memorial_pdf',
-      valor: preco,
-      status: 'pendente',
-      duracao_meses: duracaoMeses || null,
-      external_reference: externalRef,
-      criado_em: new Date().toISOString(),
+    const externalRef = JSON.stringify({
+      usuarioId,
+      eventoId,
+      tipo,
+      duracao_meses: duracaoMeses,
     });
 
     const preference = new Preference(client);
@@ -124,8 +93,8 @@ async function _handler(req, res) {
             },
           ],
           payer: {
-            email: getEmailValido(),
-            name: getNomePagador(),
+            email: dadosEvento?.email || 'nao-informado@descomplicai.com',
+            name: dadosEvento?.nomes?.noiva || dadosEvento?.nomes?.noivo || 'Casal',
           },
           back_urls: {
             success: `${process.env.NEXT_PUBLIC_SITE_URL}/memorial/conclusao?pagamento=sucesso&tipo=${tipo}`,
@@ -134,7 +103,6 @@ async function _handler(req, res) {
           },
           auto_return: 'approved',
           external_reference: externalRef,
-          // FIX: unificado para um único endpoint de webhook
           notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/pagamento/webhook`,
           metadata: {
             usuarioId,
@@ -145,14 +113,17 @@ async function _handler(req, res) {
         },
       });
 
-      // Atualiza com o ID da preferência do MP
-      await supabaseAdmin
-        .from('pagamentos')
-        .update({
-          mp_preference_id: result.id,
-          atualizado_em: new Date().toISOString(),
-        })
-        .eq('external_reference', externalRef);
+      // Salva referencia do pagamento
+      await supabaseAdmin.from('pagamentos').insert({
+        usuario_id: usuarioId,
+        evento_id: eventoId,
+        tipo: isAssinatura ? 'assinatura' : 'memorial_pdf',
+        valor: preco,
+        mp_payment_id: result.id,
+        status: 'pendente',
+        duracao_meses: duracaoMeses || null,
+        criado_em: new Date().toISOString(),
+      });
 
       return res.status(200).json({
         success: true,
@@ -167,7 +138,7 @@ async function _handler(req, res) {
   }
 
   // ───────────────────────────────────────────────
-  // FLUXO DO FORNECEDOR (mantido funcional)
+  // FLUXO DO FORNECEDOR (mantido intacto)
   // ───────────────────────────────────────────────
   if (tipo === 'fornecedor') {
     if (!fornecedor_id) {
@@ -185,17 +156,6 @@ async function _handler(req, res) {
     }
 
     const preco = PRECO_FORNECEDOR[plano] || PRECO_FORNECEDOR.basico;
-    const externalRef = `fornecedor_${fornecedor_id}_plano_${plano}_${Date.now()}`;
-
-    // Salva referência antes de criar preferência
-    await supabaseAdmin.from('pagamentos').insert({
-      fornecedor_id,
-      tipo: 'assinatura',
-      valor: preco,
-      status: 'pendente',
-      external_reference: externalRef,
-      criado_em: new Date().toISOString(),
-    });
 
     const preference = new Preference(client);
 
@@ -211,7 +171,7 @@ async function _handler(req, res) {
             },
           ],
           payer: {
-            email: fornecedor.email || 'teste@email.com',
+            email: fornecedor.email || 'nao-informado@descomplicai.com',
             name: fornecedor.nome || 'Fornecedor',
           },
           back_urls: {
@@ -220,9 +180,8 @@ async function _handler(req, res) {
             pending: `${process.env.NEXT_PUBLIC_SITE_URL}/fornecedor/pagamento/pendente`,
           },
           auto_return: 'approved',
-          external_reference: externalRef,
-          // FIX: unificado para o mesmo endpoint
-          notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/pagamento/webhook`,
+          external_reference: `fornecedor_${fornecedor_id}_plano_${plano}`,
+          notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/mercado-pago`,
           metadata: {
             fornecedor_id,
             plano,
@@ -231,13 +190,14 @@ async function _handler(req, res) {
         },
       });
 
-      await supabaseAdmin
-        .from('pagamentos')
-        .update({
-          mp_preference_id: result.id,
-          atualizado_em: new Date().toISOString(),
-        })
-        .eq('external_reference', externalRef);
+      await supabaseAdmin.from('pagamentos').insert({
+        fornecedor_id,
+        tipo: 'assinatura',
+        valor: preco,
+        mp_payment_id: result.id,
+        status: 'pendente',
+        criado_em: new Date().toISOString(),
+      });
 
       return res.status(200).json({
         success: true,

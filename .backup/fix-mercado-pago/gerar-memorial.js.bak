@@ -26,16 +26,7 @@ async function _handler(req, res) {
       return res.status(400).json({ erro: 'Dados do memorial não fornecidos' });
     }
 
-    console.log('[gerar-memorial] Gerando memorial para usuario:', user.id, 'dados keys:', Object.keys(dados).length);
-
     const memorial = gerarMemorialLocal(dados);
-
-    if (!memorial || memorial.length < 50) {
-      console.error('[gerar-memorial] Memorial vazio ou muito curto');
-      return res.status(500).json({ erro: 'Erro ao gerar memorial — conteúdo vazio' });
-    }
-
-    console.log('[gerar-memorial] Memorial gerado com sucesso. Tamanho:', memorial.length);
 
     // Track analytics
     await trackServerEvent({
@@ -48,10 +39,9 @@ async function _handler(req, res) {
 
     return res.status(200).json({ sucesso: true, memorial });
   } catch (error) {
-    console.error('Erro em ia/gerar-memorial:', error.message, error.stack);
+    console.error('Erro em ia/gerar-memorial:', error.message);
     return res.status(500).json({
       erro: 'Erro interno do servidor. Tente novamente.',
-      detalhe: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 }
