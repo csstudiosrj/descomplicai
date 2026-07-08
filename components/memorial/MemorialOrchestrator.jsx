@@ -1,9 +1,7 @@
 // components/memorial/MemorialOrchestrator.jsx
 // MUDANCA RADICAL 07/07: Login/Cadastro no inicio do fluxo (Step00)
-// - Remove tela "Quase la!" e redirecionamento para /login / /cadastro
-// - Abre modal de login/cadastro sobre o Step00 ao clicar primeira opcao
-// - Cria evento no banco imediatamente apos login
-// - Remove polling de sessao duplicado (agora esta no LoginCadastroModal)
+// CORRECAO 07/07: Detecta sessao entre dispositivos — quando usuario
+// confirma em outro lugar e acessa o memorial logado, carrega progresso
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -195,7 +193,7 @@ function PlaceholderStep({ titulo }) {
 
 export default function MemorialOrchestrator() {
   const router = useRouter();
-  const { estado, setRespostas, carregarEstado, irParaEtapa, voltarEtapa } = useMemorial();
+  const { estado, setRespostas, atualizarMultiplo, carregarEstado, irParaEtapa, voltarEtapa } = useMemorial();
   const { user, evento, loading: carregandoAuth, supabase } = useAuth();
   const { trackStep } = useAnalytics();
   const { temDraft, carregarDraft, limparDraft, salvandoAgora } = useAutoSave(estado, user, evento);
@@ -207,6 +205,7 @@ export default function MemorialOrchestrator() {
   const [modalAuthAberto, setModalAuthAberto] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
   const [eventoCriando, setEventoCriando] = useState(false);
+  const [carregandoDoBanco, setCarregandoDoBanco] = useState(false);
   const restauracaoFeita = useRef(false);
   const stepCompletedRef = useRef(false);
   const currentStepIdRef = useRef(null);
@@ -237,35 +236,57 @@ export default function MemorialOrchestrator() {
   }, [estado.etapaAtual, trackStep]);
 
   // ============================================================
-  // Restaura progresso de usuario logado
+  // CORRECAO: Detecta usuario logado + evento existente
+  // Quando usuario confirma em outro dispositivo e acessa o memorial
   // ============================================================
   useEffect(() => {
     if (!user) return;
-    if (estado.etapaAtual !== 0 || estado.perfilCasal) return;
     if (restauracaoFeita.current) return;
+    if (carregandoAuth) return;
+
+    // Se ja tem perfilCasal no estado local, nao precisa restaurar
+    if (estado.perfilCasal) return;
 
     restauracaoFeita.current = true;
+    setCarregandoDoBanco(true);
 
     async function buscarDoSupabase() {
       try {
-        const { data, error } = await supabase
+        // 1. Busca memorial do usuario no banco
+        const { data: memorialData, error: memErr } = await supabase
           .from('memoriais')
           .select('estado')
           .eq('user_id', user.id)
+          .order('atualizado_em', { ascending: false })
+          .limit(1)
           .maybeSingle();
-        if (data?.estado && data.estado.perfilCasal) {
-          carregarEstado(data.estado);
+
+        if (!memErr && memorialData?.estado?.perfilCasal) {
+          carregarEstado(memorialData.estado);
+          setCarregandoDoBanco(false);
           return;
         }
+
+        // 2. Se nao tem memorial no banco, verifica draft local
+        const draft = carregarDraft();
+        if (draft?.perfilCasal) {
+          // Usuario logado + draft local → cria evento com o draft
+          setCarregandoDoBanco(false);
+          setOferecerDraft(true);
+          return;
+        }
+
+        // 3. Se nao tem nada, usuario acessou o memorial diretamente logado
+        // Mostra Step00 normalmente
       } catch (e) {
-        console.warn('Erro ao buscar memorial:', e);
+        console.warn('[MemorialOrchestrator] Erro ao buscar do Supabase:', e);
+      } finally {
+        setCarregandoDoBanco(false);
       }
-      const draft = carregarDraft();
-      if (draft) setOferecerDraft(true);
     }
 
     buscarDoSupabase();
-  }, [user, estado.etapaAtual, estado.perfilCasal, carregarEstado, carregarDraft, supabase]);
+  }, [user, carregandoAuth, estado.perfilCasal, carregarEstado, carregarDraft, supabase]);
 
   // ============================================================
   // Detecta login e continua fluxo pendente
@@ -325,7 +346,7 @@ export default function MemorialOrchestrator() {
   const BREATH_DURATION = 1400;
 
   // ============================================================
-  // handleSelect: NOVO FLUXO — abre modal no primeiro clique
+  // handleSelect: abre modal no primeiro clique se nao logado
   // ============================================================
   const handleSelect = useCallback((campo, valor, cor) => {
     setRespostas(campo, valor);
@@ -348,7 +369,6 @@ export default function MemorialOrchestrator() {
     setTimeout(() => {
       const proxima = calcularProximaEtapa(novoEstado, estado.etapaAtual);
 
-      // MUDANCA RADICAL: se nao estiver logado, abre modal em vez de avancar
       if (!user) {
         loginPendenteRef.current = true;
         proximaEtapaPendenteRef.current = proxima;
@@ -367,7 +387,6 @@ export default function MemorialOrchestrator() {
 
   const handleLoginSuccess = useCallback(() => {
     // O useEffect acima detecta user !== null e continua o fluxo
-    // Nao precisa fazer nada aqui — o polling do modal ja parou
   }, []);
 
   const handleConcluirMemorial = useCallback(async (fornecedores) => {
@@ -439,6 +458,22 @@ export default function MemorialOrchestrator() {
         }}>
           <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
             Preparando seu memorial...
+          </p>
+        </div>
+      )}
+
+      {carregandoDoBanco && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 9997,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'rgba(255,255,255,0.8)',
+        }}>
+          <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
+            Carregando seu progresso...
           </p>
         </div>
       )}
