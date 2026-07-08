@@ -1,7 +1,7 @@
 // components/memorial/MemorialOrchestrator.jsx
 // MUDANCA RADICAL 07/07: Login/Cadastro no inicio do fluxo (Step00)
-// CORRECAO 07/07: Detecta sessao entre dispositivos — quando usuario
-// confirma em outro lugar e acessa o memorial logado, carrega progresso
+// CORRECAO 07/07: Adiciona storage event listener para detectar
+// confirmacao de email em outra aba/dispositivo
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -213,6 +213,68 @@ export default function MemorialOrchestrator() {
   const proximaEtapaPendenteRef = useRef(null);
 
   // ============================================================
+  // STORAGE EVENT LISTENER: detecta confirmacao de email em outra aba
+  // Quando Supabase atualiza localStorage (chaves sb-*), dispara
+  // evento storage na aba original, que entao verifica sessao e
+  // cria evento no banco com o draft salvo.
+  // ============================================================
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleStorageChange = async (e) => {
+      // Só reage a mudancas no localStorage do Supabase Auth
+      if (!e.key?.startsWith('sb-')) return;
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        // Ja tem evento? Nao faz nada
+        if (evento) return;
+
+        // Tem draft salvo? Cria evento no banco
+        const draft = localStorage.getItem('descomplicai-memorial-draft');
+        if (!draft) return;
+
+        const estadoDraft = JSON.parse(draft);
+        if (!estadoDraft?.perfilCasal) return;
+
+        const res = await fetchAPI('/api/memorial/criar-evento', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ estado: estadoDraft }),
+        });
+
+        if (!res.ok) {
+          const err = await res.text();
+          console.warn('[storage event] Erro ao criar evento:', err);
+          return;
+        }
+
+        console.log('[storage event] Evento criado apos confirmacao em outra aba');
+
+        // Fecha modal e continua fluxo
+        setModalAuthAberto(false);
+        loginPendenteRef.current = false;
+
+        // Avanca para a proxima etapa pendente
+        if (proximaEtapaPendenteRef.current !== null) {
+          irParaEtapa(proximaEtapaPendenteRef.current);
+          proximaEtapaPendenteRef.current = null;
+        }
+      } catch (err) {
+        console.error('[storage event] Erro ao processar confirmacao:', err);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [evento, supabase, irParaEtapa]);
+
+  // ============================================================
   // Rastreia inicio e abandono de steps
   // ============================================================
   useEffect(() => {
@@ -236,15 +298,13 @@ export default function MemorialOrchestrator() {
   }, [estado.etapaAtual, trackStep]);
 
   // ============================================================
-  // CORRECAO: Detecta usuario logado + evento existente
-  // Quando usuario confirma em outro dispositivo e acessa o memorial
+  // Detecta usuario logado + evento existente (entre dispositivos)
   // ============================================================
   useEffect(() => {
     if (!user) return;
     if (restauracaoFeita.current) return;
     if (carregandoAuth) return;
 
-    // Se ja tem perfilCasal no estado local, nao precisa restaurar
     if (estado.perfilCasal) return;
 
     restauracaoFeita.current = true;
@@ -252,7 +312,6 @@ export default function MemorialOrchestrator() {
 
     async function buscarDoSupabase() {
       try {
-        // 1. Busca memorial do usuario no banco
         const { data: memorialData, error: memErr } = await supabase
           .from('memoriais')
           .select('estado')
@@ -267,17 +326,12 @@ export default function MemorialOrchestrator() {
           return;
         }
 
-        // 2. Se nao tem memorial no banco, verifica draft local
         const draft = carregarDraft();
         if (draft?.perfilCasal) {
-          // Usuario logado + draft local → cria evento com o draft
           setCarregandoDoBanco(false);
           setOferecerDraft(true);
           return;
         }
-
-        // 3. Se nao tem nada, usuario acessou o memorial diretamente logado
-        // Mostra Step00 normalmente
       } catch (e) {
         console.warn('[MemorialOrchestrator] Erro ao buscar do Supabase:', e);
       } finally {
@@ -327,7 +381,6 @@ export default function MemorialOrchestrator() {
         setEventoCriando(false);
       }
 
-      // Avanca para a proxima etapa que estava pendente
       if (proximaEtapaPendenteRef.current !== null) {
         irParaEtapa(proximaEtapaPendenteRef.current);
         proximaEtapaPendenteRef.current = null;
