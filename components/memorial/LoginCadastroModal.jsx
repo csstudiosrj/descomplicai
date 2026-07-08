@@ -2,9 +2,8 @@
  * ARQUIVO: components/memorial/LoginCadastroModal.jsx
  * ==========================================
  * Modal de login/cadastro embutido no fluxo do memorial.
- * Abre sobre o Step00 quando usuário clica pela primeira vez.
- * Reutiliza estilo visual das páginas login.jsx / cadastro.jsx
- * e funções do AuthContext.
+ * CORRECAO 07/07: Adiciona emailRedirectTo no cadastro para
+ * redirecionar corretamente apos confirmacao de email.
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -13,6 +12,8 @@ import Input from '../ui/Input';
 import Button from '../ui/Button';
 import { useAuth } from '../../hooks/useAuth';
 import fetchAPI from '../../utils/fetchAPI';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://arxum.csstudios.site';
 
 const TABS = [
   { id: 'entrar', label: 'Entrar' },
@@ -45,7 +46,6 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
     };
   }, []);
 
-  // Para polling quando modal fecha
   useEffect(() => {
     if (!isOpen) {
       if (intervalRef.current) {
@@ -67,7 +67,6 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
     abortPollingRef.current = false;
   }, []);
 
-  // Quando abre pela primeira vez, reseta tudo
   useEffect(() => {
     if (isOpen) {
       resetarFormulario();
@@ -75,7 +74,7 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
   }, [isOpen, resetarFormulario]);
 
   // ============================================================
-  // Polling de sessão: detecta confirmação de email em outra aba
+  // Polling de sessao: detecta confirmacao de email em outra aba
   // ============================================================
   const iniciarPollingSessao = useCallback(() => {
     if (intervalRef.current) return;
@@ -127,7 +126,7 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
   }
 
   // ============================================================
-  // Cadastro
+  // Cadastro — CORRECAO: adiciona emailRedirectTo
   // ============================================================
   async function handleCadastro(e) {
     e.preventDefault();
@@ -135,13 +134,24 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
     setLoading(true);
 
     try {
-      const { data, error } = await cadastrar(email, senha, { nome });
+      // CORRECAO: URL absoluta com basePath /descomplicai
+      const redirectTo = `${SITE_URL}/descomplicai/memorial`;
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: senha,
+        options: {
+          data: { nome },
+          emailRedirectTo: redirectTo,
+        },
+      });
+
       if (error) throw error;
 
       const session = data?.session;
 
       if (session?.access_token) {
-        // Confirmação automática (ambiente de dev ou email já verificado)
+        // Confirmacao automatica (ambiente de dev)
         onLoginSuccess();
         return;
       }
@@ -197,13 +207,13 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
   }
 
   // ============================================================
-  // Tela de "Aguardando confirmação"
+  // Tela de "Aguardando confirmacao"
   // ============================================================
   if (aguardandoConfirmacao) {
     return (
       <Modal
         isOpen={isOpen}
-        onClose={() => { /* não fecha — obrigatório */ }}
+        onClose={() => { /* obrigatorio */ }}
         title="Quase lá!"
         size="md"
         hideCloseButton={true}
@@ -346,7 +356,7 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
   return (
     <Modal
       isOpen={isOpen}
-      onClose={() => { /* obrigatório no primeiro acesso — não fecha */ }}
+      onClose={() => { /* obrigatorio no primeiro acesso */ }}
       title=""
       size="md"
       hideCloseButton={true}
@@ -401,7 +411,7 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
         ))}
       </div>
 
-      {/* Formulário */}
+      {/* Formulario */}
       <form
         onSubmit={abaAtiva === 'entrar' ? handleLogin : handleCadastro}
         style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}
