@@ -31,10 +31,11 @@
   --color-info: #3D6B8C;
   --color-info-light: #D4E6F5;
 
-  /* Tipografia */
-  --font-display: 'DM Sans', sans-serif;
-  --font-body: 'DM Sans', sans-serif;
-  --font-mono: 'Space Mono', monospace;
+  /* Tipografia — fallback seguro para todo o sistema */
+  --font-display: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Space Mono', 'Courier New', monospace;
+  --font-tech: 'Space Mono', 'Courier New', monospace;
 
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;

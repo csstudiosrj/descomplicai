@@ -5,6 +5,7 @@ import MainLayout from '../components/layout/MainLayout';
 import AnalyticsProvider from '../components/analytics/AnalyticsProvider';
 import AcessibilidadeWidget from '../components/AcessibilidadeWidget';
 import '../styles/tokens.css';
+import '../styles/fontes.css';
 import '../styles/globals.css';
 
 const NO_HEADER_ROUTES = ['/memorial', '/memorial/[...slug]', '/admin', '/admin/[...slug]'];
