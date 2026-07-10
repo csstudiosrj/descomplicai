@@ -1,0 +1,444 @@
+/* ============================================================
+   ESTADOS VISUAIS — Descomplicaí Memorial
+   5 estados progressivos que refletem a jornada do casal
+   pelo questionário. Aplicados pelo VisualEngine dinamicamente.
+   ============================================================
+
+   COMO USAR:
+   O MemorialOrchestrator aplica a classe .estado-visual-N ao
+   container raiz (.memorial-root) conforme o progresso:
+
+   - Estado 0 (Intro): antes do Step00
+   - Estado 1 (Perfil): Steps A (perfil do casal)
+   - Estado 2 (Cerimônia): Steps B-C (cerimônia + local)
+   - Estado 3 (Festa): Steps D-H (decoração, mesa, recepção)
+   - Estado 4 (Conclusão): Steps I-N + finalização
+
+   EXEMPLO:
+   <div class="memorial-root estado-visual-2">
+     <div class="memorial-container">...</div>
+   </div>
+
+   As variáveis CSS são herdadas e aplicadas aos elementos filhos.
+   ============================================================ */
+
+/* ============================================================
+   TRANSICOES GLOBAIS
+   ============================================================ */
+
+   .memorial-root,
+   .memorial-container,
+   .memorial-card,
+   .memorial-btn-primary,
+   .memorial-progress,
+   .memorial-progress-fill {
+     transition: all 400ms ease;
+   }
+   
+   /* Respeita preferencia do usuario por menos movimento */
+   @media (prefers-reduced-motion: reduce) {
+     .memorial-root,
+     .memorial-container,
+     .memorial-card,
+     .memorial-btn-primary,
+     .memorial-progress,
+     .memorial-progress-fill {
+       transition: none !important;
+       animation: none !important;
+     }
+   }
+   
+   
+   /* ============================================================
+      ANIMACOES DE ENTRADA POR ESTADO
+      ============================================================ */
+   
+   @keyframes entrada-intro {
+     from { opacity: 0; transform: scale(0.98); }
+     to   { opacity: 1; transform: scale(1); }
+   }
+   
+   @keyframes entrada-perfil {
+     from { opacity: 0; transform: translateY(16px); }
+     to   { opacity: 1; transform: translateY(0); }
+   }
+   
+   @keyframes entrada-cerimonia {
+     from { opacity: 0; transform: translateX(-20px); }
+     to   { opacity: 1; transform: translateX(0); }
+   }
+   
+   @keyframes entrada-festa {
+     from { opacity: 0; transform: translateY(-12px) scale(0.99); }
+     to   { opacity: 1; transform: translateY(0) scale(1); }
+   }
+   
+   @keyframes entrada-conclusao {
+     from { opacity: 0; transform: scale(0.96); filter: blur(2px); }
+     to   { opacity: 1; transform: scale(1); filter: blur(0); }
+   }
+   
+   
+   /* ============================================================
+      ESTADO 0 — INTRO
+      Tela de boas-vindas. Limpo, convidativo, minimal.
+      Aplicado: antes do Step00 (tela inicial do memorial)
+      ============================================================ */
+   
+   .estado-visual-0 {
+     /* Fundo */
+     --estado-fundo: linear-gradient(135deg, #F9F7F4 0%, #F3F0EC 50%, #EDEAE5 100%);
+     --estado-fundo-overlay: rgba(255, 255, 255, 0.4);
+   
+     /* Cards */
+     --estado-card-bg: #FFFFFF;
+     --estado-card-shadow: 0 4px 24px rgba(26, 23, 20, 0.06);
+     --estado-card-border: 1px solid rgba(26, 23, 20, 0.04);
+     --estado-card-radius: 20px;
+   
+     /* Botoes primarios */
+     --estado-btn-bg: #1A1714;
+     --estado-btn-text: #FFFFFF;
+     --estado-btn-hover-bg: #2D2926;
+     --estado-btn-hover-text: #FFFFFF;
+     --estado-btn-shadow: 0 2px 12px rgba(26, 23, 20, 0.15);
+   
+     /* Barra de progresso */
+     --estado-progress-fill: #1A1714;
+     --estado-progress-empty: rgba(26, 23, 20, 0.08);
+     --estado-progress-height: 4px;
+     --estado-progress-radius: 2px;
+   
+     /* Tipografia */
+     --estado-titulo-size: clamp(2rem, 5vw, 3rem);
+     --estado-titulo-weight: 400;
+   
+     /* Animacao */
+     --estado-animacao: entrada-intro 600ms ease-out;
+   }
+   
+   .estado-visual-0 .memorial-container {
+     background: var(--estado-fundo);
+   }
+   
+   .estado-visual-0 .memorial-card {
+     background: var(--estado-card-bg);
+     box-shadow: var(--estado-card-shadow);
+     border: var(--estado-card-border);
+     border-radius: var(--estado-card-radius);
+     animation: var(--estado-animacao);
+   }
+   
+   .estado-visual-0 .memorial-btn-primary {
+     background: var(--estado-btn-bg);
+     color: var(--estado-btn-text);
+     box-shadow: var(--estado-btn-shadow);
+   }
+   
+   .estado-visual-0 .memorial-btn-primary:hover {
+     background: var(--estado-btn-hover-bg);
+     color: var(--estado-btn-hover-text);
+   }
+   
+   .estado-visual-0 .memorial-progress {
+     background: var(--estado-progress-empty);
+     height: var(--estado-progress-height);
+     border-radius: var(--estado-progress-radius);
+   }
+   
+   .estado-visual-0 .memorial-progress-fill {
+     background: var(--estado-progress-fill);
+     border-radius: var(--estado-progress-radius);
+   }
+   
+   
+   /* ============================================================
+      ESTADO 1 — PERFIL
+      Coleta de dados do casal. Acolhedor, pessoal, quente.
+      Aplicado: Steps A (perfil do casal)
+      ============================================================ */
+   
+   .estado-visual-1 {
+     /* Fundo */
+     --estado-fundo: linear-gradient(160deg, #FDF8F5 0%, #F5EDE8 50%, #EFE5DE 100%);
+     --estado-fundo-overlay: rgba(253, 248, 245, 0.5);
+   
+     /* Cards */
+     --estado-card-bg: #FFFBF8;
+     --estado-card-shadow: 0 4px 24px rgba(139, 111, 94, 0.08);
+     --estado-card-border: 1px solid rgba(139, 111, 94, 0.06);
+     --estado-card-radius: 20px;
+   
+     /* Botoes primarios */
+     --estado-btn-bg: #C8A882;
+     --estado-btn-text: #FFFFFF;
+     --estado-btn-hover-bg: #B89872;
+     --estado-btn-hover-text: #FFFFFF;
+     --estado-btn-shadow: 0 2px 12px rgba(200, 168, 130, 0.25);
+   
+     /* Barra de progresso */
+     --estado-progress-fill: #C8A882;
+     --estado-progress-empty: rgba(200, 168, 130, 0.12);
+     --estado-progress-height: 4px;
+     --estado-progress-radius: 2px;
+   
+     /* Tipografia */
+     --estado-titulo-size: clamp(1.75rem, 4.5vw, 2.5rem);
+     --estado-titulo-weight: 400;
+   
+     /* Animacao */
+     --estado-animacao: entrada-perfil 500ms ease-out;
+   }
+   
+   .estado-visual-1 .memorial-container {
+     background: var(--estado-fundo);
+   }
+   
+   .estado-visual-1 .memorial-card {
+     background: var(--estado-card-bg);
+     box-shadow: var(--estado-card-shadow);
+     border: var(--estado-card-border);
+     border-radius: var(--estado-card-radius);
+     animation: var(--estado-animacao);
+   }
+   
+   .estado-visual-1 .memorial-btn-primary {
+     background: var(--estado-btn-bg);
+     color: var(--estado-btn-text);
+     box-shadow: var(--estado-btn-shadow);
+   }
+   
+   .estado-visual-1 .memorial-btn-primary:hover {
+     background: var(--estado-btn-hover-bg);
+     color: var(--estado-btn-hover-text);
+   }
+   
+   .estado-visual-1 .memorial-progress {
+     background: var(--estado-progress-empty);
+     height: var(--estado-progress-height);
+     border-radius: var(--estado-progress-radius);
+   }
+   
+   .estado-visual-1 .memorial-progress-fill {
+     background: var(--estado-progress-fill);
+     border-radius: var(--estado-progress-radius);
+   }
+   
+   
+   /* ============================================================
+      ESTADO 2 — CERIMONIA
+      Decisoes da cerimonia. Elegante, ritual, sereno.
+      Aplicado: Steps B-C (cerimonia + local)
+      ============================================================ */
+   
+   .estado-visual-2 {
+     /* Fundo */
+     --estado-fundo: linear-gradient(150deg, #F5F0F7 0%, #EDE8F0 50%, #E8E2EB 100%);
+     --estado-fundo-overlay: rgba(245, 240, 247, 0.4);
+   
+     /* Cards */
+     --estado-card-bg: #FBF8FC;
+     --estado-card-shadow: 0 4px 24px rgba(107, 91, 122, 0.08);
+     --estado-card-border: 1px solid rgba(107, 91, 122, 0.06);
+     --estado-card-radius: 20px;
+   
+     /* Botoes primarios */
+     --estado-btn-bg: #6B5B7A;
+     --estado-btn-text: #FFFFFF;
+     --estado-btn-hover-bg: #5A4D67;
+     --estado-btn-hover-text: #FFFFFF;
+     --estado-btn-shadow: 0 2px 12px rgba(107, 91, 122, 0.25);
+   
+     /* Barra de progresso */
+     --estado-progress-fill: #6B5B7A;
+     --estado-progress-empty: rgba(107, 91, 122, 0.12);
+     --estado-progress-height: 4px;
+     --estado-progress-radius: 2px;
+   
+     /* Tipografia */
+     --estado-titulo-size: clamp(1.75rem, 4.5vw, 2.5rem);
+     --estado-titulo-weight: 400;
+   
+     /* Animacao */
+     --estado-animacao: entrada-cerimonia 500ms ease-out;
+   }
+   
+   .estado-visual-2 .memorial-container {
+     background: var(--estado-fundo);
+   }
+   
+   .estado-visual-2 .memorial-card {
+     background: var(--estado-card-bg);
+     box-shadow: var(--estado-card-shadow);
+     border: var(--estado-card-border);
+     border-radius: var(--estado-card-radius);
+     animation: var(--estado-animacao);
+   }
+   
+   .estado-visual-2 .memorial-btn-primary {
+     background: var(--estado-btn-bg);
+     color: var(--estado-btn-text);
+     box-shadow: var(--estado-btn-shadow);
+   }
+   
+   .estado-visual-2 .memorial-btn-primary:hover {
+     background: var(--estado-btn-hover-bg);
+     color: var(--estado-btn-hover-text);
+   }
+   
+   .estado-visual-2 .memorial-progress {
+     background: var(--estado-progress-empty);
+     height: var(--estado-progress-height);
+     border-radius: var(--estado-progress-radius);
+   }
+   
+   .estado-visual-2 .memorial-progress-fill {
+     background: var(--estado-progress-fill);
+     border-radius: var(--estado-progress-radius);
+   }
+   
+   
+   /* ============================================================
+      ESTADO 3 — FESTA
+      Decisoes da festa. Vibrante, celebrativo, luminoso.
+      Aplicado: Steps D-H (decoração, mesa, recepção)
+      ============================================================ */
+   
+   .estado-visual-3 {
+     /* Fundo */
+     --estado-fundo: linear-gradient(145deg, #FAF6F0 0%, #F5EFE6 50%, #F0E9DE 100%);
+     --estado-fundo-overlay: rgba(250, 246, 240, 0.4);
+   
+     /* Cards */
+     --estado-card-bg: #FFFCF7;
+     --estado-card-shadow: 0 4px 24px rgba(212, 175, 55, 0.08);
+     --estado-card-border: 1px solid rgba(212, 175, 55, 0.06);
+     --estado-card-radius: 20px;
+   
+     /* Botoes primarios */
+     --estado-btn-bg: #D4AF37;
+     --estado-btn-text: #1A1714;
+     --estado-btn-hover-bg: #C4A030;
+     --estado-btn-hover-text: #1A1714;
+     --estado-btn-shadow: 0 2px 12px rgba(212, 175, 55, 0.25);
+   
+     /* Barra de progresso */
+     --estado-progress-fill: #D4AF37;
+     --estado-progress-empty: rgba(212, 175, 55, 0.12);
+     --estado-progress-height: 4px;
+     --estado-progress-radius: 2px;
+   
+     /* Tipografia */
+     --estado-titulo-size: clamp(1.75rem, 4.5vw, 2.5rem);
+     --estado-titulo-weight: 400;
+   
+     /* Animacao */
+     --estado-animacao: entrada-festa 500ms ease-out;
+   }
+   
+   .estado-visual-3 .memorial-container {
+     background: var(--estado-fundo);
+   }
+   
+   .estado-visual-3 .memorial-card {
+     background: var(--estado-card-bg);
+     box-shadow: var(--estado-card-shadow);
+     border: var(--estado-card-border);
+     border-radius: var(--estado-card-radius);
+     animation: var(--estado-animacao);
+   }
+   
+   .estado-visual-3 .memorial-btn-primary {
+     background: var(--estado-btn-bg);
+     color: var(--estado-btn-text);
+     box-shadow: var(--estado-btn-shadow);
+   }
+   
+   .estado-visual-3 .memorial-btn-primary:hover {
+     background: var(--estado-btn-hover-bg);
+     color: var(--estado-btn-hover-text);
+   }
+   
+   .estado-visual-3 .memorial-progress {
+     background: var(--estado-progress-empty);
+     height: var(--estado-progress-height);
+     border-radius: var(--estado-progress-radius);
+   }
+   
+   .estado-visual-3 .memorial-progress-fill {
+     background: var(--estado-progress-fill);
+     border-radius: var(--estado-progress-radius);
+   }
+   
+   
+   /* ============================================================
+      ESTADO 4 — CONCLUSAO
+      Finalizacao. Emocionante, satisfatorio, memoravel.
+      Aplicado: Steps I-N + tela de conclusao
+      ============================================================ */
+   
+   .estado-visual-4 {
+     /* Fundo */
+     --estado-fundo: linear-gradient(155deg, #FDF6F0 0%, #F5EBE0 50%, #EDE0D4 100%);
+     --estado-fundo-overlay: rgba(253, 246, 240, 0.5);
+   
+     /* Cards */
+     --estado-card-bg: #FFFAF5;
+     --estado-card-shadow: 0 4px 24px rgba(45, 90, 61, 0.08);
+     --estado-card-border: 1px solid rgba(45, 90, 61, 0.06);
+     --estado-card-radius: 20px;
+   
+     /* Botoes primarios */
+     --estado-btn-bg: #2D5A3D;
+     --estado-btn-text: #FFFFFF;
+     --estado-btn-hover-bg: #254D34;
+     --estado-btn-hover-text: #FFFFFF;
+     --estado-btn-shadow: 0 2px 12px rgba(45, 90, 61, 0.25);
+   
+     /* Barra de progresso */
+     --estado-progress-fill: #2D5A3D;
+     --estado-progress-empty: rgba(45, 90, 61, 0.12);
+     --estado-progress-height: 4px;
+     --estado-progress-radius: 2px;
+   
+     /* Tipografia */
+     --estado-titulo-size: clamp(1.75rem, 4.5vw, 2.5rem);
+     --estado-titulo-weight: 400;
+   
+     /* Animacao */
+     --estado-animacao: entrada-conclusao 700ms ease-out;
+   }
+   
+   .estado-visual-4 .memorial-container {
+     background: var(--estado-fundo);
+   }
+   
+   .estado-visual-4 .memorial-card {
+     background: var(--estado-card-bg);
+     box-shadow: var(--estado-card-shadow);
+     border: var(--estado-card-border);
+     border-radius: var(--estado-card-radius);
+     animation: var(--estado-animacao);
+   }
+   
+   .estado-visual-4 .memorial-btn-primary {
+     background: var(--estado-btn-bg);
+     color: var(--estado-btn-text);
+     box-shadow: var(--estado-btn-shadow);
+   }
+   
+   .estado-visual-4 .memorial-btn-primary:hover {
+     background: var(--estado-btn-hover-bg);
+     color: var(--estado-btn-hover-text);
+   }
+   
+   .estado-visual-4 .memorial-progress {
+     background: var(--estado-progress-empty);
+     height: var(--estado-progress-height);
+     border-radius: var(--estado-progress-radius);
+   }
+   
+   .estado-visual-4 .memorial-progress-fill {
+     background: var(--estado-progress-fill);
+     border-radius: var(--estado-progress-radius);
+   }
