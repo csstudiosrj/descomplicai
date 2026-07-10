@@ -1,0 +1,777 @@
+{
+  "common": {
+    "next": "Próximo",
+    "back": "Voltar",
+    "skip": "Pular",
+    "save": "Salvar",
+    "loading": "Carregando...",
+    "error": "Algo deu errado",
+    "required": "Campo obrigatório",
+    "confirm": "Confirmar",
+    "confirmResponse": "Confirmar resposta",
+    "confirmDate": "Confirmar data",
+    "confirmLocation": "Confirmar local",
+    "confirmStyle": "Confirmar estilo",
+    "confirmReferences": "Confirmar referências",
+    "optional": "opcional",
+    "yes": "Sim",
+    "no": "Não",
+    "other": "Outro",
+    "continue": "Continuar",
+    "upload": "Upload",
+    "add": "Adicionar",
+    "remove": "Remover",
+    "edit": "Editar",
+    "cancel": "Cancelar",
+    "search": "Buscar",
+    "select": "Selecionar",
+    "done": "Concluído",
+    "notDefined": "Ainda não definido"
+  },
+  "steps": {
+    "step00": {
+      "title": "Quem está celebrando o Bar Mitzvah?",
+      "ariaLabel": "Quem está celebrando o Bar Mitzvah?",
+      "options": [
+        {
+          "value": "noiva-noivo",
+          "label": "Noiva e Noivo"
+        },
+        {
+          "value": "duas-noivas",
+          "label": "Duas Noivas"
+        },
+        {
+          "value": "dois-noivos",
+          "label": "Dois Noivos"
+        },
+        {
+          "value": "nao-especificar",
+          "label": "Prefiro não especificar"
+        }
+      ]
+    },
+    "step01": {
+      "title": "Como vocês preferem planejar?",
+      "ariaLabel": "Como vocês preferem planejar?",
+      "options": [
+        {
+          "value": "guiado",
+          "label": "Me guiem"
+        },
+        {
+          "value": "ativo",
+          "label": "Já tenho referências"
+        }
+      ]
+    },
+    "step02": {
+      "title": "Como devemos chamar você?",
+      "labels": {
+        "nome1": "Nome da primeira pessoa",
+        "nome2": "Nome da segunda pessoa",
+        "nomeJuntos": "Como querem ser chamados juntos (opcional)",
+        "hint": "Se deixar em branco, usamos os dois nomes"
+      },
+      "placeholders": {
+        "nome1": "Ex: Ana",
+        "nome2": "Ex: Pedro",
+        "nomeJuntos": "Ex: Ana e Pedro, Aninha e Pedrinho..."
+      },
+      "buttons": {
+        "confirm": "Confirmar"
+      }
+    },
+    "step03": {
+      "title": "Quando será o Bar Mitzvah?",
+      "ariaLabel": "Quando será o Bar Mitzvah?",
+      "buttons": {
+        "confirm": "Confirmar data"
+      }
+    },
+    "step04": {
+      "title": "Onde vai acontecer a celebração?",
+      "ariaLabel": "Onde vai acontecer a celebração?",
+      "buttons": {
+        "confirm": "Confirmar local"
+      }
+    },
+    "step05": {
+      "title": "Quantos convidados?",
+      "ariaLabel": "Quantos convidados?",
+      "options": [
+        {
+          "value": "micro",
+          "label": "Micro"
+        },
+        {
+          "value": "intimo",
+          "label": "Íntimo"
+        },
+        {
+          "value": "medio",
+          "label": "Médio"
+        },
+        {
+          "value": "grande",
+          "label": "Grande"
+        },
+        {
+          "value": "mega",
+          "label": "Mega"
+        }
+      ]
+    },
+    "step06": {
+      "title": "Qual o orçamento previsto?",
+      "ariaLabel": "Qual o orçamento previsto?"
+    },
+    "step07": {
+      "title": "Como será a cerimônia no templo?",
+      "ariaLabel": "Como será a cerimônia no templo?",
+      "options": [
+        {
+          "value": "catolica",
+          "label": "Católica"
+        },
+        {
+          "value": "evangelica",
+          "label": "Evangélica"
+        },
+        {
+          "value": "judaica",
+          "label": "Judaica"
+        },
+        {
+          "value": "espirita",
+          "label": "Espírita"
+        },
+        {
+          "value": "outra-religiosa",
+          "label": "Outra religiosa"
+        },
+        {
+          "value": "civil",
+          "label": "Civil"
+        },
+        {
+          "value": "simbolica",
+          "label": "Simbólica"
+        },
+        {
+          "value": "mista",
+          "label": "Mista"
+        }
+      ]
+    },
+    "step07a": {
+      "title": "Detalhes da cerimônia católica"
+    },
+    "step07b": {
+      "title": "Detalhes da cerimônia evangélica"
+    },
+    "step07c": {
+      "title": "Detalhes da cerimônia judaica"
+    },
+    "step07d": {
+      "title": "Detalhes da cerimônia simbólica"
+    },
+    "step08": {
+      "title": "Onde vai acontecer a celebração?",
+      "ariaLabel": "Onde vai acontecer a celebração?",
+      "buttons": {
+        "confirm": "Confirmar local"
+      }
+    },
+    "step09": {
+      "title": "Cerimônia e festa no mesmo local?",
+      "ariaLabel": "Cerimônia e festa no mesmo local?",
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ]
+    },
+    "step10": {
+      "title": "Em que horário será a celebração?",
+      "ariaLabel": "Em que horário será a celebração?",
+      "buttons": {
+        "confirm": "Confirmar"
+      }
+    },
+    "step11": {
+      "title": "Plano B para chuva?",
+      "ariaLabel": "Plano B para chuva?",
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "nao",
+          "label": "Não"
+        }
+      ]
+    },
+    "step11b": {
+      "title": "Transporte entre locais",
+      "ariaLabel": "Transporte entre locais",
+      "description": "Como os convidados irão da cerimônia para a festa?"
+    },
+    "step12": {
+      "title": "Qual estilo mais combina com você?",
+      "options": [
+        {
+          "value": "classico",
+          "label": "Clássico"
+        },
+        {
+          "value": "rustico",
+          "label": "Rústico"
+        },
+        {
+          "value": "boho",
+          "label": "Boho"
+        },
+        {
+          "value": "moderno",
+          "label": "Moderno"
+        },
+        {
+          "value": "minimalista",
+          "label": "Minimalista"
+        },
+        {
+          "value": "industrial",
+          "label": "Industrial"
+        },
+        {
+          "value": "tropical",
+          "label": "Tropical"
+        },
+        {
+          "value": "romantico",
+          "label": "Romântico"
+        },
+        {
+          "value": "gotico",
+          "label": "Gótico Suave"
+        },
+        {
+          "value": "vintage",
+          "label": "Vintage"
+        }
+      ],
+      "labels": {
+        "referencias": "Tem referências? Cole links do Pinterest ou descreva (opcional)"
+      },
+      "placeholders": {
+        "referencias": "https://pinterest.com/..."
+      },
+      "buttons": {
+        "confirm": "Confirmar estilo"
+      }
+    },
+    "step13": {
+      "title": "Qual o nível de formalidade?"
+    },
+    "step14": {
+      "title": "Qual a paleta de cores?"
+    },
+    "step15": {
+      "title": "Qual o tom da decoração?"
+    },
+    "step16": {
+      "title": "Referências visuais",
+      "labels": {
+        "imagens": "Imagens de referência",
+        "links": "Links de referência (um por linha, máx 10)"
+      },
+      "placeholders": {
+        "links": "https://pinterest.com/...\nhttps://instagram.com/..."
+      },
+      "buttons": {
+        "confirm": "Confirmar referências"
+      },
+      "description": "Cole links do Pinterest, Instagram ou faça upload de imagens de inspiração. Isso é opcional."
+    },
+    "step17": {
+      "title": "Flores"
+    },
+    "step18": {
+      "title": "Iluminação"
+    },
+    "step19": {
+      "title": "Velas"
+    },
+    "step20": {
+      "title": "Mobiliário"
+    },
+    "step21": {
+      "title": "Backdrop"
+    },
+    "step22": {
+      "title": "Tecidos"
+    },
+    "step23": {
+      "title": "Toalha de mesa"
+    },
+    "step24": {
+      "title": "Louças"
+    },
+    "step25": {
+      "title": "Talheres"
+    },
+    "step26": {
+      "title": "Taças"
+    },
+    "step27": {
+      "title": "Centro de mesa"
+    },
+    "step28": {
+      "title": "Guardanapo"
+    },
+    "step29": {
+      "title": "Cartão de lugar"
+    },
+    "step30": {
+      "title": "Entrada do bar mitzvah"
+    },
+    "step31": {
+      "title": "Música da cerimônia no templo"
+    },
+    "step32": {
+      "title": "Padrinhos e familiares"
+    },
+    "step33": {
+      "title": "Rituais de saída"
+    },
+    "step38": {
+      "title": "Coquetel"
+    },
+    "step39": {
+      "title": "Bolo, doces e bar"
+    },
+    "step40": {
+      "title": "Música e entretenimento"
+    },
+    "step49": {
+      "title": "Convites"
+    },
+    "step50": {
+      "title": "Identidade visual"
+    },
+    "step54": {
+      "title": "Traje do bar mitzvah"
+    },
+    "step55": {
+      "title": "Beleza e padronização"
+    },
+    "step60": {
+      "title": "Fornecedores"
+    },
+    "stepA4": {
+      "title": "Crianças na celebração?"
+    },
+    "stepA5": {
+      "title": "Padrinhos"
+    },
+    "stepA6": {
+      "title": "Data prevista"
+    },
+    "stepA7": {
+      "title": "Tempo de preparação"
+    },
+    "stepA8": {
+      "title": "Mora com os pais?"
+    },
+    "stepA9": {
+      "title": "Como conheceu seus padrinhos?",
+      "ariaLabel": "Como conheceu seus padrinhos?",
+      "options": [
+        {
+          "value": "trabalho",
+          "label": "Trabalho"
+        },
+        {
+          "value": "faculdade",
+          "label": "Faculdade"
+        },
+        {
+          "value": "amigos",
+          "label": "Amigos"
+        },
+        {
+          "value": "familia",
+          "label": "Família"
+        },
+        {
+          "value": "app",
+          "label": "App"
+        },
+        {
+          "value": "viagem",
+          "label": "Viagem"
+        },
+        {
+          "value": "outros",
+          "label": "Outros"
+        }
+      ]
+    },
+    "stepA10": {
+      "title": "Tem irmãos?"
+    },
+    "stepA11": {
+      "title": "Tem animais de estimação?"
+    },
+    "stepA12": {
+      "title": "O que gosta de fazer?"
+    },
+    "stepA13": {
+      "title": "Personalidade do pai"
+    },
+    "stepA14": {
+      "title": "Personalidade da mãe"
+    },
+    "stepA15": {
+      "title": "Tradição familiar"
+    },
+    "stepA16": {
+      "title": "Restrição cultural"
+    },
+    "stepB5": {
+      "title": "Crianças na cerimônia?"
+    },
+    "stepB6": {
+      "title": "Duração da cerimônia no templo"
+    },
+    "stepB7": {
+      "title": "Música na cerimônia (ao vivo)?"
+    },
+    "stepB8": {
+      "title": "Reservou o templo?"
+    },
+    "stepB9": {
+      "title": "Estudos para o Bar Mitzvah",
+      "ariaLabel": "Estudos para o Bar Mitzvah",
+      "options": [
+        {
+          "value": "sim",
+          "label": "Sim"
+        },
+        {
+          "value": "em_andamento",
+          "label": "Em andamento"
+        },
+        {
+          "value": "nao_iniciado",
+          "label": "Não iniciado"
+        }
+      ]
+    },
+    "stepB10": {
+      "title": "Escolheu o rabino?"
+    },
+    "stepB11": {
+      "title": "Reservou o templo?"
+    },
+    "stepB12": {
+      "title": "Definiu a decoração do templo?"
+    },
+    "stepB13": {
+      "title": "Escolheu o rabino?"
+    },
+    "stepB14": {
+      "title": "Agendou o templo?"
+    },
+    "stepB15": {
+      "title": "Padrinhos escolhidos?"
+    },
+    "stepB16": {
+      "title": "Definiu a entrada?"
+    },
+    "stepB17": {
+      "title": "Músicos da cerimônia"
+    },
+    "stepB18": {
+      "title": "Documentação do templo"
+    },
+    "stepC4": {
+      "title": "Estacionamento"
+    },
+    "stepC5": {
+      "title": "Cozinha de apoio"
+    },
+    "stepC6": {
+      "title": "Capacidade do local"
+    },
+    "stepC7": {
+      "title": "Gerador no local?"
+    },
+    "stepC8": {
+      "title": "Reservou o templo?"
+    },
+    "stepC9": {
+      "title": "Reservou local da festa?"
+    },
+    "stepC10": {
+      "title": "Verificou a maré?"
+    },
+    "stepC11": {
+      "title": "Lista preliminar de convidados"
+    },
+    "stepC12": {
+      "title": "Convidados de fora da cidade?"
+    },
+    "stepC13": {
+      "title": "Hotel de indicação"
+    },
+    "stepC14": {
+      "title": "Horário da festa"
+    },
+    "stepC15": {
+      "title": "Duração do coquetel"
+    },
+    "stepD1": {
+      "title": "Tipo de decoração"
+    },
+    "stepD2": {
+      "title": "Tipo de iluminação"
+    },
+    "stepD3": {
+      "title": "Mobiliário escolhido"
+    },
+    "stepD4": {
+      "title": "Fotógrafo contratado?"
+    },
+    "stepD5": {
+      "title": "Filmagem contratada?"
+    },
+    "stepD6": {
+      "title": "Buffet contratado?"
+    },
+    "stepD7": {
+      "title": "Decoração contratada?"
+    },
+    "stepD8": {
+      "title": "Música contratada?"
+    },
+    "stepD9": {
+      "title": "Espaço contratado?"
+    },
+    "stepD10": {
+      "title": "Traje contratado?"
+    },
+    "stepD11": {
+      "title": "Traje do acompanhante contratado?"
+    },
+    "stepD12": {
+      "title": "Cerimonialista contratado?"
+    },
+    "stepD13": {
+      "title": "Transporte contratado?"
+    },
+    "stepD14": {
+      "title": "Papelaria contratada?"
+    },
+    "stepD15": {
+      "title": "Cabine de fotos?"
+    },
+    "stepD16": {
+      "title": "Drone?"
+    },
+    "stepD17": {
+      "title": "Animação infantil?"
+    },
+    "stepD18": {
+      "title": "Traje comprado?"
+    },
+    "stepD19": {
+      "title": "Teste de beleza?"
+    },
+    "stepD20": {
+      "title": "Convites encomendados?"
+    },
+    "stepD21": {
+      "title": "Save the date enviado?"
+    },
+    "stepD22": {
+      "title": "Lembrancinhas?"
+    },
+    "stepD23": {
+      "title": "Kit de saída?"
+    },
+    "stepE1": {
+      "title": "Estado civil do acompanhante"
+    },
+    "stepE2": {
+      "title": "Estado civil do celebrante"
+    },
+    "stepE3": {
+      "title": "Certidão de divórcio do acompanhante"
+    },
+    "stepE4": {
+      "title": "Certidão de divórcio do celebrante"
+    },
+    "stepE5": {
+      "title": "Certidão de óbito do acompanhante"
+    },
+    "stepE6": {
+      "title": "Certidão de óbito do celebrante"
+    },
+    "stepE7": {
+      "title": "Nacionalidade do acompanhante"
+    },
+    "stepE8": {
+      "title": "Nacionalidade do celebrante"
+    },
+    "stepE9": {
+      "title": "Documentação de estrangeiro"
+    },
+    "stepE10": {
+      "title": "Quem paga?"
+    },
+    "stepE11": {
+      "title": "Forma de pagamento"
+    },
+    "stepE12": {
+      "title": "Cronograma do dia"
+    },
+    "stepE13": {
+      "title": "Horário do making of do celebrante"
+    },
+    "stepE14": {
+      "title": "Horário do making of do acompanhante"
+    },
+    "stepE15": {
+      "title": "Destino da viagem pós-festa"
+    },
+    "stepE16": {
+      "title": "Viagem reservada?"
+    },
+    "stepE17": {
+      "title": "Passaporte válido?"
+    },
+    "stepE18": {
+      "title": "Visto necessário?"
+    },
+    "stepE19": {
+      "title": "Vacinas em dia?"
+    },
+    "stepG8": {
+      "title": "Mesa de frios"
+    },
+    "stepG9": {
+      "title": "Bebidas por pessoa"
+    },
+    "stepG10": {
+      "title": "Menu infantil"
+    },
+    "stepH3": {
+      "title": "Fogos e sparklers"
+    },
+    "stepH4": {
+      "title": "Mesa de doces exposta?"
+    },
+    "stepH5": {
+      "title": "Aula de dança?"
+    },
+    "stepI4": {
+      "title": "Aulas de dança"
+    },
+    "stepI5": {
+      "title": "Mudança de look"
+    },
+    "stepI6": {
+      "title": "Quantos acompanhantes?"
+    },
+    "stepL1": {
+      "title": "Presente do bar mitzvah"
+    },
+    "stepL2": {
+      "title": "Cerimônia no templo?"
+    },
+    "stepL3": {
+      "title": "Transporte especial do celebrante"
+    },
+    "stepL4": {
+      "title": "Carro do celebrante"
+    },
+    "stepL5": {
+      "title": "Transporte dos convidados"
+    },
+    "stepL6": {
+      "title": "Segurança"
+    },
+    "stepM1": {
+      "title": "Viagem pós-festa"
+    },
+    "stepM2": {
+      "title": "Fotos da viagem pós-festa"
+    }
+  },
+  "blocks": {
+    "A": {
+      "label": "Perfil do Celebrante",
+      "description": "Conhecendo o bar mitzvah"
+    },
+    "B": {
+      "label": "Cerimônia",
+      "description": "O momento mais especial"
+    },
+    "C": {
+      "label": "Local e Estrutura",
+      "description": "Onde tudo acontece"
+    },
+    "D": {
+      "label": "Identidade Visual",
+      "description": "A cara do seu evento"
+    },
+    "E": {
+      "label": "Decoração",
+      "description": "Ambiente e estética"
+    },
+    "F": {
+      "label": "Mesa Posta",
+      "description": "Detalhes da recepção"
+    },
+    "G": {
+      "label": "Cerimônia Detalhada",
+      "description": "Cada momento da celebração"
+    },
+    "H": {
+      "label": "Recepção",
+      "description": "Festa e celebração"
+    },
+    "I": {
+      "label": "Papelaria",
+      "description": "Convites e identidade"
+    },
+    "J": {
+      "label": "Vestuário",
+      "description": "Como você vai brilhar"
+    },
+    "K": {
+      "label": "Fornecedores",
+      "description": "Quem vai fazer acontecer"
+    },
+    "L": {
+      "label": "Logística",
+      "description": "Tudo nos trinques"
+    },
+    "M": {
+      "label": "Pós-Festa",
+      "description": "Depois da grande noite"
+    },
+    "N": {
+      "label": "Documentação",
+      "description": "Papelada e burocracia"
+    }
+  }
+}

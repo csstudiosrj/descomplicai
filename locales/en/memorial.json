@@ -1,0 +1,813 @@
+{
+  "common": {
+    "next": "Next",
+    "back": "Back",
+    "skip": "Skip",
+    "save": "Save",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "required": "Required field",
+    "confirm": "Confirm",
+    "confirmResponse": "Confirm response",
+    "confirmDate": "Confirm date",
+    "confirmLocation": "Confirm location",
+    "confirmStyle": "Confirm style",
+    "confirmReferences": "Confirm references",
+    "optional": "optional",
+    "yes": "Yes",
+    "no": "No",
+    "other": "Other",
+    "continue": "Continue",
+    "upload": "Upload",
+    "add": "Add",
+    "remove": "Remove",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "search": "Search",
+    "select": "Select",
+    "done": "Done",
+    "notDefined": "Not defined yet"
+  },
+  "steps": {
+    "step00": {
+      "title": "Who is getting married?",
+      "ariaLabel": "Who is getting married?",
+      "options": [
+        {
+          "value": "noiva-noivo",
+          "label": "Bride and Groom"
+        },
+        {
+          "value": "duas-noivas",
+          "label": "Two Brides"
+        },
+        {
+          "value": "dois-noivos",
+          "label": "Two Grooms"
+        },
+        {
+          "value": "nao-especificar",
+          "label": "Prefer not to specify"
+        }
+      ]
+    },
+    "step01": {
+      "title": "How do you prefer to plan?",
+      "ariaLabel": "How do you prefer to plan?",
+      "options": [
+        {
+          "value": "guiado",
+          "label": "Guide me",
+          "desc": "I prefer to receive suggestions and approve. Ideal for those starting to imagine the event."
+        },
+        {
+          "value": "ativo",
+          "label": "I already have references",
+          "desc": "I want to organize what I imagine. You will be able to upload and paste Pinterest links."
+        }
+      ]
+    },
+    "step02": {
+      "title": "How should we call you?",
+      "labels": {
+        "nome1": "First person's name",
+        "nome2": "Second person's name",
+        "nomeJuntos": "How do you want to be called together (optional)",
+        "hint": "If left blank, we use both names"
+      },
+      "placeholders": {
+        "nome1": "Ex: Ana",
+        "nome2": "Ex: Pedro",
+        "nomeJuntos": "Ex: Ana and Pedro..."
+      },
+      "buttons": {
+        "confirm": "Confirm"
+      }
+    },
+    "step03": {
+      "title": "When is the big day?",
+      "ariaLabel": "When is the big day?",
+      "buttons": {
+        "confirm": "Confirm date"
+      }
+    },
+    "step04": {
+      "title": "Where will the event take place?",
+      "ariaLabel": "Where will the event take place?",
+      "buttons": {
+        "confirm": "Confirm location"
+      }
+    },
+    "step05": {
+      "title": "How many guests?",
+      "ariaLabel": "How many guests?",
+      "options": [
+        {
+          "value": "micro",
+          "label": "Micro",
+          "sub": "Up to 20 people",
+          "desc": "Only the closest ones"
+        },
+        {
+          "value": "intimo",
+          "label": "Intimate",
+          "sub": "20 to 50 people",
+          "desc": "Family and dear friends"
+        },
+        {
+          "value": "medio",
+          "label": "Medium",
+          "sub": "50 to 100 people",
+          "desc": "Complete celebration"
+        },
+        {
+          "value": "grande",
+          "label": "Large",
+          "sub": "100 to 200 people",
+          "desc": "Memorable party"
+        },
+        {
+          "value": "mega",
+          "label": "Mega",
+          "sub": "Over 200",
+          "desc": "Grand celebration"
+        }
+      ]
+    },
+    "step06": {
+      "title": "What is the estimated budget?",
+      "ariaLabel": "What is the estimated budget?"
+    },
+    "step07": {
+      "title": "What will the ceremony be like?",
+      "ariaLabel": "What will the ceremony be like?",
+      "options": [
+        {
+          "value": "catolica",
+          "label": "Catholic"
+        },
+        {
+          "value": "evangelica",
+          "label": "Evangelical"
+        },
+        {
+          "value": "judaica",
+          "label": "Jewish"
+        },
+        {
+          "value": "espirita",
+          "label": "Spiritist"
+        },
+        {
+          "value": "outra-religiosa",
+          "label": "Other religious"
+        },
+        {
+          "value": "civil",
+          "label": "Civil"
+        },
+        {
+          "value": "simbolica",
+          "label": "Symbolic"
+        },
+        {
+          "value": "mista",
+          "label": "Mixed"
+        }
+      ]
+    },
+    "step07a": {
+      "title": "Catholic ceremony details"
+    },
+    "step07b": {
+      "title": "Evangelical ceremony details"
+    },
+    "step07c": {
+      "title": "Jewish ceremony details"
+    },
+    "step07d": {
+      "title": "Symbolic ceremony details"
+    },
+    "step08": {
+      "title": "Where will the event take place?",
+      "ariaLabel": "Where will the event take place?",
+      "buttons": {
+        "confirm": "Confirm location"
+      }
+    },
+    "step09": {
+      "title": "Ceremony and party at the same venue?",
+      "ariaLabel": "Ceremony and party at the same venue?",
+      "options": [
+        {
+          "value": "sim",
+          "label": "Yes",
+          "desc": "Everything in one place"
+        },
+        {
+          "value": "nao",
+          "label": "No",
+          "desc": "Different venues"
+        }
+      ]
+    },
+    "step10": {
+      "title": "What time will the celebration be?",
+      "ariaLabel": "What time will the celebration be?",
+      "buttons": {
+        "confirm": "Confirm"
+      }
+    },
+    "step11": {
+      "title": "Rain plan B?",
+      "ariaLabel": "Rain plan B?",
+      "options": [
+        {
+          "value": "sim",
+          "label": "Yes",
+          "desc": "I already have a plan B"
+        },
+        {
+          "value": "nao",
+          "label": "No",
+          "desc": "I haven't thought about it yet"
+        }
+      ]
+    },
+    "step11b": {
+      "title": "Transport between venues",
+      "ariaLabel": "Transport between venues",
+      "description": "How will guests get from the ceremony to the party?"
+    },
+    "step12": {
+      "title": "Which style suits you best?",
+      "options": [
+        {
+          "value": "classico",
+          "label": "Classic",
+          "desc": "Elegant · Timeless"
+        },
+        {
+          "value": "rustico",
+          "label": "Rustic",
+          "desc": "Natural · Cozy"
+        },
+        {
+          "value": "boho",
+          "label": "Boho",
+          "desc": "Light · Artisanal"
+        },
+        {
+          "value": "moderno",
+          "label": "Modern",
+          "desc": "Clean · Urban"
+        },
+        {
+          "value": "minimalista",
+          "label": "Minimalist",
+          "desc": "Essential · Serene"
+        },
+        {
+          "value": "industrial",
+          "label": "Industrial",
+          "desc": "Raw · Authentic"
+        },
+        {
+          "value": "tropical",
+          "label": "Tropical",
+          "desc": "Vibrant · Solar"
+        },
+        {
+          "value": "romantico",
+          "label": "Romantic",
+          "desc": "Soft · Dreamy"
+        },
+        {
+          "value": "gotico",
+          "label": "Soft Gothic",
+          "desc": "Dramatic · Unique"
+        },
+        {
+          "value": "vintage",
+          "label": "Vintage",
+          "desc": "Nostalgic · Charming"
+        }
+      ],
+      "labels": {
+        "referencias": "Have references? Paste Pinterest links or describe (optional)"
+      },
+      "placeholders": {
+        "referencias": "https://pinterest.com/..."
+      },
+      "buttons": {
+        "confirm": "Confirm style"
+      }
+    },
+    "step13": {
+      "title": "What is the level of formality?"
+    },
+    "step14": {
+      "title": "What is the color palette?"
+    },
+    "step15": {
+      "title": "What is the decor tone?"
+    },
+    "step16": {
+      "title": "Visual references",
+      "labels": {
+        "imagens": "Reference images",
+        "links": "Reference links (one per line, max 10)"
+      },
+      "placeholders": {
+        "links": "https://pinterest.com/...\nhttps://instagram.com/..."
+      },
+      "buttons": {
+        "confirm": "Confirm references"
+      },
+      "description": "Paste Pinterest, Instagram links or upload inspiration images. This is optional."
+    },
+    "step17": {
+      "title": "Flowers"
+    },
+    "step18": {
+      "title": "Lighting"
+    },
+    "step19": {
+      "title": "Candles"
+    },
+    "step20": {
+      "title": "Furniture"
+    },
+    "step21": {
+      "title": "Backdrop"
+    },
+    "step22": {
+      "title": "Fabrics"
+    },
+    "step23": {
+      "title": "Tablecloth"
+    },
+    "step24": {
+      "title": "Tableware"
+    },
+    "step25": {
+      "title": "Cutlery"
+    },
+    "step26": {
+      "title": "Glasses"
+    },
+    "step27": {
+      "title": "Centerpiece"
+    },
+    "step28": {
+      "title": "Napkin"
+    },
+    "step29": {
+      "title": "Place card"
+    },
+    "step30": {
+      "title": "Couple's entrance"
+    },
+    "step31": {
+      "title": "Ceremony music"
+    },
+    "step32": {
+      "title": "Godparents and children"
+    },
+    "step33": {
+      "title": "Exit rituals"
+    },
+    "step38": {
+      "title": "Cocktail"
+    },
+    "step39": {
+      "title": "Cake, sweets and bar"
+    },
+    "step40": {
+      "title": "Music and entertainment"
+    },
+    "step49": {
+      "title": "Invitations"
+    },
+    "step50": {
+      "title": "Visual identity"
+    },
+    "step54": {
+      "title": "Dress"
+    },
+    "step55": {
+      "title": "Beauty and standardization"
+    },
+    "step60": {
+      "title": "Vendors"
+    },
+    "stepA4": {
+      "title": "Children at the event?"
+    },
+    "stepA5": {
+      "title": "Godparents"
+    },
+    "stepA6": {
+      "title": "Expected date"
+    },
+    "stepA7": {
+      "title": "Time together"
+    },
+    "stepA8": {
+      "title": "Do you live together?"
+    },
+    "stepA9": {
+      "title": "How did you meet?",
+      "ariaLabel": "How did you meet?",
+      "options": [
+        {
+          "value": "trabalho",
+          "label": "Work",
+          "desc": "In a professional environment"
+        },
+        {
+          "value": "faculdade",
+          "label": "College",
+          "desc": "In academic life"
+        },
+        {
+          "value": "amigos",
+          "label": "Friends",
+          "desc": "Through mutual friends"
+        },
+        {
+          "value": "familia",
+          "label": "Family",
+          "desc": "Family acquaintances"
+        },
+        {
+          "value": "app",
+          "label": "App",
+          "desc": "Dating app"
+        },
+        {
+          "value": "viagem",
+          "label": "Travel",
+          "desc": "On a trip"
+        },
+        {
+          "value": "outros",
+          "label": "Others",
+          "desc": "Another special story"
+        }
+      ]
+    },
+    "stepA10": {
+      "title": "Do you have children?"
+    },
+    "stepA11": {
+      "title": "Do you have pets?"
+    },
+    "stepA12": {
+      "title": "What do you like to do together?"
+    },
+    "stepA13": {
+      "title": "Groom's personality"
+    },
+    "stepA14": {
+      "title": "Bride's personality"
+    },
+    "stepA15": {
+      "title": "Family tradition"
+    },
+    "stepA16": {
+      "title": "Cultural restriction"
+    },
+    "stepB5": {
+      "title": "Children at the ceremony?"
+    },
+    "stepB6": {
+      "title": "Ceremony duration"
+    },
+    "stepB7": {
+      "title": "Live music at the ceremony?"
+    },
+    "stepB8": {
+      "title": "Did you book the church/temple?"
+    },
+    "stepB9": {
+      "title": "Pre-wedding course",
+      "ariaLabel": "Pre-wedding course",
+      "options": [
+        {
+          "value": "sim",
+          "label": "Yes",
+          "desc": "Course completed"
+        },
+        {
+          "value": "em_andamento",
+          "label": "In progress",
+          "desc": "I'm taking the course"
+        },
+        {
+          "value": "nao_iniciado",
+          "label": "Not started",
+          "desc": "I haven't started yet"
+        }
+      ]
+    },
+    "stepB10": {
+      "title": "Did you choose the priest/officiant?"
+    },
+    "stepB11": {
+      "title": "Did you book the temple?"
+    },
+    "stepB12": {
+      "title": "Did you define the chuppah?"
+    },
+    "stepB13": {
+      "title": "Did you choose the officiant?"
+    },
+    "stepB14": {
+      "title": "Did you schedule the registry office?"
+    },
+    "stepB15": {
+      "title": "Godparents chosen?"
+    },
+    "stepB16": {
+      "title": "Did you define the entrance?"
+    },
+    "stepB17": {
+      "title": "Ceremony musicians"
+    },
+    "stepB18": {
+      "title": "Baptism certificate"
+    },
+    "stepC4": {
+      "title": "Parking"
+    },
+    "stepC5": {
+      "title": "Support kitchen"
+    },
+    "stepC6": {
+      "title": "Venue capacity"
+    },
+    "stepC7": {
+      "title": "Generator on site?"
+    },
+    "stepC8": {
+      "title": "Did you book the ceremony venue?"
+    },
+    "stepC9": {
+      "title": "Did you book the party venue?"
+    },
+    "stepC10": {
+      "title": "Did you check the tide?"
+    },
+    "stepC11": {
+      "title": "Preliminary guest list"
+    },
+    "stepC12": {
+      "title": "Guests from out of town?"
+    },
+    "stepC13": {
+      "title": "Recommended hotel"
+    },
+    "stepC14": {
+      "title": "Party time"
+    },
+    "stepC15": {
+      "title": "Cocktail duration"
+    },
+    "stepD1": {
+      "title": "Type of flowers"
+    },
+    "stepD2": {
+      "title": "Type of lighting"
+    },
+    "stepD3": {
+      "title": "Chosen furniture"
+    },
+    "stepD4": {
+      "title": "Photographer hired?"
+    },
+    "stepD5": {
+      "title": "Videographer hired?"
+    },
+    "stepD6": {
+      "title": "Catering hired?"
+    },
+    "stepD7": {
+      "title": "Decor hired?"
+    },
+    "stepD8": {
+      "title": "Music hired?"
+    },
+    "stepD9": {
+      "title": "Venue hired?"
+    },
+    "stepD10": {
+      "title": "Dress hired?"
+    },
+    "stepD11": {
+      "title": "Groom's attire hired?"
+    },
+    "stepD12": {
+      "title": "Wedding planner hired?"
+    },
+    "stepD13": {
+      "title": "Transport hired?"
+    },
+    "stepD14": {
+      "title": "Stationery hired?"
+    },
+    "stepD15": {
+      "title": "Photo booth?"
+    },
+    "stepD16": {
+      "title": "Drone?"
+    },
+    "stepD17": {
+      "title": "Kids entertainment?"
+    },
+    "stepD18": {
+      "title": "Dress purchased?"
+    },
+    "stepD19": {
+      "title": "Beauty trial?"
+    },
+    "stepD20": {
+      "title": "Invitations ordered?"
+    },
+    "stepD21": {
+      "title": "Save the date sent?"
+    },
+    "stepD22": {
+      "title": "Favors?"
+    },
+    "stepD23": {
+      "title": "Exit kit?"
+    },
+    "stepE1": {
+      "title": "Groom's marital status"
+    },
+    "stepE2": {
+      "title": "Bride's marital status"
+    },
+    "stepE3": {
+      "title": "Groom's divorce certificate"
+    },
+    "stepE4": {
+      "title": "Bride's divorce certificate"
+    },
+    "stepE5": {
+      "title": "Groom's death certificate"
+    },
+    "stepE6": {
+      "title": "Bride's death certificate"
+    },
+    "stepE7": {
+      "title": "Groom's nationality"
+    },
+    "stepE8": {
+      "title": "Bride's nationality"
+    },
+    "stepE9": {
+      "title": "Foreigner documentation"
+    },
+    "stepE10": {
+      "title": "Who pays?"
+    },
+    "stepE11": {
+      "title": "Payment method"
+    },
+    "stepE12": {
+      "title": "Day schedule"
+    },
+    "stepE13": {
+      "title": "Bride's getting-ready time"
+    },
+    "stepE14": {
+      "title": "Groom's getting-ready time"
+    },
+    "stepE15": {
+      "title": "Honeymoon destination"
+    },
+    "stepE16": {
+      "title": "Honeymoon booked?"
+    },
+    "stepE17": {
+      "title": "Valid passport?"
+    },
+    "stepE18": {
+      "title": "Visa required?"
+    },
+    "stepE19": {
+      "title": "Vaccines up to date?"
+    },
+    "stepG8": {
+      "title": "Cold buffet table"
+    },
+    "stepG9": {
+      "title": "Drinks per person"
+    },
+    "stepG10": {
+      "title": "Kids menu"
+    },
+    "stepH3": {
+      "title": "Fireworks and sparklers"
+    },
+    "stepH4": {
+      "title": "Dessert table displayed?"
+    },
+    "stepH5": {
+      "title": "Dance class?"
+    },
+    "stepI4": {
+      "title": "Dance classes"
+    },
+    "stepI5": {
+      "title": "Outfit change"
+    },
+    "stepI6": {
+      "title": "How many bridesmaids?"
+    },
+    "stepL1": {
+      "title": "Wedding rings"
+    },
+    "stepL2": {
+      "title": "Civil ceremony together?"
+    },
+    "stepL3": {
+      "title": "Special couple transport"
+    },
+    "stepL4": {
+      "title": "Couple's car"
+    },
+    "stepL5": {
+      "title": "Guest transport"
+    },
+    "stepL6": {
+      "title": "Security"
+    },
+    "stepM1": {
+      "title": "Honeymoon"
+    },
+    "stepM2": {
+      "title": "Honeymoon photos"
+    }
+  },
+  "blocks": {
+    "A": {
+      "label": "Couple Profile",
+      "description": "Getting to know who you are"
+    },
+    "B": {
+      "label": "Ceremony",
+      "description": "The most special moment"
+    },
+    "C": {
+      "label": "Venue & Structure",
+      "description": "Where everything happens"
+    },
+    "D": {
+      "label": "Visual Identity",
+      "description": "The face of your event"
+    },
+    "E": {
+      "label": "Decor",
+      "description": "Ambience and aesthetics"
+    },
+    "F": {
+      "label": "Table Setting",
+      "description": "Reception details"
+    },
+    "G": {
+      "label": "Ceremony Details",
+      "description": "Every moment of the celebration"
+    },
+    "H": {
+      "label": "Reception",
+      "description": "Party and celebration"
+    },
+    "I": {
+      "label": "Stationery",
+      "description": "Invitations and identity"
+    },
+    "J": {
+      "label": "Attire & Beauty",
+      "description": "How you will shine"
+    },
+    "K": {
+      "label": "Vendors",
+      "description": "Who will make it happen"
+    },
+    "L": {
+      "label": "Logistics",
+      "description": "Everything in order"
+    },
+    "M": {
+      "label": "Post-Wedding",
+      "description": "After the big day"
+    },
+    "N": {
+      "label": "Documentation",
+      "description": "Paperwork and bureaucracy"
+    }
+  }
+}
