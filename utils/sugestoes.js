@@ -668,8 +668,22 @@ export function sugerirVestido(estilo) {
   return MAPA_ESTILO[estilo]?.vestido || ['Clássico'];
 }
 
+/**
+ * Retorna a paleta de cores de um estilo
+ * @param {string} estilo
+ * @returns {Array<string>}
+ */
 export function getPaleta(estilo) {
   return MAPA_ESTILO[estilo]?.paleta || ['#F5F0EB', '#D4AF37', '#8B6F5E'];
+}
+
+/**
+ * Alias para compatibilidade com componentes que importam sugerirPaleta
+ * @param {string} estilo
+ * @returns {Array<string>}
+ */
+export function sugerirPaleta(estilo) {
+  return getPaleta(estilo);
 }
 
 export { MAPA_ESTILO };
