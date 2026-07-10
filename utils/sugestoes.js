@@ -1,5 +1,7 @@
 // utils/sugestoes.js — Sugestões por estilo com múltiplos pares de fontes
 
+import { getPaleta as getPaletaFromPaletas } from './paletas';
+
 // ============================================================
 // MAPA_ESTILO — Cada estilo tem 3-6 opções de pares de fontes
 // O casal escolhe a combinação que mais gosta
@@ -58,7 +60,7 @@ const MAPA_ESTILO = {
         corpo: { nome: 'Cormorant Infant', uso: 'corpo' },
       },
     ],
-    paleta: ['#F5F0EB', '#D4AF37', '#8B6F5E'],
+    paleta: getPaletaFromPaletas('classico').cores,
   },
   rustico: {
     flores: ['Girassóis', 'Margaridas', 'Capins e folhagens'],
@@ -107,7 +109,7 @@ const MAPA_ESTILO = {
         corpo: { nome: 'Lora', uso: 'corpo' },
       },
     ],
-    paleta: ['#F4E4C1', '#8B6F5E', '#556B2F'],
+    paleta: getPaletaFromPaletas('rustico').cores,
   },
   boho: {
     flores: ['Ranúnculos', 'Anêmonas', 'Flores secas'],
@@ -156,7 +158,7 @@ const MAPA_ESTILO = {
         corpo: { nome: 'Plus Jakarta Sans', uso: 'corpo' },
       },
     ],
-    paleta: ['#E8DCC8', '#C4A898', '#8B6F5E'],
+    paleta: getPaletaFromPaletas('boho').cores,
   },
   moderno: {
     flores: ['Copo-de-leite', 'Orquídeas phalaenopsis', 'Folhagem estruturada'],
@@ -205,7 +207,7 @@ const MAPA_ESTILO = {
         corpo: { nome: 'Plus Jakarta Sans', uso: 'corpo' },
       },
     ],
-    paleta: ['#FFFFFF', '#1A1714', '#C8BFB4'],
+    paleta: getPaletaFromPaletas('moderno').cores,
   },
   minimalista: {
     flores: ['Copo-de-leite', 'Folhagem única em vaso cerâmico'],
@@ -254,7 +256,7 @@ const MAPA_ESTILO = {
         corpo: { nome: 'Outfit', uso: 'corpo' },
       },
     ],
-    paleta: ['#FFFFFF', '#F3F0EC', '#1A1714'],
+    paleta: getPaletaFromPaletas('minimalista').cores,
   },
   industrial: {
     flores: ['Folhagens secas', 'Musgo', 'Proteas'],
@@ -303,7 +305,7 @@ const MAPA_ESTILO = {
         corpo: { nome: 'Roboto', uso: 'corpo' },
       },
     ],
-    paleta: ['#2C2C2C', '#8B6F5E', '#C8BFB4'],
+    paleta: getPaletaFromPaletas('industrial').cores,
   },
   tropical: {
     flores: ['Antúrios', 'Helicônias', 'Costelas-de-adão'],
@@ -352,7 +354,7 @@ const MAPA_ESTILO = {
         corpo: { nome: 'Quicksand', uso: 'corpo' },
       },
     ],
-    paleta: ['#FF6B6B', '#4ECDC4', '#FFE66D'],
+    paleta: getPaletaFromPaletas('tropical').cores,
   },
   romantico: {
     flores: ['Rosas rosa', 'Peônias', 'Lisianthus'],
@@ -407,7 +409,7 @@ const MAPA_ESTILO = {
         corpo: { nome: 'Cormorant Infant', uso: 'corpo' },
       },
     ],
-    paleta: ['#F8E1E4', '#FFB7C5', '#8B6F5E'],
+    paleta: getPaletaFromPaletas('romantico').cores,
   },
   gotico: {
     flores: ['Rosas escuras', 'Dálias negras', 'Callas'],
@@ -456,7 +458,7 @@ const MAPA_ESTILO = {
         corpo: { nome: 'EB Garamond', uso: 'corpo' },
       },
     ],
-    paleta: ['#1A1714', '#4A0E0E', '#C8BFB4'],
+    paleta: getPaletaFromPaletas('gotico').cores,
   },
   vintage: {
     flores: ['Lavanda', 'Ranúnculos', 'Gypsofila'],
@@ -505,7 +507,7 @@ const MAPA_ESTILO = {
         corpo: { nome: 'Cormorant Infant', uso: 'corpo' },
       },
     ],
-    paleta: ['#E6E6FA', '#D8BFD8', '#8B6F5E'],
+    paleta: getPaletaFromPaletas('vintage').cores,
   },
   artdeco: {
     flores: ['Orquídeas brancas', 'Rosas de jardim', 'Anémonas'],
@@ -536,7 +538,239 @@ const MAPA_ESTILO = {
         corpo: { nome: 'Cormorant Infant', uso: 'corpo' },
       },
     ],
-    paleta: ['#0A0A0A', '#D4AF37', '#F5F0EB'],
+    paleta: getPaletaFromPaletas('artdeco').cores,
+  },
+  praia: {
+    flores: ['Orquídeas brancas', 'Estrelas-do-mar secas', 'Folhagens tropicais'],
+    iluminacao: { tipo: 'Lanternas de papel + luzes de corda', tom: 'quente' },
+    velas: ['Velas em conchas', 'Lanternas de vidro com areia'],
+    mobiliario: { cadeiras: 'Cadeiras de bambu ou madeira clara', mesas: 'Mesas redondas com toalhas leves' },
+    toalha: 'Linho cru ou gaze branca',
+    loucas: 'Louça branca com detalhes azul-mar',
+    talheres: 'Bambu ou madeira natural',
+    tacas: 'Taças de vidro fino transparente',
+    centroMesa: 'Arranjo com conchas e velas flutuantes em garrafas de vidro com ramos de folhagem',
+    guardanapo: 'Guardanapo de linho branco com argola de corda',
+    bolo: 'Bolo branco com detalhes em azul-mar e conchas de açúcar',
+    saboresBolo: ['Coco com abacaxi', 'Limão com maracujá', 'Baunilha com frutas tropicais'],
+    embalagem: 'Caixa de palha com fita de juta e concha',
+    vestido: ['Vestido leve em chiffon', 'Cauda curta', 'Detalhes em renda'],
+    fontes: [
+      {
+        id: 'praia-1',
+        nome: 'Brisa do Mar',
+        display: { nome: 'Great Vibes', uso: 'display' },
+        corpo: { nome: 'Nunito', uso: 'corpo' },
+      },
+      {
+        id: 'praia-2',
+        nome: 'Onda Suave',
+        display: { nome: 'Dancing Script', uso: 'display' },
+        corpo: { nome: 'Nunito', uso: 'corpo' },
+      },
+      {
+        id: 'praia-3',
+        nome: 'Pôr do Sol',
+        display: { nome: 'Sacramento', uso: 'display' },
+        corpo: { nome: 'Quicksand', uso: 'corpo' },
+      },
+      {
+        id: 'praia-4',
+        nome: 'Coqueiro',
+        display: { nome: 'Satisfy', uso: 'display' },
+        corpo: { nome: 'Nunito', uso: 'corpo' },
+      },
+      {
+        id: 'praia-5',
+        nome: 'Tropical Breeze',
+        display: { nome: 'Pacifico', uso: 'display' },
+        corpo: { nome: 'Quicksand', uso: 'corpo' },
+      },
+    ],
+    paleta: getPaletaFromPaletas('praia').cores,
+  },
+  jardim: {
+    flores: ['Hortênsias', 'Peônias', 'Rosas inglesas', 'Folhagens diversas'],
+    iluminacao: { tipo: 'Fairy lights em árvores + velas em garrafas', tom: 'quente' },
+    velas: ['Velas em potes de vidro com musgo', 'Lanternas de ferro enferrujado'],
+    mobiliario: { cadeiras: 'Cadeiras de ferro branco ou madeira natural', mesas: 'Mesas redondas com toalhas de linho verde' },
+    toalha: 'Linho verde-claro ou branco com estampa floral',
+    loucas: 'Louça branca com detalhes em verde',
+    talheres: 'Prata antiga ou dourado envelhecido',
+    tacas: 'Cristal fino com pé verde',
+    centroMesa: 'Arranjo alto em vaso de cerâmica artesanal com terrário de suculentas e velas',
+    guardanapo: 'Guardanapo de linho verde com argola de rattan',
+    bolo: 'Bolo branco com flores naturais comestíveis e folhagem',
+    saboresBolo: ['Limão com hortelã', 'Baunilha com flores', 'Chá verde com maracujá'],
+    embalagem: 'Caixa de papel reciclado com semente de flor e fita de juta',
+    vestido: ['Vestido em renda floral', 'Cauda leve com folhagem', 'Tule natural'],
+    fontes: [
+      {
+        id: 'jardim-1',
+        nome: 'Jardim Secreto',
+        display: { nome: 'Parisienne', uso: 'display' },
+        corpo: { nome: 'Lora', uso: 'corpo' },
+      },
+      {
+        id: 'jardim-2',
+        nome: 'Flores ao Vento',
+        display: { nome: 'Sacramento', uso: 'display' },
+        corpo: { nome: 'Josefin Sans', uso: 'corpo' },
+      },
+      {
+        id: 'jardim-3',
+        nome: 'Bosque Encantado',
+        display: { nome: 'Satisfy', uso: 'display' },
+        corpo: { nome: 'Lora', uso: 'corpo' },
+      },
+      {
+        id: 'jardim-4',
+        nome: 'Primavera',
+        display: { nome: 'Dancing Script', uso: 'display' },
+        corpo: { nome: 'Nunito', uso: 'corpo' },
+      },
+      {
+        id: 'jardim-5',
+        nome: 'Orvalho',
+        display: { nome: 'Great Vibes', uso: 'display' },
+        corpo: { nome: 'Josefin Sans', uso: 'corpo' },
+      },
+    ],
+    paleta: getPaletaFromPaletas('jardim').cores,
+  },
+  glam: {
+    flores: ['Orquídeas phalaenopsis brancas', 'Rosas vermelhas', 'Lírios'],
+    iluminacao: { tipo: 'Lustres de cristal + spots dourados + velas em candelabros', tom: 'quente' },
+    velas: ['Velas altas em candelabros de cristal', 'Velas flutuantes em espelhos'],
+    mobiliario: { cadeiras: 'Cadeiras de veludo dourado ou acrílico transparente', mesas: 'Mesas redondas com toalhas de cetim dourado' },
+    toalha: 'Cetim dourado ou preto com bordado em ouro',
+    loucas: 'Porcelana branca com filete dourado e detalhes em cristal',
+    talheres: 'Dourado brilhante ou rosé gold',
+    tacas: 'Cristal com corte diamante e pé dourado',
+    centroMesa: 'Arranjo alto em vasos de vidro espelhado com candelabros de cristal e velas',
+    guardanapo: 'Guardanapo de seda dourado dobrado em leque',
+    bolo: 'Bolo branco com drip de ouro comestível e flores de açúcar',
+    saboresBolo: ['Champagne', 'Baunilha com ouro', 'Framboesa com chocolate branco'],
+    embalagem: 'Caixa preta com hot stamping dourado e fita de cetim',
+    vestido: ['Vestido de sereia em cetim', 'Decote profundo', 'Detalhes em cristais'],
+    fontes: [
+      {
+        id: 'glam-1',
+        nome: 'Hollywood',
+        display: { nome: 'Cinzel Decorative', uso: 'display' },
+        corpo: { nome: 'Cormorant Infant', uso: 'corpo' },
+      },
+      {
+        id: 'glam-2',
+        nome: 'Tapete Vermelho',
+        display: { nome: 'Limelight', uso: 'display' },
+        corpo: { nome: 'Cormorant Infant', uso: 'corpo' },
+      },
+      {
+        id: 'glam-3',
+        nome: 'Alta Costura',
+        display: { nome: 'Playfair Display', uso: 'display' },
+        corpo: { nome: 'EB Garamond', uso: 'corpo' },
+      },
+      {
+        id: 'glam-4',
+        nome: 'Diamante',
+        display: { nome: 'Italiana', uso: 'display' },
+        corpo: { nome: 'Cormorant Infant', uso: 'corpo' },
+      },
+      {
+        id: 'glam-5',
+        nome: 'Oscar',
+        display: { nome: 'Yeseva One', uso: 'display' },
+        corpo: { nome: 'Playfair Display', uso: 'corpo' },
+      },
+    ],
+    paleta: getPaletaFromPaletas('glam').cores,
+  },
+};
+
+// ============================================================
+// SUGESTOES_APROFUNDAMENTO — Sugestões para nós específicos do memorial
+// ============================================================
+
+const SUGESTOES_APROFUNDAMENTO = {
+  // MÚSICA
+  musicaEntretenimento: {
+    tipos: ['DJ profissional', 'Banda ao vivo', 'Playlist própria com som contratado', 'String quartet', 'DJ + banda híbrido'],
+    equipamento: ['Som completo com iluminação', 'Som básico', 'Som + iluminação de pista', 'Som + projeção'],
+    horario: ['Durante toda a festa', 'Apenas na pista', 'Durante o coquetel', 'Apenas no jantar'],
+  },
+  musicaCerimonia: {
+    entrada: ['Marcha nupcial clássica', 'Música escolhida pelo casal', 'Violinista solo', 'Coral', 'Harpa'],
+    saida: ['Música alegre e festiva', 'Marcha nupcial', 'Música escolhida', 'Banda'],
+    trocaAliancas: ['Silêncio', 'Música suave', 'Violino', 'Harpa'],
+  },
+  // PALCO E ESTRUTURA
+  palco: {
+    tipo: ['Palco tradicional', 'Palco circular', 'Palco em T', 'Sem palco (pista aberta)', 'Palco suspenso'],
+    iluminacao: ['Spots coloridos', 'Luz branca', 'Projeção mapeada', 'Fairy lights', 'Nenhuma (luz ambiente)'],
+  },
+  // GASTRONOMIA
+  buffet: {
+    tipoServico: ['Servido à mesa', 'Estação (buffet)', 'Finger food / coquetel', 'Rodízio', 'Mix (servido + estação)'],
+    degustacao: ['Sim, com menu definido', 'Sim, menu a definir', 'Não'],
+    cardapio: ['Clássico brasileiro', 'Internacional', 'Regional', 'Vegetariano/Vegano', 'Fusion'],
+  },
+  mesaDoces: {
+    tipo: ['Mesa tradicional com doces finos', 'Candy bar colorido', 'Mesa de sobremesas', 'Mesa de queijos', 'Sem mesa de doces'],
+    estilo: ['Clássico', 'Moderno', 'Temático', 'Minimalista'],
+  },
+  // FOTO & FILME
+  fotografia: {
+    estilo: ['Fotossocial (clássico)', 'Fine art (artístico)', 'Documental (jornalístico)', 'Editorial (moda)', 'Lifestyle (natural)'],
+    servicos: ['Pré-wedding', 'Making-of noivo', 'Making-of noiva', 'Ensaio pós-casamento', 'Álbum físico', 'Revelação em canvas'],
+  },
+  filmagem: {
+    estilo: ['Cinematic (cinema)', 'Documental', 'Same-day edit', 'Teaser para redes', 'Filme longo (20+ min)'],
+    extras: ['Drone', 'Making-of', 'Entrevistas com convidados', 'Projeção durante a festa'],
+  },
+  // VESTUÁRIO
+  vestidoNoiva: {
+    estilo: ['Sereia', 'Princesa (volumosa)', 'Evasê', 'Slip dress', 'Corte reto', 'Curto'],
+    tecido: ['Renda', 'Cetim', 'Tule', 'Crepe', 'Organza', 'Mikado'],
+    cor: ['Branco puro', 'Off-white', 'Champagne', 'Rosé', 'Azul claro'],
+    cauda: ['Longa (2m+)', 'Média (1m)', 'Curta', 'Removível', 'Sem cauda'],
+  },
+  trajeNoivo: {
+    estilo: ['Smoking clássico', 'Fraque', 'Terno slim', 'Terno tradicional', 'Esporte fino'],
+    cor: ['Preto', 'Azul marinho', 'Cinza', 'Bege', 'Branco'],
+    acessorio: ['Gravata', 'Laço', 'Sem gravata', 'Suspensório', 'Lenço de bolso'],
+  },
+  // DECORAÇÃO
+  decoracao: {
+    estilo: ['Suspensa (lustres, flores pendentes)', 'Mesa (centros, runners)', 'Parede (painel, backdrop)', 'Piso (tapetes, petalas)', 'Mix completo'],
+    material: ['Flores naturais', 'Flores secas', 'Velas', 'Tecidos', 'Luzes', 'Papel / papelaria'],
+  },
+  // LOGÍSTICA
+  transporteNoivos: {
+    tipo: ['Carro clássico', 'Limousine', 'Carro esportivo', 'Carroça', 'Barco', 'Helicóptero', 'Carro próprio'],
+    decoracao: ['Flores naturais', 'Fitas', 'Placa personalizada', 'Sem decoração'],
+  },
+  transporteConvidados: {
+    tipo: ['Ônibus fretado', 'Van', 'Estacionamento com manobrista', 'Carona compartilhada', 'Sem transporte'],
+  },
+  // PAPELARIA
+  convites: {
+    formato: ['Digital (e-mail / WhatsApp)', 'Impresso tradicional', 'Letterpress', 'Hot stamping', 'Convite individual + RSVP'],
+    prazo: ['6 meses antes', '4 meses antes', '3 meses antes', '2 meses antes'],
+  },
+  lembrancinhas: {
+    tipo: ['Comestível (bem-casado, brigadeiro)', 'Planta / semente', 'Vela personalizada', 'Item utilitário (chaveiro, porta-retrato)', 'Doação em nome dos noivos'],
+  },
+  // CERIMÔNIA
+  celebrante: {
+    tipo: ['Padre / religioso', 'Celebrante laico', 'Amigo / familiar', 'Rabino', 'Juiz de paz'],
+    roteiro: ['Tradicional', 'Personalizado', 'Mix (tradicional + personalizações)'],
+  },
+  // LUA DE MEL
+  luaDeMel: {
+    tipo: ['Praia nacional', 'Praia internacional', 'Cidade histórica', 'Montanha / natureza', 'Cruzeiro', 'Road trip'],
+    duracao: ['3-5 dias', '1 semana', '10-15 dias', '2+ semanas'],
   },
 };
 
@@ -686,4 +920,49 @@ export function sugerirPaleta(estilo) {
   return getPaleta(estilo);
 }
 
-export { MAPA_ESTILO };
+// ============================================================
+// FUNCOES DE APROFUNDAMENTO
+// ============================================================
+
+/**
+ * Retorna sugestões de aprofundamento para uma categoria e subcategoria específicas.
+ *
+ * @param {string} categoria — chave principal (ex: 'musicaEntretenimento', 'vestidoNoiva')
+ * @param {string} subcategoria — chave interna (ex: 'tipos', 'estilo', 'cor')
+ * @returns {Array<string>} — array de sugestões, ou array vazio se não encontrar
+ *
+ * @example
+ * import { sugerirAprofundamento } from '../utils/sugestoes';
+ * const tipos = sugerirAprofundamento('musicaEntretenimento', 'tipos');
+ * // ['DJ profissional', 'Banda ao vivo', ...]
+ */
+export function sugerirAprofundamento(categoria, subcategoria) {
+  const cat = SUGESTOES_APROFUNDAMENTO[categoria];
+  if (!cat) {
+    console.warn(`[sugestoes] Categoria de aprofundamento "${categoria}" não encontrada.`);
+    return [];
+  }
+  const sub = cat[subcategoria];
+  if (!sub) {
+    console.warn(`[sugestoes] Subcategoria "${subcategoria}" não encontrada em "${categoria}".`);
+    return [];
+  }
+  return [...sub];
+}
+
+/**
+ * Retorna o objeto completo de sugestões de aprofundamento.
+ * Útil para preencher dropdowns, checklists ou documentação.
+ *
+ * @returns {Object} — cópia profunda do SUGESTOES_APROFUNDAMENTO
+ *
+ * @example
+ * import { getSugestoesAprofundamento } from '../utils/sugestoes';
+ * const todas = getSugestoesAprofundamento();
+ * const tiposBuffet = todas.buffet.tipoServico;
+ */
+export function getSugestoesAprofundamento() {
+  return JSON.parse(JSON.stringify(SUGESTOES_APROFUNDAMENTO));
+}
+
+export { MAPA_ESTILO, SUGESTOES_APROFUNDAMENTO };
