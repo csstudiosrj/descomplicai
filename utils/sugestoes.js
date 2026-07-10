@@ -1,8 +1,9 @@
-/**
- * Motor de sugestões automáticas baseadas no estado do memorial
- * @module utils/sugestoes
- */
+// utils/sugestoes.js — Sugestões por estilo com múltiplos pares de fontes
 
+// ============================================================
+// MAPA_ESTILO — Cada estilo tem 3-6 opções de pares de fontes
+// O casal escolhe a combinação que mais gosta
+// ============================================================
 const MAPA_ESTILO = {
   classico: {
     flores: ['Rosas', 'Orquídeas', 'Hortênsias brancas'],
@@ -19,7 +20,44 @@ const MAPA_ESTILO = {
     saboresBolo: ['Baunilha com buttercream', 'Nozes com chantilly', 'Limão siciliano'],
     embalagem: 'Caixa branca com fita de cetim e monograma dourado',
     vestido: ['Cauda longa', 'Renda francesa', 'Cetim estruturado'],
-    fontes: [{ nome: 'Cormorant Garamond', uso: 'display' }, { nome: 'Playfair Display', uso: 'corpo' }],
+    fontes: [
+      {
+        id: 'classico-1',
+        nome: 'Elegância Real',
+        display: { nome: 'Cormorant Garamond', uso: 'display' },
+        corpo: { nome: 'Playfair Display', uso: 'corpo' },
+      },
+      {
+        id: 'classico-2',
+        nome: 'Tradição Atemporal',
+        display: { nome: 'EB Garamond', uso: 'display' },
+        corpo: { nome: 'Crimson Text', uso: 'corpo' },
+      },
+      {
+        id: 'classico-3',
+        nome: 'Sofisticação Clássica',
+        display: { nome: 'Cormorant Garamond', uso: 'display' },
+        corpo: { nome: 'Libre Baskerville', uso: 'corpo' },
+      },
+      {
+        id: 'classico-4',
+        nome: 'Refinamento Editorial',
+        display: { nome: 'Playfair Display', uso: 'display' },
+        corpo: { nome: 'Source Serif 4', uso: 'corpo' },
+      },
+      {
+        id: 'classico-5',
+        nome: 'Alta Costura',
+        display: { nome: 'Italiana', uso: 'display' },
+        corpo: { nome: 'Cormorant Infant', uso: 'corpo' },
+      },
+      {
+        id: 'classico-6',
+        nome: 'Herança Real',
+        display: { nome: 'Cinzel', uso: 'display' },
+        corpo: { nome: 'Cormorant Infant', uso: 'corpo' },
+      },
+    ],
     paleta: ['#F5F0EB', '#D4AF37', '#8B6F5E'],
   },
   rustico: {
@@ -37,7 +75,38 @@ const MAPA_ESTILO = {
     saboresBolo: ['Naked cake de doce de leite', 'Chocolate com frutas vermelhas', 'Coco com maracujá'],
     embalagem: 'Saco de tecido de algodão com tag de madeira',
     vestido: ['Renda boho', 'Cauda leve', 'Tule natural'],
-    fontes: [{ nome: 'Amatic SC', uso: 'display' }, { nome: 'Lora', uso: 'corpo' }],
+    fontes: [
+      {
+        id: 'rustico-1',
+        nome: 'Campestre Autêntico',
+        display: { nome: 'Amatic SC', uso: 'display' },
+        corpo: { nome: 'Lora', uso: 'corpo' },
+      },
+      {
+        id: 'rustico-2',
+        nome: 'Floresta Encantada',
+        display: { nome: 'Dancing Script', uso: 'display' },
+        corpo: { nome: 'Lora', uso: 'corpo' },
+      },
+      {
+        id: 'rustico-3',
+        nome: 'Jardim Secreto',
+        display: { nome: 'Parisienne', uso: 'display' },
+        corpo: { nome: 'Lora', uso: 'corpo' },
+      },
+      {
+        id: 'rustico-4',
+        nome: 'Carta do Campo',
+        display: { nome: 'Sacramento', uso: 'display' },
+        corpo: { nome: 'Lora', uso: 'corpo' },
+      },
+      {
+        id: 'rustico-5',
+        nome: 'Piquenique',
+        display: { nome: 'Satisfy', uso: 'display' },
+        corpo: { nome: 'Lora', uso: 'corpo' },
+      },
+    ],
     paleta: ['#F4E4C1', '#8B6F5E', '#556B2F'],
   },
   boho: {
@@ -55,7 +124,38 @@ const MAPA_ESTILO = {
     saboresBolo: ['Lavanda com baunilha', 'Figo com mel', 'Frutas silvestres'],
     embalagem: 'Envelope de papel reciclado com selo de cera',
     vestido: ['Vestido fluido em crepe', 'Renda boho', 'Detalhes em franja'],
-    fontes: [{ nome: 'Cormorant Garamond', uso: 'display' }, { nome: 'Josefin Sans', uso: 'corpo' }],
+    fontes: [
+      {
+        id: 'boho-1',
+        nome: 'Alma Livre',
+        display: { nome: 'Cormorant Garamond', uso: 'display' },
+        corpo: { nome: 'Josefin Sans', uso: 'corpo' },
+      },
+      {
+        id: 'boho-2',
+        nome: 'Brisa do Deserto',
+        display: { nome: 'Dancing Script', uso: 'display' },
+        corpo: { nome: 'Josefin Sans', uso: 'corpo' },
+      },
+      {
+        id: 'boho-3',
+        nome: 'Pétalas ao Vento',
+        display: { nome: 'Parisienne', uso: 'display' },
+        corpo: { nome: 'Lora', uso: 'corpo' },
+      },
+      {
+        id: 'boho-4',
+        nome: 'Maré Boho',
+        display: { nome: 'Satisfy', uso: 'display' },
+        corpo: { nome: 'Josefin Sans', uso: 'corpo' },
+      },
+      {
+        id: 'boho-5',
+        nome: 'Free Spirit',
+        display: { nome: 'Sacramento', uso: 'display' },
+        corpo: { nome: 'Plus Jakarta Sans', uso: 'corpo' },
+      },
+    ],
     paleta: ['#E8DCC8', '#C4A898', '#8B6F5E'],
   },
   moderno: {
@@ -73,7 +173,38 @@ const MAPA_ESTILO = {
     saboresBolo: ['Pistache com chocolate branco', 'Matcha com limão', 'Caramelo salgado'],
     embalagem: 'Caixa preta fosca com hot stamping prata',
     vestido: ['Corte reto minimalista', 'Cetim pesado', 'Decote arquitetônico'],
-    fontes: [{ nome: 'Montserrat', uso: 'display' }, { nome: 'Open Sans', uso: 'corpo' }],
+    fontes: [
+      {
+        id: 'moderno-1',
+        nome: 'Linhas Puras',
+        display: { nome: 'Montserrat', uso: 'display' },
+        corpo: { nome: 'Open Sans', uso: 'corpo' },
+      },
+      {
+        id: 'moderno-2',
+        nome: 'Contraste Bold',
+        display: { nome: 'Oswald', uso: 'display' },
+        corpo: { nome: 'Roboto', uso: 'corpo' },
+      },
+      {
+        id: 'moderno-3',
+        nome: 'Nordico Clean',
+        display: { nome: 'Montserrat', uso: 'display' },
+        corpo: { nome: 'Inter', uso: 'corpo' },
+      },
+      {
+        id: 'moderno-4',
+        nome: 'Arquitetura Viva',
+        display: { nome: 'Bebas Neue', uso: 'display' },
+        corpo: { nome: 'Outfit', uso: 'corpo' },
+      },
+      {
+        id: 'moderno-5',
+        nome: 'Design Contemporâneo',
+        display: { nome: 'Yeseva One', uso: 'display' },
+        corpo: { nome: 'Plus Jakarta Sans', uso: 'corpo' },
+      },
+    ],
     paleta: ['#FFFFFF', '#1A1714', '#C8BFB4'],
   },
   minimalista: {
@@ -91,7 +222,38 @@ const MAPA_ESTILO = {
     saboresBolo: ['Baunilha pura', 'Creme brûlée', 'Iogurte com limão'],
     embalagem: 'Papel kraft branco com tipografia minimalista',
     vestido: ['Corte clean em crepe', 'Sem renda', 'Silhueta minimalista'],
-    fontes: [{ nome: 'Cormorant Garamond', uso: 'display' }, { nome: 'Inter', uso: 'corpo' }],
+    fontes: [
+      {
+        id: 'minimalista-1',
+        nome: 'Essência',
+        display: { nome: 'Cormorant Garamond', uso: 'display' },
+        corpo: { nome: 'Inter', uso: 'corpo' },
+      },
+      {
+        id: 'minimalista-2',
+        nome: 'Geometria Pura',
+        display: { nome: 'Montserrat', uso: 'display' },
+        corpo: { nome: 'Inter', uso: 'corpo' },
+      },
+      {
+        id: 'minimalista-3',
+        nome: 'Silencio Visual',
+        display: { nome: 'Oswald', uso: 'display' },
+        corpo: { nome: 'Open Sans', uso: 'corpo' },
+      },
+      {
+        id: 'minimalista-4',
+        nome: 'Essência Digital',
+        display: { nome: 'Outfit', uso: 'display' },
+        corpo: { nome: 'Inter', uso: 'corpo' },
+      },
+      {
+        id: 'minimalista-5',
+        nome: 'Linha Fina',
+        display: { nome: 'Poiret One', uso: 'display' },
+        corpo: { nome: 'Outfit', uso: 'corpo' },
+      },
+    ],
     paleta: ['#FFFFFF', '#F3F0EC', '#1A1714'],
   },
   industrial: {
@@ -109,7 +271,38 @@ const MAPA_ESTILO = {
     saboresBolo: ['Chocolate amargo', 'Café com caramelo', 'Cacau com especiarias'],
     embalagem: 'Caixa de cartão kraft com cordel preto',
     vestido: ['Vestido em renda escura', 'Couro sintético', 'Detalhes em metal'],
-    fontes: [{ nome: 'Oswald', uso: 'display' }, { nome: 'Roboto', uso: 'corpo' }],
+    fontes: [
+      {
+        id: 'industrial-1',
+        nome: 'Fabrica Raw',
+        display: { nome: 'Oswald', uso: 'display' },
+        corpo: { nome: 'Roboto', uso: 'corpo' },
+      },
+      {
+        id: 'industrial-2',
+        nome: 'Metal e Tinta',
+        display: { nome: 'Montserrat', uso: 'display' },
+        corpo: { nome: 'Roboto', uso: 'corpo' },
+      },
+      {
+        id: 'industrial-3',
+        nome: 'Estilo Loft',
+        display: { nome: 'Oswald', uso: 'display' },
+        corpo: { nome: 'Open Sans', uso: 'corpo' },
+      },
+      {
+        id: 'industrial-4',
+        nome: 'Estúdio Raw',
+        display: { nome: 'Bebas Neue', uso: 'display' },
+        corpo: { nome: 'Roboto', uso: 'corpo' },
+      },
+      {
+        id: 'industrial-5',
+        nome: 'Concreto e Aço',
+        display: { nome: 'Yeseva One', uso: 'display' },
+        corpo: { nome: 'Roboto', uso: 'corpo' },
+      },
+    ],
     paleta: ['#2C2C2C', '#8B6F5E', '#C8BFB4'],
   },
   tropical: {
@@ -127,7 +320,38 @@ const MAPA_ESTILO = {
     saboresBolo: ['Maracujá com coco', 'Manga com abacaxi', 'Frutas tropicais mistas'],
     embalagem: 'Caixa de palha com fita de tecido colorido',
     vestido: ['Vestido leve em chiffon', 'Detalhes em renda floral', 'Cauda leve'],
-    fontes: [{ nome: 'Pacifico', uso: 'display' }, { nome: 'Nunito', uso: 'corpo' }],
+    fontes: [
+      {
+        id: 'tropical-1',
+        nome: 'Onda Tropical',
+        display: { nome: 'Pacifico', uso: 'display' },
+        corpo: { nome: 'Nunito', uso: 'corpo' },
+      },
+      {
+        id: 'tropical-2',
+        nome: 'Brisa de Verão',
+        display: { nome: 'Dancing Script', uso: 'display' },
+        corpo: { nome: 'Nunito', uso: 'corpo' },
+      },
+      {
+        id: 'tropical-3',
+        nome: 'Coqueiro ao Vento',
+        display: { nome: 'Great Vibes', uso: 'display' },
+        corpo: { nome: 'Nunito', uso: 'corpo' },
+      },
+      {
+        id: 'tropical-4',
+        nome: 'Pôr do Sol',
+        display: { nome: 'Sacramento', uso: 'display' },
+        corpo: { nome: 'Nunito', uso: 'corpo' },
+      },
+      {
+        id: 'tropical-5',
+        nome: 'Praia Viva',
+        display: { nome: 'Satisfy', uso: 'display' },
+        corpo: { nome: 'Quicksand', uso: 'corpo' },
+      },
+    ],
     paleta: ['#FF6B6B', '#4ECDC4', '#FFE66D'],
   },
   romantico: {
@@ -145,7 +369,44 @@ const MAPA_ESTILO = {
     saboresBolo: ['Rosa com framboesa', 'Morango com champagne', 'Peônia com baunilha'],
     embalagem: 'Caixa rosa com fita de cetim e flor de seda',
     vestido: ['Princesa com saia volumosa', 'Renda de chantilly', 'Cauda longa'],
-    fontes: [{ nome: 'Great Vibes', uso: 'display' }, { nome: 'Lora', uso: 'corpo' }],
+    fontes: [
+      {
+        id: 'romantico-1',
+        nome: 'Amor Eterno',
+        display: { nome: 'Great Vibes', uso: 'display' },
+        corpo: { nome: 'Lora', uso: 'corpo' },
+      },
+      {
+        id: 'romantico-2',
+        nome: 'Carta de Amor',
+        display: { nome: 'Parisienne', uso: 'display' },
+        corpo: { nome: 'Lora', uso: 'corpo' },
+      },
+      {
+        id: 'romantico-3',
+        nome: 'Sonho de Princesa',
+        display: { nome: 'Dancing Script', uso: 'display' },
+        corpo: { nome: 'Lora', uso: 'corpo' },
+      },
+      {
+        id: 'romantico-4',
+        nome: 'Conto de Fadas',
+        display: { nome: 'Great Vibes', uso: 'display' },
+        corpo: { nome: 'Libre Baskerville', uso: 'corpo' },
+      },
+      {
+        id: 'romantico-5',
+        nome: 'Jardim de Rosas',
+        display: { nome: 'Sacramento', uso: 'display' },
+        corpo: { nome: 'Lora', uso: 'corpo' },
+      },
+      {
+        id: 'romantico-6',
+        nome: 'Sonho Dourado',
+        display: { nome: 'Satisfy', uso: 'display' },
+        corpo: { nome: 'Cormorant Infant', uso: 'corpo' },
+      },
+    ],
     paleta: ['#F8E1E4', '#FFB7C5', '#8B6F5E'],
   },
   gotico: {
@@ -163,7 +424,38 @@ const MAPA_ESTILO = {
     saboresBolo: ['Chocolate negro com mirtilo', 'Ameixa com especiarias', 'Veludo negro'],
     embalagem: 'Caixa preta com fita de veludo e selo de cera negra',
     vestido: ['Vestido escuro em renda', 'Detalhes em veludo', 'Cauda dramática'],
-    fontes: [{ nome: 'Cinzel Decorative', uso: 'display' }, { nome: 'Crimson Text', uso: 'corpo' }],
+    fontes: [
+      {
+        id: 'gotico-1',
+        nome: 'Noite Eterna',
+        display: { nome: 'Cinzel Decorative', uso: 'display' },
+        corpo: { nome: 'Crimson Text', uso: 'corpo' },
+      },
+      {
+        id: 'gotico-2',
+        nome: 'Castelo Sombrio',
+        display: { nome: 'Cinzel Decorative', uso: 'display' },
+        corpo: { nome: 'EB Garamond', uso: 'corpo' },
+      },
+      {
+        id: 'gotico-3',
+        nome: 'Veludo Negro',
+        display: { nome: 'Oswald', uso: 'display' },
+        corpo: { nome: 'Crimson Text', uso: 'corpo' },
+      },
+      {
+        id: 'gotico-4',
+        nome: 'Catedral Noturna',
+        display: { nome: 'UnifrakturMaguntia', uso: 'display' },
+        corpo: { nome: 'Crimson Text', uso: 'corpo' },
+      },
+      {
+        id: 'gotico-5',
+        nome: 'Mistério Medieval',
+        display: { nome: 'Cinzel', uso: 'display' },
+        corpo: { nome: 'EB Garamond', uso: 'corpo' },
+      },
+    ],
     paleta: ['#1A1714', '#4A0E0E', '#C8BFB4'],
   },
   vintage: {
@@ -181,171 +473,203 @@ const MAPA_ESTILO = {
     saboresBolo: ['Bem-casado', 'Creme de confeiteiro com amêndoas', 'Baunilha com caramelo'],
     embalagem: 'Caixa de papel envelhecido com renda e tag vintage',
     vestido: ['Renda vintage', 'Cauda leve', 'Detalhes em pérolas'],
-    fontes: [{ nome: 'Cormorant Garamond', uso: 'display' }, { nome: 'EB Garamond', uso: 'corpo' }],
+    fontes: [
+      {
+        id: 'vintage-1',
+        nome: 'Tempo de Ouro',
+        display: { nome: 'Cormorant Garamond', uso: 'display' },
+        corpo: { nome: 'EB Garamond', uso: 'corpo' },
+      },
+      {
+        id: 'vintage-2',
+        nome: 'Poeira de Estrelas',
+        display: { nome: 'Playfair Display', uso: 'display' },
+        corpo: { nome: 'Crimson Text', uso: 'corpo' },
+      },
+      {
+        id: 'vintage-3',
+        nome: 'Memoria de Lavanda',
+        display: { nome: 'Cormorant Garamond', uso: 'display' },
+        corpo: { nome: 'Libre Baskerville', uso: 'corpo' },
+      },
+      {
+        id: 'vintage-4',
+        nome: 'Hollywood Dourada',
+        display: { nome: 'Limelight', uso: 'display' },
+        corpo: { nome: 'Cormorant Infant', uso: 'corpo' },
+      },
+      {
+        id: 'vintage-5',
+        nome: 'Art Deco Revival',
+        display: { nome: 'Poiret One', uso: 'display' },
+        corpo: { nome: 'Cormorant Infant', uso: 'corpo' },
+      },
+    ],
     paleta: ['#E6E6FA', '#D8BFD8', '#8B6F5E'],
+  },
+  artdeco: {
+    flores: ['Orquídeas brancas', 'Rosas de jardim', 'Anémonas'],
+    iluminacao: { tipo: 'Lustres art deco + velas douradas', tom: 'quente' },
+    velas: ['Castiçais geométricos dourados', 'Velas altas em candelabros'],
+    mobiliario: { cadeiras: 'Veludo com costura channel', mesas: 'Redondas com toalhas seda' },
+    toalha: 'Seda ou cetim com bordado geométrico',
+    loucas: 'Porcelana branca com filete preto e dourado',
+    talheres: 'Dourado art deco com cabo geométrico',
+    tacas: 'Cristal com corte diamante',
+    centroMesa: 'Arranjo baixo em vasos geométricos dourados',
+    guardanapo: 'Seda dobrado em leque',
+    bolo: 'Branco com detalhes geométricos dourados e espelhados',
+    saboresBolo: ['Champagne', 'Baunilha com ouro comestível', 'Framboesa'],
+    embalagem: 'Caixa preta com hot stamping dourado geométrico',
+    vestido: ['Corte sereia em cetim', 'Decote profundo nas costas', 'Detalhes em franja art deco'],
+    fontes: [
+      {
+        id: 'artdeco-1',
+        nome: 'Gatsby',
+        display: { nome: 'Limelight', uso: 'display' },
+        corpo: { nome: 'Poiret One', uso: 'corpo' },
+      },
+      {
+        id: 'artdeco-2',
+        nome: 'Grande Hotel',
+        display: { nome: 'Poiret One', uso: 'display' },
+        corpo: { nome: 'Cormorant Infant', uso: 'corpo' },
+      },
+    ],
+    paleta: ['#0A0A0A', '#D4AF37', '#F5F0EB'],
   },
 };
 
+// ============================================================
+// FUNCOES DE SUGESTAO — Compatibilidade + Expansao
+// ============================================================
+
 /**
- * Sugere flores com base no estilo escolhido
+ * Sugere o PRIMEIRO par de fontes do estilo (compatibilidade com codigo antigo)
+ * Retorna formato antigo: array de 2 objetos [{nome, uso}, {nome, uso}]
  * @param {string} estilo
- * @returns {string[]}
+ * @returns {Array<{nome: string, uso: string}>}
  */
+export function sugerirFontes(estilo) {
+  const opcoes = MAPA_ESTILO[estilo]?.fontes;
+  if (!opcoes || opcoes.length === 0) {
+    return [
+      { nome: 'Cormorant Garamond', uso: 'display' },
+      { nome: 'DM Sans', uso: 'corpo' },
+    ];
+  }
+  const primeiro = opcoes[0];
+  return [
+    { nome: primeiro.display.nome, uso: primeiro.display.uso },
+    { nome: primeiro.corpo.nome, uso: primeiro.corpo.uso },
+  ];
+}
+
+/**
+ * Retorna TODAS as opcoes de pares de fontes para um estilo
+ * Usado pelo novo step de escolha de fontes
+ * @param {string} estilo
+ * @returns {Array<{id: string, nome: string, display: object, corpo: object}>}
+ */
+export function sugerirOpcoesFontes(estilo) {
+  return MAPA_ESTILO[estilo]?.fontes || [];
+}
+
+/**
+ * Retorna um par especifico de fontes pelo ID
+ * Usado quando o casal ja escolheu uma combinacao
+ * @param {string} estilo
+ * @param {string} parId
+ * @returns {object|null}
+ */
+export function getParFontes(estilo, parId) {
+  const opcoes = MAPA_ESTILO[estilo]?.fontes;
+  if (!opcoes) return null;
+  return opcoes.find((par) => par.id === parId) || opcoes[0] || null;
+}
+
+/**
+ * Retorna a classe CSS para um par de fontes
+ * Usada pelo VisualEngine para aplicar a fonte dinamicamente
+ * @param {string} estilo
+ * @param {string} parId
+ * @returns {string}
+ */
+export function getClasseFonte(estilo, parId) {
+  if (!estilo || !parId) return '';
+  return `fonte-par-${estilo}-${parId.split('-').pop()}`;
+}
+
+// ============================================================
+// FUNCOES EXISTENTES (mantidas para compatibilidade)
+// ============================================================
+
 export function sugerirFlores(estilo) {
   return MAPA_ESTILO[estilo]?.flores || [];
 }
 
-/**
- * Sugere iluminação com base no estilo e horário
- * @param {string} estilo
- * @param {string} horario — 'diurno' | 'por-do-sol' | 'noturno'
- * @returns {{tipo: string, tom: string}}
- */
 export function sugerirIluminacao(estilo, horario) {
   const base = MAPA_ESTILO[estilo]?.iluminacao || { tipo: 'Spots quentes', tom: 'quente' };
-  if (horario === 'diurno') return { ...base, tipo: `${base.tipo} (complementar à luz natural)` };
-  if (horario === 'por-do-sol') return { ...base, tipo: `${base.tipo} (golden hour integrado)` };
+  if (horario && (horario.includes('noite') || horario.includes('tarde'))) {
+    return { ...base, intensidade: 'forte' };
+  }
   return base;
 }
 
-/**
- * Sugere tipos de velas com base no estilo
- * @param {string} estilo
- * @returns {string[]}
- */
 export function sugerirVelas(estilo) {
   return MAPA_ESTILO[estilo]?.velas || [];
 }
 
-/**
- * Sugere mobiliário com base no estilo
- * @param {string} estilo
- * @returns {{cadeiras: string, mesas: string}}
- */
 export function sugerirMobiliario(estilo) {
   return MAPA_ESTILO[estilo]?.mobiliario || { cadeiras: 'Padrão', mesas: 'Padrão' };
 }
 
-/**
- * Sugere toalha com base no estilo e paleta
- * @param {string} estilo
- * @param {string[]} paleta
- * @returns {string}
- */
-export function sugerirToalha(estilo, paleta) {
+export function sugerirToalha(estilo) {
   return MAPA_ESTILO[estilo]?.toalha || 'Toalha branca clássica';
 }
 
-/**
- * Sugere louças com base no estilo
- * @param {string} estilo
- * @returns {string}
- */
 export function sugerirLoucas(estilo) {
   return MAPA_ESTILO[estilo]?.loucas || 'Louça branca padrão';
 }
 
-/**
- * Sugere talheres com base na paleta (temperatura das cores)
- * @param {string[]} paleta
- * @returns {string}
- */
-export function sugerirTalheres(paleta) {
-  if (!paleta || paleta.length === 0) return 'Talheres em inox';
-  const corBase = paleta[0].toLowerCase();
-  if (corBase.includes('ff') || corBase.includes('d4af') || corBase.includes('c8a')) return 'Dourado';
-  if (corBase.includes('00') || corBase.includes('1a17') || corBase.includes('2c2c')) return 'Preto fosco';
-  return 'Inox polido';
+export function sugerirTalheres(estilo) {
+  return MAPA_ESTILO[estilo]?.talheres || 'Talheres de inox';
 }
 
-/**
- * Sugere taças com base no estilo
- * @param {string} estilo
- * @returns {string}
- */
 export function sugerirTacas(estilo) {
   return MAPA_ESTILO[estilo]?.tacas || 'Taças de cristal';
 }
 
-/**
- * Sugere centro de mesa com base no estilo e pé direito
- * @param {string} estilo
- * @param {boolean} peeDireito — se o local tem pé direito alto
- * @returns {string}
- */
-export function sugerirCentroMesa(estilo, peeDireito) {
+export function sugerirCentroMesa(estilo, flores) {
   const base = MAPA_ESTILO[estilo]?.centroMesa || 'Arranjo floral clássico';
-  if (peeDireito) return `${base} (arranjo alto permitido pelo pé direito)`;
-  return `${base} (arranjo baixo para conversação)`;
-}
-
-/**
- * Sugere guardanapo com base no estilo
- * @param {string} estilo
- * @returns {string}
- */
-export function sugerirGuardanapo(estilo) {
-  return MAPA_ESTILO[estilo]?.guardanapo || 'Guardanapo de linho branco';
-}
-
-/**
- * Sugere bolo com base no estilo
- * @param {string} estilo
- * @returns {string}
- */
-export function sugerirBolo(estilo) {
-  return MAPA_ESTILO[estilo]?.bolo || 'Bolo branco clássico';
-}
-
-/**
- * Sugere sabores de bolo com base no estilo
- * @param {string} estilo
- * @returns {string[]}
- */
-export function sugerirSaboresBolo(estilo) {
-  return MAPA_ESTILO[estilo]?.saboresBolo || [];
-}
-
-/**
- * Sugere embalagem para bem-casados com base no estilo
- * @param {string} estilo
- * @returns {string}
- */
-export function sugerirEmbalagem(estilo) {
-  return MAPA_ESTILO[estilo]?.embalagem || 'Caixa branca clássica';
-}
-
-/**
- * Sugere opções de vestido/traje com base no estilo e perfil do casal
- * @param {string} estilo
- * @param {string} perfilCasal — 'noiva-noivo' | 'duas-noivas' | 'dois-noivos' | 'nao-especificar'
- * @returns {string[]}
- */
-export function sugerirVestido(estilo, perfilCasal) {
-  const base = MAPA_ESTILO[estilo]?.vestido || ['Clássico'];
-  if (perfilCasal === 'dois-noivos') {
-    return ['Terno slim', 'Smoking moderno', 'Traje de linho (se praia)'];
-  }
-  if (perfilCasal === 'duas-noivas') {
-    return [...base, 'Vestido complementar para segunda noiva'];
+  if (flores && flores.length > 0) {
+    return `${base} com ${flores[0].toLowerCase()}`;
   }
   return base;
 }
 
-/**
- * Sugere fontes com base no estilo
- * @param {string} estilo
- * @returns {{nome: string, uso: 'display'|'corpo'}[]}
- */
-export function sugerirFontes(estilo) {
-  return MAPA_ESTILO[estilo]?.fontes || [{ nome: 'Cormorant Garamond', uso: 'display' }, { nome: 'DM Sans', uso: 'corpo' }];
+export function sugerirGuardanapo(estilo) {
+  return MAPA_ESTILO[estilo]?.guardanapo || 'Guardanapo de linho branco';
 }
 
-/**
- * Sugere paleta de 3 cores com base no estilo
- * @param {string} estilo
- * @returns {string[]}
- */
-export function sugerirPaleta(estilo) {
-  return MAPA_ESTILO[estilo]?.paleta || ['#FFFFFF', '#F3F0EC', '#1A1714'];
+export function sugerirBolo(estilo) {
+  return MAPA_ESTILO[estilo]?.bolo || 'Bolo branco clássico';
 }
+
+export function sugerirSaboresBolo(estilo) {
+  return MAPA_ESTILO[estilo]?.saboresBolo || [];
+}
+
+export function sugerirEmbalagem(estilo) {
+  return MAPA_ESTILO[estilo]?.embalagem || 'Caixa branca clássica';
+}
+
+export function sugerirVestido(estilo) {
+  return MAPA_ESTILO[estilo]?.vestido || ['Clássico'];
+}
+
+export function getPaleta(estilo) {
+  return MAPA_ESTILO[estilo]?.paleta || ['#F5F0EB', '#D4AF37', '#8B6F5E'];
+}
+
+export { MAPA_ESTILO };
