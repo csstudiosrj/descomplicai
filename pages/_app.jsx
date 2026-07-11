@@ -7,6 +7,7 @@ import AcessibilidadeWidget from '../components/AcessibilidadeWidget';
 import '../styles/tokens.css';
 import '../styles/fontes.css';
 import '../styles/globals.css';
+import '../styles/cards.css';
 
 const NO_HEADER_ROUTES = ['/memorial', '/memorial/[...slug]', '/admin', '/admin/[...slug]'];
 

@@ -5,6 +5,7 @@
  * MUDANCA 07/07: aceita prop 'disabled' para bloquear interacao
  * quando modal de login esta aberto
  * MUDANCA 10/07: backgroundImage nos cards
+ * MUDANCA 10/07: troca JPG por SVG (step00.svg)
  */
 
 import React, { useState } from 'react';
@@ -16,10 +17,10 @@ import { getAssetPath } from '../../../utils/getAssetPath';
 export default function Step00Casal({ onSelect, estadoAtual, disabled = false }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
   const OPCOES = [
-    { valor: 'noiva-noivo', label: 'Noiva e Noivo', icone: 'heart', cor: 'var(--color-info-light)', imagem: 'card-00-casal.jpg' },
-    { valor: 'duas-noivas', label: 'Duas Noivas', icone: 'users', cor: 'var(--color-brand-lighter)', imagem: 'card-00-casal.jpg' },
-    { valor: 'dois-noivos', label: 'Dois Noivos', icone: 'users', cor: 'var(--color-brand-lighter)', imagem: 'card-00-casal.jpg' },
-    { valor: 'nao-especificar', label: 'Prefiro não especificar', icone: 'heart', cor: 'var(--color-info-light)', imagem: 'card-00-casal.jpg' },
+    { valor: 'noiva-noivo', label: 'Noiva e Noivo', icone: 'heart', cor: 'var(--color-info-light)', imagem: 'step00.svg' },
+    { valor: 'duas-noivas', label: 'Duas Noivas', icone: 'users', cor: 'var(--color-brand-lighter)', imagem: 'step00.svg' },
+    { valor: 'dois-noivos', label: 'Dois Noivos', icone: 'users', cor: 'var(--color-brand-lighter)', imagem: 'step00.svg' },
+    { valor: 'nao-especificar', label: 'Prefiro não especificar', icone: 'heart', cor: 'var(--color-info-light)', imagem: 'step00.svg' },
   ];
 
   const selecionado = estadoAtual?.perfilCasal;

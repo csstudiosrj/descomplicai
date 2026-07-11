@@ -1,0 +1,57 @@
+/* styles/cards.css */
+/* Garante que os cards de imagem nunca cortam em nenhuma tela */
+
+.card-imagem-container {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+  position: relative;
+}
+
+/* Mobile: quadrado */
+.card-imagem-container {
+  aspect-ratio: 1 / 1;
+  max-height: 300px;
+}
+
+/* Tablet: retangular */
+@media (min-width: 640px) {
+  .card-imagem-container {
+    aspect-ratio: 16 / 9;
+    max-height: 250px;
+  }
+}
+
+/* Desktop: banner */
+@media (min-width: 1024px) {
+  .card-imagem-container {
+    aspect-ratio: 21 / 9;
+    max-height: 200px;
+  }
+}
+
+.card-imagem {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* SVGs são sempre square e abstratos, então nunca cortam o conteúdo importante */
+.card-imagem[src*=".svg"] {
+  object-fit: cover;
+}
+
+/* Overlay gradiente para garantir legibilidade do texto */
+.card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.1) 0%,
+    rgba(255,255,255,0.5) 50%,
+    rgba(255,255,255,0.9) 100%
+  );
+  pointer-events: none;
+  border-radius: inherit;
+}
