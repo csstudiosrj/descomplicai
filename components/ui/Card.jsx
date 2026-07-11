@@ -1,3 +1,4 @@
+// components/ui/Card.jsx
 // Componente Card genérico — container reutilizável com variantes visuais
 // ARIA: role="article" para item de lista, role="button" quando interativo
 // MUDANÇA 10/07: suporte a backgroundImage para cards do memorial
@@ -10,106 +11,58 @@ export default function Card({
   padding = 'md',
   interactive = false,
   selected = false,
-  onClick,
+  disabled = false,
+  backgroundImage = null,
   children,
   className = '',
-  ariaLabel,
-  backgroundImage,
-  ...rest
+  ...props
 }) {
-  const isInteractive = interactive || !!onClick;
+  const baseClasses = 'relative overflow-hidden rounded-2xl transition-all duration-300';
 
-  const baseStyles = {
-    borderRadius: 'var(--radius-lg)',
-    transition: 'all var(--transition-base)',
-    cursor: isInteractive ? 'pointer' : 'default',
-    position: 'relative',
-    overflow: 'hidden',
+  const variantClasses = {
+    default: 'bg-white/80 backdrop-blur-sm border border-stone-200/50',
+    primary: 'bg-[#F5E6D3]/90 backdrop-blur-sm border border-[#C9A87C]/30',
+    secondary: 'bg-stone-100/80 backdrop-blur-sm border border-stone-200/50',
+    ghost: 'bg-transparent border-0',
+    outline: 'bg-transparent border-2 border-current',
+    memorial: 'bg-white/60 backdrop-blur-md border border-stone-200/30 shadow-sm'
   };
 
-  const variantStyles = {
-    default: { backgroundColor: 'var(--color-white)', boxShadow: 'var(--shadow-sm)', border: '1.5px solid transparent' },
-    elevated: { backgroundColor: 'var(--color-white)', boxShadow: 'var(--shadow-md)', border: '1.5px solid transparent' },
-    outlined: { backgroundColor: 'transparent', boxShadow: 'none', border: '1.5px solid var(--color-border)' },
-    flat: { backgroundColor: 'var(--color-surface)', boxShadow: 'none', border: '1.5px solid transparent' },
+  const paddingClasses = {
+    none: 'p-0',
+    xs: 'p-2',
+    sm: 'p-3',
+    md: 'p-4',
+    lg: 'p-6',
+    xl: 'p-8'
   };
 
-  const paddingStyles = {
-    none: { padding: '0' },
-    sm: { padding: 'var(--space-3)' },
-    md: { padding: 'var(--space-5)' },
-    lg: { padding: 'var(--space-8)' },
-  };
+  const stateClasses = [
+    interactive && !disabled && 'cursor-pointer hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]',
+    selected && 'ring-2 ring-[#C9A87C] shadow-lg scale-[1.02]',
+    disabled && 'opacity-50 cursor-not-allowed'
+  ].filter(Boolean).join(' ');
 
-  const selectedStyles = selected
-    ? { border: '2px solid var(--color-brand)', boxShadow: '0 0 0 4px var(--color-brand-lighter)' }
-    : {};
-
-  const [isHovered, setIsHovered] = React.useState(false);
-
-  const hoverStyles = isInteractive && isHovered && !selected
-    ? {
-        transform: 'translateY(-1px)',
-        boxShadow:
-          variant === 'default' ? 'var(--shadow-md)' :
-          variant === 'elevated' ? 'var(--shadow-lg)' :
-          variant === 'outlined' ? 'var(--shadow-sm)' :
-          'none',
-      }
-    : {};
-
-  const bgImageStyles = backgroundImage
-    ? {
-        backgroundImage: `url(${backgroundImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }
-    : {};
-
-  const combinedStyles = {
-    ...baseStyles,
-    ...variantStyles[variant],
-    ...paddingStyles[padding],
-    ...selectedStyles,
-    ...hoverStyles,
-    ...bgImageStyles,
-  };
+  const allClasses = `${baseClasses} ${variantClasses[variant] || variantClasses.default} ${paddingClasses[padding] || paddingClasses.md} ${stateClasses} ${className}`;
 
   return (
     <div
-      role={isInteractive ? 'button' : 'article'}
-      tabIndex={isInteractive ? 0 : undefined}
-      aria-pressed={isInteractive ? selected : undefined}
-      aria-label={ariaLabel}
-      onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onKeyDown={(e) => {
-        if (isInteractive && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault();
-          onClick?.();
-        }
-      }}
-      className={className}
-      style={combinedStyles}
-      {...rest}
+      role={interactive ? 'button' : 'article'}
+      aria-pressed={interactive ? selected : undefined}
+      aria-disabled={disabled}
+      tabIndex={interactive && !disabled ? 0 : -1}
+      className={allClasses}
+      style={backgroundImage ? {
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      } : undefined}
+      {...props}
     >
       {backgroundImage && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.15)',
-            borderRadius: 'var(--radius-lg)',
-            pointerEvents: 'none',
-            zIndex: 1,
-          }}
-        />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/60 to-white/90 pointer-events-none" />
       )}
-      <div style={{ position: 'relative', zIndex: 2 }}>
+      <div className="relative z-10">
         {children}
       </div>
     </div>
@@ -117,15 +70,12 @@ export default function Card({
 }
 
 Card.propTypes = {
-  variant: PropTypes.oneOf(['default', 'elevated', 'outlined', 'flat']),
-  padding: PropTypes.oneOf(['none', 'sm', 'md', 'lg']),
+  variant: PropTypes.oneOf(['default', 'primary', 'secondary', 'ghost', 'outline', 'memorial']),
+  padding: PropTypes.oneOf(['none', 'xs', 'sm', 'md', 'lg', 'xl']),
   interactive: PropTypes.bool,
   selected: PropTypes.bool,
-  onClick: PropTypes.func,
-  children: PropTypes.node,
-  className: PropTypes.string,
-  ariaLabel: PropTypes.string,
+  disabled: PropTypes.bool,
   backgroundImage: PropTypes.string,
+  children: PropTypes.node,
+  className: PropTypes.string
 };
-
-export { Card };

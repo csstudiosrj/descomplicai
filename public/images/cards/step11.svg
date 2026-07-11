@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="80%">
+      <stop offset="0%" stop-color="#F5F0E8" />
+      <stop offset="60%" stop-color="#E8DDD0" />
+      <stop offset="100%" stop-color="#D4C4B0" />
+    </radialGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="60"/></filter>
+  </defs>
+  <rect width="1200" height="1200" fill="url(#bg)"/>
+  <circle cx="531" cy="293" r="100" fill="#A89078" opacity="0.07" filter="url(#blur)"/><circle cx="1026" cy="383" r="96" fill="#F5F0E8" opacity="0.08" filter="url(#blur)"/><circle cx="826" cy="1006" r="196" fill="#F5F0E8" opacity="0.15" filter="url(#blur)"/><circle cx="207" cy="963" r="102" fill="#A89078" opacity="0.14" filter="url(#blur)"/><circle cx="473" cy="566" r="136" fill="#8B7355" opacity="0.11" filter="url(#blur)"/>
+  <path d="M666,522 L666,492 L726,492 L726,522" fill="none" stroke="#A89078" stroke-width="2.5" opacity="0.3"/>
+  <g opacity="0.06">
+    <circle cx="204" cy="238" r="3" fill="#A89078"/><circle cx="877" cy="96" r="2" fill="#A89078"/><circle cx="800" cy="761" r="1" fill="#A89078"/><circle cx="515" cy="637" r="1" fill="#A89078"/><circle cx="351" cy="543" r="1" fill="#A89078"/><circle cx="440" cy="1053" r="2" fill="#A89078"/><circle cx="461" cy="54" r="1" fill="#A89078"/><circle cx="743" cy="794" r="2" fill="#A89078"/><circle cx="259" cy="469" r="1" fill="#A89078"/><circle cx="73" cy="510" r="3" fill="#A89078"/><circle cx="1015" cy="159" r="2" fill="#A89078"/><circle cx="568" cy="324" r="2" fill="#A89078"/><circle cx="388" cy="976" r="1" fill="#A89078"/><circle cx="462" cy="877" r="2" fill="#A89078"/><circle cx="641" cy="1111" r="3" fill="#A89078"/>
+  </g>
+</svg>
