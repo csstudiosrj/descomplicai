@@ -4,23 +4,20 @@
  * Etapa 0 do memorial — coleta dos dados do casal (perfil)
  * MUDANCA 07/07: aceita prop 'disabled' para bloquear interacao
  * quando modal de login esta aberto
- * MUDANCA 10/07: backgroundImage nos cards
- * MUDANCA 10/07: troca JPG por SVG (step00.svg)
  */
 
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
-import { getAssetPath } from '../../../utils/getAssetPath';
 
 export default function Step00Casal({ onSelect, estadoAtual, disabled = false }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
   const OPCOES = [
-    { valor: 'noiva-noivo', label: 'Noiva e Noivo', icone: 'heart', cor: 'var(--color-info-light)', imagem: 'step00.svg' },
-    { valor: 'duas-noivas', label: 'Duas Noivas', icone: 'users', cor: 'var(--color-brand-lighter)', imagem: 'step00.svg' },
-    { valor: 'dois-noivos', label: 'Dois Noivos', icone: 'users', cor: 'var(--color-brand-lighter)', imagem: 'step00.svg' },
-    { valor: 'nao-especificar', label: 'Prefiro não especificar', icone: 'heart', cor: 'var(--color-info-light)', imagem: 'step00.svg' },
+    { valor: 'noiva-noivo', label: 'Noiva e Noivo', icone: 'heart', cor: 'var(--color-info-light)' },
+    { valor: 'duas-noivas', label: 'Duas Noivas', icone: 'users', cor: 'var(--color-brand-lighter)' },
+    { valor: 'dois-noivos', label: 'Dois Noivos', icone: 'users', cor: 'var(--color-brand-lighter)' },
+    { valor: 'nao-especificar', label: 'Prefiro não especificar', icone: 'heart', cor: 'var(--color-info-light)' },
   ];
 
   const selecionado = estadoAtual?.perfilCasal;
@@ -101,7 +98,6 @@ export default function Step00Casal({ onSelect, estadoAtual, disabled = false })
                 aria-checked={isSelected}
                 aria-label={opcao.label}
                 tabIndex={disabled ? -1 : 0}
-                backgroundImage={getAssetPath(`/images/cards/${opcao.imagem}`)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
