@@ -1,6 +1,5 @@
 // Componente Card genérico — container reutilizável com variantes visuais
 // ARIA: role="article" para item de lista, role="button" quando interativo
-// MUDANÇA 10/07: suporte a backgroundImage para cards do memorial
 
 import React from 'react';
 import PropTypes from 'prop-types';
@@ -14,7 +13,6 @@ export default function Card({
   children,
   className = '',
   ariaLabel,
-  backgroundImage,
   ...rest
 }) {
   const isInteractive = interactive || !!onClick;
@@ -24,7 +22,6 @@ export default function Card({
     transition: 'all var(--transition-base)',
     cursor: isInteractive ? 'pointer' : 'default',
     position: 'relative',
-    overflow: 'hidden',
   };
 
   const variantStyles = {
@@ -58,21 +55,12 @@ export default function Card({
       }
     : {};
 
-  const bgImageStyles = backgroundImage
-    ? {
-        backgroundImage: `url(${backgroundImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }
-    : {};
-
   const combinedStyles = {
     ...baseStyles,
     ...variantStyles[variant],
     ...paddingStyles[padding],
     ...selectedStyles,
     ...hoverStyles,
-    ...bgImageStyles,
   };
 
   return (
@@ -94,24 +82,7 @@ export default function Card({
       style={combinedStyles}
       {...rest}
     >
-      {backgroundImage && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.15)',
-            borderRadius: 'var(--radius-lg)',
-            pointerEvents: 'none',
-            zIndex: 1,
-          }}
-        />
-      )}
-      <div style={{ position: 'relative', zIndex: 2 }}>
-        {children}
-      </div>
+      {children}
     </div>
   );
 }
@@ -125,7 +96,6 @@ Card.propTypes = {
   children: PropTypes.node,
   className: PropTypes.string,
   ariaLabel: PropTypes.string,
-  backgroundImage: PropTypes.string,
 };
 
 export { Card };
