@@ -2,6 +2,7 @@
 // Componente Card genérico — container reutilizável com variantes visuais
 // ARIA: role="article" para item de lista, role="button" quando interativo
 // MUDANÇA 10/07: suporte a backgroundImage para cards do memorial
+// MUDANÇA 11/07: remove overlay branco opaco para SVG aparecer
 
 import React from 'react';
 import PropTypes from 'prop-types';
@@ -59,9 +60,7 @@ export default function Card({
       } : undefined}
       {...props}
     >
-      {backgroundImage && (
-        <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/60 to-white/90 pointer-events-none" />
-      )}
+      {/* Overlay removido — SVG agora visível */}
       <div className="relative z-10">
         {children}
       </div>
