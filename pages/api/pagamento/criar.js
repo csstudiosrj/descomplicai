@@ -24,6 +24,8 @@ const PRECO_FORNECEDOR = {
 };
 
 // ─── DURAÇÃO DOS PLANOS DE ASSINATURA (meses) ───
+const LINK_FIXO_PDF = 'https://mpago.la/1Rzicb2';
+
 const DURACAO_PLANOS = {
   mensal: 1,
   '3_meses': 3,
@@ -109,6 +111,14 @@ async function _handler(req, res) {
       external_reference: externalRef,
       criado_em: new Date().toISOString(),
     });
+
+    if (tipo === 'memorial_pdf') {
+      return res.status(200).json({
+        success: true,
+        checkoutUrl: LINK_FIXO_PDF,
+        externalReference: externalRef,
+      });
+    }
 
     const preference = new Preference(client);
 
