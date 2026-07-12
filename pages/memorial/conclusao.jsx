@@ -12,6 +12,7 @@ import Icon from '../../components/ui/Icon';
 import MarkdownRenderer from '../../components/ui/MarkdownRenderer';
 import { temAcessoPainel } from '../../utils/acesso';
 import fetchAPI from '../../utils/fetchAPI';
+import CheckoutBricks from '../../components/pagamento/CheckoutBricks';
 
 const PLANOS_ASSINATURA = [
   { id: 'mensal', label: 'Mensal', preco: 'R$59,90/mes', duracao: 1 },
@@ -40,8 +41,10 @@ export default function ConclusaoPage() {
   const [aceiteTermosAssinatura, setAceiteTermosAssinatura] = useState(false);
   const [planoSelecionado, setPlanoSelecionado] = useState('mensal');
   const [iniciandoTrial, setIniciandoTrial] = useState(false);
+  const [paymentData, setPaymentData] = useState(null);
+  const [paymentError, setPaymentError] = useState(null);
 
-  // FIX: flag para evitar múltiplas chamadas do useEffect
+  // FIX: flag para evitar multiplas chamadas do useEffect
   const gerandoRef = useRef(false);
 
   const { pagamento, tipo: tipoProduto, concluido, collection_status } = router.query;
@@ -74,10 +77,10 @@ export default function ConclusaoPage() {
     }
   }, [isMounted, isHydrated]);
 
-  // FIX: useEffect de geração do memorial com flag anti-loop e timeout
+  // FIX: useEffect de geracao do memorial com flag anti-loop e timeout
   useEffect(() => {
     if (!estado || !estado.etapaAtual || status !== 'carregando') return;
-    if (gerandoRef.current) return; // já está gerando
+    if (gerandoRef.current) return; // ja esta gerando
 
     gerandoRef.current = true;
 
@@ -123,7 +126,7 @@ export default function ConclusaoPage() {
 
         if (err.name === 'AbortError') {
           console.error('[Conclusao] Timeout ao gerar memorial');
-          setErro('O servidor demorou muito para responder. Tente recarregar a página.');
+          setErro('O servidor demorou muito para responder. Tente recarregar a pagina.');
         } else {
           console.error('[Conclusao] Erro ao gerar memorial:', err.message);
           setErro(err.message || 'Erro ao gerar o memorial. Tente novamente.');
@@ -208,86 +211,78 @@ export default function ConclusaoPage() {
     }
   };
 
-  // FIX: garante que email sempre tem valor válido
-  const handleComprarPDF = async () => {
+  // FIX: funcao helper para criar pagamento via Bricks
+  const criarPagamentoBricks = async (tipo, plano = null) => {
     if (!user?.id || !evento?.id) { alert('Faca login primeiro para continuar.'); return; }
+
+    const payloadMemorial = montarPayloadMemorial(estado);
+    const dadosEvento = {
+      ...payloadMemorial,
+      email: user?.email || 'teste@email.com',
+      nomes: {
+        noiva: estado.nomeNoiva || estado.nomePessoa1 || 'Noiva',
+        noivo: estado.nomeNoivo || estado.nomePessoa2 || 'Noivo',
+      }
+    };
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+
+    const body = {
+      tipo,
+      usuarioId: user.id,
+      eventoId: evento.id,
+      dadosEvento,
+      ...(plano && { plano }),
+    };
+
+    const resposta = await fetchAPI('/api/pagamento/bricks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await resposta.json();
+
+    if (data.preferenceId && data.publicKey) {
+      setPaymentData({
+        preferenceId: data.preferenceId,
+        publicKey: data.publicKey,
+        tipo,
+      });
+    } else {
+      throw new Error(data.erro || data.error || 'Erro ao iniciar pagamento');
+    }
+  };
+
+  const handleComprarPDF = async () => {
     if (!aceiteTermosPDF) { alert('Aceite os termos para continuar.'); return; }
     setPagando(true);
+    setPaymentError(null);
     try {
-      const payloadMemorial = montarPayloadMemorial(estado);
-      // FIX: garante email válido — usa user.email como fallback principal
-      const dadosEvento = {
-        ...payloadMemorial,
-        email: user?.email || 'teste@email.com',
-        nomes: {
-          noiva: estado.nomeNoiva || estado.nomePessoa1 || 'Noiva',
-          noivo: estado.nomeNoivo || estado.nomePessoa2 || 'Noivo',
-        }
-      };
-
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-
-      console.log('[Conclusao] Criando pagamento PDF...', { usuarioId: user.id, eventoId: evento.id });
-
-      const resposta = await fetchAPI('/api/pagamento/criar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-        body: JSON.stringify({ tipo: 'memorial_pdf', usuarioId: user.id, eventoId: evento.id, dadosEvento }),
-      });
-
-      const data = await resposta.json();
-      console.log('[Conclusao] Resposta pagamento:', { status: resposta.status, hasCheckoutUrl: !!data.checkoutUrl });
-
-      if (data.checkoutUrl) { 
-        window.location.href = data.checkoutUrl; 
-      } else { 
-        alert(data.erro || data.error || 'Erro ao iniciar pagamento'); 
-      }
+      await criarPagamentoBricks('memorial_pdf');
     } catch (err) {
       console.error('[Conclusao] Erro ao comprar PDF:', err);
-      alert('Erro ao iniciar pagamento. Tente novamente.');
+      setPaymentError(err.message);
+      alert(err.message || 'Erro ao iniciar pagamento. Tente novamente.');
     } finally {
       setPagando(false);
     }
   };
 
   const handleComprarAssinatura = async () => {
-    if (!user?.id || !evento?.id) { alert('Faca login primeiro para continuar.'); return; }
     if (!aceiteTermosAssinatura) { alert('Aceite os termos para continuar.'); return; }
     setPagando(true);
+    setPaymentError(null);
     try {
-      const payloadMemorial = montarPayloadMemorial(estado);
-      const dadosEvento = {
-        ...payloadMemorial,
-        email: user?.email || 'teste@email.com',
-        nomes: {
-          noiva: estado.nomeNoiva || estado.nomePessoa1 || 'Noiva',
-          noivo: estado.nomeNoivo || estado.nomePessoa2 || 'Noivo',
-        }
-      };
-
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-
-      const resposta = await fetchAPI('/api/pagamento/criar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-        body: JSON.stringify({ tipo: 'assinatura', plano: planoSelecionado, usuarioId: user.id, eventoId: evento.id, dadosEvento }),
-      });
-
-      const data = await resposta.json();
-      if (data.checkoutUrl) { window.location.href = data.checkoutUrl; }
-      else { alert(data.erro || 'Erro ao iniciar pagamento'); }
+      await criarPagamentoBricks('assinatura', planoSelecionado);
     } catch (err) {
-      console.error(err);
-      alert('Erro ao iniciar pagamento. Tente novamente.');
+      console.error('[Conclusao] Erro ao comprar assinatura:', err);
+      setPaymentError(err.message);
+      alert(err.message || 'Erro ao iniciar pagamento. Tente novamente.');
     } finally {
       setPagando(false);
     }
@@ -360,6 +355,25 @@ export default function ConclusaoPage() {
           )}
         </div>
 
+        {/* Checkout Bricks - aparece quando o usuario clica em comprar */}
+        {paymentData && (
+          <div style={{ marginBottom: 'var(--space-6)' }}>
+            <CheckoutBricks
+              preferenceId={paymentData.preferenceId}
+              publicKey={paymentData.publicKey}
+              onPaymentSuccess={(data) => {
+                setPaymentData(null);
+                router.push(`/memorial/conclusao?pagamento=sucesso&tipo=${paymentData.tipo}`);
+              }}
+              onPaymentError={(err) => {
+                setPaymentData(null);
+                setPaymentError(err);
+                alert('Erro no pagamento. Tente novamente.');
+              }}
+            />
+          </div>
+        )}
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
           {pdfLiberado ? (
             <>
@@ -372,10 +386,10 @@ export default function ConclusaoPage() {
             <>
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', cursor: 'pointer' }}>
                 <input type="checkbox" checked={aceiteTermosPDF} onChange={(e) => setAceiteTermosPDF(e.target.checked)} style={{ marginTop: '2px' }} />
-                <span>Entendo que este PDF é personalizado para o meu casamento com base nas minhas respostas, é gerado e entregue imediatamente após a confirmação do pagamento, e que, por sua natureza personalizada, não há devolução após a geração.</span>
+                <span>Entendo que este PDF e personalizado para o meu casamento com base nas minhas respostas, e gerado e entregue imediatamente apos a confirmacao do pagamento, e que, por sua natureza personalizada, nao ha devolucao apos a geracao.</span>
               </label>
               <Button variant="primary" size="lg" fullWidth loading={pagando} onClick={handleComprarPDF}>
-                {pagando ? 'Redirecionando...' : 'Baixar PDF completo — R$197'}
+                {pagando ? 'Carregando pagamento...' : 'Baixar PDF completo — R$197'}
               </Button>
             </>
           )}
@@ -384,9 +398,9 @@ export default function ConclusaoPage() {
             <>
               {pdfLiberado && (
                 <div style={{ padding: '24px', backgroundColor: 'rgba(16,185,129,0.05)', borderRadius: '16px', border: '1px solid rgba(16,185,129,0.35)', marginTop: '16px' }}>
-                  <p style={{ fontSize: '11px', color: '#0b7a56', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', fontFamily: 'var(--font-body)' }}>gestão completa</p>
+                  <p style={{ fontSize: '11px', color: '#0b7a56', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', fontFamily: 'var(--font-body)' }}>gestao completa</p>
                   <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '21px', color: '#1a1714', marginBottom: '12px', lineHeight: '1.3', fontWeight: 600 }}>Coloque seu casamento no painel</h3>
-                  <p style={{ fontSize: '14px', color: '#5c534a', marginBottom: '20px', lineHeight: '1.5', fontFamily: 'var(--font-body)' }}>Fornecedores, orçamento e prazos, tudo num só lugar, até o grande dia.</p>
+                  <p style={{ fontSize: '14px', color: '#5c534a', marginBottom: '20px', lineHeight: '1.5', fontFamily: 'var(--font-body)' }}>Fornecedores, orcamento e prazos, tudo num so lugar, ate o grande dia.</p>
 
                   {!trialJaIniciado ? (
                     <button
@@ -410,7 +424,7 @@ export default function ConclusaoPage() {
                         opacity: iniciandoTrial ? 0.7 : 1,
                       }}
                     >
-                      {iniciandoTrial ? 'Iniciando...' : 'Testar grátis por 7 dias'}
+                      {iniciandoTrial ? 'Iniciando...' : 'Testar gratis por 7 dias'}
                       {!iniciandoTrial && <span style={{ fontSize: '18px' }}>→</span>}
                     </button>
                   ) : (
@@ -438,7 +452,7 @@ export default function ConclusaoPage() {
                     </button>
                   )}
 
-                  <p style={{ textAlign: 'center', fontSize: '12px', color: '#8b7e6e', marginTop: '12px', fontFamily: 'var(--font-body)' }}>sem cartão de crédito · sem compromisso</p>
+                  <p style={{ textAlign: 'center', fontSize: '12px', color: '#8b7e6e', marginTop: '12px', fontFamily: 'var(--font-body)' }}>sem cartao de credito · sem compromisso</p>
                 </div>
               )}
 
@@ -450,9 +464,9 @@ export default function ConclusaoPage() {
                     </Button>
                   ) : (
                     <div style={{ padding: '24px', backgroundColor: 'rgba(16,185,129,0.05)', borderRadius: '16px', border: '1px solid rgba(16,185,129,0.35)', marginTop: '16px' }}>
-                      <p style={{ fontSize: '11px', color: '#0b7a56', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', fontFamily: 'var(--font-body)' }}>gestão completa</p>
+                      <p style={{ fontSize: '11px', color: '#0b7a56', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', fontFamily: 'var(--font-body)' }}>gestao completa</p>
                       <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '21px', color: '#1a1714', marginBottom: '12px', lineHeight: '1.3', fontWeight: 600 }}>Coloque seu casamento no painel</h3>
-                      <p style={{ fontSize: '14px', color: '#5c534a', marginBottom: '20px', lineHeight: '1.5', fontFamily: 'var(--font-body)' }}>Fornecedores, orçamento e prazos, tudo num só lugar, até o grande dia.</p>
+                      <p style={{ fontSize: '14px', color: '#5c534a', marginBottom: '20px', lineHeight: '1.5', fontFamily: 'var(--font-body)' }}>Fornecedores, orcamento e prazos, tudo num so lugar, ate o grande dia.</p>
                       <button
                         onClick={() => setModalPlanos(true)}
                         style={{
@@ -475,7 +489,7 @@ export default function ConclusaoPage() {
                         Assinar painel — escolha seu plano
                         <span style={{ fontSize: '18px' }}>→</span>
                       </button>
-                      <p style={{ textAlign: 'center', fontSize: '12px', color: '#8b7e6e', marginTop: '12px', fontFamily: 'var(--font-body)' }}>sem cartão de crédito · sem compromisso</p>
+                      <p style={{ textAlign: 'center', fontSize: '12px', color: '#8b7e6e', marginTop: '12px', fontFamily: 'var(--font-body)' }}>sem cartao de credito · sem compromisso</p>
                     </div>
                   )}
                 </>
@@ -519,7 +533,7 @@ export default function ConclusaoPage() {
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setModalPlanos(false)} style={styles.btnSecondary}>Cancelar</button>
               <button onClick={handleComprarAssinatura} style={styles.btnPrimary}>
-                {pagando ? 'Redirecionando...' : 'Continuar'}
+                {pagando ? 'Carregando pagamento...' : 'Continuar'}
               </button>
             </div>
           </div>
