@@ -177,7 +177,6 @@ SUPABASE_SERVICE_ROLE_KEY
 MP_ACCESS_TOKEN (manter mas não usar no SDK)
 NEXT_PUBLIC_SITE_URL=https://arxum.csstudios.site/descomplicai
 NEXT_PUBLIC_BASE_PATH=/descomplicai
-ANTHROPIC_API_KEY
 ```
 
 ---

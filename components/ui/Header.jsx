@@ -14,10 +14,7 @@ export default function Header() {
   const closeTimer = useRef(null);
 
   // Detecta se estamos no fluxo do memorial
-  const isMemorial = router.pathname.startsWith('/memorial');
-
-  // Define para onde o logo deve apontar
-  const logoHref = isMemorial && user ? '/painel' : '/';
+  const noMemorial = router.pathname.includes('/memorial');
 
   const handleLogout = async () => {
     await signOut();
@@ -44,12 +41,31 @@ export default function Header() {
     closeTimer.current = setTimeout(() => setDropdownAberto(false), 150);
   };
 
+  const handleLogoClick = () => {
+    setMenuAberto(false);
+    if (noMemorial && user) {
+      // Logado no memorial: vai pro painel (SPA navigation, preserva estado)
+      router.push('/painel');
+    } else if (noMemorial) {
+      // Deslogado no memorial: reload completo pra home
+      window.location.href = '/';
+    } else {
+      // Fora do memorial: navegacao normal SPA pra home
+      router.push('/');
+    }
+  };
+
   return (
     <header className="header">
       <div className="header-container">
-        <Link href={logoHref} className="header-logo-link" onClick={() => setMenuAberto(false)}>
+        <button
+          className="header-logo-link"
+          onClick={handleLogoClick}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          aria-label="Descomplicaí"
+        >
           <Logo />
-        </Link>
+        </button>
 
         <nav className={`header-nav ${menuAberto ? 'header-nav--open' : ''}`} aria-label="Navegacao principal">
           <ul className="header-nav-list">
