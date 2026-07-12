@@ -4,6 +4,7 @@
  * Modal de login/cadastro embutido no fluxo do memorial.
  * CORRECAO 07/07: Adiciona emailRedirectTo no cadastro para
  * redirecionar corretamente apos confirmacao de email.
+ * CORRECAO 12/07: Cria evento automatico apos cadastro confirmado.
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -74,6 +75,50 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
   }, [isOpen, resetarFormulario]);
 
   // ============================================================
+  // Cria evento automatico se nao existir, depois fecha modal
+  // ============================================================
+  const handleLoginSuccessComEvento = useCallback(async () => {
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session?.user?.id) {
+        console.error('Sessao nao encontrada apos login:', sessionError);
+        onLoginSuccess();
+        return;
+      }
+
+      const { data: eventoExistente } = await supabase
+        .from('eventos')
+        .select('id')
+        .eq('usuario_id', session.user.id)
+        .single();
+
+      if (!eventoExistente) {
+        const { error: insertError } = await supabase.from('eventos').insert({
+          usuario_id: session.user.id,
+          nome_evento: 'Meu Casamento',
+          status: 'memorial',
+          plano: 'trial',
+          acesso_iniciado_em: new Date().toISOString(),
+          acesso_expira_em: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          criado_em: new Date().toISOString(),
+        });
+
+        if (insertError) {
+          console.error('Erro ao criar evento automatico:', insertError);
+        } else {
+          console.log('Evento criado com sucesso para usuario:', session.user.id);
+        }
+      } else {
+        console.log('Evento ja existente para usuario:', session.user.id);
+      }
+    } catch (e) {
+      console.error('Erro no fluxo de criacao de evento:', e);
+    } finally {
+      onLoginSuccess();
+    }
+  }, [supabase, onLoginSuccess]);
+
+  // ============================================================
   // Polling de sessao: detecta confirmacao de email em outra aba
   // ============================================================
   const iniciarPollingSessao = useCallback(() => {
@@ -89,7 +134,7 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
             clearInterval(intervalRef.current);
             intervalRef.current = null;
           }
-          onLoginSuccess();
+          await handleLoginSuccessComEvento();
         }
       } catch (e) {
         // Silencioso
@@ -98,7 +143,7 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
 
     verificar();
     intervalRef.current = setInterval(verificar, 3000);
-  }, [supabase, onLoginSuccess]);
+  }, [supabase, handleLoginSuccessComEvento]);
 
   // ============================================================
   // Login
@@ -113,11 +158,11 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
       if (error) throw error;
 
       if (data?.session?.access_token) {
-        onLoginSuccess();
+        await handleLoginSuccessComEvento();
         return;
       }
 
-      setErro('Não foi possível iniciar a sessão. Tente novamente.');
+      setErro('Nao foi possivel iniciar a sessao. Tente novamente.');
       setLoading(false);
     } catch (err) {
       setErro(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
@@ -152,7 +197,7 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
 
       if (session?.access_token) {
         // Confirmacao automatica (ambiente de dev)
-        onLoginSuccess();
+        await handleLoginSuccessComEvento();
         return;
       }
 
@@ -195,12 +240,12 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
           clearInterval(intervalRef.current);
           intervalRef.current = null;
         }
-        onLoginSuccess();
+        await handleLoginSuccessComEvento();
         return;
       }
-      setErro('Ainda não detectamos a confirmação. Verifique seu email e clique no link.');
+      setErro('Ainda nao detectamos a confirmacao. Verifique seu email e clique no link.');
     } catch (err) {
-      setErro('Erro ao verificar sessão. Tente novamente.');
+      setErro('Erro ao verificar sessao. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -214,7 +259,7 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
       <Modal
         isOpen={isOpen}
         onClose={() => { /* obrigatorio */ }}
-        title="Quase lá!"
+        title="Quase la!"
         size="md"
         hideCloseButton={true}
       >
@@ -265,13 +310,13 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
               lineHeight: 1.6,
               fontSize: 'var(--text-base)',
             }}>
-              Enviamos um link de confirmação para{' '}
+              Enviamos um link de confirmacao para{' '}
               <strong style={{ color: 'var(--color-text-primary)' }}>{emailConfirmacao}</strong>.
               <br /><br />
               Clique no link do email para ativar sua conta e continuar planejando seu casamento.
               <br /><br />
               <em style={{ fontSize: 'var(--text-sm)' }}>
-                Assim que confirmar, o memorial continuará automaticamente.
+                Assim que confirmar, o memorial continuara automaticamente.
               </em>
             </p>
           </div>
@@ -301,9 +346,9 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
               paddingLeft: 'var(--space-5)',
               margin: 0,
             }}>
-              <li>Verifique sua caixa de <strong>spam</strong> ou <strong>promoções</strong></li>
+              <li>Verifique sua caixa de <strong>spam</strong> ou <strong>promocoes</strong></li>
               <li>O link expira em 24 horas</li>
-              <li>Se não recebeu, clique em reenviar abaixo</li>
+              <li>Se nao recebeu, clique em reenviar abaixo</li>
               <li>Pode confirmar em qualquer dispositivo</li>
             </ul>
           </div>
@@ -333,7 +378,7 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
               loading={loading}
               onClick={handleVerificarAgora}
             >
-              Já confirmei — verificar agora
+              Ja confirmei — verificar agora
             </Button>
             <Button
               variant="ghost"
@@ -342,7 +387,7 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
               loading={loading}
               onClick={handleReenviarEmail}
             >
-              Reenviar email de confirmação
+              Reenviar email de confirmacao
             </Button>
           </div>
         </div>
@@ -368,7 +413,7 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
           color: 'var(--color-text-primary)',
           marginBottom: 'var(--space-1)',
         }}>
-          Descomplicaí
+          Descomplicai
         </h2>
         <p style={{
           fontFamily: 'var(--font-body)',
@@ -439,11 +484,11 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
         <Input
           label="Senha"
           type="password"
-          placeholder="Mínimo 6 caracteres"
+          placeholder="Minimo 6 caracteres"
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
           required
-          hint={abaAtiva === 'cadastrar' ? 'Mínimo 6 caracteres' : undefined}
+          hint={abaAtiva === 'cadastrar' ? 'Minimo 6 caracteres' : undefined}
         />
 
         {erro && (
@@ -480,7 +525,7 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
       }}>
         {abaAtiva === 'entrar' ? (
           <>
-            Não tem conta?{' '}
+            Nao tem conta?{' '}
             <button
               onClick={() => { setAbaAtiva('cadastrar'); setErro(''); }}
               style={{
@@ -499,7 +544,7 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
           </>
         ) : (
           <>
-            Já tem conta?{' '}
+            Ja tem conta?{' '}
             <button
               onClick={() => { setAbaAtiva('entrar'); setErro(''); }}
               style={{
