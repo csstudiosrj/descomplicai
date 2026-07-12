@@ -156,8 +156,8 @@ async function _handler(req, res) {
 
       return res.status(200).json({
         success: true,
-        checkoutUrl: result.init_point,
-        init_point: result.init_point,
+        checkoutUrl: ((process.env.MP_ACCESS_TOKEN || "").startsWith("TEST-") ? result.sandbox_init_point : result.init_point),
+        init_point: ((process.env.MP_ACCESS_TOKEN || "").startsWith("TEST-") ? result.sandbox_init_point : result.init_point),
         preference_id: result.id,
       });
     } catch (err) {
@@ -241,8 +241,8 @@ async function _handler(req, res) {
 
       return res.status(200).json({
         success: true,
-        checkoutUrl: result.init_point,
-        init_point: result.init_point,
+        checkoutUrl: ((process.env.MP_ACCESS_TOKEN || "").startsWith("TEST-") ? result.sandbox_init_point : result.init_point),
+        init_point: ((process.env.MP_ACCESS_TOKEN || "").startsWith("TEST-") ? result.sandbox_init_point : result.init_point),
         preference_id: result.id,
       });
     } catch (err) {
