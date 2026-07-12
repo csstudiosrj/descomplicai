@@ -109,17 +109,57 @@ export default async function handler(req, res) {
       ref = extRef
     }
 
+    // ─── FALLBACK: link fixo (sem external_reference ou não reconhecido) ───
+    if (!ref.eventoId || !ref.tipo) {
+      const payerEmail = pagamento?.payer?.email
+      const valor = pagamento?.transaction_amount
+
+      if (payerEmail && valor) {
+        const supabaseAdmin = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_ROLE_KEY
+        )
+
+        // Busca pagamento pendente mais recente com mesmo valor
+        const { data: pagamentoDb } = await supabaseAdmin
+          .from('pagamentos')
+          .select('usuario_id, evento_id, tipo, duracao_meses')
+          .eq('status', 'pendente')
+          .eq('valor', valor)
+          .order('criado_em', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (pagamentoDb) {
+          ref = {
+            usuarioId: pagamentoDb.usuario_id,
+            eventoId: pagamentoDb.evento_id,
+            tipo: pagamentoDb.tipo,
+            duracao_meses: pagamentoDb.duracao_meses,
+          }
+
+          // Atualiza o external_reference do pagamento com o do MP
+          await supabaseAdmin
+            .from('pagamentos')
+            .update({
+              external_reference: pagamento.external_reference || `mp_${pagamento.id}`,
+              atualizado_em: new Date().toISOString(),
+            })
+            .eq('id', pagamentoDb.id)
+        }
+      }
+    }
+
     const { usuarioId, eventoId, tipo } = ref
     let duracaoMeses = pagamento.metadata?.duracao_meses ?? ref.duracao_meses ?? 0
 
     if (!eventoId || !tipo) {
-      console.error('Webhook: external_reference invalido', {
+      console.error('Webhook: nao foi possivel identificar pagamento', {
         external_reference: pagamento.external_reference,
-        ref,
+        payer_email: pagamento?.payer?.email,
+        valor: pagamento?.transaction_amount,
         payment_id: pagamento.id,
-        metadata: pagamento.metadata,
       })
-      // FIX: retorna 200 mesmo com erro para o MP não reenviar indefinidamente
       return res.status(200).end()
     }
 
@@ -165,7 +205,7 @@ export default async function handler(req, res) {
         mp_payment_id: String(pagamento.id),
         atualizado_em: new Date().toISOString(),
       })
-      .eq('external_reference', pagamento.external_reference)
+      .eq('external_reference', pagamento.external_reference || `mp_${pagamento.id}`)
 
     // Track analytics
     await trackServerEvent({
