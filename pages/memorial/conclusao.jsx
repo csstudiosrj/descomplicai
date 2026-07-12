@@ -12,7 +12,7 @@ import Icon from '../../components/ui/Icon';
 import MarkdownRenderer from '../../components/ui/MarkdownRenderer';
 import { temAcessoPainel } from '../../utils/acesso';
 import fetchAPI from '../../utils/fetchAPI';
-import CheckoutBricks from '../../components/pagamento/CheckoutBricks';
+import CheckoutTransparente from '../../components/pagamento/CheckoutTransparente';
 
 const PLANOS_ASSINATURA = [
   { id: 'mensal', label: 'Mensal', preco: 'R$59,90/mes', duracao: 1 },
@@ -41,8 +41,9 @@ export default function ConclusaoPage() {
   const [aceiteTermosAssinatura, setAceiteTermosAssinatura] = useState(false);
   const [planoSelecionado, setPlanoSelecionado] = useState('mensal');
   const [iniciandoTrial, setIniciandoTrial] = useState(false);
-  const [paymentData, setPaymentData] = useState(null);
-  const [paymentError, setPaymentError] = useState(null);
+  const [mostrarPagamento, setMostrarPagamento] = useState(false);
+  const [tipoPagamento, setTipoPagamento] = useState(null);
+  const [dadosPagamento, setDadosPagamento] = useState(null);
 
   // FIX: flag para evitar multiplas chamadas do useEffect
   const gerandoRef = useRef(false);
@@ -211,9 +212,9 @@ export default function ConclusaoPage() {
     }
   };
 
-  // FIX: funcao helper para criar pagamento via Bricks
-  const criarPagamentoBricks = async (tipo, plano = null) => {
+  const handleComprarPDF = async () => {
     if (!user?.id || !evento?.id) { alert('Faca login primeiro para continuar.'); return; }
+    if (!aceiteTermosPDF) { alert('Aceite os termos para continuar.'); return; }
 
     const payloadMemorial = montarPayloadMemorial(estado);
     const dadosEvento = {
@@ -225,67 +226,52 @@ export default function ConclusaoPage() {
       }
     };
 
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData?.session?.access_token;
-
-    const body = {
-      tipo,
+    setDadosPagamento({
+      tipo: 'memorial_pdf',
       usuarioId: user.id,
       eventoId: evento.id,
       dadosEvento,
-      ...(plano && { plano }),
-    };
-
-    const resposta = await fetchAPI('/api/pagamento/bricks', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
-      body: JSON.stringify(body),
+      valor: 197.00,
     });
-
-    const data = await resposta.json();
-
-    if (data.preferenceId && data.publicKey) {
-      setPaymentData({
-        preferenceId: data.preferenceId,
-        publicKey: data.publicKey,
-        tipo,
-      });
-    } else {
-      throw new Error(data.erro || data.error || 'Erro ao iniciar pagamento');
-    }
-  };
-
-  const handleComprarPDF = async () => {
-    if (!aceiteTermosPDF) { alert('Aceite os termos para continuar.'); return; }
-    setPagando(true);
-    setPaymentError(null);
-    try {
-      await criarPagamentoBricks('memorial_pdf');
-    } catch (err) {
-      console.error('[Conclusao] Erro ao comprar PDF:', err);
-      setPaymentError(err.message);
-      alert(err.message || 'Erro ao iniciar pagamento. Tente novamente.');
-    } finally {
-      setPagando(false);
-    }
+    setTipoPagamento('memorial_pdf');
+    setMostrarPagamento(true);
   };
 
   const handleComprarAssinatura = async () => {
+    if (!user?.id || !evento?.id) { alert('Faca login primeiro para continuar.'); return; }
     if (!aceiteTermosAssinatura) { alert('Aceite os termos para continuar.'); return; }
-    setPagando(true);
-    setPaymentError(null);
-    try {
-      await criarPagamentoBricks('assinatura', planoSelecionado);
-    } catch (err) {
-      console.error('[Conclusao] Erro ao comprar assinatura:', err);
-      setPaymentError(err.message);
-      alert(err.message || 'Erro ao iniciar pagamento. Tente novamente.');
-    } finally {
-      setPagando(false);
-    }
+
+    const payloadMemorial = montarPayloadMemorial(estado);
+    const dadosEvento = {
+      ...payloadMemorial,
+      email: user?.email || 'teste@email.com',
+      nomes: {
+        noiva: estado.nomeNoiva || estado.nomePessoa1 || 'Noiva',
+        noivo: estado.nomeNoivo || estado.nomePessoa2 || 'Noivo',
+      }
+    };
+
+    setDadosPagamento({
+      tipo: 'assinatura',
+      plano: planoSelecionado,
+      usuarioId: user.id,
+      eventoId: evento.id,
+      dadosEvento,
+      valor: 29.90,
+    });
+    setTipoPagamento('assinatura');
+    setMostrarPagamento(true);
+    setModalPlanos(false);
+  };
+
+  const handlePaymentSuccess = (data) => {
+    setMostrarPagamento(false);
+    router.push(`/memorial/conclusao?pagamento=sucesso&tipo=${tipoPagamento}`);
+  };
+
+  const handlePaymentError = (err) => {
+    console.error('[Pagamento] Erro:', err);
+    alert(err.message || 'Erro no pagamento. Tente novamente.');
   };
 
   if (!isMounted || !isHydrated || temAcesso) {
@@ -355,22 +341,29 @@ export default function ConclusaoPage() {
           )}
         </div>
 
-        {/* Checkout Bricks - aparece quando o usuario clica em comprar */}
-        {paymentData && (
-          <div style={{ marginBottom: 'var(--space-6)' }}>
-            <CheckoutBricks
-              preferenceId={paymentData.preferenceId}
-              publicKey={paymentData.publicKey}
-              onPaymentSuccess={(data) => {
-                setPaymentData(null);
-                router.push(`/memorial/conclusao?pagamento=sucesso&tipo=${paymentData.tipo}`);
-              }}
-              onPaymentError={(err) => {
-                setPaymentData(null);
-                setPaymentError(err);
-                alert('Erro no pagamento. Tente novamente.');
-              }}
+        {/* Checkout Transparente - aparece quando o usuario clica em comprar */}
+        {mostrarPagamento && dadosPagamento && (
+          <div style={{ marginBottom: 'var(--space-6)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)' }}>
+            <CheckoutTransparente
+              valor={dadosPagamento.valor}
+              onPaymentSuccess={handlePaymentSuccess}
+              onPaymentError={handlePaymentError}
             />
+            <div style={{ textAlign: 'center', marginTop: 'var(--space-4)' }}>
+              <button 
+                onClick={() => setMostrarPagamento(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--color-text-muted)',
+                  cursor: 'pointer',
+                  fontSize: 'var(--text-sm)',
+                  textDecoration: 'underline',
+                }}
+              >
+                Cancelar pagamento
+              </button>
+            </div>
           </div>
         )}
 
@@ -389,7 +382,7 @@ export default function ConclusaoPage() {
                 <span>Entendo que este PDF e personalizado para o meu casamento com base nas minhas respostas, e gerado e entregue imediatamente apos a confirmacao do pagamento, e que, por sua natureza personalizada, nao ha devolucao apos a geracao.</span>
               </label>
               <Button variant="primary" size="lg" fullWidth loading={pagando} onClick={handleComprarPDF}>
-                {pagando ? 'Carregando pagamento...' : 'Baixar PDF completo — R$197'}
+                {pagando ? 'Carregando...' : 'Baixar PDF completo — R$197'}
               </Button>
             </>
           )}
@@ -533,7 +526,7 @@ export default function ConclusaoPage() {
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setModalPlanos(false)} style={styles.btnSecondary}>Cancelar</button>
               <button onClick={handleComprarAssinatura} style={styles.btnPrimary}>
-                {pagando ? 'Carregando pagamento...' : 'Continuar'}
+                {pagando ? 'Carregando...' : 'Continuar'}
               </button>
             </div>
           </div>
