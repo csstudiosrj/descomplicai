@@ -11,17 +11,7 @@ async function _handler(req, res) {
     return res.status(405).json({ error: 'Metodo nao permitido' });
   }
 
-  const {
-    tipo,
-    usuarioId,
-    eventoId,
-    dadosEvento,
-    plano = 'basico',
-    cardToken,
-    paymentMethodId,
-    installments = 1,
-    issuerId,
-  } = req.body;
+  const { tipo, usuarioId, eventoId, dadosEvento, plano = 'basico' } = req.body;
 
   if (!tipo || !usuarioId || !eventoId) {
     return res.status(400).json({ error: 'tipo, usuarioId e eventoId obrigatorios' });
@@ -53,7 +43,8 @@ async function _handler(req, res) {
       return res.status(500).json({ error: 'MP_ACCESS_TOKEN nao configurado' });
     }
 
-    const response = await fetch('https://api.mercadopago.com/v1/payments', {
+    // Cria link de pagamento dinâmico via API do MP
+    const response = await fetch('https://api.mercadopago.com/v1/payment_links', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${mpToken}`,
@@ -61,19 +52,21 @@ async function _handler(req, res) {
         'X-Idempotency-Key': externalRef,
       },
       body: JSON.stringify({
-        transaction_amount: preco,
-        token: cardToken,
+        title: titulo,
         description: titulo,
-        installments: parseInt(installments) || 1,
-        payment_method_id: paymentMethodId,
-        issuer_id: issuerId,
-        payer: {
-          email: dadosEvento?.email || 'teste@email.com',
-          first_name: dadosEvento?.nomes?.noiva || dadosEvento?.nomePessoa1 || 'Casal',
-          last_name: dadosEvento?.nomes?.noivo || dadosEvento?.nomePessoa2 || '',
-        },
+        unit_price: preco,
+        quantity: 1,
+        currency_id: 'BRL',
         external_reference: externalRef,
         notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/pagamento/webhook`,
+        back_urls: {
+          success: `${process.env.NEXT_PUBLIC_SITE_URL}/memorial/conclusao?pagamento=sucesso&tipo=${tipo}`,
+          failure: `${process.env.NEXT_PUBLIC_SITE_URL}/memorial/conclusao?pagamento=erro&tipo=${tipo}`,
+          pending: `${process.env.NEXT_PUBLIC_SITE_URL}/memorial/conclusao?pagamento=pendente&tipo=${tipo}`,
+        },
+        payer: {
+          email: dadosEvento?.email || 'teste@email.com',
+        },
         metadata: {
           usuarioId,
           eventoId,
@@ -86,33 +79,27 @@ async function _handler(req, res) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('[TRANSPARENTE] Erro MP:', data);
-      return res.status(500).json({ 
-        error: 'Erro ao processar pagamento', 
-        detalhe: data.message || data.error 
-      });
+      console.error('[LINK] Erro MP:', data);
+      return res.status(500).json({ error: 'Erro ao criar link de pagamento', detalhe: data.message });
     }
 
-    // Atualiza o pagamento no banco
+    // Atualiza com o ID do link
     await supabaseAdmin
       .from('pagamentos')
       .update({
-        mp_payment_id: String(data.id),
-        status: data.status === 'approved' ? 'aprovado' : 'pendente',
+        mp_preference_id: data.id,
         atualizado_em: new Date().toISOString(),
       })
       .eq('external_reference', externalRef);
 
     return res.status(200).json({
-      success: data.status === 'approved',
-      paymentId: data.id,
-      status: data.status,
-      statusDetail: data.status_detail,
+      success: true,
+      checkoutUrl: data.init_point,
       externalReference: externalRef,
     });
   } catch (err) {
-    console.error('[TRANSPARENTE] Erro:', err);
-    return res.status(500).json({ error: 'Erro ao processar pagamento', detalhe: err.message });
+    console.error('[LINK] Erro:', err);
+    return res.status(500).json({ error: 'Erro ao criar link de pagamento', detalhe: err.message });
   }
 }
 
