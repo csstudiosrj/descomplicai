@@ -13,6 +13,12 @@ export default function Header() {
   const dropdownRef = useRef(null);
   const closeTimer = useRef(null);
 
+  // Detecta se estamos no fluxo do memorial
+  const isMemorial = router.pathname.startsWith('/memorial');
+
+  // Define para onde o logo deve apontar
+  const logoHref = isMemorial && user ? '/painel' : '/';
+
   const handleLogout = async () => {
     await signOut();
     setMenuAberto(false);
@@ -41,7 +47,7 @@ export default function Header() {
   return (
     <header className="header">
       <div className="header-container">
-        <Link href="/" className="header-logo-link" onClick={() => setMenuAberto(false)}>
+        <Link href={logoHref} className="header-logo-link" onClick={() => setMenuAberto(false)}>
           <Logo />
         </Link>
 

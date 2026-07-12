@@ -214,25 +214,18 @@ export default function MemorialOrchestrator() {
 
   // ============================================================
   // STORAGE EVENT LISTENER: detecta confirmacao de email em outra aba
-  // Quando Supabase atualiza localStorage (chaves sb-*), dispara
-  // evento storage na aba original, que entao verifica sessao e
-  // cria evento no banco com o draft salvo.
   // ============================================================
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const handleStorageChange = async (e) => {
-      // Só reage a mudancas no localStorage do Supabase Auth
       if (!e.key?.startsWith('sb-')) return;
 
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.access_token) return;
-
-        // Ja tem evento? Nao faz nada
         if (evento) return;
 
-        // Tem draft salvo? Cria evento no banco
         const draft = localStorage.getItem('descomplicai-memorial-draft');
         if (!draft) return;
 
@@ -255,12 +248,9 @@ export default function MemorialOrchestrator() {
         }
 
         console.log('[storage event] Evento criado apos confirmacao em outra aba');
-
-        // Fecha modal e continua fluxo
         setModalAuthAberto(false);
         loginPendenteRef.current = false;
 
-        // Avanca para a proxima etapa pendente
         if (proximaEtapaPendenteRef.current !== null) {
           irParaEtapa(proximaEtapaPendenteRef.current);
           proximaEtapaPendenteRef.current = null;
@@ -304,7 +294,6 @@ export default function MemorialOrchestrator() {
     if (!user) return;
     if (restauracaoFeita.current) return;
     if (carregandoAuth) return;
-
     if (estado.perfilCasal) return;
 
     restauracaoFeita.current = true;
