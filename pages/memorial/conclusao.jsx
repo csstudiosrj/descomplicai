@@ -233,7 +233,7 @@ export default function ConclusaoPage() {
       ...(plano && { plano }),
     };
 
-    const resposta = await fetchAPI('/api/pagamento/link', {
+    const resposta = await fetchAPI('/api/pagamento/criar', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
