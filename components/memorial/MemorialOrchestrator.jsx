@@ -2,6 +2,7 @@
 // MUDANCA RADICAL 07/07: Login/Cadastro no inicio do fluxo (Step00)
 // CORRECAO 07/07: Adiciona storage event listener para detectar
 // confirmacao de email em outra aba/dispositivo
+// ATUALIZACAO 13/07: Remove criacao de evento — evento ja criado na Fase 0 (perfil.jsx)
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -167,19 +168,19 @@ const STEP_COMPONENTS = {
 
 const BLOCK_NAMES = {
   'A': 'Bloco A — Perfil do Casal',
-  'B': 'Bloco B — Cerimônia',
+  'B': 'Bloco B — Cerimonia',
   'C': 'Bloco C — Local e Estrutura',
   'D': 'Bloco D — Identidade Visual e Fornecedores',
-  'E': 'Bloco E — Decoração',
+  'E': 'Bloco E — Decoracao',
   'F': 'Bloco F — Mesa Posta',
-  'G': 'Bloco G — Cerimônia Detalhada',
-  'H': 'Bloco H — Recepção',
+  'G': 'Bloco G — Cerimonia Detalhada',
+  'H': 'Bloco H — Recepcao',
   'I': 'Bloco I — Papelaria e Identidade',
-  'J': 'Bloco J — Vestuário e Beleza',
+  'J': 'Bloco J — Vestuario e Beleza',
   'K': 'Bloco K — Fornecedores',
-  'L': 'Bloco L — Logística e Documentação',
-  'M': 'Bloco M — Pós-casamento',
-  'N': 'Bloco N — Documentação e Financeiro',
+  'L': 'Bloco L — Logistica e Documentacao',
+  'M': 'Bloco M — Pos-casamento',
+  'N': 'Bloco N — Documentacao e Financeiro',
 };
 
 function PlaceholderStep({ titulo }) {
@@ -204,65 +205,19 @@ export default function MemorialOrchestrator() {
   const [campoTransicao, setCampoTransicao] = useState('');
   const [modalAuthAberto, setModalAuthAberto] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
-  const [eventoCriando, setEventoCriando] = useState(false);
   const [carregandoDoBanco, setCarregandoDoBanco] = useState(false);
+  const [eventoId, setEventoId] = useState(null);
   const restauracaoFeita = useRef(false);
   const stepCompletedRef = useRef(false);
   const currentStepIdRef = useRef(null);
-  const loginPendenteRef = useRef(false);
-  const proximaEtapaPendenteRef = useRef(null);
 
   // ============================================================
-  // STORAGE EVENT LISTENER: detecta confirmacao de email em outra aba
+  // Recupera evento_id do localStorage (criado na Fase 0)
   // ============================================================
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const handleStorageChange = async (e) => {
-      if (!e.key?.startsWith('sb-')) return;
-
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.access_token) return;
-        if (evento) return;
-
-        const draft = localStorage.getItem('descomplicai-memorial-draft');
-        if (!draft) return;
-
-        const estadoDraft = JSON.parse(draft);
-        if (!estadoDraft?.perfilCasal) return;
-
-        const res = await fetchAPI('/api/memorial/criar-evento', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ estado: estadoDraft }),
-        });
-
-        if (!res.ok) {
-          const err = await res.text();
-          console.warn('[storage event] Erro ao criar evento:', err);
-          return;
-        }
-
-        console.log('[storage event] Evento criado apos confirmacao em outra aba');
-        setModalAuthAberto(false);
-        loginPendenteRef.current = false;
-
-        if (proximaEtapaPendenteRef.current !== null) {
-          irParaEtapa(proximaEtapaPendenteRef.current);
-          proximaEtapaPendenteRef.current = null;
-        }
-      } catch (err) {
-        console.error('[storage event] Erro ao processar confirmacao:', err);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [evento, supabase, irParaEtapa]);
+    const id = localStorage.getItem('descomplicai-evento-id');
+    if (id) setEventoId(id);
+  }, []);
 
   // ============================================================
   // Rastreia inicio e abandono de steps
@@ -303,7 +258,7 @@ export default function MemorialOrchestrator() {
       try {
         const { data: memorialData, error: memErr } = await supabase
           .from('memoriais')
-          .select('estado')
+          .select('estado, dados')
           .eq('user_id', user.id)
           .order('atualizado_em', { ascending: false })
           .limit(1)
@@ -313,6 +268,11 @@ export default function MemorialOrchestrator() {
           carregarEstado(memorialData.estado);
           setCarregandoDoBanco(false);
           return;
+        }
+
+        // Se tem dados no campo JSONB 'dados', carrega no estado
+        if (!memErr && memorialData?.dados) {
+          carregarEstado(memorialData.dados);
         }
 
         const draft = carregarDraft();
@@ -331,54 +291,6 @@ export default function MemorialOrchestrator() {
     buscarDoSupabase();
   }, [user, carregandoAuth, estado.perfilCasal, carregarEstado, carregarDraft, supabase]);
 
-  // ============================================================
-  // Detecta login e continua fluxo pendente
-  // ============================================================
-  useEffect(() => {
-    if (!user) return;
-    if (!loginPendenteRef.current) return;
-
-    async function continuarAposLogin() {
-      loginPendenteRef.current = false;
-      setModalAuthAberto(false);
-      setEventoCriando(true);
-
-      try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const token = sessionData?.session?.access_token;
-
-        if (token) {
-          const res = await fetchAPI('/api/memorial/criar-evento', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({ estado }),
-          });
-
-          const result = await res.json();
-          if (!res.ok) {
-            console.warn('[MemorialOrchestrator] Erro ao criar evento:', result.erro || result.error);
-          } else {
-            console.log('[MemorialOrchestrator] Evento criado:', result.evento_id);
-          }
-        }
-      } catch (apiErr) {
-        console.warn('[MemorialOrchestrator] Falha na API criar-evento:', apiErr);
-      } finally {
-        setEventoCriando(false);
-      }
-
-      if (proximaEtapaPendenteRef.current !== null) {
-        irParaEtapa(proximaEtapaPendenteRef.current);
-        proximaEtapaPendenteRef.current = null;
-      }
-    }
-
-    continuarAposLogin();
-  }, [user, estado, supabase, irParaEtapa]);
-
   const etapasTotais = calcularEtapasTotais(estado);
   const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
   const blocoAtual = etapaAtualObj?.bloco || '';
@@ -388,7 +300,7 @@ export default function MemorialOrchestrator() {
   const BREATH_DURATION = 1400;
 
   // ============================================================
-  // handleSelect: abre modal no primeiro clique se nao logado
+  // handleSelect: avanca etapa (sem criar evento — ja existe)
   // ============================================================
   const handleSelect = useCallback((campo, valor, cor) => {
     setRespostas(campo, valor);
@@ -396,9 +308,7 @@ export default function MemorialOrchestrator() {
     let valorDisplay = valor;
     if (campo === 'dataEvento' && valor && typeof valor === 'string') {
       const [ano, mes, dia] = valor.split('-');
-      if (ano && mes && dia) {
-        valorDisplay = `${dia}/${mes}/${ano}`;
-      }
+      if (ano && mes && dia) valorDisplay = `${dia}/${mes}/${ano}`;
     }
 
     setRespostaTransicao(typeof valorDisplay === 'string' ? valorDisplay : '');
@@ -410,32 +320,25 @@ export default function MemorialOrchestrator() {
 
     setTimeout(() => {
       const proxima = calcularProximaEtapa(novoEstado, estado.etapaAtual);
-
-      if (!user) {
-        loginPendenteRef.current = true;
-        proximaEtapaPendenteRef.current = proxima;
-        setTransicionando(false);
-        setModalAuthAberto(true);
-        return;
-      }
-
       irParaEtapa(proxima);
       setTransicionando(false);
       setCorTransicao(null);
       setRespostaTransicao('');
       setCampoTransicao('');
     }, BREATH_DURATION);
-  }, [estado, setRespostas, irParaEtapa, user]);
+  }, [estado, setRespostas, irParaEtapa]);
 
-  const handleLoginSuccess = useCallback(() => {
-    // O useEffect acima detecta user !== null e continua o fluxo
-  }, []);
-
+  // ============================================================
+  // handleConcluirMemorial: salva estado final no banco
+  // ============================================================
   const handleConcluirMemorial = useCallback(async (fornecedores) => {
     setRespostas('fornecedoresNecessarios', fornecedores);
     try {
       localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
-      if (user && evento?.id) {
+
+      // Salva no banco se tem evento_id
+      const evId = eventoId || localStorage.getItem('descomplicai-evento-id');
+      if (user && evId) {
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData?.session?.access_token;
         if (token) {
@@ -445,16 +348,20 @@ export default function MemorialOrchestrator() {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`,
             },
-            body: JSON.stringify({ evento_id: evento.id, estado }),
+            body: JSON.stringify({ evento_id: evId, estado }),
           });
-          if (!res.ok) void 0
+          if (!res.ok) {
+            const errText = await res.text();
+            console.warn('[MemorialOrchestrator] Erro ao salvar memorial:', errText);
+          }
         }
       }
       router.push('/memorial/conclusao?concluido=1');
     } catch (erro) {
+      console.error('[MemorialOrchestrator] Falha ao salvar:', erro);
       alert('Falha ao salvar o progresso. Tente novamente.');
     }
-  }, [estado, setRespostas, router, user, evento, supabase]);
+  }, [estado, setRespostas, router, user, eventoId, supabase]);
 
   const handleBack = useCallback(() => {
     if (estado.historicoEtapas?.length > 0) {
@@ -488,30 +395,10 @@ export default function MemorialOrchestrator() {
         </div>
       )}
 
-      {eventoCriando && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 9998,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'rgba(255,255,255,0.8)',
-        }}>
-          <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
-            Preparando seu memorial...
-          </p>
-        </div>
-      )}
-
       {carregandoDoBanco && (
         <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 9997,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          position: 'fixed', inset: 0, zIndex: 9997,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
           backgroundColor: 'rgba(255,255,255,0.8)',
         }}>
           <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
@@ -522,7 +409,6 @@ export default function MemorialOrchestrator() {
 
       <LoginCadastroModal
         isOpen={modalAuthAberto}
-        onLoginSuccess={handleLoginSuccess}
         onClose={() => setModalAuthAberto(false)}
       />
 
@@ -534,10 +420,10 @@ export default function MemorialOrchestrator() {
         <>
           {estado.etapaAtual === 0 && oferecerDraft ? (
             <div style={{ padding: 'var(--space-6)', textAlign: 'center' }}>
-              <h2>Você tem um progresso salvo</h2>
+              <h2>Voce tem um progresso salvo</h2>
               <p>Deseja continuar de onde parou?</p>
               <button onClick={handleContinuarDraft}>Continuar</button>
-              <button onClick={handleDescartarDraft}>Começar do zero</button>
+              <button onClick={handleDescartarDraft}>Comecar do zero</button>
             </div>
           ) : (
             <>
