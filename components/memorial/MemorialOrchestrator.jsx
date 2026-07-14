@@ -187,7 +187,7 @@ function PlaceholderStep({ titulo, componente }) {
 
 export default function MemorialOrchestrator() {
   const router = useRouter();
-  const { estado, setRespostas, atualizarMultiplo, carregarEstado } = useMemorial();
+  const { estado, setRespostas, carregarEstado } = useMemorial();
   const { user, evento, loading: carregandoAuth, supabase } = useAuth();
   const { trackStep } = useAnalytics();
   const { temDraft, carregarDraft, limparDraft, salvandoAgora } = useAutoSave(estado, user, evento);
@@ -196,36 +196,38 @@ export default function MemorialOrchestrator() {
   const [noAtualId, setNoAtualId] = useState(null);
   const [historicoIds, setHistoricoIds] = useState([]);
   const arvoreCarregada = useRef(false);
-  const inicializacaoFeita = useRef(false);
+  const noInicialDefinido = useRef(false);
 
-  // Carrega a árvore e inicializa o ponto de partida
+  // 1. Carrega a árvore apenas uma vez
   useEffect(() => {
     if (arvoreCarregada.current) return;
     arvoreCarregada.current = true;
     const tipo = estado.tipoEvento || 'casamento';
-    carregarArvore(tipo).then(arv => {
-      setArvore(arv);
-      const raiz = getRaiz(arv);
-      if (!raiz) return;
+    carregarArvore(tipo).then(setArvore);
+  }, [estado.tipoEvento]);
 
-      // Se o usuário já tem perfil e o DNA foi concluído, pula o Step00 automaticamente
-      const dnaCompleto = localStorage.getItem('descomplicai-dna-completo');
-      const perfilPreenchido = estado.perfilCasal;
+  // 2. Define o nó inicial assim que árvore e estado estiverem prontos
+  useEffect(() => {
+    if (!arvore || noInicialDefinido.current) return;
+    const raiz = getRaiz(arvore);
+    if (!raiz) return;
 
-      if (dnaCompleto && perfilPreenchido) {
-        // Avança para o próximo nó após o step00 (ou aquele que o condicional do step00 indicar)
-        const proximo = proximoNo(estado, raiz.id, arv);
-        if (proximo) {
-          setNoAtualId(proximo.id);
-          setHistoricoIds([raiz.id]); // step00 fica como histórico
-        } else {
-          setNoAtualId(raiz.id);
-        }
+    const dnaCompleto = localStorage.getItem('descomplicai-dna-completo');
+    const perfilPreenchido = estado.perfilCasal;
+
+    if (dnaCompleto && perfilPreenchido) {
+      const proximo = proximoNo(estado, raiz.id, arvore);
+      if (proximo) {
+        setHistoricoIds([raiz.id]);
+        setNoAtualId(proximo.id);
       } else {
         setNoAtualId(raiz.id);
       }
-    });
-  }, [estado.tipoEvento]); // eslint-disable-line react-hooks/exhaustive-deps
+    } else {
+      setNoAtualId(raiz.id);
+    }
+    noInicialDefinido.current = true;
+  }, [arvore, estado.perfilCasal]);
 
   const [transicionando, setTransicionando] = useState(false);
   const [corTransicao, setCorTransicao] = useState(null);
@@ -245,7 +247,6 @@ export default function MemorialOrchestrator() {
     if (id) setEventoId(id);
   }, []);
 
-  // Redireciona para perfil se logado e sem evento
   useEffect(() => {
     if (!user || carregandoAuth) return;
     if (eventoId) return;
@@ -260,7 +261,6 @@ export default function MemorialOrchestrator() {
     }
   }, [user, carregandoAuth, eventoId, router]);
 
-  // Analytics
   useEffect(() => {
     if (!noAtualId || !arvore) return;
     const noAtual = getNoPorId(noAtualId, arvore);
@@ -282,7 +282,6 @@ export default function MemorialOrchestrator() {
     };
   }, [noAtualId, arvore, trackStep]);
 
-  // Restaura do Supabase
   useEffect(() => {
     if (!user) return;
     if (restauracaoFeita.current) return;
@@ -341,6 +340,9 @@ export default function MemorialOrchestrator() {
       perfilSelecionadoRef.current = valor;
 
       if (!user) {
+        // Salva estado e draft antes de abrir o modal, garantindo persistência após reload
+        const novoEstado = { ...estado, perfilCasal: valor, modoPlanejamento: 'guiado' };
+        localStorage.setItem('memorial_estado', JSON.stringify(novoEstado));
         localStorage.setItem('descomplicai-perfil-draft', JSON.stringify({ perfilCasal: valor }));
         setModalAuthAberto(true);
         return;
@@ -502,7 +504,8 @@ export default function MemorialOrchestrator() {
         isOpen={modalAuthAberto}
         onClose={() => setModalAuthAberto(false)}
         onLoginSuccess={() => {
-          // Recarrega a página para sincronizar evento/estado
+          // O estado já foi salvo em localStorage antes de abrir o modal,
+          // então o reload recuperará o perfilCasal e pulará o Step00.
           window.location.reload();
         }}
       />
