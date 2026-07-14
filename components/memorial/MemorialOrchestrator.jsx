@@ -1,6 +1,6 @@
 // components/memorial/MemorialOrchestrator.jsx
 // REFATORADO: Motor de árvore de nós (motorArvore.js) substitui algoritmo linear.
-// Manter todas as funcionalidades existentes: login, autosave, analytics, etc.
+// Mantém todas as funcionalidades existentes: login, autosave, analytics, etc.
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -18,11 +18,6 @@ import fetchAPI from '../../utils/fetchAPI';
 
 const STEP_COMPONENTS = {
   Step00Casal: React.lazy(() => import('./steps/Step00Casal')),
-  Step02NomeCasal: React.lazy(() => import('./steps/Step02NomeCasal')),
-  Step03Data: React.lazy(() => import('./steps/Step03Data')),
-  Step04Cidade: React.lazy(() => import('./steps/Step04Cidade')),
-  Step05Convidados: React.lazy(() => import('./steps/Step05Convidados')),
-  Step06Orcamento: React.lazy(() => import('./steps/Step06Orcamento')),
   Step07Cerimonia: React.lazy(() => import('./steps/Step07Cerimonia')),
   Step07aCatolica: React.lazy(() => import('./steps/Step07aCatolica')),
   Step07bEvangelica: React.lazy(() => import('./steps/Step07bEvangelica')),
@@ -467,7 +462,6 @@ export default function MemorialOrchestrator() {
     setOferecerDraft(false);
   };
 
-  // Escolhe o componente com fallback informativo
   let StepComponent = null;
   let stepProps = {};
   if (noAtual) {

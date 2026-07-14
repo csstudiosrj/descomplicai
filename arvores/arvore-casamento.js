@@ -1,29 +1,21 @@
 // arvores/arvore-casamento.js
-// Árvore de questionário para Casamento (~145 nós).
+// Árvore de questionário para Casamento (~140 nós após remoção dos steps duplicados do perfil).
 // Cada nó: { id, titulo, bloco, componente, next, condicional? }
 // condicional: (estado) => idPróximo | null (pula) | undefined (usa next)
 
 const ARVORE_CASAMENTO = [
   // === BLOCO A: Perfil do Casal ===
-  // step01 (Modo de planejamento) foi removido. step00 agora aponta direto para step02.
-  { id: 'step00', titulo: 'Perfil do casal', bloco: 'A', componente: 'Step00Casal', next: 'step02' },
-  { id: 'step02', titulo: 'Nomes do casal', bloco: 'A', componente: 'Step02NomeCasal', next: 'step03' },
-  { id: 'step03', titulo: 'Data do casamento', bloco: 'A', componente: 'Step03Data', next: 'step04' },
-  { id: 'step04', titulo: 'Cidade', bloco: 'A', componente: 'Step04Cidade', next: 'step05' },
-  { id: 'step05', titulo: 'Número de convidados', bloco: 'A', componente: 'Step05Convidados', next: 'step06' },
-  {
-    id: 'step06', titulo: 'Orçamento estimado', bloco: 'A', componente: 'Step06Orcamento',
-    next: 'stepA4',
-    condicional: (estado) => {
-      if (estado.criancas === false) {
-        return 'stepA7';
-      }
-      return undefined;
-    }
-  },
+  // step01, step02, step03, step04, step05, step06 removidos: dados coletados no perfil.
+  { id: 'step00', titulo: 'Perfil do casal', bloco: 'A', componente: 'Step00Casal', next: 'stepA4' },
+
+  // Expansão A (detalhes adicionais, não duplicados no perfil)
   {
     id: 'stepA4', titulo: 'Crianças na festa', bloco: 'A', componente: 'StepA4Criancas',
-    next: 'stepA5'
+    next: 'stepA5',
+    condicional: (estado) => {
+      if (estado.criancas === false) return 'stepA5'; // pula se já sabe que não tem
+      return undefined;
+    }
   },
   {
     id: 'stepA5', titulo: 'Padrinhos', bloco: 'A', componente: 'StepA5Padrinhos',
@@ -37,7 +29,7 @@ const ARVORE_CASAMENTO = [
     id: 'stepA6', titulo: 'Data prevista', bloco: 'A', componente: 'StepA6DataPrevista',
     next: 'stepA7',
     condicional: (estado) => {
-      if (estado.dataCasamento) return 'stepA7';
+      if (estado.dataCasamento) return 'stepA7'; // já tem data, pula
       return undefined;
     }
   },
