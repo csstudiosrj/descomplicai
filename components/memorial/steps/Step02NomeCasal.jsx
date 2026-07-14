@@ -1,6 +1,6 @@
 // Etapa 2 do memorial — nomes do casal
-// Dependências diretas: React, PropTypes
-// Linguagem adaptada conforme perfil do casal (nunca hardcoded)
+// Dependencias diretas: React, PropTypes
+// CORRECAO 13/07: Labels dinamicos conforme perfil (getTermos)
 
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
@@ -22,6 +22,15 @@ export default function Step02NomeCasal({ onSelect, estadoAtual }) {
 
   const podeConfirmar = nome1.trim().length > 0 && nome2.trim().length > 0;
 
+  // Labels dinamicos conforme perfil
+  const labelPessoa1 = `Nome da ${termos.pessoa1}`;
+  const labelPessoa2 = `Nome da ${termos.pessoa2}`;
+  const labelJuntos = `Como querem ser chamados juntos (opcional)`;
+
+  // Placeholders dinamicos conforme genero
+  const placeholder1 = termos.genero1 === 'feminino' ? 'Ex: Ana' : termos.genero1 === 'masculino' ? 'Ex: Pedro' : 'Ex: Ana';
+  const placeholder2 = termos.genero2 === 'feminino' ? 'Ex: Maria' : termos.genero2 === 'masculino' ? 'Ex: Joao' : 'Ex: Pedro';
+
   return (
     <div
       style={{
@@ -42,7 +51,7 @@ export default function Step02NomeCasal({ onSelect, estadoAtual }) {
             marginBottom: 'var(--space-2)',
           }}
         >
-          Como devemos chamar vocês?
+          Como devemos chamar voces?
         </h1>
       </div>
 
@@ -56,14 +65,14 @@ export default function Step02NomeCasal({ onSelect, estadoAtual }) {
               color: 'var(--color-text-primary)',
             }}
           >
-            Nome da primeira pessoa
+            {labelPessoa1}
           </label>
           <input
             id="nome1"
             type="text"
             value={nome1}
             onChange={(e) => setNome1(e.target.value)}
-            placeholder={`Ex: ${termos.genero1 === 'feminino' ? 'Ana' : termos.genero1 === 'masculino' ? 'Pedro' : 'Ana'}`}
+            placeholder={placeholder1}
             style={{
               width: '100%',
               padding: 'var(--space-3) var(--space-4)',
@@ -89,14 +98,14 @@ export default function Step02NomeCasal({ onSelect, estadoAtual }) {
               color: 'var(--color-text-primary)',
             }}
           >
-            Nome da segunda pessoa
+            {labelPessoa2}
           </label>
           <input
             id="nome2"
             type="text"
             value={nome2}
             onChange={(e) => setNome2(e.target.value)}
-            placeholder={`Ex: ${termos.genero2 === 'feminino' ? 'Maria' : termos.genero2 === 'masculino' ? 'João' : 'Pedro'}`}
+            placeholder={placeholder2}
             style={{
               width: '100%',
               padding: 'var(--space-3) var(--space-4)',
@@ -122,7 +131,7 @@ export default function Step02NomeCasal({ onSelect, estadoAtual }) {
               color: 'var(--color-text-primary)',
             }}
           >
-            Como querem ser chamados juntos (opcional)
+            {labelJuntos}
           </label>
           <input
             id="nomeJuntos"

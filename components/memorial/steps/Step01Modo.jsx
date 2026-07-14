@@ -1,8 +1,8 @@
 /* ==========================================
  * ARQUIVO: components/memorial/steps/Step01Modo.jsx
  * ========================================== */
-// Etapa 1 do memorial — escolha do modo de criação
-// COM PULSO NO WRAPPER (não no Card — evita conflito de estilos internos)
+// Etapa 1 do memorial — escolha do modo de criacao
+// CORRECAO 13/07: Remove opcao "Ja tenho referencias" (ativo)
 
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
@@ -13,18 +13,10 @@ const OPCOES = [
   {
     valor: 'guiado',
     label: 'Me guiem',
-    subtexto: 'Prefiro receber sugestões e aprovar. Ideal para quem está começando a imaginar o evento.',
+    subtexto: 'Prefiro receber sugestoes e aprovar. Ideal para quem esta comecando a imaginar o evento.',
     icone: 'sparkle',
     cor: 'var(--color-brand-lighter)',
     corPulso: 'rgba(139, 111, 94, 0.22)',
-  },
-  {
-    valor: 'ativo',
-    label: 'Já tenho referências',
-    subtexto: 'Quero organizar o que imagino. Você vai poder fazer uploads e colar links do Pinterest.',
-    icone: 'link',
-    cor: 'var(--color-info-light)',
-    corPulso: 'rgba(61, 107, 140, 0.22)',
   },
 ];
 
@@ -72,7 +64,7 @@ export default function Step01Modo({ onSelect, estadoAtual }) {
             marginBottom: 'var(--space-2)',
           }}
         >
-          Como vocês preferem planejar?
+          Como voces preferem planejar?
         </h1>
       </div>
 

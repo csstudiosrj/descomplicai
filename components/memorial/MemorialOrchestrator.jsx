@@ -2,6 +2,7 @@
 // MUDANCA RADICAL 07/07: Login/Cadastro no inicio do fluxo (Step00)
 // ATUALIZACAO 13/07: Remove criacao de evento — evento ja criado na Fase 0 (perfil.jsx)
 // ATUALIZACAO 13/07 v2: Step00 -> modal login -> perfil -> DNA -> questionario
+// CORRECAO 13/07 v3: Detecta DNA completo e pula Step00 para evitar looping
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -210,12 +211,23 @@ export default function MemorialOrchestrator() {
   const stepCompletedRef = useRef(false);
   const currentStepIdRef = useRef(null);
   const perfilSelecionadoRef = useRef(null);
+  const dnaSkipFeito = useRef(false);
 
   // Recupera evento_id do localStorage (criado na Fase 0)
   useEffect(() => {
     const id = localStorage.getItem('descomplicai-evento-id');
     if (id) setEventoId(id);
   }, []);
+
+  // CORRECAO: Detecta DNA completo e pula Step00 para evitar looping
+  useEffect(() => {
+    if (dnaSkipFeito.current) return;
+    const dnaCompleto = localStorage.getItem('descomplicai-dna-completo');
+    if (dnaCompleto && estado.perfilCasal && estado.etapaAtual === 0) {
+      dnaSkipFeito.current = true;
+      irParaEtapa(1);
+    }
+  }, [estado.perfilCasal, estado.etapaAtual, irParaEtapa]);
 
   // Quando usuario loga apos modal, redireciona para perfil se nao tem evento
   useEffect(() => {
