@@ -1,6 +1,10 @@
 // components/memorial/MemorialOrchestrator.jsx
-// REFATORADO: Motor de árvore de nós (motorArvore.js) substitui algoritmo linear.
-// Manter todas as funcionalidades existentes: login, autosave, analytics, etc.
+// MUDANCA RADICAL 07/07: Login/Cadastro no inicio do fluxo (Step00)
+// ATUALIZACAO 13/07: Remove criacao de evento — evento ja criado na Fase 0 (perfil.jsx)
+// ATUALIZACAO 13/07 v2: Step00 -> modal login -> perfil -> DNA -> questionario
+// CORRECAO 13/07 v3: Detecta DNA completo e pula Step00 para evitar looping
+// REMOCAO 14/07: Step01Modo deletado permanentemente (modo guiado unico)
+// CORRECAO 14/07 v2: Botao voltar no step 0 redireciona para DNA
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -8,7 +12,7 @@ import useMemorial from '../../hooks/useMemorial';
 import { useAuth } from '../../hooks/useAuth';
 import { useAnalytics } from '../../hooks/useAnalytics';
 import useAutoSave from '../../hooks/useAutoSave';
-import { carregarArvore, getNoPorId, getRaiz, proximoNo, noAnterior, contarNosAtivos } from '../../utils/motorArvore';
+import { calcularProximaEtapa, calcularEtapasTotais, getEtapaPorIndice } from '../../utils/algoritmo';
 import BreathTransition from './BreathTransition';
 import ProgressBar from './ProgressBar';
 import BackButton from './BackButton';
@@ -180,40 +184,21 @@ const BLOCK_NAMES = {
   'N': 'Bloco N — Documentacao e Financeiro',
 };
 
-function PlaceholderStep({ titulo, componente }) {
+function PlaceholderStep({ titulo }) {
   return (
     <div style={{ padding: 'var(--space-6)', textAlign: 'center' }}>
-      <h2>{titulo || 'Componente não encontrado'}</h2>
+      <h2>{titulo}</h2>
       <p>Etapa em desenvolvimento</p>
-      {componente && <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Faltando: {componente}</p>}
     </div>
   );
 }
 
 export default function MemorialOrchestrator() {
   const router = useRouter();
-  const { estado, setRespostas, atualizarMultiplo, carregarEstado } = useMemorial();
+  const { estado, setRespostas, atualizarMultiplo, carregarEstado, irParaEtapa, voltarEtapa } = useMemorial();
   const { user, evento, loading: carregandoAuth, supabase } = useAuth();
   const { trackStep } = useAnalytics();
   const { temDraft, carregarDraft, limparDraft, salvandoAgora } = useAutoSave(estado, user, evento);
-
-  const [arvore, setArvore] = useState(null);
-  const [noAtualId, setNoAtualId] = useState(null);
-  const [historicoIds, setHistoricoIds] = useState([]);
-  const arvoreCarregada = useRef(false);
-
-  useEffect(() => {
-    if (arvoreCarregada.current) return;
-    arvoreCarregada.current = true;
-    const tipo = estado.tipoEvento || 'casamento';
-    carregarArvore(tipo).then(arv => {
-      setArvore(arv);
-      if (!noAtualId) {
-        const raiz = getRaiz(arv);
-        if (raiz) setNoAtualId(raiz.id);
-      }
-    });
-  }, [estado.tipoEvento]);
 
   const [transicionando, setTransicionando] = useState(false);
   const [corTransicao, setCorTransicao] = useState(null);
@@ -229,30 +214,27 @@ export default function MemorialOrchestrator() {
   const perfilSelecionadoRef = useRef(null);
   const dnaSkipFeito = useRef(false);
 
+  // Recupera evento_id do localStorage (criado na Fase 0)
   useEffect(() => {
     const id = localStorage.getItem('descomplicai-evento-id');
     if (id) setEventoId(id);
   }, []);
 
+  // CORRECAO: Detecta DNA completo e pula Step00 para evitar looping
   useEffect(() => {
-    if (dnaSkipFeito.current || !arvore) return;
+    if (dnaSkipFeito.current) return;
     const dnaCompleto = localStorage.getItem('descomplicai-dna-completo');
-    if (dnaCompleto && estado.perfilCasal && noAtualId === getRaiz(arvore)?.id) {
+    if (dnaCompleto && estado.perfilCasal && estado.etapaAtual === 0) {
       dnaSkipFeito.current = true;
-      const raiz = getRaiz(arvore);
-      if (raiz) {
-        const prox = proximoNo(estado, raiz.id, arvore);
-        if (prox) {
-          setHistoricoIds(prev => [...prev, raiz.id]);
-          setNoAtualId(prox.id);
-        }
-      }
+      irParaEtapa(1);
     }
-  }, [estado.perfilCasal, noAtualId, arvore]);
+  }, [estado.perfilCasal, estado.etapaAtual, irParaEtapa]);
 
+  // Quando usuario loga apos modal, redireciona para perfil se nao tem evento
   useEffect(() => {
     if (!user || carregandoAuth) return;
     if (eventoId) return;
+
     const draft = localStorage.getItem('descomplicai-perfil-draft');
     if (draft) {
       try {
@@ -264,10 +246,10 @@ export default function MemorialOrchestrator() {
     }
   }, [user, carregandoAuth, eventoId, router]);
 
+  // Rastreia inicio e abandono de steps
   useEffect(() => {
-    if (!noAtualId || !arvore) return;
-    const noAtual = getNoPorId(noAtualId, arvore);
-    const stepId = noAtual?.id || noAtual?.componente;
+    const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
+    const stepId = etapaAtualObj?.id || etapaAtualObj?.componente;
 
     if (stepId && stepId !== currentStepIdRef.current) {
       if (currentStepIdRef.current && !stepCompletedRef.current) {
@@ -283,8 +265,9 @@ export default function MemorialOrchestrator() {
         trackStep(currentStepIdRef.current, 'abandonou');
       }
     };
-  }, [noAtualId, arvore, trackStep]);
+  }, [estado.etapaAtual, trackStep]);
 
+  // Detecta usuario logado + evento existente (entre dispositivos)
   useEffect(() => {
     if (!user) return;
     if (restauracaoFeita.current) return;
@@ -330,30 +313,35 @@ export default function MemorialOrchestrator() {
     buscarDoSupabase();
   }, [user, carregandoAuth, estado.perfilCasal, carregarEstado, carregarDraft, supabase]);
 
-  const etapasTotais = arvore ? contarNosAtivos(estado, arvore) : 0;
-  const noAtual = arvore ? getNoPorId(noAtualId, arvore) : null;
-  const blocoAtual = noAtual?.bloco || '';
-  const progress = etapasTotais > 0 ? (historicoIds.length / etapasTotais) * 100 : 0;
+  const etapasTotais = calcularEtapasTotais(estado);
+  const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
+  const blocoAtual = etapaAtualObj?.bloco || '';
+  const progress = etapasTotais > 0 ? (estado.etapaAtual / etapasTotais) * 100 : 0;
   const blockName = BLOCK_NAMES[blocoAtual] || '';
 
   const BREATH_DURATION = 1400;
 
+  // handleSelect: avanca etapa (sem criar evento — ja existe)
   const handleSelect = useCallback((campo, valor, cor) => {
+    // Intercepta Step00 (perfilCasal) para gerenciar login e redirecionamento
     if (campo === 'perfilCasal') {
       perfilSelecionadoRef.current = valor;
 
+      // Nao logado: salva draft e abre modal de login
       if (!user) {
         localStorage.setItem('descomplicai-perfil-draft', JSON.stringify({ perfilCasal: valor }));
         setModalAuthAberto(true);
         return;
       }
 
+      // Logado mas sem evento: redireciona para perfil
       if (!eventoId) {
         localStorage.setItem('descomplicai-perfil-draft', JSON.stringify({ perfilCasal: valor }));
         router.push('/memorial/perfil');
         return;
       }
 
+      // Logado com evento: avanca normalmente, modo guiado ja e o unico
       setRespostas('perfilCasal', valor);
       setRespostas('modoPlanejamento', 'guiado');
 
@@ -365,12 +353,8 @@ export default function MemorialOrchestrator() {
       const novoEstado = { ...estado, perfilCasal: valor, modoPlanejamento: 'guiado' };
 
       setTimeout(() => {
-        if (!arvore) return;
-        const proximo = proximoNo(novoEstado, noAtualId, arvore);
-        if (proximo) {
-          setHistoricoIds(prev => [...prev, noAtualId]);
-          setNoAtualId(proximo.id);
-        }
+        const proxima = calcularProximaEtapa(novoEstado, estado.etapaAtual);
+        irParaEtapa(proxima);
         setTransicionando(false);
         setCorTransicao(null);
         setRespostaTransicao('');
@@ -395,19 +379,16 @@ export default function MemorialOrchestrator() {
     const novoEstado = { ...estado, [campo]: valor };
 
     setTimeout(() => {
-      if (!arvore) return;
-      const proximo = proximoNo(novoEstado, noAtualId, arvore);
-      if (proximo) {
-        setHistoricoIds(prev => [...prev, noAtualId]);
-        setNoAtualId(proximo.id);
-      }
+      const proxima = calcularProximaEtapa(novoEstado, estado.etapaAtual);
+      irParaEtapa(proxima);
       setTransicionando(false);
       setCorTransicao(null);
       setRespostaTransicao('');
       setCampoTransicao('');
     }, BREATH_DURATION);
-  }, [estado, setRespostas, noAtualId, arvore, user, eventoId, router]);
+  }, [estado, setRespostas, irParaEtapa, user, eventoId, router]);
 
+  // handleConcluirMemorial: salva estado final no banco
   const handleConcluirMemorial = useCallback(async (fornecedores) => {
     setRespostas('fornecedoresNecessarios', fornecedores);
     try {
@@ -439,22 +420,19 @@ export default function MemorialOrchestrator() {
     }
   }, [estado, setRespostas, router, user, eventoId, supabase]);
 
+  // CORRECAO: Botao voltar no step 0 redireciona para DNA
   const handleBack = useCallback(() => {
-    if (!arvore || historicoIds.length === 0) {
+    if (estado.etapaAtual === 0) {
       router.push('/memorial?fase=dna');
       return;
     }
-    const anterior = noAnterior(historicoIds, arvore);
-    if (anterior) {
+    if (estado.historicoEtapas?.length > 0) {
       setRespostaTransicao('');
       setCampoTransicao('');
       setCorTransicao(null);
-      setHistoricoIds(prev => prev.slice(0, -1));
-      setNoAtualId(anterior.id);
-    } else {
-      router.push('/memorial?fase=dna');
+      voltarEtapa();
     }
-  }, [arvore, historicoIds, router]);
+  }, [estado.etapaAtual, estado.historicoEtapas, voltarEtapa, router]);
 
   const handleContinuarDraft = () => {
     const draft = carregarDraft();
@@ -467,19 +445,9 @@ export default function MemorialOrchestrator() {
     setOferecerDraft(false);
   };
 
-  // Escolhe o componente com fallback informativo
-  let StepComponent = null;
-  let stepProps = {};
-  if (noAtual) {
-    const Comp = STEP_COMPONENTS[noAtual.componente];
-    if (Comp) {
-      StepComponent = Comp;
-    } else {
-      console.warn(`[MemorialOrchestrator] Componente "${noAtual.componente}" não encontrado no STEP_COMPONENTS.`);
-      StepComponent = PlaceholderStep;
-      stepProps = { titulo: noAtual.titulo, componente: noAtual.componente };
-    }
-  }
+  const StepComponent = etapaAtualObj
+    ? STEP_COMPONENTS[etapaAtualObj.componente] || PlaceholderStep
+    : null;
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh' }}>
@@ -512,7 +480,7 @@ export default function MemorialOrchestrator() {
         </div>
       ) : (
         <>
-          {(!noAtualId && oferecerDraft) ? (
+          {estado.etapaAtual === 0 && oferecerDraft ? (
             <div style={{ padding: 'var(--space-6)', textAlign: 'center' }}>
               <h2>Voce tem um progresso salvo</h2>
               <p>Deseja continuar de onde parou?</p>
@@ -530,19 +498,18 @@ export default function MemorialOrchestrator() {
                 perfilCasal={estado.perfilCasal || ''}
               >
                 <ProgressBar progress={progress} blockName={blockName} />
-                {historicoIds.length > 0 && <BackButton onClick={handleBack} />}
+                {estado.etapaAtual > 0 && <BackButton onClick={handleBack} />}
                 <React.Suspense fallback={<div style={{ padding: 'var(--space-6)' }}>Carregando etapa...</div>}>
                   {StepComponent && (
                     <StepComponent
                       estado={estado}
                       onSelect={handleSelect}
                       onConcluir={handleConcluirMemorial}
-                      disabled={modalAuthAberto && noAtual?.componente === 'Step00Casal'}
-                      {...stepProps}
+                      disabled={modalAuthAberto && etapaAtualObj?.componente === 'Step00Casal'}
                     />
                   )}
                 </React.Suspense>
-                {!noAtualId && <Footer />}
+                {estado.etapaAtual === 0 && <Footer />}
               </BreathTransition>
             </>
           )}
