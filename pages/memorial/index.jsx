@@ -1,5 +1,6 @@
 // pages/memorial/index.jsx
 // Entry point do memorial — gerencia fluxo por fase na URL
+export const dynamic = 'force-dynamic'; // Impede pré-renderização, evita erro de localStorage no build
 
 import { useRouter } from 'next/router';
 import Header from '../../components/ui/Header';
@@ -14,8 +15,6 @@ export default function MemorialPage() {
     if (fase === 'dna') {
       return <DNACasamento />;
     }
-    // Qualquer outra fase (incluindo sem fase na URL):
-    // o MemorialOrchestrator cuida do Step00, swipe, aprofundamento, etc.
     return <MemorialOrchestrator />;
   };
 
