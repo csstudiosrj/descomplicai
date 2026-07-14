@@ -1,16 +1,20 @@
 // pages/memorial/index.jsx
 // Entry point do memorial — gerencia fluxo por fase na URL
+// Componentes pesados são carregados apenas no cliente para evitar erros de SSR.
 
 import { useRouter } from 'next/router';
+import dynamic from 'next/dynamic';
 import Header from '../../components/ui/Header';
-import MemorialOrchestrator from '../../components/memorial/MemorialOrchestrator';
-import DNACasamento from '../../components/memorial/DNACasamento';
 
-// Força a página a ser renderizada no servidor sob demanda,
-// evitando pré-renderização estática e erros com localStorage.
-export async function getServerSideProps() {
-  return { props: {} };
-}
+const MemorialOrchestrator = dynamic(
+  () => import('../../components/memorial/MemorialOrchestrator'),
+  { ssr: false }
+);
+
+const DNACasamento = dynamic(
+  () => import('../../components/memorial/DNACasamento'),
+  { ssr: false }
+);
 
 export default function MemorialPage() {
   const router = useRouter();
