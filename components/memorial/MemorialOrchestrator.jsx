@@ -4,6 +4,7 @@
 // ATUALIZACAO 13/07 v2: Step00 -> modal login -> perfil -> DNA -> questionario
 // CORRECAO 13/07 v3: Detecta DNA completo e pula Step00 para evitar looping
 // REMOCAO 14/07: Step01Modo deletado permanentemente (modo guiado unico)
+// CORRECAO 14/07 v2: Botao voltar no step 0 redireciona para DNA
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -232,7 +233,7 @@ export default function MemorialOrchestrator() {
   // Quando usuario loga apos modal, redireciona para perfil se nao tem evento
   useEffect(() => {
     if (!user || carregandoAuth) return;
-    if (eventoId) return; // ja tem evento, deixa o fluxo normal
+    if (eventoId) return;
 
     const draft = localStorage.getItem('descomplicai-perfil-draft');
     if (draft) {
@@ -419,14 +420,19 @@ export default function MemorialOrchestrator() {
     }
   }, [estado, setRespostas, router, user, eventoId, supabase]);
 
+  // CORRECAO: Botao voltar no step 0 redireciona para DNA
   const handleBack = useCallback(() => {
+    if (estado.etapaAtual === 0) {
+      router.push('/memorial?fase=dna');
+      return;
+    }
     if (estado.historicoEtapas?.length > 0) {
       setRespostaTransicao('');
       setCampoTransicao('');
       setCorTransicao(null);
       voltarEtapa();
     }
-  }, [estado.historicoEtapas, voltarEtapa]);
+  }, [estado.etapaAtual, estado.historicoEtapas, voltarEtapa, router]);
 
   const handleContinuarDraft = () => {
     const draft = carregarDraft();
