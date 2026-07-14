@@ -2,7 +2,7 @@
 // Fase 0 — Cadastro/Perfil do evento
 // Mobile-first, linguagem inclusiva, i18n-ready, zero emojis
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -29,55 +29,40 @@ export default function PerfilPage() {
   const [perfilCasal, setPerfilCasal] = useState('');
   const [dataCasamento, setDataCasamento] = useState('');
   const [ufSelecionada, setUfSelecionada] = useState('');
-  const [cidadeInput, setCidadeInput] = useState('');
+  const [cidadeSelecionada, setCidadeSelecionada] = useState('');
   const [totalConvidados, setTotalConvidados] = useState(100);
   const [nomeEvento, setNomeEvento] = useState('');
 
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
 
-  const autocompleteRef = useRef(null);
-  const cidadeInputRef = useRef(null);
-
-  // Estados já carregados localmente — sem chamada de API
+  // Estados já carregados localmente
   const estados = useMemo(() => {
     return [...ESTADOS].sort((a, b) => a.nome.localeCompare(b.nome));
   }, []);
 
   // Cidades do estado selecionado — já carregadas localmente
-  const todasCidades = useMemo(() => {
+  const cidades = useMemo(() => {
     if (!ufSelecionada) return [];
-    const cidades = CIDADES_POR_ESTADO[ufSelecionada] || [];
-    return cidades.map((nome, idx) => ({ id: idx, nome }));
+    const lista = CIDADES_POR_ESTADO[ufSelecionada] || [];
+    return lista.map((nome, idx) => ({ id: idx, nome }));
   }, [ufSelecionada]);
 
-  // Autocomplete de cidades
-  const cidadesFiltradas = useMemo(() => {
-    if (!cidadeInput || cidadeInput.length < 2 || !todasCidades.length) return [];
-    const termo = cidadeInput.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return todasCidades
-      .filter(c => {
-        const nome = c.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        return nome.includes(termo);
-      })
-      .slice(0, 8);
-  }, [cidadeInput, todasCidades]);
-
-  const mostrarAutocomplete = cidadesFiltradas.length > 0 && cidadeInput.length >= 2;
-
-  // Fecha autocomplete ao clicar fora
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (autocompleteRef.current && !autocompleteRef.current.contains(e.target)) {
-        // Fecha removendo foco — não precisa de setState aqui
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+  const handleUfChange = useCallback((e) => {
+    setUfSelecionada(e.target.value);
+    setCidadeSelecionada('');
   }, []);
 
-  const selecionarCidade = useCallback((cidade) => {
-    setCidadeInput(cidade.nome);
+  const handleDateChange = useCallback((e) => {
+    const val = e.target.value;
+    if (val) {
+      const partes = val.split('-');
+      if (partes[0] && partes[0].length === 4) {
+        setDataCasamento(val);
+      }
+    } else {
+      setDataCasamento('');
+    }
   }, []);
 
   const handleSliderChange = useCallback((e) => {
@@ -91,25 +76,12 @@ export default function PerfilPage() {
     }
   }, []);
 
-  // Validacao do date picker
-  const handleDateChange = useCallback((e) => {
-    const val = e.target.value;
-    if (val) {
-      const partes = val.split('-');
-      if (partes[0] && partes[0].length === 4) {
-        setDataCasamento(val);
-      }
-    } else {
-      setDataCasamento('');
-    }
-  }, []);
-
   const validar = useCallback(() => {
     if (!perfilCasal) return t('perfil.erros.perfilObrigatorio');
     if (!dataCasamento) return t('perfil.erros.dataObrigatoria');
-    if (!ufSelecionada || !cidadeInput.trim()) return t('perfil.erros.cidadeObrigatoria');
+    if (!ufSelecionada || !cidadeSelecionada) return t('perfil.erros.cidadeObrigatoria');
     return null;
-  }, [perfilCasal, dataCasamento, ufSelecionada, cidadeInput, t]);
+  }, [perfilCasal, dataCasamento, ufSelecionada, cidadeSelecionada, t]);
 
   const handleSubmit = useCallback(async () => {
     const erroValidacao = validar();
@@ -124,7 +96,7 @@ export default function PerfilPage() {
 
       if (!token) {
         const draft = {
-          perfilCasal, dataCasamento, cidade: cidadeInput, uf: ufSelecionada,
+          perfilCasal, dataCasamento, cidade: cidadeSelecionada, uf: ufSelecionada,
           totalConvidados,
         };
         localStorage.setItem('descomplicai-perfil-draft', JSON.stringify(draft));
@@ -139,7 +111,7 @@ export default function PerfilPage() {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          perfilCasal, dataCasamento, cidade: cidadeInput, uf: ufSelecionada,
+          perfilCasal, dataCasamento, cidade: cidadeSelecionada, uf: ufSelecionada,
           totalConvidados,
           modoPlanejamento: 'guiado',
           nomeEvento: nomeEvento?.trim() || '',
@@ -157,7 +129,7 @@ export default function PerfilPage() {
     } finally {
       setEnviando(false);
     }
-  }, [perfilCasal, dataCasamento, ufSelecionada, cidadeInput, totalConvidados, nomeEvento, t, supabase, router, validar]);
+  }, [perfilCasal, dataCasamento, ufSelecionada, cidadeSelecionada, totalConvidados, nomeEvento, t, supabase, router, validar]);
 
   // Restaura draft se existir
   useEffect(() => {
@@ -168,13 +140,13 @@ export default function PerfilPage() {
         if (d.perfilCasal) setPerfilCasal(d.perfilCasal);
         if (d.dataCasamento) setDataCasamento(d.dataCasamento);
         if (d.uf) setUfSelecionada(d.uf);
-        if (d.cidade) setCidadeInput(d.cidade);
+        if (d.cidade) setCidadeSelecionada(d.cidade);
         if (d.totalConvidados) setTotalConvidados(d.totalConvidados);
       } catch { /* ignora */ }
     }
   }, []);
 
-  const isFormValid = perfilCasal && dataCasamento && ufSelecionada && cidadeInput.trim();
+  const isFormValid = perfilCasal && dataCasamento && ufSelecionada && cidadeSelecionada;
 
   return (
     <div className="perfil-page">
@@ -230,7 +202,7 @@ export default function PerfilPage() {
             <select
               className="perfil-select perfil-select--uf"
               value={ufSelecionada}
-              onChange={(e) => { setUfSelecionada(e.target.value); setCidadeInput(''); }}
+              onChange={handleUfChange}
               aria-label={t('perfil.cidade.ufLabel')}
             >
               <option value="">UF</option>
@@ -238,33 +210,22 @@ export default function PerfilPage() {
                 <option key={est.sigla} value={est.sigla}>{est.nome} ({est.sigla})</option>
               ))}
             </select>
-            <div className="perfil-autocomplete-wrapper" ref={autocompleteRef}>
-              <input
-                ref={cidadeInputRef}
-                type="text"
-                className="perfil-input perfil-input--cidade"
-                value={cidadeInput}
-                onChange={(e) => setCidadeInput(e.target.value)}
-                placeholder={ufSelecionada ? 'Digite a cidade' : 'Selecione o estado primeiro'}
-                aria-label={t('perfil.cidade.ariaLabel')}
-                disabled={!ufSelecionada}
-                autoComplete="off"
-              />
-              {mostrarAutocomplete && (
-                <ul className="perfil-autocomplete-list" role="listbox">
-                  {cidadesFiltradas.map((cidade) => (
-                    <li
-                      key={cidade.id}
-                      role="option"
-                      className="perfil-autocomplete-item"
-                      onMouseDown={(e) => { e.preventDefault(); selecionarCidade(cidade); }}
-                    >
-                      {cidade.nome}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            <select
+              className="perfil-select"
+              value={cidadeSelecionada}
+              onChange={(e) => setCidadeSelecionada(e.target.value)}
+              disabled={!ufSelecionada}
+              aria-label={t('perfil.cidade.ariaLabel')}
+            >
+              <option value="">
+                {ufSelecionada ? 'Selecione a cidade' : 'Selecione o estado primeiro'}
+              </option>
+              {cidades.map((cidade) => (
+                <option key={cidade.id} value={cidade.nome}>
+                  {cidade.nome}
+                </option>
+              ))}
+            </select>
           </div>
         </section>
 
@@ -351,10 +312,6 @@ export default function PerfilPage() {
         .perfil-input--date { min-height: 48px; }
         .perfil-cidade-row { display: flex; gap: var(--space-2); }
         .perfil-select--uf { flex: 0 0 140px; min-width: 140px; }
-        .perfil-autocomplete-wrapper { flex: 1; position: relative; }
-        .perfil-autocomplete-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-md); max-height: 200px; overflow-y: auto; z-index: var(--z-dropdown); list-style: none; margin: 0; padding: var(--space-1) 0; }
-        .perfil-autocomplete-item { padding: var(--space-2) var(--space-3); cursor: pointer; font-family: var(--font-body); font-size: var(--text-sm); color: var(--color-text-primary); transition: background 100ms ease; }
-        .perfil-autocomplete-item:hover, .perfil-autocomplete-item:focus-visible { background: var(--color-surface); outline: none; }
         .perfil-slider-row { display: flex; align-items: center; gap: var(--space-3); }
         .perfil-slider { flex: 1; -webkit-appearance: none; appearance: none; height: 6px; background: var(--color-border); border-radius: var(--radius-full); outline: none; }
         .perfil-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--color-brand); border-radius: 50%; cursor: pointer; border: 2px solid var(--color-white); box-shadow: var(--shadow-sm); }
