@@ -196,19 +196,36 @@ export default function MemorialOrchestrator() {
   const [noAtualId, setNoAtualId] = useState(null);
   const [historicoIds, setHistoricoIds] = useState([]);
   const arvoreCarregada = useRef(false);
+  const inicializacaoFeita = useRef(false);
 
+  // Carrega a árvore e inicializa o ponto de partida
   useEffect(() => {
     if (arvoreCarregada.current) return;
     arvoreCarregada.current = true;
     const tipo = estado.tipoEvento || 'casamento';
     carregarArvore(tipo).then(arv => {
       setArvore(arv);
-      if (!noAtualId) {
-        const raiz = getRaiz(arv);
-        if (raiz) setNoAtualId(raiz.id);
+      const raiz = getRaiz(arv);
+      if (!raiz) return;
+
+      // Se o usuário já tem perfil e o DNA foi concluído, pula o Step00 automaticamente
+      const dnaCompleto = localStorage.getItem('descomplicai-dna-completo');
+      const perfilPreenchido = estado.perfilCasal;
+
+      if (dnaCompleto && perfilPreenchido) {
+        // Avança para o próximo nó após o step00 (ou aquele que o condicional do step00 indicar)
+        const proximo = proximoNo(estado, raiz.id, arv);
+        if (proximo) {
+          setNoAtualId(proximo.id);
+          setHistoricoIds([raiz.id]); // step00 fica como histórico
+        } else {
+          setNoAtualId(raiz.id);
+        }
+      } else {
+        setNoAtualId(raiz.id);
       }
     });
-  }, [estado.tipoEvento]);
+  }, [estado.tipoEvento]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [transicionando, setTransicionando] = useState(false);
   const [corTransicao, setCorTransicao] = useState(null);
@@ -222,29 +239,13 @@ export default function MemorialOrchestrator() {
   const stepCompletedRef = useRef(false);
   const currentStepIdRef = useRef(null);
   const perfilSelecionadoRef = useRef(null);
-  const dnaSkipFeito = useRef(false);
 
   useEffect(() => {
     const id = localStorage.getItem('descomplicai-evento-id');
     if (id) setEventoId(id);
   }, []);
 
-  useEffect(() => {
-    if (dnaSkipFeito.current || !arvore) return;
-    const dnaCompleto = localStorage.getItem('descomplicai-dna-completo');
-    if (dnaCompleto && estado.perfilCasal && noAtualId === getRaiz(arvore)?.id) {
-      dnaSkipFeito.current = true;
-      const raiz = getRaiz(arvore);
-      if (raiz) {
-        const prox = proximoNo(estado, raiz.id, arvore);
-        if (prox) {
-          setHistoricoIds(prev => [...prev, raiz.id]);
-          setNoAtualId(prox.id);
-        }
-      }
-    }
-  }, [estado.perfilCasal, noAtualId, arvore]);
-
+  // Redireciona para perfil se logado e sem evento
   useEffect(() => {
     if (!user || carregandoAuth) return;
     if (eventoId) return;
@@ -259,6 +260,7 @@ export default function MemorialOrchestrator() {
     }
   }, [user, carregandoAuth, eventoId, router]);
 
+  // Analytics
   useEffect(() => {
     if (!noAtualId || !arvore) return;
     const noAtual = getNoPorId(noAtualId, arvore);
@@ -280,6 +282,7 @@ export default function MemorialOrchestrator() {
     };
   }, [noAtualId, arvore, trackStep]);
 
+  // Restaura do Supabase
   useEffect(() => {
     if (!user) return;
     if (restauracaoFeita.current) return;
@@ -499,8 +502,7 @@ export default function MemorialOrchestrator() {
         isOpen={modalAuthAberto}
         onClose={() => setModalAuthAberto(false)}
         onLoginSuccess={() => {
-          // Recarrega a página para que o evento e o estado sejam sincronizados,
-          // mantendo o usuário no questionário.
+          // Recarrega a página para sincronizar evento/estado
           window.location.reload();
         }}
       />
