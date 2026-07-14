@@ -2,11 +2,10 @@
 // Fase 0 — Cadastro/Perfil do evento
 // Mobile-first, linguagem inclusiva, i18n-ready, zero emojis
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from '../../hooks/useTranslation';
-import { getTermos } from '../../utils/linguagemCasal';
 import { listarEstados, listarCidadesPorEstado } from '../../lib/ibge';
 import Icon from '../../components/ui/Icon';
 import fetchAPI from '../../utils/fetchAPI';
@@ -31,13 +30,12 @@ export default function PerfilPage() {
   const [dataCasamento, setDataCasamento] = useState('');
   const [ufSelecionada, setUfSelecionada] = useState('');
   const [cidadeInput, setCidadeInput] = useState('');
-  const [cidadesFiltradas, setCidadesFiltradas] = useState([]);
-  const [mostrarAutocomplete, setMostrarAutocomplete] = useState(false);
   const [totalConvidados, setTotalConvidados] = useState(100);
   const [nomeEvento, setNomeEvento] = useState('');
 
   const [estados, setEstados] = useState([]);
   const [todasCidades, setTodasCidades] = useState([]);
+  const [carregandoCidades, setCarregandoCidades] = useState(false);
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
 
@@ -61,60 +59,50 @@ export default function PerfilPage() {
 
   // Carrega cidades quando UF muda
   useEffect(() => {
-    if (!ufSelecionada) { setTodasCidades([]); return; }
+    if (!ufSelecionada) { setTodasCidades([]); setCidadeInput(''); return; }
     let cancelled = false;
+    setCarregandoCidades(true);
     async function load() {
       try {
         const cids = await listarCidadesPorEstado(ufSelecionada);
         if (!cancelled) setTodasCidades(cids);
       } catch (e) {
         console.warn('[Perfil] Erro ao carregar cidades:', e);
+      } finally {
+        if (!cancelled) setCarregandoCidades(false);
       }
     }
     load();
     return () => { cancelled = true; };
   }, [ufSelecionada]);
 
-  // Autocomplete de cidades
-  useEffect(() => {
-    if (!cidadeInput || cidadeInput.length < 2 || !todasCidades.length) {
-      setCidadesFiltradas([]);
-      setMostrarAutocomplete(false);
-      return;
-    }
+  // Autocomplete de cidades — useMemo para performance
+  const cidadesFiltradas = useMemo(() => {
+    if (!cidadeInput || cidadeInput.length < 2 || !todasCidades.length) return [];
     const termo = cidadeInput.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const filtradas = todasCidades
+    return todasCidades
       .filter(c => {
         const nome = c.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         return nome.includes(termo);
       })
       .slice(0, 8);
-    setCidadesFiltradas(filtradas);
-    setMostrarAutocomplete(filtradas.length > 0);
   }, [cidadeInput, todasCidades]);
+
+  const mostrarAutocomplete = cidadesFiltradas.length > 0 && cidadeInput.length >= 2;
 
   // Fecha autocomplete ao clicar fora
   useEffect(() => {
     function handleClickOutside(e) {
       if (autocompleteRef.current && !autocompleteRef.current.contains(e.target)) {
-        setMostrarAutocomplete(false);
+        // Fecha sem setState direto no evento
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Preenche nome do evento automaticamente quando perfil muda
-  useEffect(() => {
-    if (!nomeEvento && perfilCasal) {
-      const termos = getTermos(perfilCasal);
-      setNomeEvento(`Casamento de ${termos.casalCap}`);
-    }
-  }, [perfilCasal, nomeEvento]);
-
   const selecionarCidade = useCallback((cidade) => {
     setCidadeInput(cidade.nome);
-    setMostrarAutocomplete(false);
   }, []);
 
   const handleSliderChange = useCallback((e) => {
@@ -125,6 +113,19 @@ export default function PerfilPage() {
     const val = parseInt(e.target.value, 10);
     if (!isNaN(val)) {
       setTotalConvidados(Math.min(Math.max(val, CONVIDADOS_MIN), CONVIDADOS_MAX));
+    }
+  }, []);
+
+  // Validacao do date picker — limita ano a 4 digitos
+  const handleDateChange = useCallback((e) => {
+    const val = e.target.value;
+    if (val) {
+      const ano = val.split('-')[0];
+      if (ano && ano.length <= 4) {
+        setDataCasamento(val);
+      }
+    } else {
+      setDataCasamento('');
     }
   }, []);
 
@@ -150,7 +151,6 @@ export default function PerfilPage() {
         const draft = {
           perfilCasal, dataCasamento, cidade: cidadeInput, uf: ufSelecionada,
           totalConvidados,
-          nomeEvento: nomeEvento || 'Meu evento',
         };
         localStorage.setItem('descomplicai-perfil-draft', JSON.stringify(draft));
         router.push('/login?redirect=/memorial/perfil');
@@ -167,7 +167,7 @@ export default function PerfilPage() {
           perfilCasal, dataCasamento, cidade: cidadeInput, uf: ufSelecionada,
           totalConvidados,
           modoPlanejamento: 'guiado',
-          nomeEvento: nomeEvento || 'Meu evento',
+          nomeEvento: nomeEvento?.trim() || '',
         }),
       });
 
@@ -195,7 +195,6 @@ export default function PerfilPage() {
         if (d.uf) setUfSelecionada(d.uf);
         if (d.cidade) setCidadeInput(d.cidade);
         if (d.totalConvidados) setTotalConvidados(d.totalConvidados);
-        if (d.nomeEvento) setNomeEvento(d.nomeEvento);
       } catch { /* ignora */ }
     }
   }, []);
@@ -241,7 +240,7 @@ export default function PerfilPage() {
             type="date"
             className="perfil-input perfil-input--date"
             value={dataCasamento}
-            onChange={(e) => setDataCasamento(e.target.value)}
+            onChange={handleDateChange}
             min={new Date().toISOString().split('T')[0]}
             aria-label={t('perfil.dataCasamento.ariaLabel')}
           />
@@ -256,7 +255,7 @@ export default function PerfilPage() {
             <select
               className="perfil-select perfil-select--uf"
               value={ufSelecionada}
-              onChange={(e) => { setUfSelecionada(e.target.value); setCidadeInput(''); setCidadesFiltradas([]); }}
+              onChange={(e) => { setUfSelecionada(e.target.value); setCidadeInput(''); }}
               aria-label={t('perfil.cidade.ufLabel')}
             >
               <option value="">{t('perfil.cidade.ufPlaceholder')}</option>
@@ -271,16 +270,23 @@ export default function PerfilPage() {
                 className="perfil-input perfil-input--cidade"
                 value={cidadeInput}
                 onChange={(e) => setCidadeInput(e.target.value)}
-                onFocus={() => cidadeInput.length >= 2 && cidadesFiltradas.length > 0 && setMostrarAutocomplete(true)}
-                placeholder={t('perfil.cidade.placeholder')}
+                placeholder={ufSelecionada ? t('perfil.cidade.placeholder') : t('perfil.cidade.ufFirst')}
                 aria-label={t('perfil.cidade.ariaLabel')}
-                disabled={!ufSelecionada}
+                disabled={!ufSelecionada || carregandoCidades}
                 autoComplete="off"
               />
-              {mostrarAutocomplete && (
+              {carregandoCidades && (
+                <div className="perfil-autocomplete-loading">Carregando cidades...</div>
+              )}
+              {mostrarAutocomplete && !carregandoCidades && (
                 <ul className="perfil-autocomplete-list" role="listbox">
                   {cidadesFiltradas.map((cidade) => (
-                    <li key={cidade.id} role="option" className="perfil-autocomplete-item" onClick={() => selecionarCidade(cidade)}>
+                    <li
+                      key={cidade.id}
+                      role="option"
+                      className="perfil-autocomplete-item"
+                      onMouseDown={(e) => { e.preventDefault(); selecionarCidade(cidade); }}
+                    >
                       {cidade.nome}
                     </li>
                   ))}
@@ -319,10 +325,11 @@ export default function PerfilPage() {
             <span className="perfil-optional">{t('common.optional')}</span>
           </h2>
           <input
-            type="text" className="perfil-input"
+            type="text"
+            className="perfil-input"
             value={nomeEvento}
             onChange={(e) => setNomeEvento(e.target.value)}
-            placeholder={t('perfil.nomeEvento.placeholder') || 'Nome do seu evento'}
+            placeholder=""
             aria-label={t('perfil.nomeEvento.ariaLabel')}
             maxLength={100}
           />
@@ -376,6 +383,7 @@ export default function PerfilPage() {
         .perfil-autocomplete-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-md); max-height: 200px; overflow-y: auto; z-index: var(--z-dropdown); list-style: none; margin: 0; padding: var(--space-1) 0; }
         .perfil-autocomplete-item { padding: var(--space-2) var(--space-3); cursor: pointer; font-family: var(--font-body); font-size: var(--text-sm); color: var(--color-text-primary); transition: background 100ms ease; }
         .perfil-autocomplete-item:hover, .perfil-autocomplete-item:focus-visible { background: var(--color-surface); outline: none; }
+        .perfil-autocomplete-loading { position: absolute; top: calc(100% + 4px); left: 0; right: 0; padding: var(--space-2) var(--space-3); background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--text-xs); color: var(--color-text-muted); z-index: var(--z-dropdown); }
         .perfil-slider-row { display: flex; align-items: center; gap: var(--space-3); }
         .perfil-slider { flex: 1; -webkit-appearance: none; appearance: none; height: 6px; background: var(--color-border); border-radius: var(--radius-full); outline: none; }
         .perfil-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--color-brand); border-radius: 50%; cursor: pointer; border: 2px solid var(--color-white); box-shadow: var(--shadow-sm); }
