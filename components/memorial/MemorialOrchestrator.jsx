@@ -1,5 +1,5 @@
 // components/memorial/MemorialOrchestrator.jsx
-// REFATORADO: Motor de árvore de nós (motorArvore.js) substitui algoritmo linear.
+// REFATORADO: Motor de árvore de nós (motorArvore.js) substitui navegação linear.
 // Mantém todas as funcionalidades existentes: login, autosave, analytics, etc.
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
