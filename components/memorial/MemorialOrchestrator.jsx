@@ -1,8 +1,7 @@
 // components/memorial/MemorialOrchestrator.jsx
 // MUDANCA RADICAL 07/07: Login/Cadastro no inicio do fluxo (Step00)
-// CORRECAO 07/07: Adiciona storage event listener para detectar
-// confirmacao de email em outra aba/dispositivo
 // ATUALIZACAO 13/07: Remove criacao de evento — evento ja criado na Fase 0 (perfil.jsx)
+// ATUALIZACAO 13/07 v2: Step00 -> modal login -> perfil -> DNA -> questionario
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -210,18 +209,31 @@ export default function MemorialOrchestrator() {
   const restauracaoFeita = useRef(false);
   const stepCompletedRef = useRef(false);
   const currentStepIdRef = useRef(null);
+  const perfilSelecionadoRef = useRef(null);
 
-  // ============================================================
   // Recupera evento_id do localStorage (criado na Fase 0)
-  // ============================================================
   useEffect(() => {
     const id = localStorage.getItem('descomplicai-evento-id');
     if (id) setEventoId(id);
   }, []);
 
-  // ============================================================
+  // Quando usuario loga apos modal, redireciona para perfil se nao tem evento
+  useEffect(() => {
+    if (!user || carregandoAuth) return;
+    if (eventoId) return; // ja tem evento, deixa o fluxo normal
+
+    const draft = localStorage.getItem('descomplicai-perfil-draft');
+    if (draft) {
+      try {
+        const d = JSON.parse(draft);
+        if (d.perfilCasal || perfilSelecionadoRef.current) {
+          router.push('/memorial/perfil');
+        }
+      } catch { /* ignora */ }
+    }
+  }, [user, carregandoAuth, eventoId, router]);
+
   // Rastreia inicio e abandono de steps
-  // ============================================================
   useEffect(() => {
     const etapaAtualObj = getEtapaPorIndice(estado.etapaAtual);
     const stepId = etapaAtualObj?.id || etapaAtualObj?.componente;
@@ -242,9 +254,7 @@ export default function MemorialOrchestrator() {
     };
   }, [estado.etapaAtual, trackStep]);
 
-  // ============================================================
   // Detecta usuario logado + evento existente (entre dispositivos)
-  // ============================================================
   useEffect(() => {
     if (!user) return;
     if (restauracaoFeita.current) return;
@@ -270,7 +280,6 @@ export default function MemorialOrchestrator() {
           return;
         }
 
-        // Se tem dados no campo JSONB 'dados', carrega no estado
         if (!memErr && memorialData?.dados) {
           carregarEstado(memorialData.dados);
         }
@@ -299,10 +308,29 @@ export default function MemorialOrchestrator() {
 
   const BREATH_DURATION = 1400;
 
-  // ============================================================
   // handleSelect: avanca etapa (sem criar evento — ja existe)
-  // ============================================================
   const handleSelect = useCallback((campo, valor, cor) => {
+    // Intercepta Step00 (perfilCasal) para gerenciar login e redirecionamento
+    if (campo === 'perfilCasal') {
+      perfilSelecionadoRef.current = valor;
+
+      // Nao logado: salva draft e abre modal de login
+      if (!user) {
+        localStorage.setItem('descomplicai-perfil-draft', JSON.stringify({ perfilCasal: valor }));
+        setModalAuthAberto(true);
+        return;
+      }
+
+      // Logado mas sem evento: redireciona para perfil
+      if (!eventoId) {
+        localStorage.setItem('descomplicai-perfil-draft', JSON.stringify({ perfilCasal: valor }));
+        router.push('/memorial/perfil');
+        return;
+      }
+
+      // Logado com evento: continua fluxo normal do questionario
+    }
+
     setRespostas(campo, valor);
 
     let valorDisplay = valor;
@@ -326,17 +354,14 @@ export default function MemorialOrchestrator() {
       setRespostaTransicao('');
       setCampoTransicao('');
     }, BREATH_DURATION);
-  }, [estado, setRespostas, irParaEtapa]);
+  }, [estado, setRespostas, irParaEtapa, user, eventoId, router]);
 
-  // ============================================================
   // handleConcluirMemorial: salva estado final no banco
-  // ============================================================
   const handleConcluirMemorial = useCallback(async (fornecedores) => {
     setRespostas('fornecedoresNecessarios', fornecedores);
     try {
       localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
 
-      // Salva no banco se tem evento_id
       const evId = eventoId || localStorage.getItem('descomplicai-evento-id');
       if (user && evId) {
         const { data: sessionData } = await supabase.auth.getSession();

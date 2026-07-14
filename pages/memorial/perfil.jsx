@@ -18,12 +18,6 @@ const PERFIL_OPTIONS = [
   { value: 'nao-especificar', labelKey: 'perfil.options.naoEspecificar', icon: 'users' },
 ];
 
-const MODO_OPTIONS = [
-  { value: 'guiado', labelKey: 'perfil.modo.guiado', descKey: 'perfil.modo.guiadoDesc', icon: 'checklist' },
-  { value: 'ativo', labelKey: 'perfil.modo.ativo', descKey: 'perfil.modo.ativoDesc', icon: 'search' },
-  { value: 'misto', labelKey: 'perfil.modo.misto', descKey: 'perfil.modo.mistoDesc', icon: 'list' },
-];
-
 const CONVIDADOS_MIN = 20;
 const CONVIDADOS_MAX = 500;
 const CONVIDADOS_STEP = 10;
@@ -40,7 +34,6 @@ export default function PerfilPage() {
   const [cidadesFiltradas, setCidadesFiltradas] = useState([]);
   const [mostrarAutocomplete, setMostrarAutocomplete] = useState(false);
   const [totalConvidados, setTotalConvidados] = useState(100);
-  const [modoPlanejamento, setModoPlanejamento] = useState('');
   const [nomeEvento, setNomeEvento] = useState('');
 
   const [estados, setEstados] = useState([]);
@@ -51,6 +44,7 @@ export default function PerfilPage() {
   const autocompleteRef = useRef(null);
   const cidadeInputRef = useRef(null);
 
+  // Carrega estados (IBGE)
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -65,6 +59,7 @@ export default function PerfilPage() {
     return () => { cancelled = true; };
   }, []);
 
+  // Carrega cidades quando UF muda
   useEffect(() => {
     if (!ufSelecionada) { setTodasCidades([]); return; }
     let cancelled = false;
@@ -80,6 +75,7 @@ export default function PerfilPage() {
     return () => { cancelled = true; };
   }, [ufSelecionada]);
 
+  // Autocomplete de cidades
   useEffect(() => {
     if (!cidadeInput || cidadeInput.length < 2 || !todasCidades.length) {
       setCidadesFiltradas([]);
@@ -97,6 +93,7 @@ export default function PerfilPage() {
     setMostrarAutocomplete(filtradas.length > 0);
   }, [cidadeInput, todasCidades]);
 
+  // Fecha autocomplete ao clicar fora
   useEffect(() => {
     function handleClickOutside(e) {
       if (autocompleteRef.current && !autocompleteRef.current.contains(e.target)) {
@@ -107,12 +104,13 @@ export default function PerfilPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Preenche nome do evento automaticamente quando perfil muda
   useEffect(() => {
     if (!nomeEvento && perfilCasal) {
       const termos = getTermos(perfilCasal);
-      setNomeEvento(t('perfil.nomeEvento.placeholder', { casal: termos.casalCap }));
+      setNomeEvento(`Casamento de ${termos.casalCap}`);
     }
-  }, [perfilCasal, nomeEvento, t]);
+  }, [perfilCasal, nomeEvento]);
 
   const selecionarCidade = useCallback((cidade) => {
     setCidadeInput(cidade.nome);
@@ -134,9 +132,8 @@ export default function PerfilPage() {
     if (!perfilCasal) return t('perfil.erros.perfilObrigatorio');
     if (!dataCasamento) return t('perfil.erros.dataObrigatoria');
     if (!ufSelecionada || !cidadeInput.trim()) return t('perfil.erros.cidadeObrigatoria');
-    if (!modoPlanejamento) return t('perfil.erros.modoObrigatorio');
     return null;
-  }, [perfilCasal, dataCasamento, ufSelecionada, cidadeInput, modoPlanejamento, t]);
+  }, [perfilCasal, dataCasamento, ufSelecionada, cidadeInput, t]);
 
   const handleSubmit = useCallback(async () => {
     const erroValidacao = validar();
@@ -152,8 +149,8 @@ export default function PerfilPage() {
       if (!token) {
         const draft = {
           perfilCasal, dataCasamento, cidade: cidadeInput, uf: ufSelecionada,
-          totalConvidados, modoPlanejamento,
-          nomeEvento: nomeEvento || t('perfil.nomeEvento.default'),
+          totalConvidados,
+          nomeEvento: nomeEvento || 'Meu evento',
         };
         localStorage.setItem('descomplicai-perfil-draft', JSON.stringify(draft));
         router.push('/login?redirect=/memorial/perfil');
@@ -168,8 +165,9 @@ export default function PerfilPage() {
         },
         body: JSON.stringify({
           perfilCasal, dataCasamento, cidade: cidadeInput, uf: ufSelecionada,
-          totalConvidados, modoPlanejamento,
-          nomeEvento: nomeEvento || t('perfil.nomeEvento.default'),
+          totalConvidados,
+          modoPlanejamento: 'guiado',
+          nomeEvento: nomeEvento || 'Meu evento',
         }),
       });
 
@@ -184,8 +182,9 @@ export default function PerfilPage() {
     } finally {
       setEnviando(false);
     }
-  }, [perfilCasal, dataCasamento, ufSelecionada, cidadeInput, totalConvidados, modoPlanejamento, nomeEvento, t, supabase, router, validar]);
+  }, [perfilCasal, dataCasamento, ufSelecionada, cidadeInput, totalConvidados, nomeEvento, t, supabase, router, validar]);
 
+  // Restaura draft se existir
   useEffect(() => {
     const draft = localStorage.getItem('descomplicai-perfil-draft');
     if (draft) {
@@ -196,13 +195,12 @@ export default function PerfilPage() {
         if (d.uf) setUfSelecionada(d.uf);
         if (d.cidade) setCidadeInput(d.cidade);
         if (d.totalConvidados) setTotalConvidados(d.totalConvidados);
-        if (d.modoPlanejamento) setModoPlanejamento(d.modoPlanejamento);
         if (d.nomeEvento) setNomeEvento(d.nomeEvento);
       } catch { /* ignora */ }
     }
   }, []);
 
-  const isFormValid = perfilCasal && dataCasamento && ufSelecionada && cidadeInput.trim() && modoPlanejamento;
+  const isFormValid = perfilCasal && dataCasamento && ufSelecionada && cidadeInput.trim();
 
   return (
     <div className="perfil-page">
@@ -314,28 +312,6 @@ export default function PerfilPage() {
           <p className="perfil-hint">{t('perfil.totalConvidados.hint', { count: totalConvidados })}</p>
         </section>
 
-        <section className="perfil-section" aria-labelledby="perfil-modo-label">
-          <h2 id="perfil-modo-label" className="perfil-section-title">
-            <Icon name="checklist" size={20} className="perfil-section-icon" />
-            {t('perfil.modoPlanejamento.titulo')}
-          </h2>
-          <div className="perfil-cards perfil-cards--modo" role="radiogroup" aria-label={t('perfil.modoPlanejamento.ariaLabel')}>
-            {MODO_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                type="button" role="radio"
-                aria-checked={modoPlanejamento === opt.value}
-                className={`perfil-card ${modoPlanejamento === opt.value ? 'perfil-card--selected' : ''}`}
-                onClick={() => setModoPlanejamento(opt.value)}
-              >
-                <Icon name={opt.icon} size={28} className="perfil-card-icon" />
-                <span className="perfil-card-label">{t(opt.labelKey)}</span>
-                <span className="perfil-card-desc">{t(opt.descKey)}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
         <section className="perfil-section" aria-labelledby="perfil-nome-label">
           <h2 id="perfil-nome-label" className="perfil-section-title">
             <Icon name="edit" size={20} className="perfil-section-icon" />
@@ -344,8 +320,9 @@ export default function PerfilPage() {
           </h2>
           <input
             type="text" className="perfil-input"
-            value={nomeEvento} onChange={(e) => setNomeEvento(e.target.value)}
-            placeholder={t('perfil.nomeEvento.placeholder')}
+            value={nomeEvento}
+            onChange={(e) => setNomeEvento(e.target.value)}
+            placeholder={t('perfil.nomeEvento.placeholder') || 'Nome do seu evento'}
             aria-label={t('perfil.nomeEvento.ariaLabel')}
             maxLength={100}
           />
@@ -383,7 +360,6 @@ export default function PerfilPage() {
         .perfil-section-title { font-family: var(--font-body); font-size: var(--text-base); font-weight: var(--font-semibold); color: var(--color-text-primary); margin: 0 0 var(--space-3); display: flex; align-items: center; gap: var(--space-2); }
         .perfil-section-icon { color: var(--color-brand); flex-shrink: 0; }
         .perfil-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
-        .perfil-cards--modo { grid-template-columns: 1fr; }
         .perfil-card { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-4) var(--space-3); background: var(--color-white); border: 2px solid var(--color-border); border-radius: var(--radius-lg); cursor: pointer; transition: all 150ms ease; text-align: center; font-family: var(--font-body); font-size: var(--text-sm); color: var(--color-text-primary); }
         .perfil-card:hover { border-color: var(--color-brand-light); background: var(--color-surface); }
         .perfil-card:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
@@ -391,7 +367,6 @@ export default function PerfilPage() {
         .perfil-card--selected .perfil-card-icon { color: var(--color-brand); }
         .perfil-card-icon { color: var(--color-text-muted); transition: color 150ms ease; }
         .perfil-card-label { font-weight: var(--font-medium); }
-        .perfil-card-desc { font-size: var(--text-xs); color: var(--color-text-secondary); line-height: 1.4; }
         .perfil-input, .perfil-select { width: 100%; padding: var(--space-3) var(--space-4); font-family: var(--font-body); font-size: var(--text-base); color: var(--color-text-primary); background: var(--color-white); border: 1.5px solid var(--color-border); border-radius: var(--radius-md); transition: border-color 150ms ease; }
         .perfil-input:focus-visible, .perfil-select:focus-visible { outline: none; border-color: var(--color-brand); }
         .perfil-input--date { min-height: 48px; }
