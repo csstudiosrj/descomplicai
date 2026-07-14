@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from '../../hooks/useTranslation';
-import { listarEstados, listarCidadesPorEstado } from '../../lib/ibge';
+import { ESTADOS, CIDADES_POR_ESTADO } from '../../lib/estados-cidades';
 import Icon from '../../components/ui/Icon';
 import fetchAPI from '../../utils/fetchAPI';
 
@@ -33,50 +33,25 @@ export default function PerfilPage() {
   const [totalConvidados, setTotalConvidados] = useState(100);
   const [nomeEvento, setNomeEvento] = useState('');
 
-  const [estados, setEstados] = useState([]);
-  const [todasCidades, setTodasCidades] = useState([]);
-  const [carregandoCidades, setCarregandoCidades] = useState(false);
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
 
   const autocompleteRef = useRef(null);
   const cidadeInputRef = useRef(null);
 
-  // Carrega estados (IBGE)
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const ests = await listarEstados();
-        if (!cancelled) setEstados(ests.sort((a, b) => a.nome.localeCompare(b.nome)));
-      } catch (e) {
-        console.warn('[Perfil] Erro ao carregar estados:', e);
-      }
-    }
-    load();
-    return () => { cancelled = true; };
+  // Estados já carregados localmente — sem chamada de API
+  const estados = useMemo(() => {
+    return [...ESTADOS].sort((a, b) => a.nome.localeCompare(b.nome));
   }, []);
 
-  // Carrega cidades quando UF muda
-  useEffect(() => {
-    if (!ufSelecionada) { setTodasCidades([]); setCidadeInput(''); return; }
-    let cancelled = false;
-    setCarregandoCidades(true);
-    async function load() {
-      try {
-        const cids = await listarCidadesPorEstado(ufSelecionada);
-        if (!cancelled) setTodasCidades(cids);
-      } catch (e) {
-        console.warn('[Perfil] Erro ao carregar cidades:', e);
-      } finally {
-        if (!cancelled) setCarregandoCidades(false);
-      }
-    }
-    load();
-    return () => { cancelled = true; };
+  // Cidades do estado selecionado — já carregadas localmente
+  const todasCidades = useMemo(() => {
+    if (!ufSelecionada) return [];
+    const cidades = CIDADES_POR_ESTADO[ufSelecionada] || [];
+    return cidades.map((nome, idx) => ({ id: idx, nome }));
   }, [ufSelecionada]);
 
-  // Autocomplete de cidades — useMemo para performance
+  // Autocomplete de cidades
   const cidadesFiltradas = useMemo(() => {
     if (!cidadeInput || cidadeInput.length < 2 || !todasCidades.length) return [];
     const termo = cidadeInput.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -94,7 +69,7 @@ export default function PerfilPage() {
   useEffect(() => {
     function handleClickOutside(e) {
       if (autocompleteRef.current && !autocompleteRef.current.contains(e.target)) {
-        // Fecha sem setState direto no evento
+        // Fecha removendo foco — não precisa de setState aqui
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -116,12 +91,12 @@ export default function PerfilPage() {
     }
   }, []);
 
-  // Validacao do date picker — limita ano a 4 digitos
+  // Validacao do date picker
   const handleDateChange = useCallback((e) => {
     const val = e.target.value;
     if (val) {
-      const ano = val.split('-')[0];
-      if (ano && ano.length <= 4) {
+      const partes = val.split('-');
+      if (partes[0] && partes[0].length === 4) {
         setDataCasamento(val);
       }
     } else {
@@ -258,7 +233,7 @@ export default function PerfilPage() {
               onChange={(e) => { setUfSelecionada(e.target.value); setCidadeInput(''); }}
               aria-label={t('perfil.cidade.ufLabel')}
             >
-              <option value="">{t('perfil.cidade.ufPlaceholder')}</option>
+              <option value="">UF</option>
               {estados.map((est) => (
                 <option key={est.sigla} value={est.sigla}>{est.nome} ({est.sigla})</option>
               ))}
@@ -270,15 +245,12 @@ export default function PerfilPage() {
                 className="perfil-input perfil-input--cidade"
                 value={cidadeInput}
                 onChange={(e) => setCidadeInput(e.target.value)}
-                placeholder={ufSelecionada ? t('perfil.cidade.placeholder') : t('perfil.cidade.ufFirst')}
+                placeholder={ufSelecionada ? 'Digite a cidade' : 'Selecione o estado primeiro'}
                 aria-label={t('perfil.cidade.ariaLabel')}
-                disabled={!ufSelecionada || carregandoCidades}
+                disabled={!ufSelecionada}
                 autoComplete="off"
               />
-              {carregandoCidades && (
-                <div className="perfil-autocomplete-loading">Carregando cidades...</div>
-              )}
-              {mostrarAutocomplete && !carregandoCidades && (
+              {mostrarAutocomplete && (
                 <ul className="perfil-autocomplete-list" role="listbox">
                   {cidadesFiltradas.map((cidade) => (
                     <li
@@ -383,7 +355,6 @@ export default function PerfilPage() {
         .perfil-autocomplete-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-md); max-height: 200px; overflow-y: auto; z-index: var(--z-dropdown); list-style: none; margin: 0; padding: var(--space-1) 0; }
         .perfil-autocomplete-item { padding: var(--space-2) var(--space-3); cursor: pointer; font-family: var(--font-body); font-size: var(--text-sm); color: var(--color-text-primary); transition: background 100ms ease; }
         .perfil-autocomplete-item:hover, .perfil-autocomplete-item:focus-visible { background: var(--color-surface); outline: none; }
-        .perfil-autocomplete-loading { position: absolute; top: calc(100% + 4px); left: 0; right: 0; padding: var(--space-2) var(--space-3); background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--text-xs); color: var(--color-text-muted); z-index: var(--z-dropdown); }
         .perfil-slider-row { display: flex; align-items: center; gap: var(--space-3); }
         .perfil-slider { flex: 1; -webkit-appearance: none; appearance: none; height: 6px; background: var(--color-border); border-radius: var(--radius-full); outline: none; }
         .perfil-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--color-brand); border-radius: 50%; cursor: pointer; border: 2px solid var(--color-white); box-shadow: var(--shadow-sm); }
