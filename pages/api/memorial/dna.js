@@ -9,12 +9,21 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+function extractTokenFromHeader(req) {
+  const auth = req.headers.authorization || req.headers.Authorization;
+  if (auth && auth.startsWith('Bearer ')) {
+    return auth.slice(7).trim();
+  }
+  return null;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'PATCH') {
     return res.status(405).json({ erro: 'Metodo nao permitido. Use PATCH.' });
   }
 
-  const token = extractSupabaseToken(req);
+  // Tenta header Authorization primeiro, depois cookie
+  let token = extractTokenFromHeader(req) || extractSupabaseToken(req);
   if (!token) {
     return res.status(401).json({ erro: 'Token de autenticacao nao fornecido.' });
   }
