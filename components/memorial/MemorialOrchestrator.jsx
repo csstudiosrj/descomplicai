@@ -198,7 +198,10 @@ export default function MemorialOrchestrator() {
   const arvoreCarregada = useRef(false);
   const noInicialDefinido = useRef(false);
 
-  // 1. Carrega a árvore apenas uma vez
+  // Dados da seleção pendente para após o login
+  const [selecaoPendente, setSelecaoPendente] = useState(null); // { campo, valor, cor }
+
+  // 1. Carrega a árvore
   useEffect(() => {
     if (arvoreCarregada.current) return;
     arvoreCarregada.current = true;
@@ -206,16 +209,17 @@ export default function MemorialOrchestrator() {
     carregarArvore(tipo).then(setArvore);
   }, [estado.tipoEvento]);
 
-  // 2. Define o nó inicial assim que árvore e estado estiverem prontos
+  // 2. Define o nó inicial (pula Step00 se DNA completo)
   useEffect(() => {
     if (!arvore || noInicialDefinido.current) return;
     const raiz = getRaiz(arvore);
     if (!raiz) return;
 
     const dnaCompleto = localStorage.getItem('descomplicai-dna-completo');
-    const perfilPreenchido = estado.perfilCasal;
+    const perfilCasal = estado.perfilCasal || 
+      (() => { try { return JSON.parse(localStorage.getItem('memorial_estado') || '{}').perfilCasal; } catch { return ''; } })();
 
-    if (dnaCompleto && perfilPreenchido) {
+    if (dnaCompleto && perfilCasal) {
       const proximo = proximoNo(estado, raiz.id, arvore);
       if (proximo) {
         setHistoricoIds([raiz.id]);
@@ -227,7 +231,42 @@ export default function MemorialOrchestrator() {
       setNoAtualId(raiz.id);
     }
     noInicialDefinido.current = true;
-  }, [arvore, estado.perfilCasal]);
+  }, [arvore, estado.perfilCasal]); // eslint-disable-line
+
+  // Efeito para processar seleção pendente após login
+  useEffect(() => {
+    if (!user || carregandoAuth || !selecaoPendente || !eventoId) return;
+    
+    const { campo, valor, cor } = selecaoPendente;
+    // Limpa a pendência para evitar loops
+    setSelecaoPendente(null);
+    
+    // Simula a mesma chamada que handleSelect faria se já estivesse logado
+    if (campo === 'perfilCasal') {
+      setRespostas('perfilCasal', valor);
+      setRespostas('modoPlanejamento', 'guiado');
+      
+      setRespostaTransicao('');
+      setCampoTransicao(campo);
+      setTransicionando(true);
+      if (cor) setCorTransicao(cor);
+      
+      const novoEstado = { ...estado, perfilCasal: valor, modoPlanejamento: 'guiado' };
+      
+      setTimeout(() => {
+        if (!arvore) return;
+        const proximo = proximoNo(novoEstado, noAtualId, arvore);
+        if (proximo) {
+          setHistoricoIds(prev => [...prev, noAtualId]);
+          setNoAtualId(proximo.id);
+        }
+        setTransicionando(false);
+        setCorTransicao(null);
+        setRespostaTransicao('');
+        setCampoTransicao('');
+      }, BREATH_DURATION);
+    }
+  }, [user, carregandoAuth, eventoId, selecaoPendente, arvore, estado, setRespostas, noAtualId]);
 
   const [transicionando, setTransicionando] = useState(false);
   const [corTransicao, setCorTransicao] = useState(null);
@@ -339,21 +378,22 @@ export default function MemorialOrchestrator() {
     if (campo === 'perfilCasal') {
       perfilSelecionadoRef.current = valor;
 
+      // Se não estiver logado, salva draft, abre modal e aguarda login
       if (!user) {
-        // Salva estado e draft antes de abrir o modal, garantindo persistência após reload
-        const novoEstado = { ...estado, perfilCasal: valor, modoPlanejamento: 'guiado' };
-        localStorage.setItem('memorial_estado', JSON.stringify(novoEstado));
         localStorage.setItem('descomplicai-perfil-draft', JSON.stringify({ perfilCasal: valor }));
+        setSelecaoPendente({ campo, valor, cor });
         setModalAuthAberto(true);
         return;
       }
 
+      // Logado mas sem eventoId: precisa criar evento antes, redireciona para perfil
       if (!eventoId) {
         localStorage.setItem('descomplicai-perfil-draft', JSON.stringify({ perfilCasal: valor }));
         router.push('/memorial/perfil');
         return;
       }
 
+      // Logado e com evento: segue o fluxo
       setRespostas('perfilCasal', valor);
       setRespostas('modoPlanejamento', 'guiado');
 
@@ -379,6 +419,7 @@ export default function MemorialOrchestrator() {
       return;
     }
 
+    // Outros campos
     setRespostas(campo, valor);
 
     let valorDisplay = valor;
@@ -407,6 +448,12 @@ export default function MemorialOrchestrator() {
       setCampoTransicao('');
     }, BREATH_DURATION);
   }, [estado, setRespostas, noAtualId, arvore, user, eventoId, router]);
+
+  // Quando o modal for fechado sem login, limpar pendência
+  const handleModalClose = useCallback(() => {
+    setModalAuthAberto(false);
+    setSelecaoPendente(null);
+  }, []);
 
   const handleConcluirMemorial = useCallback(async (fornecedores) => {
     setRespostas('fornecedoresNecessarios', fornecedores);
@@ -502,11 +549,10 @@ export default function MemorialOrchestrator() {
 
       <LoginCadastroModal
         isOpen={modalAuthAberto}
-        onClose={() => setModalAuthAberto(false)}
+        onClose={handleModalClose}
         onLoginSuccess={() => {
-          // O estado já foi salvo em localStorage antes de abrir o modal,
-          // então o reload recuperará o perfilCasal e pulará o Step00.
-          window.location.reload();
+          // Apenas fecha o modal; o efeito de seleção pendente continuará o fluxo
+          setModalAuthAberto(false);
         }}
       />
 
