@@ -3,7 +3,7 @@
 // ATUALIZACAO 13/07: Remove criacao de evento — evento ja criado na Fase 0 (perfil.jsx)
 // ATUALIZACAO 13/07 v2: Step00 -> modal login -> perfil -> DNA -> questionario
 // CORRECAO 13/07 v3: Detecta DNA completo e pula Step00 para evitar looping
-// CORRECAO 13/07 v4: Pula Step01Modo automaticamente (modo guiado unico)
+// REMOCAO 14/07: Step01Modo deletado permanentemente (modo guiado unico)
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -21,7 +21,6 @@ import fetchAPI from '../../utils/fetchAPI';
 
 const STEP_COMPONENTS = {
   Step00Casal: React.lazy(() => import('./steps/Step00Casal')),
-  Step01Modo: React.lazy(() => import('./steps/Step01Modo')),
   Step02NomeCasal: React.lazy(() => import('./steps/Step02NomeCasal')),
   Step03Data: React.lazy(() => import('./steps/Step03Data')),
   Step04Cidade: React.lazy(() => import('./steps/Step04Cidade')),
@@ -341,7 +340,7 @@ export default function MemorialOrchestrator() {
         return;
       }
 
-      // Logado com evento: pula Step01Modo automaticamente (modo guiado unico)
+      // Logado com evento: avanca normalmente, modo guiado ja e o unico
       setRespostas('perfilCasal', valor);
       setRespostas('modoPlanejamento', 'guiado');
 
@@ -353,8 +352,7 @@ export default function MemorialOrchestrator() {
       const novoEstado = { ...estado, perfilCasal: valor, modoPlanejamento: 'guiado' };
 
       setTimeout(() => {
-        // Pula step01 (modo) e vai direto para step02 (nome do casal)
-        const proxima = calcularProximaEtapa(novoEstado, 1);
+        const proxima = calcularProximaEtapa(novoEstado, estado.etapaAtual);
         irParaEtapa(proxima);
         setTransicionando(false);
         setCorTransicao(null);
