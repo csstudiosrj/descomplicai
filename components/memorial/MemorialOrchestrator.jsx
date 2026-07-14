@@ -3,6 +3,7 @@
 // ATUALIZACAO 13/07: Remove criacao de evento — evento ja criado na Fase 0 (perfil.jsx)
 // ATUALIZACAO 13/07 v2: Step00 -> modal login -> perfil -> DNA -> questionario
 // CORRECAO 13/07 v3: Detecta DNA completo e pula Step00 para evitar looping
+// CORRECAO 13/07 v4: Pula Step01Modo automaticamente (modo guiado unico)
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -340,7 +341,27 @@ export default function MemorialOrchestrator() {
         return;
       }
 
-      // Logado com evento: continua fluxo normal do questionario
+      // Logado com evento: pula Step01Modo automaticamente (modo guiado unico)
+      setRespostas('perfilCasal', valor);
+      setRespostas('modoPlanejamento', 'guiado');
+
+      setRespostaTransicao('');
+      setCampoTransicao(campo);
+      setTransicionando(true);
+      if (cor) setCorTransicao(cor);
+
+      const novoEstado = { ...estado, perfilCasal: valor, modoPlanejamento: 'guiado' };
+
+      setTimeout(() => {
+        // Pula step01 (modo) e vai direto para step02 (nome do casal)
+        const proxima = calcularProximaEtapa(novoEstado, 1);
+        irParaEtapa(proxima);
+        setTransicionando(false);
+        setCorTransicao(null);
+        setRespostaTransicao('');
+        setCampoTransicao('');
+      }, BREATH_DURATION);
+      return;
     }
 
     setRespostas(campo, valor);
