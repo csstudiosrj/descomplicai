@@ -498,6 +498,11 @@ export default function MemorialOrchestrator() {
       <LoginCadastroModal
         isOpen={modalAuthAberto}
         onClose={() => setModalAuthAberto(false)}
+        onLoginSuccess={() => {
+          // Recarrega a página para que o evento e o estado sejam sincronizados,
+          // mantendo o usuário no questionário.
+          window.location.reload();
+        }}
       />
 
       {carregandoAuth ? (
