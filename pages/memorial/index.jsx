@@ -1,24 +1,13 @@
 import dynamic from 'next/dynamic'
 
-const MemorialOrchestrator = dynamic(
-  () => import('../../components/memorial/MemorialOrchestrator'),
+const TestComponent = dynamic(
+  () => import('../../components/memorial/TestComponent'),
   {
     ssr: false,
-    loading: () => (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        fontFamily: 'var(--font-body)',
-        color: 'var(--color-text-secondary)'
-      }}>
-        <p>Carregando questionário...</p>
-      </div>
-    ),
+    loading: () => <p>Carregando teste...</p>,
   }
 )
 
 export default function MemorialPage() {
-  return <MemorialOrchestrator />
+  return <TestComponent />
 }
