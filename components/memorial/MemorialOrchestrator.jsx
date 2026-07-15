@@ -1,4 +1,3 @@
-cat > components/memorial/MemorialOrchestrator.jsx << 'EOF'
 // components/memorial/MemorialOrchestrator.jsx
 // REFATORADO: Motor de árvore de nós (motorArvore.js) substitui navegação linear.
 // Mantém todas as funcionalidades existentes: login, autosave, analytics, etc.
@@ -620,4 +619,3 @@ export default function MemorialOrchestrator() {
     </div>
   );
 }
-EOF
