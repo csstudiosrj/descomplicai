@@ -9,7 +9,7 @@ import '../styles/fontes.css';
 import '../styles/globals.css';
 import '../styles/cards.css';
 
-const NO_HEADER_ROUTES = ['/memorial', '/memorial/[...slug]', '/admin', '/admin/[...slug]'];
+const NO_HEADER_ROUTES = ['/admin', '/admin/[...slug]'];
 
 function MyApp({ Component, pageProps }) {
   const router = useRouter();
