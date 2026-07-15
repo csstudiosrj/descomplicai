@@ -1,4 +1,3 @@
-cat > pages/memorial/index.jsx << 'EOF'
 import dynamic from 'next/dynamic'
 
 const MemorialOrchestrator = dynamic(
@@ -23,4 +22,3 @@ const MemorialOrchestrator = dynamic(
 export default function MemorialPage() {
   return <MemorialOrchestrator />
 }
-EOF
