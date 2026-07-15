@@ -1,6 +1,8 @@
+cat > components/memorial/MemorialOrchestrator.jsx << 'EOF'
 // components/memorial/MemorialOrchestrator.jsx
 // REFATORADO: Motor de árvore de nós (motorArvore.js) substitui navegação linear.
 // Mantém todas as funcionalidades existentes: login, autosave, analytics, etc.
+// ADICIONADO: Error Boundary para isolar falhas de steps específicos.
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -175,6 +177,30 @@ const BLOCK_NAMES = {
   'N': 'Bloco N — Documentacao e Financeiro',
 };
 
+class StepErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 'var(--space-6)', textAlign: 'center' }}>
+          <h2>Falha ao carregar esta etapa</h2>
+          <p>O componente <strong>{this.props.componentName || 'desconhecido'}</strong> apresentou um erro.</p>
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+            {this.state.error?.message}
+          </p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function PlaceholderStep({ titulo, componente }) {
   return (
     <div style={{ padding: 'var(--space-6)', textAlign: 'center' }}>
@@ -198,8 +224,25 @@ export default function MemorialOrchestrator() {
   const arvoreCarregada = useRef(false);
   const noInicialDefinido = useRef(false);
 
-  // Dados da seleção pendente para após o login
-  const [selecaoPendente, setSelecaoPendente] = useState(null); // { campo, valor, cor }
+  const [selecaoPendente, setSelecaoPendente] = useState(null);
+
+  const [transicionando, setTransicionando] = useState(false);
+  const [corTransicao, setCorTransicao] = useState(null);
+  const [respostaTransicao, setRespostaTransicao] = useState('');
+  const [campoTransicao, setCampoTransicao] = useState('');
+  const [modalAuthAberto, setModalAuthAberto] = useState(false);
+  const [oferecerDraft, setOferecerDraft] = useState(false);
+  const [carregandoDoBanco, setCarregandoDoBanco] = useState(false);
+  const [eventoId, setEventoId] = useState(null);
+  const restauracaoFeita = useRef(false);
+  const stepCompletedRef = useRef(false);
+  const currentStepIdRef = useRef(null);
+  const perfilSelecionadoRef = useRef(null);
+
+  useEffect(() => {
+    const id = localStorage.getItem('descomplicai-evento-id');
+    if (id) setEventoId(id);
+  }, []);
 
   // 1. Carrega a árvore
   useEffect(() => {
@@ -231,17 +274,15 @@ export default function MemorialOrchestrator() {
       setNoAtualId(raiz.id);
     }
     noInicialDefinido.current = true;
-  }, [arvore, estado.perfilCasal]); // eslint-disable-line
+  }, [arvore, estado.perfilCasal]);
 
-  // Efeito para processar seleção pendente após login
+  // Processa seleção pendente após login
   useEffect(() => {
     if (!user || carregandoAuth || !selecaoPendente || !eventoId) return;
     
     const { campo, valor, cor } = selecaoPendente;
-    // Limpa a pendência para evitar loops
     setSelecaoPendente(null);
     
-    // Simula a mesma chamada que handleSelect faria se já estivesse logado
     if (campo === 'perfilCasal') {
       setRespostas('perfilCasal', valor);
       setRespostas('modoPlanejamento', 'guiado');
@@ -264,27 +305,9 @@ export default function MemorialOrchestrator() {
         setCorTransicao(null);
         setRespostaTransicao('');
         setCampoTransicao('');
-      }, BREATH_DURATION);
+      }, 1400);
     }
   }, [user, carregandoAuth, eventoId, selecaoPendente, arvore, estado, setRespostas, noAtualId]);
-
-  const [transicionando, setTransicionando] = useState(false);
-  const [corTransicao, setCorTransicao] = useState(null);
-  const [respostaTransicao, setRespostaTransicao] = useState('');
-  const [campoTransicao, setCampoTransicao] = useState('');
-  const [modalAuthAberto, setModalAuthAberto] = useState(false);
-  const [oferecerDraft, setOferecerDraft] = useState(false);
-  const [carregandoDoBanco, setCarregandoDoBanco] = useState(false);
-  const [eventoId, setEventoId] = useState(null);
-  const restauracaoFeita = useRef(false);
-  const stepCompletedRef = useRef(false);
-  const currentStepIdRef = useRef(null);
-  const perfilSelecionadoRef = useRef(null);
-
-  useEffect(() => {
-    const id = localStorage.getItem('descomplicai-evento-id');
-    if (id) setEventoId(id);
-  }, []);
 
   useEffect(() => {
     if (!user || carregandoAuth) return;
@@ -378,7 +401,6 @@ export default function MemorialOrchestrator() {
     if (campo === 'perfilCasal') {
       perfilSelecionadoRef.current = valor;
 
-      // Se não estiver logado, salva draft, abre modal e aguarda login
       if (!user) {
         localStorage.setItem('descomplicai-perfil-draft', JSON.stringify({ perfilCasal: valor }));
         setSelecaoPendente({ campo, valor, cor });
@@ -386,14 +408,12 @@ export default function MemorialOrchestrator() {
         return;
       }
 
-      // Logado mas sem eventoId: precisa criar evento antes, redireciona para perfil
       if (!eventoId) {
         localStorage.setItem('descomplicai-perfil-draft', JSON.stringify({ perfilCasal: valor }));
         router.push('/memorial/perfil');
         return;
       }
 
-      // Logado e com evento: segue o fluxo
       setRespostas('perfilCasal', valor);
       setRespostas('modoPlanejamento', 'guiado');
 
@@ -419,7 +439,6 @@ export default function MemorialOrchestrator() {
       return;
     }
 
-    // Outros campos
     setRespostas(campo, valor);
 
     let valorDisplay = valor;
@@ -449,7 +468,6 @@ export default function MemorialOrchestrator() {
     }, BREATH_DURATION);
   }, [estado, setRespostas, noAtualId, arvore, user, eventoId, router]);
 
-  // Quando o modal for fechado sem login, limpar pendência
   const handleModalClose = useCallback(() => {
     setModalAuthAberto(false);
     setSelecaoPendente(null);
@@ -551,7 +569,6 @@ export default function MemorialOrchestrator() {
         isOpen={modalAuthAberto}
         onClose={handleModalClose}
         onLoginSuccess={() => {
-          // Apenas fecha o modal; o efeito de seleção pendente continuará o fluxo
           setModalAuthAberto(false);
         }}
       />
@@ -582,15 +599,17 @@ export default function MemorialOrchestrator() {
                 <ProgressBar progress={progress} blockName={blockName} />
                 {historicoIds.length > 0 && <BackButton onClick={handleBack} />}
                 <React.Suspense fallback={<div style={{ padding: 'var(--space-6)' }}>Carregando etapa...</div>}>
-                  {StepComponent && (
-                    <StepComponent
-                      estado={estado}
-                      onSelect={handleSelect}
-                      onConcluir={handleConcluirMemorial}
-                      disabled={modalAuthAberto && noAtual?.componente === 'Step00Casal'}
-                      {...stepProps}
-                    />
-                  )}
+                  <StepErrorBoundary componentName={noAtual?.componente}>
+                    {StepComponent && (
+                      <StepComponent
+                        estado={estado}
+                        onSelect={handleSelect}
+                        onConcluir={handleConcluirMemorial}
+                        disabled={modalAuthAberto && noAtual?.componente === 'Step00Casal'}
+                        {...stepProps}
+                      />
+                    )}
+                  </StepErrorBoundary>
                 </React.Suspense>
                 {!noAtualId && <Footer />}
               </BreathTransition>
@@ -601,3 +620,4 @@ export default function MemorialOrchestrator() {
     </div>
   );
 }
+EOF

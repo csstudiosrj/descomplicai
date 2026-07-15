@@ -1,28 +1,26 @@
-// pages/memorial/index.jsx
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import Header from '../../components/ui/Header';
-import MemorialOrchestrator from '../../components/memorial/MemorialOrchestrator';
-import DNACasamento from '../../components/memorial/DNACasamento';
+cat > pages/memorial/index.jsx << 'EOF'
+import dynamic from 'next/dynamic'
 
-function ClientOnly({ children, fallback = null }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  return mounted ? children : fallback;
-}
+const MemorialOrchestrator = dynamic(
+  () => import('../../components/memorial/MemorialOrchestrator'),
+  {
+    ssr: false,
+    loading: () => (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontFamily: 'var(--font-body)',
+        color: 'var(--color-text-secondary)'
+      }}>
+        <p>Carregando questionário...</p>
+      </div>
+    ),
+  }
+)
 
 export default function MemorialPage() {
-  const router = useRouter();
-  const { fase } = router.query;
-
-  return (
-    <>
-      <Header />
-      <main style={{ paddingTop: '52px', minHeight: '100dvh', boxSizing: 'border-box' }}>
-        <ClientOnly fallback={<p style={{ textAlign: 'center', marginTop: '2rem' }}>Carregando…</p>}>
-          {fase === 'dna' ? <DNACasamento /> : <MemorialOrchestrator />}
-        </ClientOnly>
-      </main>
-    </>
-  );
+  return <MemorialOrchestrator />
 }
+EOF
