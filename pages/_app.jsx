@@ -20,7 +20,7 @@ function MyApp({ Component, pageProps }) {
   const content = hideHeader ? (
     <Component {...pageProps} />
   ) : (
-    <MainLayout>
+    <MainLayout hideFooter={router.pathname.startsWith('/memorial')}>
       <Component {...pageProps} />
     </MainLayout>
   );

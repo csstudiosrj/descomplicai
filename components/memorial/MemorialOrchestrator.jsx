@@ -2,6 +2,7 @@
 // REFATORADO: Motor de árvore de nós (motorArvore.js) substitui navegação linear.
 // Mantém todas as funcionalidades existentes: login, autosave, analytics, etc.
 // ADICIONADO: Error Boundary para isolar falhas de steps específicos.
+// ADICIONADO: Persistência de progresso (noAtualId, historicoIds) no localStorage.
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -251,11 +252,32 @@ export default function MemorialOrchestrator() {
     carregarArvore(tipo).then(setArvore);
   }, [estado.tipoEvento]);
 
-  // 2. Define o nó inicial (pula Step00 se DNA completo)
+  // Persiste progresso no localStorage sempre que mudar
+  useEffect(() => {
+    if (noAtualId && historicoIds.length > 0) {
+      localStorage.setItem('memorial_progresso', JSON.stringify({ noAtualId, historicoIds }));
+    }
+  }, [noAtualId, historicoIds]);
+
+  // 2. Define o nó inicial (pula Step00 se DNA completo e/ou restaura progresso salvo)
   useEffect(() => {
     if (!arvore || noInicialDefinido.current) return;
     const raiz = getRaiz(arvore);
     if (!raiz) return;
+
+    // Restaura progresso salvo se existir
+    const progressoSalvo = localStorage.getItem('memorial_progresso');
+    if (progressoSalvo) {
+      try {
+        const { noAtualId: savedId, historicoIds: savedHistorico } = JSON.parse(progressoSalvo);
+        if (savedId && savedHistorico) {
+          setNoAtualId(savedId);
+          setHistoricoIds(savedHistorico);
+          noInicialDefinido.current = true;
+          return;
+        }
+      } catch {}
+    }
 
     const dnaCompleto = localStorage.getItem('descomplicai-dna-completo');
     const perfilCasal = estado.perfilCasal || 
