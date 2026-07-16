@@ -386,12 +386,14 @@ export default function MemorialOrchestrator() {
 
         if (!memErr && memorialData?.estado?.perfilCasal) {
           carregarEstado(memorialData.estado);
+          noInicialDefinido.current = false;
           setCarregandoDoBanco(false);
           return;
         }
 
         if (!memErr && memorialData?.dados) {
           carregarEstado(memorialData.dados);
+          noInicialDefinido.current = false;
         }
 
         const draft = carregarDraft();
