@@ -8,6 +8,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ESTADOS, CIDADES_POR_ESTADO } from '../../lib/estados-cidades';
 import Icon from '../../components/ui/Icon';
+import BackButton from '../../components/memorial/BackButton';
 import fetchAPI from '../../utils/fetchAPI';
 
 const PERFIL_OPTIONS = [
@@ -150,6 +151,7 @@ export default function PerfilPage() {
 
   return (
     <div className="perfil-page">
+      <BackButton onClick={() => router.back()} />
       <div className="perfil-container">
         <header className="perfil-header">
           <h1 className="perfil-title">{t('perfil.titulo')}</h1>

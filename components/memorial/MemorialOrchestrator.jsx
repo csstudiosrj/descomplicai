@@ -527,21 +527,8 @@ export default function MemorialOrchestrator() {
   }, [estado, setRespostas, router, user, eventoId, supabase]);
 
   const handleBack = useCallback(() => {
-    if (!arvore || historicoIds.length === 0) {
-      router.push('/memorial?fase=dna');
-      return;
-    }
-    const anterior = noAnterior(historicoIds, arvore);
-    if (anterior) {
-      setRespostaTransicao('');
-      setCampoTransicao('');
-      setCorTransicao(null);
-      setHistoricoIds(prev => prev.slice(0, -1));
-      setNoAtualId(anterior.id);
-    } else {
-      router.push('/memorial?fase=dna');
-    }
-  }, [arvore, historicoIds, router]);
+    router.back();
+  }, [router]);
 
   const handleContinuarDraft = () => {
     const draft = carregarDraft();
@@ -619,7 +606,7 @@ export default function MemorialOrchestrator() {
                 perfilCasal={estado.perfilCasal || ''}
               >
                 <ProgressBar progress={progress} blockName={blockName} />
-                {historicoIds.length > 0 && <BackButton onClick={handleBack} />}
+                <BackButton onClick={handleBack} />
                 <React.Suspense fallback={<div style={{ padding: 'var(--space-6)' }}>Carregando etapa...</div>}>
                   <StepErrorBoundary componentName={noAtual?.componente}>
                     {StepComponent && (
