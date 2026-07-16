@@ -3,6 +3,9 @@
 // Mantém todas as funcionalidades existentes: login, autosave, analytics, etc.
 // ADICIONADO: Error Boundary para isolar falhas de steps específicos.
 // ADICIONADO: Persistência de progresso (noAtualId, historicoIds) no localStorage.
+// CORREÇÃO: Perfil e DNA agora são steps da árvore — navegação voltar funciona corretamente.
+// REMOVIDO: Auto-pulo do Step00 quando perfilCasal existe.
+// REMOVIDO: Redirect para /memorial/perfil (página separada quebrava histórico).
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -20,6 +23,8 @@ import fetchAPI from '../../utils/fetchAPI';
 
 const STEP_COMPONENTS = {
   Step00Casal: React.lazy(() => import('./steps/Step00Casal')),
+  StepPerfil: React.lazy(() => import('./steps/StepPerfil')),
+  StepDNA: React.lazy(() => import('./steps/StepDNA')),
   Step07Cerimonia: React.lazy(() => import('./steps/Step07Cerimonia')),
   Step07aCatolica: React.lazy(() => import('./steps/Step07aCatolica')),
   Step07bEvangelica: React.lazy(() => import('./steps/Step07bEvangelica')),
@@ -213,7 +218,7 @@ function PlaceholderStep({ titulo, componente }) {
 
 export default function MemorialOrchestrator() {
   const router = useRouter();
-  const { estado, setRespostas, carregarEstado } = useMemorial();
+  const { estado, setRespostas, atualizarMultiplo, carregarEstado } = useMemorial();
   const { user, evento, loading: carregandoAuth, supabase } = useAuth();
   const { trackStep } = useAnalytics();
   const { temDraft, carregarDraft, limparDraft, salvandoAgora } = useAutoSave(estado, user, evento);
@@ -259,7 +264,8 @@ export default function MemorialOrchestrator() {
     }
   }, [noAtualId, historicoIds]);
 
-  // 2. Define o nó inicial (pula Step00 se perfilCasal preenchido)
+  // 2. Define o nó inicial — CORREÇÃO: NUNCA pula Step00 automaticamente
+  // O usuário sempre começa no Step00, e a árvore naturalmente avança pro Perfil
   useEffect(() => {
     if (!arvore || noInicialDefinido.current) return;
     const raiz = getRaiz(arvore);
@@ -279,41 +285,30 @@ export default function MemorialOrchestrator() {
       } catch {}
     }
 
-    const perfilCasal = estado.perfilCasal || 
-      (() => { try { return JSON.parse(localStorage.getItem('memorial_estado') || '{}').perfilCasal; } catch { return ''; } })();
-
-    if (perfilCasal) {
-      const proximo = proximoNo(estado, raiz.id, arvore);
-      if (proximo) {
-        setHistoricoIds([raiz.id]);
-        setNoAtualId(proximo.id);
-      } else {
-        setNoAtualId(raiz.id);
-      }
-    } else {
-      setNoAtualId(raiz.id);
-    }
+    // SEMPRE começa na raiz (Step00) — nunca pula automaticamente
+    setNoAtualId(raiz.id);
+    setHistoricoIds([raiz.id]);
     noInicialDefinido.current = true;
-  }, [arvore, estado.perfilCasal]);
+  }, [arvore]);
 
   // Processa seleção pendente após login
   useEffect(() => {
     if (!user || carregandoAuth || !selecaoPendente || !eventoId) return;
-    
+
     const { campo, valor, cor } = selecaoPendente;
     setSelecaoPendente(null);
-    
+
     if (campo === 'perfilCasal') {
       setRespostas('perfilCasal', valor);
       setRespostas('modoPlanejamento', 'guiado');
-      
+
       setRespostaTransicao('');
       setCampoTransicao(campo);
       setTransicionando(true);
       if (cor) setCorTransicao(cor);
-      
+
       const novoEstado = { ...estado, perfilCasal: valor, modoPlanejamento: 'guiado' };
-      
+
       setTimeout(() => {
         if (!arvore) return;
         const proximo = proximoNo(novoEstado, noAtualId, arvore);
@@ -329,19 +324,8 @@ export default function MemorialOrchestrator() {
     }
   }, [user, carregandoAuth, eventoId, selecaoPendente, arvore, estado, setRespostas, noAtualId]);
 
-  useEffect(() => {
-    if (!user || carregandoAuth) return;
-    if (eventoId) return;
-    const draft = localStorage.getItem('descomplicai-perfil-draft');
-    if (draft) {
-      try {
-        const d = JSON.parse(draft);
-        if (d.perfilCasal || perfilSelecionadoRef.current) {
-          router.push('/memorial/perfil');
-        }
-      } catch { /* ignora */ }
-    }
-  }, [user, carregandoAuth, eventoId, router]);
+  // CORREÇÃO: Remove useEffect que redirecionava pra /memorial/perfil
+  // O Perfil agora é um step da árvore, não uma página separada
 
   useEffect(() => {
     if (!noAtualId || !arvore) return;
@@ -419,32 +403,49 @@ export default function MemorialOrchestrator() {
 
   const BREATH_DURATION = 1400;
 
-  const handleSelect = useCallback((campo, valor, cor) => {
-    if (campo === 'perfilCasal') {
-      perfilSelecionadoRef.current = valor;
+  // CORREÇÃO: handleSelect agora gerencia steps internos da árvore
+  // Não redireciona mais pra páginas externas
+  const handleSelect = useCallback((campo, valor, cor, extraData = null) => {
+    // Caso especial: StepPerfil sinaliza que precisa de login
+    if (campo === '__perfilPrecisaLogin') {
+      setSelecaoPendente({ campo: 'perfilCasal', valor: valor.perfilCasal, cor });
+      setModalAuthAberto(true);
+      return;
+    }
 
-      if (!user) {
-        localStorage.setItem('descomplicai-perfil-draft', JSON.stringify({ perfilCasal: valor }));
-        setSelecaoPendente({ campo, valor, cor });
-        setModalAuthAberto(true);
-        return;
-      }
+    // Caso especial: StepDNA sinaliza continuar
+    if (campo === '__dnaContinuar') {
+      setRespostaTransicao('');
+      setCampoTransicao('dna');
+      setTransicionando(true);
+      if (cor) setCorTransicao(cor);
 
-      if (!eventoId) {
-        localStorage.setItem('descomplicai-perfil-draft', JSON.stringify({ perfilCasal: valor }));
-        router.push('/memorial/perfil');
-        return;
-      }
+      setTimeout(() => {
+        if (!arvore) return;
+        const proximo = proximoNo(estado, noAtualId, arvore);
+        if (proximo) {
+          setHistoricoIds(prev => [...prev, noAtualId]);
+          setNoAtualId(proximo.id);
+        }
+        setTransicionando(false);
+        setCorTransicao(null);
+        setRespostaTransicao('');
+        setCampoTransicao('');
+      }, BREATH_DURATION);
+      return;
+    }
 
-      setRespostas('perfilCasal', valor);
-      setRespostas('modoPlanejamento', 'guiado');
+    // Caso especial: StepPerfil passa dados extras do perfil
+    if (campo === 'perfilCasal' && extraData) {
+      // Atualiza todas as respostas do perfil de uma vez
+      atualizarMultiplo(extraData);
 
       setRespostaTransicao('');
       setCampoTransicao(campo);
       setTransicionando(true);
       if (cor) setCorTransicao(cor);
 
-      const novoEstado = { ...estado, perfilCasal: valor, modoPlanejamento: 'guiado' };
+      const novoEstado = { ...estado, perfilCasal: valor, ...extraData };
 
       setTimeout(() => {
         if (!arvore) return;
@@ -461,6 +462,7 @@ export default function MemorialOrchestrator() {
       return;
     }
 
+    // Fluxo normal de seleção (steps padrão)
     setRespostas(campo, valor);
 
     let valorDisplay = valor;
@@ -488,7 +490,7 @@ export default function MemorialOrchestrator() {
       setRespostaTransicao('');
       setCampoTransicao('');
     }, BREATH_DURATION);
-  }, [estado, setRespostas, noAtualId, arvore, user, eventoId, router]);
+  }, [estado, setRespostas, atualizarMultiplo, noAtualId, arvore]);
 
   const handleModalClose = useCallback(() => {
     setModalAuthAberto(false);
@@ -526,9 +528,24 @@ export default function MemorialOrchestrator() {
     }
   }, [estado, setRespostas, router, user, eventoId, supabase]);
 
+  // CORREÇÃO: handleBack usa noAnterior() da árvore em vez de router.back()
   const handleBack = useCallback(() => {
-    router.back();
-  }, [router]);
+    if (!arvore || historicoIds.length < 2) {
+      // Se não tem histórico suficiente, volta pra landing
+      router.push('/descomplicai');
+      return;
+    }
+
+    const resultado = noAnterior(historicoIds, arvore);
+    if (!resultado) {
+      router.push('/descomplicai');
+      return;
+    }
+
+    const { no, novoHistorico } = resultado;
+    setNoAtualId(no.id);
+    setHistoricoIds(novoHistorico);
+  }, [arvore, historicoIds, router]);
 
   const handleContinuarDraft = () => {
     const draft = carregarDraft();
