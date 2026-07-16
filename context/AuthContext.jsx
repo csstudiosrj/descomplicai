@@ -150,17 +150,24 @@ export function AuthProvider({ children }) {
     };
   }, [buscarDadosUsuario]);
 
-  // CORREÇÃO 1: signOut limpa localStorage completamente
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     Object.keys(localStorage)
-      .filter(k => k.startsWith('sb-') || k.includes('supabase'))
+      .filter(k =>
+        k.startsWith('sb-') ||
+        k.includes('supabase') ||
+        k.startsWith('descomplicai') ||
+        k === 'memorial_progresso'
+      )
       .forEach(k => localStorage.removeItem(k));
     setUsuario(null);
     setCerimonialista(null);
     setIsCerimonialista(false);
     setEvento(null);
     setIsAdmin(false);
+    if (typeof window !== 'undefined') {
+      window.location.href = '/descomplicai';
+    }
   }, []);
 
   const logout = useCallback(async () => {
