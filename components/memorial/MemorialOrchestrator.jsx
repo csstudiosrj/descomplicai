@@ -259,7 +259,7 @@ export default function MemorialOrchestrator() {
     }
   }, [noAtualId, historicoIds]);
 
-  // 2. Define o nó inicial (pula Step00 se DNA completo e/ou restaura progresso salvo)
+  // 2. Define o nó inicial (pula Step00 se perfilCasal preenchido)
   useEffect(() => {
     if (!arvore || noInicialDefinido.current) return;
     const raiz = getRaiz(arvore);
@@ -279,11 +279,10 @@ export default function MemorialOrchestrator() {
       } catch {}
     }
 
-    const dnaCompleto = localStorage.getItem('descomplicai-dna-completo');
     const perfilCasal = estado.perfilCasal || 
       (() => { try { return JSON.parse(localStorage.getItem('memorial_estado') || '{}').perfilCasal; } catch { return ''; } })();
 
-    if (dnaCompleto && perfilCasal) {
+    if (perfilCasal) {
       const proximo = proximoNo(estado, raiz.id, arvore);
       if (proximo) {
         setHistoricoIds([raiz.id]);
