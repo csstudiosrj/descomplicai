@@ -124,7 +124,7 @@ export default function PerfilPage() {
 
       localStorage.setItem('descomplicai-evento-id', result.evento_id);
       localStorage.removeItem('descomplicai-perfil-draft');
-      router.push('/memorial?fase=dna');
+      router.replace('/memorial?fase=dna');
     } catch (err) {
       setErro(err.message || t('perfil.erros.generico'));
     } finally {
