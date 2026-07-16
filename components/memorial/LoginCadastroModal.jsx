@@ -258,10 +258,9 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
     return (
       <Modal
         isOpen={isOpen}
-        onClose={() => { /* obrigatorio */ }}
+        onClose={onClose}
         title="Quase la!"
         size="md"
-        hideCloseButton={true}
       >
         <div style={{
           display: 'flex',
@@ -401,10 +400,9 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
   return (
     <Modal
       isOpen={isOpen}
-      onClose={() => { /* obrigatorio no primeiro acesso */ }}
+      onClose={onClose}
       title=""
       size="md"
-      hideCloseButton={true}
     >
       <div style={{ textAlign: 'center', marginBottom: 'var(--space-6)' }}>
         <h2 style={{

@@ -632,7 +632,7 @@ export default function MemorialOrchestrator() {
                     )}
                   </StepErrorBoundary>
                 </React.Suspense>
-                {!noAtualId && <Footer />}
+                {(noAtual?.componente === 'Step00Casal') && <Footer />}
               </BreathTransition>
             </>
           )}
