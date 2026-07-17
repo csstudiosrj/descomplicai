@@ -1,10 +1,9 @@
 // components/memorial/MemorialOrchestrator.jsx
-// CORREÇÃO CRÍTICA (v2): 
+// CORREÇÃO CRÍTICA (v3): 
+//   - Evita duplicar noAtualId no historicoIds ao avançar
 //   - handleBack NUNCA mais redireciona para landing criando flags
-//   - Removida flag 'memorial-voltou-step00' que quebrava a restauração
 //   - Logout limpa todo o progresso do memorial do localStorage
 //   - Login restaura progresso do Supabase (prioridade) ou localStorage
-//   - Detecta login/logout pelo user?.id e reseta navegação
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -242,7 +241,6 @@ export default function MemorialOrchestrator() {
   const currentStepIdRef = useRef(null);
   const perfilSelecionadoRef = useRef(null);
   
-  // CORREÇÃO CRÍTICA: Guarda o userId anterior para detectar login/logout
   const userIdAnterior = useRef(null);
 
   useEffect(() => {
@@ -265,29 +263,26 @@ export default function MemorialOrchestrator() {
     }
   }, [noAtualId, historicoIds]);
 
-  // CORREÇÃO CRÍTICA: Detecta mudança de usuário (login/logout) e reseta o estado de navegação
+  // Detecta mudança de usuário (login/logout) e reseta o estado de navegação
   useEffect(() => {
     const currentUserId = user?.id || null;
     
-    // Se o userId mudou (login ou logout)
     if (currentUserId !== userIdAnterior.current) {
       userIdAnterior.current = currentUserId;
       
-      // Se deslogou (userId era algo e agora é null)
+      // Se deslogou
       if (!currentUserId && userIdAnterior.current !== null) {
-        // Limpa todo o progresso do memorial do localStorage
         localStorage.removeItem('memorial_progresso');
         localStorage.removeItem('descomplicai-memorial-draft');
         localStorage.removeItem('descomplicai-evento-id');
         localStorage.removeItem('memorial-voltou-step00');
-        // Reseta o estado de navegação para forçar ir pro Step00
         noInicialDefinido.current = false;
         restauracaoFeita.current = false;
         setNoAtualId(null);
         setHistoricoIds([]);
       }
       
-      // Se logou (userId era null e agora tem algo)
+      // Se logou
       if (currentUserId && !noInicialDefinido.current) {
         noInicialDefinido.current = false;
         restauracaoFeita.current = false;
@@ -295,14 +290,14 @@ export default function MemorialOrchestrator() {
     }
   }, [user?.id]);
 
-  // 2. Define o nó inicial — CORREÇÃO: NUNCA pula Step00 automaticamente
+  // 2. Define o nó inicial
   useEffect(() => {
     if (!arvore) return;
     if (noInicialDefinido.current) return;
 
     // Se usuário está logado, NÃO usa localStorage — espera o Supabase
     if (user && !restauracaoFeita.current) {
-      return; // Aguarda o useEffect de restauração do Supabase
+      return;
     }
 
     // Se não tem usuário logado, tenta localStorage (anônimo)
@@ -351,7 +346,11 @@ export default function MemorialOrchestrator() {
         if (!arvore) return;
         const proximo = proximoNo(novoEstado, noAtualId, arvore);
         if (proximo) {
-          setHistoricoIds(prev => [...prev, noAtualId]);
+          // CORREÇÃO v3: Evita duplicar no histórico
+          setHistoricoIds(prev => {
+            if (prev.length > 0 && prev[prev.length - 1] === noAtualId) return prev;
+            return [...prev, noAtualId];
+          });
           setNoAtualId(proximo.id);
         }
         setTransicionando(false);
@@ -383,7 +382,7 @@ export default function MemorialOrchestrator() {
     };
   }, [noAtualId, arvore, trackStep]);
 
-  // CORREÇÃO CRÍTICA: Restauração do Supabase — agora respeita o progresso salvo
+  // Restauração do Supabase
   useEffect(() => {
     if (!user) return;
     if (restauracaoFeita.current) return;
@@ -485,7 +484,11 @@ export default function MemorialOrchestrator() {
         if (!arvore) return;
         const proximo = proximoNo(novoEstado, noAtualId, arvore);
         if (proximo) {
-          setHistoricoIds(prev => [...prev, noAtualId]);
+          // CORREÇÃO v3: Evita duplicar no histórico
+          setHistoricoIds(prev => {
+            if (prev.length > 0 && prev[prev.length - 1] === noAtualId) return prev;
+            return [...prev, noAtualId];
+          });
           setNoAtualId(proximo.id);
         }
         setTransicionando(false);
@@ -515,7 +518,11 @@ export default function MemorialOrchestrator() {
       if (!arvore) return;
       const proximo = proximoNo(novoEstado, noAtualId, arvore);
       if (proximo) {
-        setHistoricoIds(prev => [...prev, noAtualId]);
+        // CORREÇÃO v3: Evita duplicar no histórico
+        setHistoricoIds(prev => {
+          if (prev.length > 0 && prev[prev.length - 1] === noAtualId) return prev;
+          return [...prev, noAtualId];
+        });
         setNoAtualId(proximo.id);
       }
       setTransicionando(false);
@@ -568,7 +575,7 @@ export default function MemorialOrchestrator() {
     }
   }, [estado, setRespostas, router, user, eventoId, supabase, noAtualId, historicoIds]);
 
-  // CORREÇÃO CRÍTICA: handleBack agora usa APENAS o histórico da árvore
+  // handleBack agora usa APENAS o histórico da árvore
   const handleBack = useCallback(() => {
     if (!arvore || historicoIds.length < 2) {
       if (noAtualId === getRaiz(arvore)?.id) {
