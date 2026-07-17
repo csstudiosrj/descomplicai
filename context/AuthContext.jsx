@@ -155,9 +155,7 @@ export function AuthProvider({ children }) {
     Object.keys(localStorage)
       .filter(k =>
         k.startsWith('sb-') ||
-        k.includes('supabase') ||
-        k.startsWith('descomplicai') ||
-        k === 'memorial_progresso'
+        k.includes('supabase')
       )
       .forEach(k => localStorage.removeItem(k));
     setUsuario(null);
