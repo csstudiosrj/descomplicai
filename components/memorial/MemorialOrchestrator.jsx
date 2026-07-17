@@ -266,30 +266,35 @@ export default function MemorialOrchestrator() {
   // 2. Define o nó inicial — CORREÇÃO: NUNCA pula Step00 automaticamente
   // O usuário sempre começa no Step00, e a árvore naturalmente avança pro Perfil
   useEffect(() => {
-    if (!arvore || noInicialDefinido.current) return;
-    const raiz = getRaiz(arvore);
-    if (!raiz) return;
+    if (!arvore) return;
 
-    // Restaura progresso salvo — mas só se não veio de navegação explícita pro Step00
+    // Progresso do localStorage tem prioridade absoluta
     const veioDeBack = sessionStorage.getItem('memorial-voltou-step00');
     if (veioDeBack) {
       sessionStorage.removeItem('memorial-voltou-step00');
-    } else {
-      const progressoSalvo = localStorage.getItem('memorial_progresso');
-      if (progressoSalvo) {
-        try {
-          const { noAtualId: savedId, historicoIds: savedHistorico } = JSON.parse(progressoSalvo);
-          if (savedId && savedHistorico) {
-            setNoAtualId(savedId);
-            setHistoricoIds(savedHistorico);
-            noInicialDefinido.current = true;
-            return;
-          }
-        } catch {}
-      }
+      const raiz = getRaiz(arvore);
+      setNoAtualId(raiz.id);
+      setHistoricoIds([raiz.id]);
+      noInicialDefinido.current = true;
+      return;
     }
 
-    // SEMPRE começa na raiz (Step00) — nunca pula automaticamente
+    const progressoSalvo = localStorage.getItem('memorial_progresso');
+    if (progressoSalvo) {
+      try {
+        const { noAtualId: savedId, historicoIds: savedHistorico } = JSON.parse(progressoSalvo);
+        if (savedId && savedHistorico && savedId !== noAtualId) {
+          setNoAtualId(savedId);
+          setHistoricoIds(savedHistorico);
+          noInicialDefinido.current = true;
+          return;
+        }
+      } catch {}
+    }
+
+    if (noInicialDefinido.current) return;
+    const raiz = getRaiz(arvore);
+    if (!raiz) return;
     setNoAtualId(raiz.id);
     setHistoricoIds([raiz.id]);
     noInicialDefinido.current = true;
