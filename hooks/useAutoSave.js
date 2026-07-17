@@ -6,8 +6,10 @@ import fetchAPI from '../utils/fetchAPI';
 const STORAGE_KEY = 'descomplicai-memorial-draft';
 const DEBOUNCE_MS = 1500;
 
+// CORREÇÃO: etapaAtual foi removido do estado do memorial v5.
+// O memorial só é considerado "iniciado" quando o usuário escolheu um perfil.
 function draftValido(dados) {
-  return dados && dados.perfilCasal != null && dados.etapaAtual != null;
+  return dados && dados.perfilCasal != null && dados.perfilCasal !== '';
 }
 
 export default function useAutoSave(estado, user = null, evento = null) {
@@ -118,20 +120,21 @@ export default function useAutoSave(estado, user = null, evento = null) {
     setTemDraft(false);
   }, []);
 
-  // CORREÇÃO CRÍTICA: Nova função que limpa TUDO do memorial no localStorage
+  // CORREÇÃO: Limpa TUDO do memorial no localStorage
   const limparTudo = useCallback(() => {
     if (typeof window === 'undefined') return;
-    
+
     // Remove draft
     localStorage.removeItem(STORAGE_KEY);
     setTemDraft(false);
-    
-    // Remove progresso de navegação
+
+    // Remove progresso de navegação (todas as versões)
     localStorage.removeItem('memorial_progresso');
+    localStorage.removeItem('memorial_progresso_v5');
     localStorage.removeItem('descomplicai-evento-id');
     localStorage.removeItem('memorial-voltou-step00');
-    
-    // Remove qualquer chave relacionada ao memorial
+
+    // Remove qualquer outra chave que comece com 'memorial_' ou 'descomplicai-memorial'
     Object.keys(localStorage).forEach(key => {
       if (key.startsWith('memorial_') || key.startsWith('descomplicai-memorial')) {
         localStorage.removeItem(key);

@@ -33,7 +33,7 @@ export function AuthProvider({ children }) {
       try {
         const res = await fetch(apiPath('/admin/verificar'), {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`,
           },
@@ -130,7 +130,10 @@ export function AuthProvider({ children }) {
     carregarSessao();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+        // CORREÇÃO: Ignora refresh de token para evitar loop de requisições
+        if (event === 'TOKEN_REFRESHED') return;
+
         const currentUser = session?.user ?? null;
         setUsuario(currentUser);
         if (currentUser) {
@@ -150,16 +153,17 @@ export function AuthProvider({ children }) {
     };
   }, [buscarDadosUsuario]);
 
-  // CORREÇÃO CRÍTICA: Função que limpa TODO o progresso do memorial do localStorage
+  // CORREÇÃO: Limpa TODO o progresso do memorial do localStorage
   const limparProgressoMemorial = useCallback(() => {
     if (typeof window === 'undefined') return;
-    
-    // Remove todas as chaves relacionadas ao memorial
+
+    // Remove todas as chaves relacionadas ao memorial (todas as versões)
     localStorage.removeItem('memorial_progresso');
+    localStorage.removeItem('memorial_progresso_v5');
     localStorage.removeItem('descomplicai-memorial-draft');
     localStorage.removeItem('descomplicai-evento-id');
-    localStorage.removeItem('memorial-voltou-step00'); // Limpa flag antiga se existir
-    
+    localStorage.removeItem('memorial-voltou-step00');
+
     // Limpa qualquer outra chave que comece com 'memorial_' ou 'descomplicai-memorial'
     Object.keys(localStorage).forEach(key => {
       if (key.startsWith('memorial_') || key.startsWith('descomplicai-memorial')) {
@@ -171,7 +175,7 @@ export function AuthProvider({ children }) {
   const signOut = useCallback(async () => {
     // CORREÇÃO: Limpa o progresso do memorial ANTES de fazer logout
     limparProgressoMemorial();
-    
+
     await supabase.auth.signOut();
     Object.keys(localStorage)
       .filter(k =>
@@ -192,7 +196,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     // CORREÇÃO: Limpa o progresso do memorial ANTES de redirecionar
     limparProgressoMemorial();
-    
+
     await signOut();
     if (typeof window !== 'undefined') {
       window.location.href = '/descomplicai/login';
@@ -267,7 +271,6 @@ export function AuthProvider({ children }) {
     logout,
     loginSocial,
     isAdmin,
-    // CORREÇÃO: Exporta a função de limpeza para uso externo se necessário
     limparProgressoMemorial,
   };
 

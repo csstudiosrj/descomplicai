@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+// CORREÇÃO: Remove campos legados etapaAtual/historicoEtapas (v5 usa noAtualId/historicoIds no Orchestrator).
+// Adiciona noAtualId e _progresso_v5 para alinhamento com o novo modelo de navegação.
 const ESTADO_INICIAL = {
-  etapaAtual: 0,
-  historicoEtapas: [],
+  noAtualId: null,
+  _progresso_v5: null,
   perfilCasal: '',
   perfil: '',
   modoPlanejamento: '',
@@ -246,23 +248,6 @@ export function useMemorial() {
     setEstado(prev => ({ ...prev, ...novoEstado }));
   }, []);
 
-  const irParaEtapa = useCallback((indice) => {
-    setEstado(prev => ({
-      ...prev,
-      historicoEtapas: [...prev.historicoEtapas, prev.etapaAtual],
-      etapaAtual: indice,
-    }));
-  }, []);
-
-  const voltarEtapa = useCallback(() => {
-    setEstado(prev => {
-      if (!prev.historicoEtapas || prev.historicoEtapas.length === 0) return prev;
-      const novoHistorico = [...prev.historicoEtapas];
-      const etapaAnterior = novoHistorico.pop();
-      return { ...prev, historicoEtapas: novoHistorico, etapaAtual: etapaAnterior };
-    });
-  }, []);
-
   const resetar = useCallback(() => {
     setEstado(ESTADO_INICIAL);
     if (typeof window !== 'undefined') localStorage.removeItem(STORAGE_KEY);
@@ -274,7 +259,7 @@ export function useMemorial() {
 
   return {
     estado, setRespostas, atualizarMultiplo, carregarEstado,
-    irParaEtapa, voltarEtapa, resetar, estaCompleto, ESTADO_INICIAL,
+    resetar, estaCompleto, ESTADO_INICIAL,
   };
 }
 
