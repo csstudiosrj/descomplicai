@@ -1,7 +1,7 @@
 // components/memorial/MemorialOrchestrator.jsx
-// CORREÇÃO v6.1: restauracaoConcluida só é setada no FINAL da busca do Supabase
-// (evita race condition onde o efeito do nó inicial cai no fallback Step00
-// antes dos dados do banco chegarem)
+// CORREÇÃO v6.2: 
+// 1. Logout limpa memorial_estado (chave do useMemorial) para evitar perfilCasal residual
+// 2. Atalho perfilCasalRef no Supabase verifica noAtualId também (garantia contra tela em branco)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -271,6 +271,8 @@ export default function MemorialOrchestrator() {
         localStorage.removeItem('descomplicai-memorial-draft');
         localStorage.removeItem('descomplicai-evento-id');
         localStorage.removeItem('memorial-voltou-step00');
+        // CORREÇÃO v6.2: Limpa também o estado do useMemorial para evitar perfilCasal residual
+        localStorage.removeItem('memorial_estado');
         setNoInicialDefinido(false);
         setRestauracaoConcluida(false);
         setNoAtualId(null);
@@ -377,13 +379,16 @@ export default function MemorialOrchestrator() {
   const perfilCasalRef = useRef(estado.perfilCasal);
   useEffect(() => { perfilCasalRef.current = estado.perfilCasal; }, [estado.perfilCasal]);
 
-  // CORREÇÃO v6.1: restauracaoConcluida só é setada no FINAL da busca do Supabase
+  // CORREÇÃO v6.2: restauracaoConcluida só no FINAL da busca do Supabase
+  // + atalho perfilCasalRef agora verifica noAtualId também (garantia contra tela em branco)
   useEffect(() => {
     if (!user) return;
     if (restauracaoConcluida) return;
     if (carregandoAuth) return;
 
-    if (perfilCasalRef.current) {
+    // CORREÇÃO v6.2: Atalho só é válido se noAtualId também estiver definido
+    // (evita tela em branco quando useMemorial tem perfilCasal residual mas noAtualId foi resetado)
+    if (perfilCasalRef.current && noAtualId) {
       setRestauracaoConcluida(true);
       setNoInicialDefinido(true);
       return;
@@ -456,7 +461,7 @@ export default function MemorialOrchestrator() {
     }
 
     buscarDoSupabase();
-  }, [user, carregandoAuth, carregarEstado, carregarDraft, supabase, restauracaoConcluida]);
+  }, [user, carregandoAuth, carregarEstado, carregarDraft, supabase, restauracaoConcluida, noAtualId]);
 
   const etapasTotais = arvore ? contarNosAtivos(estado, arvore) : 0;
   const noAtual = arvore ? getNoPorId(noAtualId, arvore) : null;
