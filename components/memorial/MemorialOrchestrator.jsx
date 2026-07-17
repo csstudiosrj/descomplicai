@@ -1,9 +1,7 @@
 // components/memorial/MemorialOrchestrator.jsx
-// CORREÇÃO CRÍTICA (v3): 
-//   - Evita duplicar noAtualId no historicoIds ao avançar
-//   - handleBack NUNCA mais redireciona para landing criando flags
-//   - Logout limpa todo o progresso do memorial do localStorage
-//   - Login restaura progresso do Supabase (prioridade) ou localStorage
+// CORREÇÃO v5: historicoIds agora inclui o nó atual como último item
+// Quando avança: adiciona proximo.id (novo atual) ao histórico
+// Chave do localStorage mudada para memorial_progresso_v5 para forçar limpeza do cache antigo
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -259,7 +257,7 @@ export default function MemorialOrchestrator() {
   // Persiste progresso no localStorage sempre que mudar
   useEffect(() => {
     if (noAtualId && historicoIds.length > 0) {
-      localStorage.setItem('memorial_progresso', JSON.stringify({ noAtualId, historicoIds }));
+      localStorage.setItem('memorial_progresso_v5', JSON.stringify({ noAtualId, historicoIds }));
     }
   }, [noAtualId, historicoIds]);
 
@@ -272,7 +270,8 @@ export default function MemorialOrchestrator() {
       
       // Se deslogou
       if (!currentUserId && userIdAnterior.current !== null) {
-        localStorage.removeItem('memorial_progresso');
+        localStorage.removeItem('memorial_progresso_v5');
+        localStorage.removeItem('memorial_progresso'); // limpa versão antiga
         localStorage.removeItem('descomplicai-memorial-draft');
         localStorage.removeItem('descomplicai-evento-id');
         localStorage.removeItem('memorial-voltou-step00');
@@ -300,9 +299,9 @@ export default function MemorialOrchestrator() {
       return;
     }
 
-    // Se não tem usuário logado, tenta localStorage (anônimo)
+    // Se não tem usuário logado, tenta localStorage v5 (novo formato)
     if (!user) {
-      const progressoSalvo = localStorage.getItem('memorial_progresso');
+      const progressoSalvo = localStorage.getItem('memorial_progresso_v5');
       if (progressoSalvo) {
         try {
           const { noAtualId: savedId, historicoIds: savedHistorico } = JSON.parse(progressoSalvo);
@@ -346,11 +345,8 @@ export default function MemorialOrchestrator() {
         if (!arvore) return;
         const proximo = proximoNo(novoEstado, noAtualId, arvore);
         if (proximo) {
-          // CORREÇÃO v3: Evita duplicar no histórico
-          setHistoricoIds(prev => {
-            if (prev.length > 0 && prev[prev.length - 1] === noAtualId) return prev;
-            return [...prev, noAtualId];
-          });
+          // CORREÇÃO v5: Adiciona o PRÓXIMO nó (novo atual) ao histórico
+          setHistoricoIds(prev => [...prev, proximo.id]);
           setNoAtualId(proximo.id);
         }
         setTransicionando(false);
@@ -411,9 +407,9 @@ export default function MemorialOrchestrator() {
           carregarEstado(memorialData.estado);
           
           const estadoSalvo = memorialData.estado;
-          if (estadoSalvo._progresso?.noAtualId && estadoSalvo._progresso?.historicoIds) {
-            setNoAtualId(estadoSalvo._progresso.noAtualId);
-            setHistoricoIds(estadoSalvo._progresso.historicoIds);
+          if (estadoSalvo._progresso_v5?.noAtualId && estadoSalvo._progresso_v5?.historicoIds) {
+            setNoAtualId(estadoSalvo._progresso_v5.noAtualId);
+            setHistoricoIds(estadoSalvo._progresso_v5.historicoIds);
             noInicialDefinido.current = true;
           } else {
             noInicialDefinido.current = false;
@@ -425,9 +421,9 @@ export default function MemorialOrchestrator() {
         if (!memErr && memorialData?.dados) {
           carregarEstado(memorialData.dados);
           const dadosSalvos = memorialData.dados;
-          if (dadosSalvos._progresso?.noAtualId && dadosSalvos._progresso?.historicoIds) {
-            setNoAtualId(dadosSalvos._progresso.noAtualId);
-            setHistoricoIds(dadosSalvos._progresso.historicoIds);
+          if (dadosSalvos._progresso_v5?.noAtualId && dadosSalvos._progresso_v5?.historicoIds) {
+            setNoAtualId(dadosSalvos._progresso_v5.noAtualId);
+            setHistoricoIds(dadosSalvos._progresso_v5.historicoIds);
             noInicialDefinido.current = true;
           } else {
             noInicialDefinido.current = false;
@@ -484,11 +480,8 @@ export default function MemorialOrchestrator() {
         if (!arvore) return;
         const proximo = proximoNo(novoEstado, noAtualId, arvore);
         if (proximo) {
-          // CORREÇÃO v3: Evita duplicar no histórico
-          setHistoricoIds(prev => {
-            if (prev.length > 0 && prev[prev.length - 1] === noAtualId) return prev;
-            return [...prev, noAtualId];
-          });
+          // CORREÇÃO v5: Adiciona o PRÓXIMO nó (novo atual) ao histórico
+          setHistoricoIds(prev => [...prev, proximo.id]);
           setNoAtualId(proximo.id);
         }
         setTransicionando(false);
@@ -518,11 +511,8 @@ export default function MemorialOrchestrator() {
       if (!arvore) return;
       const proximo = proximoNo(novoEstado, noAtualId, arvore);
       if (proximo) {
-        // CORREÇÃO v3: Evita duplicar no histórico
-        setHistoricoIds(prev => {
-          if (prev.length > 0 && prev[prev.length - 1] === noAtualId) return prev;
-          return [...prev, noAtualId];
-        });
+        // CORREÇÃO v5: Adiciona o PRÓXIMO nó (novo atual) ao histórico
+        setHistoricoIds(prev => [...prev, proximo.id]);
         setNoAtualId(proximo.id);
       }
       setTransicionando(false);
@@ -542,7 +532,7 @@ export default function MemorialOrchestrator() {
     try {
       const estadoComProgresso = {
         ...estado,
-        _progresso: { noAtualId, historicoIds }
+        _progresso_v5: { noAtualId, historicoIds }
       };
       localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estadoComProgresso));
 
@@ -575,7 +565,7 @@ export default function MemorialOrchestrator() {
     }
   }, [estado, setRespostas, router, user, eventoId, supabase, noAtualId, historicoIds]);
 
-  // handleBack agora usa APENAS o histórico da árvore
+  // handleBack: noAnterior já funciona corretamente com o novo modelo de histórico
   const handleBack = useCallback(() => {
     if (!arvore || historicoIds.length < 2) {
       if (noAtualId === getRaiz(arvore)?.id) {
