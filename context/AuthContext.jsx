@@ -150,7 +150,28 @@ export function AuthProvider({ children }) {
     };
   }, [buscarDadosUsuario]);
 
+  // CORREÇÃO CRÍTICA: Função que limpa TODO o progresso do memorial do localStorage
+  const limparProgressoMemorial = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    
+    // Remove todas as chaves relacionadas ao memorial
+    localStorage.removeItem('memorial_progresso');
+    localStorage.removeItem('descomplicai-memorial-draft');
+    localStorage.removeItem('descomplicai-evento-id');
+    localStorage.removeItem('memorial-voltou-step00'); // Limpa flag antiga se existir
+    
+    // Limpa qualquer outra chave que comece com 'memorial_' ou 'descomplicai-memorial'
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('memorial_') || key.startsWith('descomplicai-memorial')) {
+        localStorage.removeItem(key);
+      }
+    });
+  }, []);
+
   const signOut = useCallback(async () => {
+    // CORREÇÃO: Limpa o progresso do memorial ANTES de fazer logout
+    limparProgressoMemorial();
+    
     await supabase.auth.signOut();
     Object.keys(localStorage)
       .filter(k =>
@@ -166,15 +187,17 @@ export function AuthProvider({ children }) {
     if (typeof window !== 'undefined') {
       window.location.href = '/descomplicai';
     }
-  }, []);
+  }, [limparProgressoMemorial]);
 
   const logout = useCallback(async () => {
+    // CORREÇÃO: Limpa o progresso do memorial ANTES de redirecionar
+    limparProgressoMemorial();
+    
     await signOut();
     if (typeof window !== 'undefined') {
-      // window.location.href é navegação full do browser — DEVE incluir o basePath
       window.location.href = '/descomplicai/login';
     }
-  }, [signOut]);
+  }, [signOut, limparProgressoMemorial]);
 
   const login = useCallback(async (email, senha) => {
     setCarregando(true);
@@ -211,10 +234,6 @@ export function AuthProvider({ children }) {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        // CORREÇÃO: redirectTo do OAuth é uma URL absoluta que o browser navega
-        // diretamente (fora do router do Next.js). DEVE incluir o basePath '/descomplicai'.
-        // Sem isso, o usuário é redirecionado para https://site.com/memorial (sem /descomplicai)
-        // e recebe 404, pois as rotas do Next.js estão sob /descomplicai/*.
         redirectTo: typeof window !== 'undefined'
           ? window.location.origin + '/descomplicai/memorial'
           : undefined,
@@ -248,6 +267,8 @@ export function AuthProvider({ children }) {
     logout,
     loginSocial,
     isAdmin,
+    // CORREÇÃO: Exporta a função de limpeza para uso externo se necessário
+    limparProgressoMemorial,
   };
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;

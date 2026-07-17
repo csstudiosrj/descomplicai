@@ -118,5 +118,26 @@ export default function useAutoSave(estado, user = null, evento = null) {
     setTemDraft(false);
   }, []);
 
-  return { isHydrated, temDraft, carregarDraft, limparDraft, salvandoAgora };
+  // CORREÇÃO CRÍTICA: Nova função que limpa TUDO do memorial no localStorage
+  const limparTudo = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    
+    // Remove draft
+    localStorage.removeItem(STORAGE_KEY);
+    setTemDraft(false);
+    
+    // Remove progresso de navegação
+    localStorage.removeItem('memorial_progresso');
+    localStorage.removeItem('descomplicai-evento-id');
+    localStorage.removeItem('memorial-voltou-step00');
+    
+    // Remove qualquer chave relacionada ao memorial
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('memorial_') || key.startsWith('descomplicai-memorial')) {
+        localStorage.removeItem(key);
+      }
+    });
+  }, []);
+
+  return { isHydrated, temDraft, carregarDraft, limparDraft, limparTudo, salvandoAgora };
 }

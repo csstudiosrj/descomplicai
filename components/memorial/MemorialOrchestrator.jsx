@@ -1,11 +1,10 @@
 // components/memorial/MemorialOrchestrator.jsx
-// REFATORADO: Motor de árvore de nós (motorArvore.js) substitui navegação linear.
-// Mantém todas as funcionalidades existentes: login, autosave, analytics, etc.
-// ADICIONADO: Error Boundary para isolar falhas de steps específicos.
-// ADICIONADO: Persistência de progresso (noAtualId, historicoIds) no localStorage.
-// CORREÇÃO: Perfil e DNA agora são steps da árvore — navegação voltar funciona corretamente.
-// REMOVIDO: Auto-pulo do Step00 quando perfilCasal existe.
-// REMOVIDO: Redirect para /memorial/perfil (página separada quebrava histórico).
+// CORREÇÃO CRÍTICA (v2): 
+//   - handleBack NUNCA mais redireciona para landing criando flags
+//   - Removida flag 'memorial-voltou-step00' que quebrava a restauração
+//   - Logout limpa todo o progresso do memorial do localStorage
+//   - Login restaura progresso do Supabase (prioridade) ou localStorage
+//   - Detecta login/logout pelo user?.id e reseta navegação
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -242,6 +241,9 @@ export default function MemorialOrchestrator() {
   const stepCompletedRef = useRef(false);
   const currentStepIdRef = useRef(null);
   const perfilSelecionadoRef = useRef(null);
+  
+  // CORREÇÃO CRÍTICA: Guarda o userId anterior para detectar login/logout
+  const userIdAnterior = useRef(null);
 
   useEffect(() => {
     const id = localStorage.getItem('descomplicai-evento-id');
@@ -263,42 +265,69 @@ export default function MemorialOrchestrator() {
     }
   }, [noAtualId, historicoIds]);
 
+  // CORREÇÃO CRÍTICA: Detecta mudança de usuário (login/logout) e reseta o estado de navegação
+  useEffect(() => {
+    const currentUserId = user?.id || null;
+    
+    // Se o userId mudou (login ou logout)
+    if (currentUserId !== userIdAnterior.current) {
+      userIdAnterior.current = currentUserId;
+      
+      // Se deslogou (userId era algo e agora é null)
+      if (!currentUserId && userIdAnterior.current !== null) {
+        // Limpa todo o progresso do memorial do localStorage
+        localStorage.removeItem('memorial_progresso');
+        localStorage.removeItem('descomplicai-memorial-draft');
+        localStorage.removeItem('descomplicai-evento-id');
+        localStorage.removeItem('memorial-voltou-step00');
+        // Reseta o estado de navegação para forçar ir pro Step00
+        noInicialDefinido.current = false;
+        restauracaoFeita.current = false;
+        setNoAtualId(null);
+        setHistoricoIds([]);
+      }
+      
+      // Se logou (userId era null e agora tem algo)
+      if (currentUserId && !noInicialDefinido.current) {
+        noInicialDefinido.current = false;
+        restauracaoFeita.current = false;
+      }
+    }
+  }, [user?.id]);
+
   // 2. Define o nó inicial — CORREÇÃO: NUNCA pula Step00 automaticamente
-  // O usuário sempre começa no Step00, e a árvore naturalmente avança pro Perfil
   useEffect(() => {
     if (!arvore) return;
-
-    // Progresso do localStorage tem prioridade absoluta
-    const veioDeBack = sessionStorage.getItem('memorial-voltou-step00');
-    if (veioDeBack) {
-      sessionStorage.removeItem('memorial-voltou-step00');
-      const raiz = getRaiz(arvore);
-      setNoAtualId(raiz.id);
-      setHistoricoIds([raiz.id]);
-      noInicialDefinido.current = true;
-      return;
-    }
-
-    const progressoSalvo = localStorage.getItem('memorial_progresso');
-    if (progressoSalvo) {
-      try {
-        const { noAtualId: savedId, historicoIds: savedHistorico } = JSON.parse(progressoSalvo);
-        if (savedId && savedHistorico && savedId !== noAtualId) {
-          setNoAtualId(savedId);
-          setHistoricoIds(savedHistorico);
-          noInicialDefinido.current = true;
-          return;
-        }
-      } catch {}
-    }
-
     if (noInicialDefinido.current) return;
+
+    // Se usuário está logado, NÃO usa localStorage — espera o Supabase
+    if (user && !restauracaoFeita.current) {
+      return; // Aguarda o useEffect de restauração do Supabase
+    }
+
+    // Se não tem usuário logado, tenta localStorage (anônimo)
+    if (!user) {
+      const progressoSalvo = localStorage.getItem('memorial_progresso');
+      if (progressoSalvo) {
+        try {
+          const { noAtualId: savedId, historicoIds: savedHistorico } = JSON.parse(progressoSalvo);
+          if (savedId && savedHistorico) {
+            setNoAtualId(savedId);
+            setHistoricoIds(savedHistorico);
+            noInicialDefinido.current = true;
+            return;
+          }
+        } catch {}
+      }
+    }
+
+    // Fallback: vai pro Step00 (raiz)
     const raiz = getRaiz(arvore);
     if (!raiz) return;
     setNoAtualId(raiz.id);
     setHistoricoIds([raiz.id]);
     noInicialDefinido.current = true;
-  }, [arvore]);
+  }, [arvore, user]);
 
   // Processa seleção pendente após login
   useEffect(() => {
@@ -333,9 +362,6 @@ export default function MemorialOrchestrator() {
     }
   }, [user, carregandoAuth, eventoId, selecaoPendente, arvore, estado, setRespostas, noAtualId]);
 
-  // CORREÇÃO: Remove useEffect que redirecionava pra /memorial/perfil
-  // O Perfil agora é um step da árvore, não uma página separada
-
   useEffect(() => {
     if (!noAtualId || !arvore) return;
     const noAtual = getNoPorId(noAtualId, arvore);
@@ -357,11 +383,17 @@ export default function MemorialOrchestrator() {
     };
   }, [noAtualId, arvore, trackStep]);
 
+  // CORREÇÃO CRÍTICA: Restauração do Supabase — agora respeita o progresso salvo
   useEffect(() => {
     if (!user) return;
     if (restauracaoFeita.current) return;
     if (carregandoAuth) return;
-    if (estado.perfilCasal) return;
+    
+    if (estado.perfilCasal) {
+      restauracaoFeita.current = true;
+      noInicialDefinido.current = true;
+      return;
+    }
 
     restauracaoFeita.current = true;
     setCarregandoDoBanco(true);
@@ -378,24 +410,44 @@ export default function MemorialOrchestrator() {
 
         if (!memErr && memorialData?.estado?.perfilCasal) {
           carregarEstado(memorialData.estado);
-          noInicialDefinido.current = false;
+          
+          const estadoSalvo = memorialData.estado;
+          if (estadoSalvo._progresso?.noAtualId && estadoSalvo._progresso?.historicoIds) {
+            setNoAtualId(estadoSalvo._progresso.noAtualId);
+            setHistoricoIds(estadoSalvo._progresso.historicoIds);
+            noInicialDefinido.current = true;
+          } else {
+            noInicialDefinido.current = false;
+          }
           setCarregandoDoBanco(false);
           return;
         }
 
         if (!memErr && memorialData?.dados) {
           carregarEstado(memorialData.dados);
-          noInicialDefinido.current = false;
+          const dadosSalvos = memorialData.dados;
+          if (dadosSalvos._progresso?.noAtualId && dadosSalvos._progresso?.historicoIds) {
+            setNoAtualId(dadosSalvos._progresso.noAtualId);
+            setHistoricoIds(dadosSalvos._progresso.historicoIds);
+            noInicialDefinido.current = true;
+          } else {
+            noInicialDefinido.current = false;
+          }
         }
 
         const draft = carregarDraft();
         if (draft?.perfilCasal) {
+          carregarEstado(draft);
+          noInicialDefinido.current = false;
           setCarregandoDoBanco(false);
           setOferecerDraft(true);
           return;
         }
+        
+        noInicialDefinido.current = false;
       } catch (e) {
         console.warn('[MemorialOrchestrator] Erro ao buscar do Supabase:', e);
+        noInicialDefinido.current = false;
       } finally {
         setCarregandoDoBanco(false);
       }
@@ -412,19 +464,14 @@ export default function MemorialOrchestrator() {
 
   const BREATH_DURATION = 1400;
 
-  // CORREÇÃO: handleSelect agora gerencia steps internos da árvore
-  // Não redireciona mais pra páginas externas
   const handleSelect = useCallback((campo, valor, cor, extraData = null) => {
-    // Caso especial: StepPerfil sinaliza que precisa de login
     if (campo === '__perfilPrecisaLogin') {
       setSelecaoPendente({ campo: 'perfilCasal', valor: valor.perfilCasal, cor });
       setModalAuthAberto(true);
       return;
     }
 
-    // Caso especial: StepPerfil passa dados extras do perfil
     if (campo === 'perfilCasal' && extraData) {
-      // Atualiza todas as respostas do perfil de uma vez
       atualizarMultiplo(extraData);
 
       setRespostaTransicao('');
@@ -449,7 +496,6 @@ export default function MemorialOrchestrator() {
       return;
     }
 
-    // Fluxo normal de seleção (steps padrão)
     setRespostas(campo, valor);
 
     let valorDisplay = valor;
@@ -487,7 +533,11 @@ export default function MemorialOrchestrator() {
   const handleConcluirMemorial = useCallback(async (fornecedores) => {
     setRespostas('fornecedoresNecessarios', fornecedores);
     try {
-      localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estado));
+      const estadoComProgresso = {
+        ...estado,
+        _progresso: { noAtualId, historicoIds }
+      };
+      localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estadoComProgresso));
 
       const evId = eventoId || localStorage.getItem('descomplicai-evento-id');
       if (user && evId) {
@@ -500,7 +550,10 @@ export default function MemorialOrchestrator() {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`,
             },
-            body: JSON.stringify({ evento_id: evId, estado }),
+            body: JSON.stringify({ 
+              evento_id: evId, 
+              estado: estadoComProgresso 
+            }),
           });
           if (!res.ok) {
             const errText = await res.text();
@@ -513,28 +566,37 @@ export default function MemorialOrchestrator() {
       console.error('[MemorialOrchestrator] Falha ao salvar:', erro);
       alert('Falha ao salvar o progresso. Tente novamente.');
     }
-  }, [estado, setRespostas, router, user, eventoId, supabase]);
+  }, [estado, setRespostas, router, user, eventoId, supabase, noAtualId, historicoIds]);
 
-  // CORREÇÃO: handleBack usa noAnterior() da árvore em vez de router.back()
+  // CORREÇÃO CRÍTICA: handleBack agora usa APENAS o histórico da árvore
   const handleBack = useCallback(() => {
     if (!arvore || historicoIds.length < 2) {
-      // Se não tem histórico suficiente, volta pra landing
-      sessionStorage.setItem('memorial-voltou-step00', '1');
-      router.push('/descomplicai');
+      if (noAtualId === getRaiz(arvore)?.id) {
+        router.push('/descomplicai');
+        return;
+      }
+      const raiz = getRaiz(arvore);
+      if (raiz) {
+        setNoAtualId(raiz.id);
+        setHistoricoIds([raiz.id]);
+      }
       return;
     }
 
     const resultado = noAnterior(historicoIds, arvore);
     if (!resultado) {
-      sessionStorage.setItem('memorial-voltou-step00', '1');
-      router.push('/descomplicai');
+      const raiz = getRaiz(arvore);
+      if (raiz) {
+        setNoAtualId(raiz.id);
+        setHistoricoIds([raiz.id]);
+      }
       return;
     }
 
     const { no, novoHistorico } = resultado;
     setNoAtualId(no.id);
     setHistoricoIds(novoHistorico);
-  }, [arvore, historicoIds, router]);
+  }, [arvore, historicoIds, noAtualId, router]);
 
   const handleContinuarDraft = () => {
     const draft = carregarDraft();
