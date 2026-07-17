@@ -176,7 +176,7 @@ const BLOCK_NAMES = {
   'H': 'Bloco H — Recepcao',
   'I': 'Bloco I — Papelaria e Identidade',
   'J': 'Bloco J — Vestuario e Beleza',
-  'K': 'Bloco K — Fornecedores',
+  'K': 'Bloco J — Fornecedores',
   'L': 'Bloco L — Logistica e Documentacao',
   'M': 'Bloco M — Pos-casamento',
   'N': 'Bloco N — Documentacao e Financeiro',
@@ -271,18 +271,23 @@ export default function MemorialOrchestrator() {
     const raiz = getRaiz(arvore);
     if (!raiz) return;
 
-    // Restaura progresso salvo se existir
-    const progressoSalvo = localStorage.getItem('memorial_progresso');
-    if (progressoSalvo) {
-      try {
-        const { noAtualId: savedId, historicoIds: savedHistorico } = JSON.parse(progressoSalvo);
-        if (savedId && savedHistorico) {
-          setNoAtualId(savedId);
-          setHistoricoIds(savedHistorico);
-          noInicialDefinido.current = true;
-          return;
-        }
-      } catch {}
+    // Restaura progresso salvo — mas só se não veio de navegação explícita pro Step00
+    const veioDeBack = sessionStorage.getItem('memorial-voltou-step00');
+    if (veioDeBack) {
+      sessionStorage.removeItem('memorial-voltou-step00');
+    } else {
+      const progressoSalvo = localStorage.getItem('memorial_progresso');
+      if (progressoSalvo) {
+        try {
+          const { noAtualId: savedId, historicoIds: savedHistorico } = JSON.parse(progressoSalvo);
+          if (savedId && savedHistorico) {
+            setNoAtualId(savedId);
+            setHistoricoIds(savedHistorico);
+            noInicialDefinido.current = true;
+            return;
+          }
+        } catch {}
+      }
     }
 
     // SEMPRE começa na raiz (Step00) — nunca pula automaticamente
@@ -532,12 +537,14 @@ export default function MemorialOrchestrator() {
   const handleBack = useCallback(() => {
     if (!arvore || historicoIds.length < 2) {
       // Se não tem histórico suficiente, volta pra landing
+      sessionStorage.setItem('memorial-voltou-step00', '1');
       router.push('/descomplicai');
       return;
     }
 
     const resultado = noAnterior(historicoIds, arvore);
     if (!resultado) {
+      sessionStorage.setItem('memorial-voltou-step00', '1');
       router.push('/descomplicai');
       return;
     }
