@@ -1,9 +1,9 @@
 // components/memorial/MemorialOrchestrator.jsx
-// CORREÇÃO v5: historicoIds agora inclui o nó atual como último item
+// CORREÇÃO v6: Todas as correções de bugs críticos, altos, médios e baixos aplicadas
 // Quando avança: adiciona proximo.id (novo atual) ao histórico
-// Chave do localStorage mudada para memorial_progresso_v5 para forçar limpeza do cache antigo
+// Chave do localStorage: memorial_progresso_v5
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import useMemorial from '../../hooks/useMemorial';
 import { useAuth } from '../../hooks/useAuth';
@@ -160,6 +160,7 @@ const STEP_COMPONENTS = {
   StepE19Vacinas: React.lazy(() => import('./steps/StepE19Vacinas')),
 };
 
+// CORREÇÃO 12: Rótulo duplicado 'K' corrigido de "Bloco J" para "Bloco K"
 const BLOCK_NAMES = {
   'A': 'Bloco A — Perfil do Casal',
   'B': 'Bloco B — Cerimonia',
@@ -171,7 +172,7 @@ const BLOCK_NAMES = {
   'H': 'Bloco H — Recepcao',
   'I': 'Bloco I — Papelaria e Identidade',
   'J': 'Bloco J — Vestuario e Beleza',
-  'K': 'Bloco J — Fornecedores',
+  'K': 'Bloco K — Fornecedores',
   'L': 'Bloco L — Logistica e Documentacao',
   'M': 'Bloco M — Pos-casamento',
   'N': 'Bloco N — Documentacao e Financeiro',
@@ -222,7 +223,10 @@ export default function MemorialOrchestrator() {
   const [noAtualId, setNoAtualId] = useState(null);
   const [historicoIds, setHistoricoIds] = useState([]);
   const arvoreCarregada = useRef(false);
-  const noInicialDefinido = useRef(false);
+
+  // CORREÇÃO 3: useRef trocado para useState para permitir re-render após restauração do Supabase
+  const [restauracaoConcluida, setRestauracaoConcluida] = useState(false);
+  const [noInicialDefinido, setNoInicialDefinido] = useState(false);
 
   const [selecaoPendente, setSelecaoPendente] = useState(null);
 
@@ -233,69 +237,75 @@ export default function MemorialOrchestrator() {
   const [modalAuthAberto, setModalAuthAberto] = useState(false);
   const [oferecerDraft, setOferecerDraft] = useState(false);
   const [carregandoDoBanco, setCarregandoDoBanco] = useState(false);
-  const [eventoId, setEventoId] = useState(null);
-  const restauracaoFeita = useRef(false);
+  // CORREÇÃO 4: eventoId removido do state — usamos evento?.id diretamente
   const stepCompletedRef = useRef(false);
   const currentStepIdRef = useRef(null);
   const perfilSelecionadoRef = useRef(null);
   
+  // CORREÇÃO 13: Ref para guardar e limpar timeouts
+  const timeoutRef = useRef(null);
+
   const userIdAnterior = useRef(null);
 
-  useEffect(() => {
-    const id = localStorage.getItem('descomplicai-evento-id');
-    if (id) setEventoId(id);
-  }, []);
+  // CORREÇÃO 4: Não precisamos mais do useEffect que lia eventoId do localStorage
+  // O evento vem do useAuth() e usamos evento?.id diretamente
 
-  // 1. Carrega a árvore
+  // CORREÇÃO 10: Flag mounted para evitar setState em componente desmontado
   useEffect(() => {
+    let mounted = true;
     if (arvoreCarregada.current) return;
     arvoreCarregada.current = true;
     const tipo = estado.tipoEvento || 'casamento';
-    carregarArvore(tipo).then(setArvore);
+    carregarArvore(tipo).then(arv => {
+      if (mounted) setArvore(arv);
+    });
+    return () => { mounted = false; };
   }, [estado.tipoEvento]);
 
-  // Persiste progresso no localStorage sempre que mudar
+  // CORREÇÃO 14: Só persiste no localStorage se usuário NÃO estiver logado
   useEffect(() => {
-    if (noAtualId && historicoIds.length > 0) {
+    if (!user && noAtualId && historicoIds.length > 0) {
       localStorage.setItem('memorial_progresso_v5', JSON.stringify({ noAtualId, historicoIds }));
     }
-  }, [noAtualId, historicoIds]);
+  }, [noAtualId, historicoIds, user]);
 
-  // Detecta mudança de usuário (login/logout) e reseta o estado de navegação
+  // CORREÇÃO 1: Bug de logout — guarda previousId antes de atualizar a ref
   useEffect(() => {
     const currentUserId = user?.id || null;
+    const previousId = userIdAnterior.current;
     
-    if (currentUserId !== userIdAnterior.current) {
+    if (currentUserId !== previousId) {
       userIdAnterior.current = currentUserId;
       
       // Se deslogou
-      if (!currentUserId && userIdAnterior.current !== null) {
+      if (!currentUserId && previousId !== null) {
+        // CORREÇÃO 15: Limpa TODAS as keys relacionadas ao memorial
         localStorage.removeItem('memorial_progresso_v5');
-        localStorage.removeItem('memorial_progresso'); // limpa versão antiga
+        localStorage.removeItem('memorial_progresso');
         localStorage.removeItem('descomplicai-memorial-draft');
         localStorage.removeItem('descomplicai-evento-id');
         localStorage.removeItem('memorial-voltou-step00');
-        noInicialDefinido.current = false;
-        restauracaoFeita.current = false;
+        setNoInicialDefinido(false);
+        setRestauracaoConcluida(false);
         setNoAtualId(null);
         setHistoricoIds([]);
       }
       
       // Se logou
-      if (currentUserId && !noInicialDefinido.current) {
-        noInicialDefinido.current = false;
-        restauracaoFeita.current = false;
+      if (currentUserId && !noInicialDefinido) {
+        setNoInicialDefinido(false);
+        setRestauracaoConcluida(false);
       }
     }
-  }, [user?.id]);
+  }, [user?.id, noInicialDefinido]);
 
   // 2. Define o nó inicial
   useEffect(() => {
     if (!arvore) return;
-    if (noInicialDefinido.current) return;
+    if (noInicialDefinido) return;
 
     // Se usuário está logado, NÃO usa localStorage — espera o Supabase
-    if (user && !restauracaoFeita.current) {
+    if (user && !restauracaoConcluida) {
       return;
     }
 
@@ -308,7 +318,7 @@ export default function MemorialOrchestrator() {
           if (savedId && savedHistorico) {
             setNoAtualId(savedId);
             setHistoricoIds(savedHistorico);
-            noInicialDefinido.current = true;
+            setNoInicialDefinido(true);
             return;
           }
         } catch {}
@@ -320,12 +330,13 @@ export default function MemorialOrchestrator() {
     if (!raiz) return;
     setNoAtualId(raiz.id);
     setHistoricoIds([raiz.id]);
-    noInicialDefinido.current = true;
-  }, [arvore, user]);
+    setNoInicialDefinido(true);
+  }, [arvore, user, restauracaoConcluida, noInicialDefinido]);
 
   // Processa seleção pendente após login
+  // CORREÇÃO 4: Usa evento?.id diretamente em vez de eventoId do state
   useEffect(() => {
-    if (!user || carregandoAuth || !selecaoPendente || !eventoId) return;
+    if (!user || carregandoAuth || !selecaoPendente || !evento?.id) return;
 
     const { campo, valor, cor } = selecaoPendente;
     setSelecaoPendente(null);
@@ -341,7 +352,9 @@ export default function MemorialOrchestrator() {
 
       const novoEstado = { ...estado, perfilCasal: valor, modoPlanejamento: 'guiado' };
 
-      setTimeout(() => {
+      // CORREÇÃO 13: Limpa timeout anterior antes de criar novo
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
         if (!arvore) return;
         const proximo = proximoNo(novoEstado, noAtualId, arvore);
         if (proximo) {
@@ -355,7 +368,7 @@ export default function MemorialOrchestrator() {
         setCampoTransicao('');
       }, 1400);
     }
-  }, [user, carregandoAuth, eventoId, selecaoPendente, arvore, estado, setRespostas, noAtualId]);
+  }, [user, carregandoAuth, evento?.id, selecaoPendente, arvore, estado, setRespostas, noAtualId]);
 
   useEffect(() => {
     if (!noAtualId || !arvore) return;
@@ -378,19 +391,31 @@ export default function MemorialOrchestrator() {
     };
   }, [noAtualId, arvore, trackStep]);
 
+  // CORREÇÃO 13: Limpa timeout no desmonte do componente
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
   // Restauração do Supabase
+  // CORREÇÃO 16: Remove estado.perfilCasal das dependências do useEffect
+  // Usamos uma ref interna para verificar se já tem perfil sem re-executar o efeito
+  const perfilCasalRef = useRef(estado.perfilCasal);
+  useEffect(() => { perfilCasalRef.current = estado.perfilCasal; }, [estado.perfilCasal]);
+
   useEffect(() => {
     if (!user) return;
-    if (restauracaoFeita.current) return;
+    if (restauracaoConcluida) return;
     if (carregandoAuth) return;
     
-    if (estado.perfilCasal) {
-      restauracaoFeita.current = true;
-      noInicialDefinido.current = true;
+    if (perfilCasalRef.current) {
+      setRestauracaoConcluida(true);
+      setNoInicialDefinido(true);
       return;
     }
 
-    restauracaoFeita.current = true;
+    setRestauracaoConcluida(true);
     setCarregandoDoBanco(true);
 
     async function buscarDoSupabase() {
@@ -403,16 +428,20 @@ export default function MemorialOrchestrator() {
           .limit(1)
           .maybeSingle();
 
+        // CORREÇÃO 6: Flag para saber se carregamos dados do Supabase
+        let dadosDoSupabaseCarregados = false;
+
         if (!memErr && memorialData?.estado?.perfilCasal) {
           carregarEstado(memorialData.estado);
+          dadosDoSupabaseCarregados = true;
           
           const estadoSalvo = memorialData.estado;
           if (estadoSalvo._progresso_v5?.noAtualId && estadoSalvo._progresso_v5?.historicoIds) {
             setNoAtualId(estadoSalvo._progresso_v5.noAtualId);
             setHistoricoIds(estadoSalvo._progresso_v5.historicoIds);
-            noInicialDefinido.current = true;
+            setNoInicialDefinido(true);
           } else {
-            noInicialDefinido.current = false;
+            setNoInicialDefinido(false);
           }
           setCarregandoDoBanco(false);
           return;
@@ -420,36 +449,41 @@ export default function MemorialOrchestrator() {
 
         if (!memErr && memorialData?.dados) {
           carregarEstado(memorialData.dados);
+          dadosDoSupabaseCarregados = true;
           const dadosSalvos = memorialData.dados;
           if (dadosSalvos._progresso_v5?.noAtualId && dadosSalvos._progresso_v5?.historicoIds) {
             setNoAtualId(dadosSalvos._progresso_v5.noAtualId);
             setHistoricoIds(dadosSalvos._progresso_v5.historicoIds);
-            noInicialDefinido.current = true;
+            setNoInicialDefinido(true);
           } else {
-            noInicialDefinido.current = false;
+            setNoInicialDefinido(false);
           }
         }
 
-        const draft = carregarDraft();
-        if (draft?.perfilCasal) {
-          carregarEstado(draft);
-          noInicialDefinido.current = false;
-          setCarregandoDoBanco(false);
-          setOferecerDraft(true);
-          return;
+        // CORREÇÃO 6: Só carrega draft se NÃO houver dados do Supabase
+        if (!dadosDoSupabaseCarregados) {
+          const draft = carregarDraft();
+          if (draft?.perfilCasal) {
+            carregarEstado(draft);
+            setNoInicialDefinido(false);
+            setCarregandoDoBanco(false);
+            setOferecerDraft(true);
+            return;
+          }
         }
         
-        noInicialDefinido.current = false;
+        setNoInicialDefinido(false);
       } catch (e) {
         console.warn('[MemorialOrchestrator] Erro ao buscar do Supabase:', e);
-        noInicialDefinido.current = false;
+        setNoInicialDefinido(false);
       } finally {
         setCarregandoDoBanco(false);
       }
     }
 
     buscarDoSupabase();
-  }, [user, carregandoAuth, estado.perfilCasal, carregarEstado, carregarDraft, supabase]);
+    // CORREÇÃO 16: Dependências estabilizadas — removido estado.perfilCasal
+  }, [user, carregandoAuth, carregarEstado, carregarDraft, supabase, restauracaoConcluida]);
 
   const etapasTotais = arvore ? contarNosAtivos(estado, arvore) : 0;
   const noAtual = arvore ? getNoPorId(noAtualId, arvore) : null;
@@ -459,12 +493,21 @@ export default function MemorialOrchestrator() {
 
   const BREATH_DURATION = 1400;
 
-  const handleSelect = useCallback((campo, valor, cor, extraData = null) => {
+  // CORREÇÃO 8: Removidos useCallbacks — dependências mudam a cada interação, não havia ganho real
+  // CORREÇÃO 7: Guarda contra cliques duplos durante transição
+  // CORREÇÃO 9: stepCompletedRef marcado como true antes de iniciar transição
+  function handleSelect(campo, valor, cor, extraData = null) {
+    // CORREÇÃO 7: Bloqueia cliques duplos durante transição
+    if (transicionando) return;
+
     if (campo === '__perfilPrecisaLogin') {
       setSelecaoPendente({ campo: 'perfilCasal', valor: valor.perfilCasal, cor });
       setModalAuthAberto(true);
       return;
     }
+
+    // CORREÇÃO 9: Marca step como completo antes de iniciar transição
+    stepCompletedRef.current = true;
 
     if (campo === 'perfilCasal' && extraData) {
       atualizarMultiplo(extraData);
@@ -476,7 +519,9 @@ export default function MemorialOrchestrator() {
 
       const novoEstado = { ...estado, perfilCasal: valor, ...extraData };
 
-      setTimeout(() => {
+      // CORREÇÃO 13: Limpa timeout anterior antes de criar novo
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
         if (!arvore) return;
         const proximo = proximoNo(novoEstado, noAtualId, arvore);
         if (proximo) {
@@ -507,7 +552,9 @@ export default function MemorialOrchestrator() {
 
     const novoEstado = { ...estado, [campo]: valor };
 
-    setTimeout(() => {
+    // CORREÇÃO 13: Limpa timeout anterior antes de criar novo
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
       if (!arvore) return;
       const proximo = proximoNo(novoEstado, noAtualId, arvore);
       if (proximo) {
@@ -520,23 +567,26 @@ export default function MemorialOrchestrator() {
       setRespostaTransicao('');
       setCampoTransicao('');
     }, BREATH_DURATION);
-  }, [estado, setRespostas, atualizarMultiplo, noAtualId, arvore]);
+  }
 
-  const handleModalClose = useCallback(() => {
+  function handleModalClose() {
     setModalAuthAberto(false);
     setSelecaoPendente(null);
-  }, []);
+  }
 
-  const handleConcluirMemorial = useCallback(async (fornecedores) => {
+  // CORREÇÃO 2: Merge manual de fornecedores no payload (setRespostas é assíncrono)
+  // CORREÇÃO 4: Usa evento?.id diretamente em vez de eventoId do state
+  async function handleConcluirMemorial(fornecedores) {
     setRespostas('fornecedoresNecessarios', fornecedores);
     try {
       const estadoComProgresso = {
         ...estado,
+        fornecedoresNecessarios: fornecedores,
         _progresso_v5: { noAtualId, historicoIds }
       };
       localStorage.setItem('descomplicai-memorial-draft', JSON.stringify(estadoComProgresso));
 
-      const evId = eventoId || localStorage.getItem('descomplicai-evento-id');
+      const evId = evento?.id || localStorage.getItem('descomplicai-evento-id');
       if (user && evId) {
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData?.session?.access_token;
@@ -563,11 +613,15 @@ export default function MemorialOrchestrator() {
       console.error('[MemorialOrchestrator] Falha ao salvar:', erro);
       alert('Falha ao salvar o progresso. Tente novamente.');
     }
-  }, [estado, setRespostas, router, user, eventoId, supabase, noAtualId, historicoIds]);
+  }
 
   // handleBack: noAnterior já funciona corretamente com o novo modelo de histórico
-  const handleBack = useCallback(() => {
-    if (!arvore || historicoIds.length < 2) {
+  // CORREÇÃO 11: Guarda contra arvore null
+  function handleBack() {
+    // CORREÇÃO 11: Retorna cedo se árvore não estiver carregada
+    if (!arvore) return;
+
+    if (historicoIds.length < 2) {
       if (noAtualId === getRaiz(arvore)?.id) {
         router.push('/descomplicai');
         return;
@@ -593,18 +647,18 @@ export default function MemorialOrchestrator() {
     const { no, novoHistorico } = resultado;
     setNoAtualId(no.id);
     setHistoricoIds(novoHistorico);
-  }, [arvore, historicoIds, noAtualId, router]);
+  }
 
-  const handleContinuarDraft = () => {
+  function handleContinuarDraft() {
     const draft = carregarDraft();
     if (draft) carregarEstado(draft);
     setOferecerDraft(false);
-  };
+  }
 
-  const handleDescartarDraft = () => {
+  function handleDescartarDraft() {
     limparDraft();
     setOferecerDraft(false);
-  };
+  }
 
   let StepComponent = null;
   let stepProps = {};
@@ -673,7 +727,8 @@ export default function MemorialOrchestrator() {
                 <ProgressBar progress={progress} blockName={blockName} />
                 <BackButton onClick={handleBack} />
                 <React.Suspense fallback={<div style={{ padding: 'var(--space-6)' }}>Carregando etapa...</div>}>
-                  <StepErrorBoundary componentName={noAtual?.componente}>
+                  {/* CORREÇÃO 5: key forçada no StepErrorBoundary para resetar erro ao trocar de step */}
+                  <StepErrorBoundary key={noAtual?.id} componentName={noAtual?.componente}>
                     {StepComponent && (
                       <StepComponent
                         estado={estado}
