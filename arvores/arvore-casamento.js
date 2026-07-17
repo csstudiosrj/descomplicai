@@ -9,10 +9,8 @@ const ARVORE_CASAMENTO = [
   { id: 'step00', titulo: 'Perfil do casal', bloco: 'A', componente: 'Step00Casal', next: 'step-perfil' },
 
   // NOVO: StepPerfil — coleta dados do casal (perfil, data, cidade, convidados)
-  { id: 'step-perfil', titulo: 'Dados do casal', bloco: 'A', componente: 'StepPerfil', next: 'step-dna' },
-
-  // NOVO: StepDNA — landing de confirmação antes do fluxo principal
-  { id: 'step-dna', titulo: 'DNA do evento', bloco: 'A', componente: 'StepDNA', next: 'stepA4' },
+  // REMOVIDO: step-dna — pulado direto para o fluxo principal
+  { id: 'step-perfil', titulo: 'Dados do casal', bloco: 'A', componente: 'StepPerfil', next: 'stepA4' },
 
   // Expansão A (detalhes adicionais, não duplicados no perfil)
   {

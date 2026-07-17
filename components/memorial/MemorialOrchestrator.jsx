@@ -24,7 +24,6 @@ import fetchAPI from '../../utils/fetchAPI';
 const STEP_COMPONENTS = {
   Step00Casal: React.lazy(() => import('./steps/Step00Casal')),
   StepPerfil: React.lazy(() => import('./steps/StepPerfil')),
-  StepDNA: React.lazy(() => import('./steps/StepDNA')),
   Step07Cerimonia: React.lazy(() => import('./steps/Step07Cerimonia')),
   Step07aCatolica: React.lazy(() => import('./steps/Step07aCatolica')),
   Step07bEvangelica: React.lazy(() => import('./steps/Step07bEvangelica')),
@@ -415,28 +414,6 @@ export default function MemorialOrchestrator() {
     if (campo === '__perfilPrecisaLogin') {
       setSelecaoPendente({ campo: 'perfilCasal', valor: valor.perfilCasal, cor });
       setModalAuthAberto(true);
-      return;
-    }
-
-    // Caso especial: StepDNA sinaliza continuar
-    if (campo === '__dnaContinuar') {
-      setRespostaTransicao('');
-      setCampoTransicao('dna');
-      setTransicionando(true);
-      if (cor) setCorTransicao(cor);
-
-      setTimeout(() => {
-        if (!arvore) return;
-        const proximo = proximoNo(estado, noAtualId, arvore);
-        if (proximo) {
-          setHistoricoIds(prev => [...prev, noAtualId]);
-          setNoAtualId(proximo.id);
-        }
-        setTransicionando(false);
-        setCorTransicao(null);
-        setRespostaTransicao('');
-        setCampoTransicao('');
-      }, BREATH_DURATION);
       return;
     }
 
