@@ -874,6 +874,20 @@
     "progresso": {
       "ariaLabel": "Progresso do DNA do casamento"
     },
+    "titulo": "DNA do seu casamento",
+    "subtitulo": "Perfeito! Agora vamos montar o planejamento completo",
+    "resumo": {
+      "titulo": "Resumo do seu casamento",
+      "perfil": "Perfil",
+      "data": "Data",
+      "local": "Local",
+      "convidados": "Convidados",
+      "nomeEvento": "Nome do evento"
+    },
+    "botao": {
+      "continuar": "Começar o questionário"
+    },
+    "dica": "Você pode voltar e editar essas informações a qualquer momento",
     "tipoCerimonia": {
       "titulo": "Como sera a cerimonia?",
       "ariaLabel": "Selecione o tipo de cerimonia",
