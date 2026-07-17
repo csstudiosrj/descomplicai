@@ -1,7 +1,6 @@
 // components/memorial/MemorialOrchestrator.jsx
-// CORREÇÃO v6.2: 
-// 1. Logout limpa memorial_estado (chave do useMemorial) para evitar perfilCasal residual
-// 2. Atalho perfilCasalRef no Supabase verifica noAtualId também (garantia contra tela em branco)
+// CORREÇÃO v6.3: Sincroniza _progresso_v5 no estado do useMemorial a cada mudança de step.
+// Isso garante que o useAutoSave salve noAtualId/historicoIds no Supabase durante a navegação.
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -252,6 +251,14 @@ export default function MemorialOrchestrator() {
     return () => { mounted = false; };
   }, [estado.tipoEvento]);
 
+  // CORREÇÃO v6.3: Sincroniza _progresso_v5 no estado do useMemorial sempre que mudar.
+  // Isso garante que o useAutoSave salve noAtualId/historicoIds no Supabase durante navegação.
+  useEffect(() => {
+    if (noAtualId && historicoIds.length > 0) {
+      atualizarMultiplo({ _progresso_v5: { noAtualId, historicoIds } });
+    }
+  }, [noAtualId, historicoIds, atualizarMultiplo]);
+
   useEffect(() => {
     if (!user && noAtualId && historicoIds.length > 0) {
       localStorage.setItem('memorial_progresso_v5', JSON.stringify({ noAtualId, historicoIds }));
@@ -271,7 +278,6 @@ export default function MemorialOrchestrator() {
         localStorage.removeItem('descomplicai-memorial-draft');
         localStorage.removeItem('descomplicai-evento-id');
         localStorage.removeItem('memorial-voltou-step00');
-        // CORREÇÃO v6.2: Limpa também o estado do useMemorial para evitar perfilCasal residual
         localStorage.removeItem('memorial_estado');
         setNoInicialDefinido(false);
         setRestauracaoConcluida(false);
@@ -379,15 +385,11 @@ export default function MemorialOrchestrator() {
   const perfilCasalRef = useRef(estado.perfilCasal);
   useEffect(() => { perfilCasalRef.current = estado.perfilCasal; }, [estado.perfilCasal]);
 
-  // CORREÇÃO v6.2: restauracaoConcluida só no FINAL da busca do Supabase
-  // + atalho perfilCasalRef agora verifica noAtualId também (garantia contra tela em branco)
   useEffect(() => {
     if (!user) return;
     if (restauracaoConcluida) return;
     if (carregandoAuth) return;
 
-    // CORREÇÃO v6.2: Atalho só é válido se noAtualId também estiver definido
-    // (evita tela em branco quando useMemorial tem perfilCasal residual mas noAtualId foi resetado)
     if (perfilCasalRef.current && noAtualId) {
       setRestauracaoConcluida(true);
       setNoInicialDefinido(true);
