@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 const OPCOES = [
   { valor: "sim", label: "Sim", desc: "Temos pets em casa" },
@@ -12,6 +13,9 @@ const OPCOES = [
 
 export default function StepA11TemAnimais({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
+
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
 
   const selecionado = estadoAtual?.temAnimais;
 

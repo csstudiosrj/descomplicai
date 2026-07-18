@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 const OPCOES_PADRINHOS = [
   {
@@ -20,15 +21,24 @@ const OPCOES_PADRINHOS = [
 ];
 
 export default function StepA5Padrinhos({ onSelect, estadoAtual }) {
+  const [cardPulsando, setCardPulsando] = React.useState(null);
+
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
+
   const [escolhidos, setEscolhidos] = useState(estadoAtual?.padrinhosEscolhidos ?? null);
   const [quantos, setQuantos] = useState(estadoAtual?.quantosPadrinhos || '');
 
-  const handleSelecionar = (valor) => {
-    setEscolhidos(valor);
-    if (!valor) {
-      // Se não tem padrinhos, confirma imediatamente
+  const handleCardClick = (opcao) => {
+    if (cardPulsando) return;
+    setCardPulsando(opcao.valor);
+    setEscolhidos(opcao.valor);
+    if (!opcao.valor) {
       onSelect('padrinhosEscolhidos', false);
     }
+    setTimeout(() => {
+      setCardPulsando(null);
+    }, 350);
   };
 
   const handleConfirmar = () => {
@@ -55,46 +65,55 @@ export default function StepA5Padrinhos({ onSelect, estadoAtual }) {
         {OPCOES_PADRINHOS.map((opcao) => {
           const isSelected = escolhidos === opcao.valor;
           return (
-            <Card
+            <div
               key={String(opcao.valor)}
-              interactive
-              selected={isSelected}
-              padding="lg"
-              onClick={() => handleSelecionar(opcao.valor)}
-              role="radio"
-              aria-checked={isSelected}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleSelecionar(opcao.valor);
-                }
+              style={{
+                transition: 'transform 300ms ease, box-shadow 300ms ease',
+                transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+                boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+                borderRadius: 'var(--radius-lg)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: 'var(--radius-lg)',
-                  backgroundColor: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-surface)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: isSelected ? 'var(--color-brand)' : 'var(--color-text-muted)',
-                  flexShrink: 0,
-                }}>
-                  <Icon name={opcao.icone} size={24} ariaHidden={true} />
-                </div>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>
-                    {opcao.label}
+              <Card
+                interactive
+                selected={isSelected}
+                padding="lg"
+                onClick={() => handleCardClick(opcao)}
+                role="radio"
+                aria-checked={isSelected}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleCardClick(opcao);
+                  }
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: 'var(--radius-lg)',
+                    backgroundColor: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-surface)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: isSelected ? 'var(--color-brand)' : 'var(--color-text-muted)',
+                    flexShrink: 0,
+                  }}>
+                    <Icon name={opcao.icone} size={24} ariaHidden={true} />
                   </div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
-                    {opcao.subtexto}
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>
+                      {opcao.label}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
+                      {opcao.subtexto}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
           );
         })}
       </div>

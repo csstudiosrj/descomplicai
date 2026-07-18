@@ -4,9 +4,13 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Input from '../../ui/Input';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 export default function StepA16RestricaoCultural({ onSelect, estadoAtual }) {
   const [valor, setValor] = useState(estadoAtual?.restricaoCultural || '');
+
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
 
   const handleConfirmar = () => {
     onSelect('restricaoCultural', valor.trim());

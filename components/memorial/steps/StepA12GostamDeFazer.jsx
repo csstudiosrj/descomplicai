@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 const OPCOES = [
   { valor: "viajar", label: "Viajar", desc: "Explorar novos lugares" },
@@ -19,14 +20,22 @@ const OPCOES = [
 export default function StepA12GostamDeFazer({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
 
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
+
   const [selecionadas, setSelecionadas] = useState(estadoAtual?.gostamDeFazer || []);
 
   const toggle = (valor) => {
+    if (cardPulsando) return;
+    setCardPulsando(valor);
     if (selecionadas.includes(valor)) {
       setSelecionadas(selecionadas.filter((v) => v !== valor));
     } else {
       setSelecionadas([...selecionadas, valor]);
     }
+    setTimeout(() => {
+      setCardPulsando(null);
+    }, 350);
   };
 
   const handleConfirmar = () => {
