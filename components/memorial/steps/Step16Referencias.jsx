@@ -5,11 +5,15 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Input from '../../ui/Input';
 import ImageUpload from '../../ui/ImageUpload';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 export default function Step16Referencias({ onSelect, estadoAtual }) {
   const [links, setLinks] = useState(estadoAtual?.referenciasVisuais?.map(r => r.url).join('\n') || '');
   const [uploads, setUploads] = useState(estadoAtual?.referenciasUploads || []);
   const [erroUpload, setErroUpload] = useState(null);
+
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
 
   const handleConfirmar = () => {
     const urls = links.split('\n').filter(l => l.trim()).map(url => ({ tipo: 'link', url: url.trim() }));
@@ -91,7 +95,8 @@ https://instagram.com/..."
       </div>
 
       <button
-        aria-label="Confirmar resposta" onClick={handleConfirmar}
+        aria-label="Confirmar resposta"
+        onClick={handleConfirmar}
         style={{
           alignSelf: 'flex-start',
           padding: 'var(--space-3) var(--space-6)',

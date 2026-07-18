@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 const TONS = [
   'Romântico',
@@ -19,14 +20,23 @@ const TONS = [
 ];
 
 export default function Step15Tom({ onSelect, estadoAtual }) {
+  const [cardPulsando, setCardPulsando] = React.useState(null);
   const [selecionados, setSelecionados] = useState(estadoAtual?.tomsIdentidade || []);
 
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
+
   const toggle = (t) => {
+    if (cardPulsando) return;
+    setCardPulsando(t);
     if (selecionados.includes(t)) {
       setSelecionados(selecionados.filter(x => x !== t));
     } else if (selecionados.length < 3) {
       setSelecionados([...selecionados, t]);
     }
+    setTimeout(() => {
+      setCardPulsando(null);
+    }, 350);
   };
 
   const handleConfirmar = () => {
@@ -59,6 +69,9 @@ export default function Step15Tom({ onSelect, estadoAtual }) {
               cursor: 'pointer',
               color: 'var(--color-text-primary)',
               fontWeight: selecionados.includes(t) ? 'var(--font-semibold)' : 'var(--font-normal)',
+              transition: 'transform 300ms ease, box-shadow 300ms ease',
+              transform: cardPulsando === t ? 'scale(1.05)' : 'scale(1)',
+              boxShadow: cardPulsando === t ? '0 0 0 3px var(--color-brand)' : 'none',
             }}
           >
             {t}
@@ -73,7 +86,8 @@ export default function Step15Tom({ onSelect, estadoAtual }) {
       )}
 
       <button
-        aria-label="Confirmar resposta" onClick={handleConfirmar}
+        aria-label="Confirmar resposta"
+        onClick={handleConfirmar}
         disabled={selecionados.length === 0}
         style={{
           alignSelf: 'flex-start',
