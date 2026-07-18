@@ -1,9 +1,10 @@
 // Etapa de horário do evento — com alerta para pôr do sol
 // Dependências diretas: React, PropTypes, Card
 
-import React, { useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
+import { getTermos } from '../../../utils/linguagemCasal';
 
 const OPCOES = [
   { valor: 'diurno', label: 'Diurno', sub: 'Manhã ou almoço', icone: 'sol' },
@@ -13,6 +14,8 @@ const OPCOES = [
 
 export default function Step06Horario({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
+  const perfil = estadoAtual?.perfilCasal || 'nao-especificar';
+  const termos = getTermos(perfil);
 
   const selecionado = estadoAtual?.horarioCasamento;
 
@@ -22,8 +25,9 @@ export default function Step06Horario({ onSelect, estadoAtual }) {
     setTimeout(() => {
       onSelect(opcao.campo || opcao.valor, opcao.valor, opcao.cor);
       setCardPulsando(null);
-    }, 350);
+    }, 300);
   };
+
   const mostrarAlerta = selecionado === 'por-do-sol';
 
   const handleKeyDown = (e, opcao) => {
@@ -32,10 +36,11 @@ export default function Step06Horario({ onSelect, estadoAtual }) {
       handleCardClick(opcao);
     }
   };
+
   return (
     <div
       role="radiogroup"
-      aria-label="Em que horário será a celebração?"
+      aria-label={termos.perguntaHorario || 'Em que horário será a celebração?'}
       style={{
         maxWidth: '640px',
         margin: '0 auto',
@@ -54,7 +59,7 @@ export default function Step06Horario({ onSelect, estadoAtual }) {
 
       <div>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', lineHeight: 'var(--leading-tight)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>
-          Em que horário será a celebração?
+          {termos.perguntaHorario || 'Em que horário será a celebração?'}
         </h1>
       </div>
 
@@ -63,63 +68,68 @@ export default function Step06Horario({ onSelect, estadoAtual }) {
           const isSelected = selecionado === opcao.valor;
           return (
             <div
-      key={opcao.valor}
-      style={{
-        transition: 'transform 300ms ease, box-shadow 300ms ease',
-        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
-        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
-        borderRadius: 'var(--radius-lg)',
-      }}
-    >
-      <Card
               key={opcao.valor}
-              interactive
-              selected={isSelected}
-              padding="lg"
-              onClick={() => handleCardClick(opcao)}
-              role="radio"
-              aria-checked={isSelected}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onSelect('horarioCasamento', opcao.valor);
-                }
+              style={{
+                transition: 'transform 300ms ease, box-shadow 300ms ease',
+                transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+                boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+                borderRadius: 'var(--radius-lg)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: 'var(--radius-lg)',
-                  backgroundColor: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-surface)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: isSelected ? 'var(--color-brand)' : 'var(--color-text-muted)',
-                  flexShrink: 0,
-                }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    {opcao.icone === 'sol' && <circle cx="12" cy="12" r="5" />}
-                    {opcao.icone === 'sol' && <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />}
-                    {opcao.icone === 'horizonte' && <path d="M12 2v4M12 18v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M2 12h4M18 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />}
-                    {opcao.icone === 'horizonte' && <path d="M17 18H7l5-8 5 8z" />}
-                    {opcao.icone === 'lua' && <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />}
-                  </svg>
-                </div>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }}>
-                    {opcao.label}
+              <Card
+                interactive
+                selected={isSelected}
+                padding="lg"
+                onClick={() => handleCardClick(opcao)}
+                role="radio"
+                aria-checked={isSelected}
+                aria-label={opcao.label}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect('horarioCasamento', opcao.valor);
+                  }
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: 'var(--radius-lg)',
+                    backgroundColor: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-surface)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: isSelected ? 'var(--color-brand)' : 'var(--color-text-muted)',
+                    flexShrink: 0,
+                  }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      {opcao.icone === 'sol' && <circle cx="12" cy="12" r="5" />}
+                      {opcao.icone === 'sol' && <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />}
+                      {opcao.icone === 'horizonte' && <path d="M12 2v4M12 18v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M2 12h4M18 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />}
+                      {opcao.icone === 'horizonte' && <path d="M17 18H7l5-8 5 8z" />}
+                      {opcao.icone === 'lua' && <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />}
+                    </svg>
                   </div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
-                    {opcao.sub}
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }}>
+                      {opcao.label}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
+                      {opcao.sub}
+                    </div>
                   </div>
+                  {isSelected && (
+                    <span aria-hidden="true" style={{ marginLeft: 'auto', color: 'var(--color-brand)' }}>
+                      ✓
+                    </span>
+                  )}
                 </div>
-              </div>
-            </Card>
-    </div>
-  );
-})}
+              </Card>
+            </div>
+          );
+        })}
       </div>
 
       {mostrarAlerta && (
@@ -136,7 +146,7 @@ export default function Step06Horario({ onSelect, estadoAtual }) {
             lineHeight: 'var(--leading-relaxed)',
           }}
         >
-          O timing da cerimônia será crítico para as fotos. Vamos incluir isso no briefing do fotógrafo.
+          {termos.alertaPorDoSol || 'O timing da cerimônia será crítico para as fotos. Vamos incluir isso no briefing do fotógrafo.'}
         </div>
       )}
     </div>
