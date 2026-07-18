@@ -1,9 +1,14 @@
 // components/memorial/steps/StepA6DataPrevista.jsx
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 export default function StepA6DataPrevista({ onSelect, estadoAtual }) {
   const [valor, setValor] = useState(estadoAtual?.dataPrevista || '');
+
+
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
 
   const handleConfirmar = () => {
     if (valor) {
