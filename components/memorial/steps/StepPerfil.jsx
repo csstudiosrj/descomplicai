@@ -9,6 +9,7 @@ import { useTranslation } from '../../../hooks/useTranslation';
 import { ESTADOS, CIDADES_POR_ESTADO } from '../../../lib/estados-cidades';
 import Icon from '../../ui/Icon';
 import fetchAPI from '../../../utils/fetchAPI';
+import { getTermos } from '../../../utils/linguagemCasal';
 
 const PERFIL_OPTIONS = [
   { value: 'noiva-noivo', labelKey: 'perfil.options.noivaNoivo', icon: 'users' },
@@ -24,6 +25,8 @@ const CONVIDADOS_STEP = 10;
 export default function StepPerfil({ estado, onSelect }) {
   const { user, supabase } = useAuth();
   const { t } = useTranslation();
+  const perfil = estado?.perfilCasal || 'nao-especificar';
+  const termos = getTermos(perfil);
 
   const [perfilCasal, setPerfilCasal] = useState(estado.perfilCasal || '');
   const [dataCasamento, setDataCasamento] = useState(estado.dataCasamento || '');
@@ -34,6 +37,8 @@ export default function StepPerfil({ estado, onSelect }) {
 
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [cardPulsando, setCardPulsando] = React.useState(null);
+  const [botaoPulsando, setBotaoPulsando] = React.useState(false);
 
   const estados = useMemo(() => {
     return [...ESTADOS].sort((a, b) => a.nome.localeCompare(b.nome));
@@ -80,25 +85,35 @@ export default function StepPerfil({ estado, onSelect }) {
     return null;
   }, [perfilCasal, dataCasamento, ufSelecionada, cidadeSelecionada, t]);
 
+  const handleCardClick = (opt) => {
+    if (cardPulsando) return;
+    setCardPulsando(opt.value);
+    setTimeout(() => {
+      setPerfilCasal(opt.value);
+      setCardPulsando(null);
+    }, 300);
+  };
+
   const handleSubmit = useCallback(async () => {
+    if (botaoPulsando) return;
+    setBotaoPulsando(true);
+
     const erroValidacao = validar();
-    if (erroValidacao) { setErro(erroValidacao); return; }
+    if (erroValidacao) { setErro(erroValidacao); setBotaoPulsando(false); return; }
 
     setEnviando(true);
     setErro('');
 
     try {
-      // Se não tem usuário logado, salva draft e abre modal de login
-      // (o Orchestrator gerencia o modal via onSelect)
       if (!user) {
         const draft = {
           perfilCasal, dataCasamento, cidade: cidadeSelecionada, uf: ufSelecionada,
           totalConvidados, nomeEvento: nomeEvento?.trim() || '',
         };
         localStorage.setItem('descomplicai-perfil-draft', JSON.stringify(draft));
-        // Sinaliza pro Orchestrator que precisa de login
         onSelect('__perfilPrecisaLogin', draft);
         setEnviando(false);
+        setBotaoPulsando(false);
         return;
       }
 
@@ -108,6 +123,7 @@ export default function StepPerfil({ estado, onSelect }) {
       if (!token) {
         setErro(t('perfil.erros.sessaoExpirada'));
         setEnviando(false);
+        setBotaoPulsando(false);
         return;
       }
 
@@ -134,7 +150,6 @@ export default function StepPerfil({ estado, onSelect }) {
       localStorage.setItem('descomplicai-evento-id', result.evento_id);
       localStorage.removeItem('descomplicai-perfil-draft');
 
-      // Avança na árvore passando todos os dados do perfil
       onSelect('perfilCasal', perfilCasal, null, {
         dataCasamento,
         cidade: cidadeSelecionada,
@@ -145,14 +160,14 @@ export default function StepPerfil({ estado, onSelect }) {
       });
     } catch (err) {
       setErro(err.message || t('perfil.erros.generico'));
+      setBotaoPulsando(false);
     } finally {
       setEnviando(false);
     }
-  }, [perfilCasal, dataCasamento, ufSelecionada, cidadeSelecionada, totalConvidados, nomeEvento, t, supabase, user, onSelect, validar]);
+  }, [perfilCasal, dataCasamento, ufSelecionada, cidadeSelecionada, totalConvidados, nomeEvento, t, supabase, user, onSelect, validar, botaoPulsando]);
 
-  // Restaura draft se existir e estado está vazio
   useEffect(() => {
-    if (estado.perfilCasal) return; // já tem dados, não restaura
+    if (estado.perfilCasal) return;
     const draft = localStorage.getItem('descomplicai-perfil-draft');
     if (draft) {
       try {
@@ -179,29 +194,39 @@ export default function StepPerfil({ estado, onSelect }) {
 
         <section className="perfil-section" aria-labelledby="perfil-casal-label">
           <h2 id="perfil-casal-label" className="perfil-section-title">
-            <Icon name="users" size={20} className="perfil-section-icon" />
+            <Icon name="users" size={20} className="perfil-section-icon" aria-hidden="true" />
             {t('perfil.perfilCasal.titulo')}
           </h2>
           <div className="perfil-cards" role="radiogroup" aria-label={t('perfil.perfilCasal.ariaLabel')}>
             {PERFIL_OPTIONS.map((opt) => (
-              <button
+              <div
                 key={opt.value}
-                type="button"
-                role="radio"
-                aria-checked={perfilCasal === opt.value}
-                className={`perfil-card ${perfilCasal === opt.value ? 'perfil-card--selected' : ''}`}
-                onClick={() => setPerfilCasal(opt.value)}
+                style={{
+                  transition: 'transform 300ms ease, box-shadow 300ms ease',
+                  transform: cardPulsando === opt.value ? 'scale(1.03)' : 'scale(1)',
+                  boxShadow: cardPulsando === opt.value ? '0 0 0 3px var(--color-brand)' : 'none',
+                  borderRadius: 'var(--radius-lg)',
+                }}
               >
-                <Icon name={opt.icon} size={28} className="perfil-card-icon" />
-                <span className="perfil-card-label">{t(opt.labelKey)}</span>
-              </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={perfilCasal === opt.value}
+                  aria-label={t(opt.labelKey)}
+                  className={`perfil-card ${perfilCasal === opt.value ? 'perfil-card--selected' : ''}`}
+                  onClick={() => handleCardClick(opt)}
+                >
+                  <Icon name={opt.icon} size={28} className="perfil-card-icon" aria-hidden="true" />
+                  <span className="perfil-card-label">{t(opt.labelKey)}</span>
+                </button>
+              </div>
             ))}
           </div>
         </section>
 
         <section className="perfil-section" aria-labelledby="perfil-data-label">
           <h2 id="perfil-data-label" className="perfil-section-title">
-            <Icon name="calendar" size={20} className="perfil-section-icon" />
+            <Icon name="calendar" size={20} className="perfil-section-icon" aria-hidden="true" />
             {t('perfil.dataCasamento.titulo')}
           </h2>
           <input
@@ -216,7 +241,7 @@ export default function StepPerfil({ estado, onSelect }) {
 
         <section className="perfil-section" aria-labelledby="perfil-cidade-label">
           <h2 id="perfil-cidade-label" className="perfil-section-title">
-            <Icon name="mapPin" size={20} className="perfil-section-icon" />
+            <Icon name="mapPin" size={20} className="perfil-section-icon" aria-hidden="true" />
             {t('perfil.cidade.titulo')}
           </h2>
           <div className="perfil-cidade-row">
@@ -252,7 +277,7 @@ export default function StepPerfil({ estado, onSelect }) {
 
         <section className="perfil-section" aria-labelledby="perfil-convidados-label">
           <h2 id="perfil-convidados-label" className="perfil-section-title">
-            <Icon name="users" size={20} className="perfil-section-icon" />
+            <Icon name="users" size={20} className="perfil-section-icon" aria-hidden="true" />
             {t('perfil.totalConvidados.titulo')}
           </h2>
           <div className="perfil-slider-row">
@@ -274,7 +299,7 @@ export default function StepPerfil({ estado, onSelect }) {
 
         <section className="perfil-section" aria-labelledby="perfil-nome-label">
           <h2 id="perfil-nome-label" className="perfil-section-title">
-            <Icon name="edit" size={20} className="perfil-section-icon" />
+            <Icon name="edit" size={20} className="perfil-section-icon" aria-hidden="true" />
             {t('perfil.nomeEvento.titulo')}
             <span className="perfil-optional">{t('common.optional')}</span>
           </h2>
@@ -291,7 +316,7 @@ export default function StepPerfil({ estado, onSelect }) {
 
         {erro && (
           <div className="perfil-erro" role="alert">
-            <Icon name="alert" size={18} />
+            <Icon name="alert" size={18} aria-hidden="true" />
             <span>{erro}</span>
           </div>
         )}
@@ -302,16 +327,22 @@ export default function StepPerfil({ estado, onSelect }) {
           onClick={handleSubmit}
           disabled={!isFormValid || enviando}
           aria-busy={enviando}
+          aria-label={termos.botaoComecar || t('perfil.botao.comecar') || 'Começar'}
+          style={{
+            transition: 'transform 300ms ease, box-shadow 300ms ease',
+            transform: botaoPulsando ? 'scale(1.03)' : 'scale(1)',
+            boxShadow: botaoPulsando ? '0 0 0 3px var(--color-brand)' : 'none',
+          }}
         >
           {enviando ? (
             <><span className="perfil-submit-spinner" aria-hidden="true" />{t('perfil.botao.carregando')}</>
           ) : (
-            <>{t('perfil.botao.comecar')}<Icon name="arrowRight" size={18} /></>
+            <>{t('perfil.botao.comecar')}<Icon name="arrowRight" size={18} aria-hidden="true" /></>
           )}
         </button>
       </div>
 
-      <style jsx>{`
+      <style jsx>{`\
         .step-perfil { min-height: 100dvh; background: var(--color-surface); padding: var(--space-4) var(--space-3); padding-bottom: calc(var(--space-4) + 80px); }
         .perfil-container { max-width: 480px; margin: 0 auto; }
         .perfil-header { text-align: center; margin-bottom: var(--space-6); }
@@ -321,7 +352,7 @@ export default function StepPerfil({ estado, onSelect }) {
         .perfil-section-title { font-family: var(--font-body); font-size: var(--text-base); font-weight: var(--font-semibold); color: var(--color-text-primary); margin: 0 0 var(--space-3); display: flex; align-items: center; gap: var(--space-2); }
         .perfil-section-icon { color: var(--color-brand); flex-shrink: 0; }
         .perfil-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
-        .perfil-card { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-4) var(--space-3); background: var(--color-white); border: 2px solid var(--color-border); border-radius: var(--radius-lg); cursor: pointer; transition: all 150ms ease; text-align: center; font-family: var(--font-body); font-size: var(--text-sm); color: var(--color-text-primary); }
+        .perfil-card { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-4) var(--space-3); background: var(--color-white); border: 2px solid var(--color-border); border-radius: var(--radius-lg); cursor: pointer; transition: all 150ms ease; text-align: center; font-family: var(--font-body); font-size: var(--text-sm); color: var(--color-text-primary); width: 100%; }
         .perfil-card:hover { border-color: var(--color-brand-light); background: var(--color-surface); }
         .perfil-card:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
         .perfil-card--selected { border-color: var(--color-brand); background: var(--color-brand-bg); color: var(--color-brand); }
