@@ -6,13 +6,17 @@
  * quando modal de login esta aberto
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
+import { getTermos } from '../../../utils/linguagemCasal';
 
 export default function Step00Casal({ onSelect, estadoAtual, disabled = false }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
+  const perfil = estadoAtual?.perfilCasal || 'nao-especificar';
+  const termos = getTermos(perfil);
+
   const OPCOES = [
     { valor: 'noiva-noivo', label: 'Noiva e Noivo', icone: 'heart', cor: 'var(--color-info-light)' },
     { valor: 'duas-noivas', label: 'Duas Noivas', icone: 'users', cor: 'var(--color-brand-lighter)' },
@@ -29,7 +33,7 @@ export default function Step00Casal({ onSelect, estadoAtual, disabled = false })
     setTimeout(() => {
       onSelect('perfilCasal', opcao.valor, opcao.cor);
       setCardPulsando(null);
-    }, 350);
+    }, 300);
   };
 
   const handleKeyDown = (e, opcao) => {
@@ -43,7 +47,7 @@ export default function Step00Casal({ onSelect, estadoAtual, disabled = false })
   return (
     <div
       role="radiogroup"
-      aria-label="Quem está se casando?"
+      aria-label={termos.perguntaPerfilCasal || 'Quem está se casando?'}
       aria-disabled={disabled}
       style={{
         maxWidth: '640px',
@@ -66,7 +70,7 @@ export default function Step00Casal({ onSelect, estadoAtual, disabled = false })
             marginBottom: 'var(--space-2)',
           }}
         >
-          Quem está se casando?
+          {termos.perguntaPerfilCasal || 'Quem está se casando?'}
         </h1>
       </div>
 
@@ -85,7 +89,9 @@ export default function Step00Casal({ onSelect, estadoAtual, disabled = false })
               style={{
                 transition: 'transform 300ms ease, box-shadow 300ms ease',
                 transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
-                boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+                boxShadow: cardPulsando === opcao.valor
+                  ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}`
+                  : 'none',
                 borderRadius: 'var(--radius-lg)',
               }}
             >
@@ -98,12 +104,7 @@ export default function Step00Casal({ onSelect, estadoAtual, disabled = false })
                 aria-checked={isSelected}
                 aria-label={opcao.label}
                 tabIndex={disabled ? -1 : 0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    if (!disabled) onSelect('perfilCasal', opcao.valor, opcao.cor);
-                  }
-                }}
+                onKeyDown={(e) => handleKeyDown(e, opcao)}
               >
                 <div
                   style={{
@@ -125,7 +126,7 @@ export default function Step00Casal({ onSelect, estadoAtual, disabled = false })
                       flexShrink: 0,
                     }}
                   >
-                    <Icon name={opcao.icone} size={24} ariaHidden={true} />
+                    <Icon name={opcao.icone} size={24} aria-hidden="true" />
                   </div>
                   <span
                     style={{
@@ -137,6 +138,11 @@ export default function Step00Casal({ onSelect, estadoAtual, disabled = false })
                   >
                     {opcao.label}
                   </span>
+                  {isSelected && (
+                    <span aria-hidden="true" style={{ marginLeft: 'auto', color: 'var(--color-brand)' }}>
+                      ✓
+                    </span>
+                  )}
                 </div>
               </Card>
             </div>
