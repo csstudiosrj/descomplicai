@@ -3,6 +3,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 const OPCOES = [
   { valor: true, label: 'Sim', subtexto: 'Recepção com drinks e petiscos antes do jantar', icone: 'coffee' },
@@ -11,6 +12,10 @@ const OPCOES = [
 
 export default function Step38Coquetel({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
+
+
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
 
   const selecionado = estadoAtual?.coquetel;
 
