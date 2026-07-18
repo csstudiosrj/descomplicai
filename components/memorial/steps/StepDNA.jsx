@@ -6,15 +6,19 @@
 import React from 'react';
 import { useTranslation } from '../../../hooks/useTranslation';
 import Icon from '../../ui/Icon';
+import { getTermos } from '../../../utils/linguagemCasal';
 
 export default function StepDNA({ estado, onSelect }) {
   const { t } = useTranslation();
+  const perfil = estado?.perfilCasal || 'nao-especificar';
+  const termos = getTermos(perfil);
+  const [cardPulsando, setCardPulsando] = React.useState(false);
 
   const perfilLabels = {
-    'noiva-noivo': 'Noiva e Noivo',
-    'duas-noivas': 'Duas Noivas',
-    'dois-noivos': 'Dois Noivos',
-    'nao-especificar': 'Não especificar',
+    'noiva-noivo': termos.perfilNoivaNoivo || 'Noiva e Noivo',
+    'duas-noivas': termos.perfilDuasNoivas || 'Duas Noivas',
+    'dois-noivos': termos.perfilDoisNoivos || 'Dois Noivos',
+    'nao-especificar': termos.perfilNaoEspecificar || 'Não especificar',
   };
 
   const perfilTexto = perfilLabels[estado.perfilCasal] || estado.perfilCasal;
@@ -27,8 +31,12 @@ export default function StepDNA({ estado, onSelect }) {
   };
 
   const handleContinuar = () => {
-    // Avança na árvore — o próximo nó é definido na árvore (stepA4)
-    onSelect('__dnaContinuar', true);
+    if (cardPulsando) return;
+    setCardPulsando(true);
+    setTimeout(() => {
+      onSelect('__dnaContinuar', true);
+      setCardPulsando(false);
+    }, 300);
   };
 
   return (
@@ -36,36 +44,36 @@ export default function StepDNA({ estado, onSelect }) {
       <div className="dna-container">
         <header className="dna-header">
           <div className="dna-icon-wrapper">
-            <Icon name="sparkles" size={48} className="dna-icon" />
+            <Icon name="sparkles" size={48} className="dna-icon" aria-hidden="true" />
           </div>
-          <h1 className="dna-title">{t('dna.titulo') || 'Seu memorial está pronto'}</h1>
+          <h1 className="dna-title">{t('dna.titulo') || termos.dnaTitulo || 'Seu memorial está pronto'}</h1>
           <p className="dna-subtitle">
-            {t('dna.subtitulo') || 'Vamos criar juntos o planejamento do seu grande dia'}
+            {t('dna.subtitulo') || termos.dnaSubtitulo || 'Vamos criar juntos o planejamento do seu grande dia'}
           </p>
         </header>
 
         <section className="dna-resumo" aria-labelledby="dna-resumo-label">
           <h2 id="dna-resumo-label" className="dna-resumo-title">
-            <Icon name="fileText" size={20} />
-            {t('dna.resumo.titulo') || 'Resumo do perfil'}
+            <Icon name="fileText" size={20} aria-hidden="true" />
+            {t('dna.resumo.titulo') || termos.resumoTitulo || 'Resumo do perfil'}
           </h2>
 
           <div className="dna-resumo-grid">
             <div className="dna-resumo-item">
-              <span className="dna-resumo-label">{t('dna.resumo.perfil') || 'Perfil'}</span>
+              <span className="dna-resumo-label">{t('dna.resumo.perfil') || termos.resumoPerfil || 'Perfil'}</span>
               <span className="dna-resumo-valor">{perfilTexto}</span>
             </div>
 
             {estado.dataCasamento && (
               <div className="dna-resumo-item">
-                <span className="dna-resumo-label">{t('dna.resumo.data') || 'Data'}</span>
+                <span className="dna-resumo-label">{t('dna.resumo.data') || termos.resumoData || 'Data'}</span>
                 <span className="dna-resumo-valor">{formatarData(estado.dataCasamento)}</span>
               </div>
             )}
 
             {(estado.cidade || estado.uf) && (
               <div className="dna-resumo-item">
-                <span className="dna-resumo-label">{t('dna.resumo.local') || 'Local'}</span>
+                <span className="dna-resumo-label">{t('dna.resumo.local') || termos.resumoLocal || 'Local'}</span>
                 <span className="dna-resumo-valor">
                   {estado.cidade}{estado.uf ? `, ${estado.uf}` : ''}
                 </span>
@@ -74,14 +82,14 @@ export default function StepDNA({ estado, onSelect }) {
 
             {estado.totalConvidados > 0 && (
               <div className="dna-resumo-item">
-                <span className="dna-resumo-label">{t('dna.resumo.convidados') || 'Convidados'}</span>
+                <span className="dna-resumo-label">{t('dna.resumo.convidados') || termos.resumoConvidados || 'Convidados'}</span>
                 <span className="dna-resumo-valor">{estado.totalConvidados}</span>
               </div>
             )}
 
             {estado.nomeEvento && (
               <div className="dna-resumo-item dna-resumo-item--full">
-                <span className="dna-resumo-label">{t('dna.resumo.nomeEvento') || 'Nome do evento'}</span>
+                <span className="dna-resumo-label">{t('dna.resumo.nomeEvento') || termos.resumoNomeEvento || 'Nome do evento'}</span>
                 <span className="dna-resumo-valor">{estado.nomeEvento}</span>
               </div>
             )}
@@ -93,20 +101,25 @@ export default function StepDNA({ estado, onSelect }) {
             type="button"
             className="dna-btn dna-btn--primary"
             onClick={handleContinuar}
+            aria-label={termos.botaoContinuar || 'Continuar para o memorial'}
+            style={{
+              transition: 'transform 300ms ease, box-shadow 300ms ease',
+              transform: cardPulsando ? 'scale(1.03)' : 'scale(1)',
+              boxShadow: cardPulsando ? '0 0 0 3px var(--color-brand)' : 'none',
+            }}
           >
-            <Icon name="arrowRight" size={18} />
-            {t('dna.botao.continuar') || 'Continuar para o memorial'}
+            <Icon name="arrowRight" size={18} aria-hidden="true" />
+            {t('dna.botao.continuar') || termos.botaoContinuar || 'Continuar para o memorial'}
           </button>
 
           <p className="dna-dica">
-            <Icon name="info" size={14} />
-            {t('dna.dica') || 'Voce pode voltar e editar essas informacoes a qualquer momento'}
+            <Icon name="info" size={14} aria-hidden="true" />
+            {t('dna.dica') || termos.dnaDica || 'Voce pode voltar e editar essas informacoes a qualquer momento'}
           </p>
         </div>
       </div>
 
-      <style jsx>{`
-        .step-dna { min-height: 100dvh; background: var(--color-surface); display: flex; align-items: center; justify-content: center; padding: var(--space-4) var(--space-3); }
+      <style jsx>{`        .step-dna { min-height: 100dvh; background: var(--color-surface); display: flex; align-items: center; justify-content: center; padding: var(--space-4) var(--space-3); }
         .dna-container { max-width: 520px; width: 100%; margin: 0 auto; }
         .dna-header { text-align: center; margin-bottom: var(--space-8); }
         .dna-icon-wrapper { width: 80px; height: 80px; border-radius: 50%; background: var(--color-brand-bg); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-4); }
