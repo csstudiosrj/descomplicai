@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 const OPCOES = [
   { valor: true, label: 'Sim, tudo no mesmo lugar', cor: 'var(--color-brand-lighter)' },
@@ -12,6 +13,10 @@ const OPCOES = [
 
 export default function Step09MesmoLocal({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = useState(null);
+
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
+
   const selecionado = estadoAtual?.ceremoniaFestaMesmoLocal;
 
   const handleCardClick = (opcao) => {

@@ -4,10 +4,24 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 export default function Step11PlanoChuva({ onSelect, estadoAtual }) {
+  const [cardPulsando, setCardPulsando] = React.useState(null);
   const [plano, setPlano] = useState(estadoAtual?.planoChuva || '');
   const [tenda, setTenda] = useState(estadoAtual?.tendaChuva || false);
+
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
+
+  const handleCardClick = (valor, setter) => {
+    if (cardPulsando) return;
+    setCardPulsando(valor);
+    setter(valor);
+    setTimeout(() => {
+      setCardPulsando(null);
+    }, 350);
+  };
 
   const handleConfirmar = () => {
     onSelect('planoChuva', plano);
@@ -27,9 +41,19 @@ export default function Step11PlanoChuva({ onSelect, estadoAtual }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
         {['Tenda/cobertura completa', 'Espaço interno reserva', 'Data reserva', 'Decidir no dia', 'Ainda não sei'].map(opcao => (
-          <Card key={opcao} interactive selected={plano === opcao} padding="md" onClick={() => setPlano(opcao)} role="radio" aria-checked={plano === opcao}>
-            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)' }}>{opcao}</span>
-          </Card>
+          <div
+            key={opcao}
+            style={{
+              transition: 'transform 300ms ease, box-shadow 300ms ease',
+              transform: cardPulsando === opcao ? 'scale(1.03)' : 'scale(1)',
+              boxShadow: cardPulsando === opcao ? '0 0 0 3px var(--color-brand)' : 'none',
+              borderRadius: 'var(--radius-lg)',
+            }}
+          >
+            <Card interactive selected={plano === opcao} padding="md" onClick={() => handleCardClick(opcao, setPlano)} role="radio" aria-checked={plano === opcao}>
+              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)' }}>{opcao}</span>
+            </Card>
+          </div>
         ))}
       </div>
 
@@ -37,15 +61,26 @@ export default function Step11PlanoChuva({ onSelect, estadoAtual }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Tenda já contratada?</label>
           {[{v:true,l:'Sim'}, {v:false,l:'Ainda não'}].map(opcao => (
-            <Card key={String(opcao.v)} interactive selected={tenda === opcao.v} padding="sm" onClick={() => setTenda(opcao.v)} role="radio" aria-checked={tenda === opcao.v}>
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)' }}>{opcao.l}</span>
-            </Card>
+            <div
+              key={String(opcao.v)}
+              style={{
+                transition: 'transform 300ms ease, box-shadow 300ms ease',
+                transform: cardPulsando === String(opcao.v) ? 'scale(1.03)' : 'scale(1)',
+                boxShadow: cardPulsando === String(opcao.v) ? '0 0 0 3px var(--color-brand)' : 'none',
+                borderRadius: 'var(--radius-lg)',
+              }}
+            >
+              <Card interactive selected={tenda === opcao.v} padding="sm" onClick={() => handleCardClick(opcao.v, setTenda)} role="radio" aria-checked={tenda === opcao.v}>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)' }}>{opcao.l}</span>
+              </Card>
+            </div>
           ))}
         </div>
       )}
 
       <button
-        aria-label="Confirmar resposta" onClick={handleConfirmar}
+        aria-label="Confirmar resposta"
+        onClick={handleConfirmar}
         disabled={!plano}
         style={{
           alignSelf: 'flex-start',

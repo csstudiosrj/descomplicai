@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import { sugerirPaleta } from '../../../utils/sugestoes';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 const ESTILOS = [
   { valor: 'classico', label: 'Clássico', desc: 'Elegante · Atemporal' },
@@ -21,9 +22,22 @@ const ESTILOS = [
 ];
 
 export default function Step04Estilo({ onSelect, estadoAtual }) {
+  const [cardPulsando, setCardPulsando] = React.useState(null);
   const [selecionado, setSelecionado] = useState(estadoAtual?.estilo || null);
   const [referencias, setReferencias] = useState('');
   const modoAtivo = estadoAtual?.modoPlanejamento === 'ativo';
+
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
+
+  const handleCardClick = (valor) => {
+    if (cardPulsando) return;
+    setCardPulsando(valor);
+    setSelecionado(valor);
+    setTimeout(() => {
+      setCardPulsando(null);
+    }, 350);
+  };
 
   const handleConfirmar = () => {
     if (!selecionado) return;
@@ -58,38 +72,47 @@ export default function Step04Estilo({ onSelect, estadoAtual }) {
           const isSelected = selecionado === opcao.valor;
           const paleta = sugerirPaleta(opcao.valor);
           return (
-            <Card
+            <div
               key={opcao.valor}
-              interactive
-              selected={isSelected}
-              padding="md"
-              onClick={() => setSelecionado(opcao.valor)}
-              role="radio"
-              aria-checked={isSelected}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setSelecionado(opcao.valor);
-                }
+              style={{
+                transition: 'transform 300ms ease, box-shadow 300ms ease',
+                transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+                boxShadow: cardPulsando === opcao.valor ? '0 0 0 3px var(--color-brand)' : 'none',
+                borderRadius: 'var(--radius-lg)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-                <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                  {paleta.map((cor) => (
-                    <div key={cor} style={{ width: '20px', height: '20px', borderRadius: 'var(--radius-sm)', backgroundColor: cor, border: '1px solid var(--color-border)' }} />
-                  ))}
-                </div>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-primary)' }}>
-                    {opcao.label}
+              <Card
+                interactive
+                selected={isSelected}
+                padding="md"
+                onClick={() => handleCardClick(opcao.valor)}
+                role="radio"
+                aria-checked={isSelected}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleCardClick(opcao.valor);
+                  }
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+                  <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                    {paleta.map((cor) => (
+                      <div key={cor} style={{ width: '20px', height: '20px', borderRadius: 'var(--radius-sm)', backgroundColor: cor, border: '1px solid var(--color-border)' }} />
+                    ))}
                   </div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', fontStyle: 'italic', color: 'var(--color-text-muted)' }}>
-                    {opcao.desc}
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-primary)' }}>
+                      {opcao.label}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', fontStyle: 'italic', color: 'var(--color-text-muted)' }}>
+                      {opcao.desc}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
           );
         })}
       </div>
@@ -122,7 +145,8 @@ export default function Step04Estilo({ onSelect, estadoAtual }) {
       )}
 
       <button
-        aria-label="Confirmar resposta" onClick={handleConfirmar}
+        aria-label="Confirmar resposta"
+        onClick={handleConfirmar}
         disabled={!selecionado}
         style={{
           alignSelf: 'flex-start',

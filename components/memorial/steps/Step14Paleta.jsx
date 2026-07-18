@@ -1,9 +1,10 @@
 // Etapa de paleta de cores — até 3 cores com sugestão automática e seletor personalizado
-// Dependências diretas: React, PropTypes, Card, sugerirPaleta
+// Dependências diretas: React, PropTypes, sugerirPaleta
 
 import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { sugerirPaleta } from '../../../utils/sugestoes';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 export default function Step05Paleta({ onSelect, estadoAtual }) {
   const estilo = estadoAtual?.estilo;
@@ -12,9 +13,15 @@ export default function Step05Paleta({ onSelect, estadoAtual }) {
   const [erro, setErro] = useState('');
   const [mostrarSeletor, setMostrarSeletor] = useState(false);
   const [corCustom, setCorCustom] = useState('#8B6F5E');
+  const [cardPulsando, setCardPulsando] = React.useState(null);
   const inputRef = useRef(null);
 
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
+
   const toggleCor = (cor) => {
+    if (cardPulsando) return;
+    setCardPulsando(cor);
     setErro('');
     if (selecionadas.includes(cor)) {
       setSelecionadas(selecionadas.filter((c) => c !== cor));
@@ -23,6 +30,9 @@ export default function Step05Paleta({ onSelect, estadoAtual }) {
     } else {
       setSelecionadas([...selecionadas, cor]);
     }
+    setTimeout(() => {
+      setCardPulsando(null);
+    }, 350);
   };
 
   const adicionarCustom = () => {
@@ -72,30 +82,39 @@ export default function Step05Paleta({ onSelect, estadoAtual }) {
           {sugeridas.map((cor) => {
             const isSelected = selecionadas.includes(cor);
             return (
-              <button
+              <div
                 key={cor}
-                onClick={() => toggleCor(cor)}
-                role="checkbox"
-                aria-checked={isSelected}
-                aria-label={`Cor ${cor}${isSelected ? ' selecionada' : ''}`}
                 style={{
-                  width: '64px',
-                  height: '64px',
+                  transition: 'transform 300ms ease, box-shadow 300ms ease',
+                  transform: cardPulsando === cor ? 'scale(1.08)' : 'scale(1)',
+                  boxShadow: cardPulsando === cor ? '0 0 0 3px var(--color-brand)' : 'none',
                   borderRadius: 'var(--radius-lg)',
-                  backgroundColor: cor,
-                  border: isSelected ? '3px solid var(--color-brand)' : '2px solid var(--color-border)',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  transition: 'all var(--transition-fast)',
-                  flexShrink: 0,
                 }}
               >
-                {isSelected && (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={cor === '#FFFFFF' || cor === '#F5F0EB' || cor === '#F3F0EC' ? '#1A1714' : '#FFFFFF'} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
-                    <path d="M20 6L9 17l-5-5" />
-                  </svg>
-                )}
-              </button>
+                <button
+                  onClick={() => toggleCor(cor)}
+                  role="checkbox"
+                  aria-checked={isSelected}
+                  aria-label={`Cor ${cor}${isSelected ? ' selecionada' : ''}`}
+                  style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: 'var(--radius-lg)',
+                    backgroundColor: cor,
+                    border: isSelected ? '3px solid var(--color-brand)' : '2px solid var(--color-border)',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    transition: 'all var(--transition-fast)',
+                    flexShrink: 0,
+                  }}
+                >
+                  {isSelected && (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={cor === '#FFFFFF' || cor === '#F5F0EB' || cor === '#F3F0EC' ? '#1A1714' : '#FFFFFF'} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} aria-hidden="true">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             );
           })}
         </div>
@@ -178,7 +197,8 @@ export default function Step05Paleta({ onSelect, estadoAtual }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
         <button
-          aria-label="Confirmar resposta" onClick={handleConfirmar}
+          aria-label="Confirmar resposta"
+          onClick={handleConfirmar}
           disabled={selecionadas.length === 0}
           style={{
             alignSelf: 'flex-start',
