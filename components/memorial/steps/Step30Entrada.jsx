@@ -14,7 +14,7 @@ const OPCOES = [
 export default function Step30Entrada({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
 
-  const perfil = estadoAtual?.perfilCasal || 'noiva-noivo';
+  const perfil = estadoAtual?.perfilCasal || 'nao-especificar';
   const termos = getTermos(perfil);
 
   const selecionado = estadoAtual?.entradaNoivos;

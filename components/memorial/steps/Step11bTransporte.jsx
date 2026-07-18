@@ -10,7 +10,7 @@ export default function Step11bTransporte({ onSelect, estadoAtual }) {
   const [transporte, setTransporte] = useState(estadoAtual?.transporteConvidados || '');
   const [onibus, setOnibus] = useState(estadoAtual?.onibusNoivos || false);
 
-  const perfil = estadoAtual?.perfilCasal || 'noiva-noivo';
+  const perfil = estadoAtual?.perfilCasal || 'nao-especificar';
   const termos = getTermos(perfil);
 
   const handleConfirmar = () => {
