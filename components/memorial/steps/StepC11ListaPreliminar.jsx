@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 const OPCOES = [
   { valor: "sim", label: "Sim", desc: "Já tenho uma lista inicial" },
@@ -13,8 +14,10 @@ const OPCOES = [
 export default function StepC11ListaPreliminar({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
 
-  const selecionado = estadoAtual?.listaPreliminar;
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
 
+  const selecionado = estadoAtual?.listaPreliminar;
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
@@ -43,23 +46,23 @@ export default function StepC11ListaPreliminar({ onSelect, estadoAtual }) {
           const isSelected = selecionado === opcao.valor;
           return (
             <div
-      key={opcao.valor}
-      style={{
-        transition: 'transform 300ms ease, box-shadow 300ms ease',
-        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
-        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
-        borderRadius: 'var(--radius-lg)',
-      }}
-    >
-      <Card key={opcao.valor} interactive selected={isSelected} padding="lg" onClick={() => handleCardClick(opcao)} role="radio" aria-checked={isSelected} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(opcao); } }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }}>{opcao.label}</span>
-                {opcao.desc && <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>{opcao.desc}</span>}
-              </div>
-            </Card>
-    </div>
-  );
-})}
+              key={opcao.valor}
+              style={{
+                transition: 'transform 300ms ease, box-shadow 300ms ease',
+                transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+                boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+                borderRadius: 'var(--radius-lg)',
+              }}
+            >
+              <Card key={opcao.valor} interactive selected={isSelected} padding="lg" onClick={() => handleCardClick(opcao)} role="radio" aria-checked={isSelected} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(opcao); } }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                  <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)' }}>{opcao.label}</span>
+                  {opcao.desc && <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>{opcao.desc}</span>}
+                </div>
+              </Card>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

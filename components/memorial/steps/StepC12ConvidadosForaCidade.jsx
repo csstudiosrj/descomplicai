@@ -4,9 +4,13 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Input from '../../ui/Input';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 export default function StepC12ConvidadosForaCidade({ onSelect, estadoAtual }) {
   const [valor, setValor] = useState(estadoAtual?.convidadosForaCidade || '');
+
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
 
   const handleConfirmar = () => {
     onSelect('convidadosForaCidade', valor.trim());
