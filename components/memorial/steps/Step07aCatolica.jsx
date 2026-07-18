@@ -5,11 +5,25 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Input from '../../ui/Input';
 import Card from '../../ui/Card';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 export default function Step07aCatolica({ onSelect, estadoAtual }) {
+  const [cardPulsando, setCardPulsando] = React.useState(null);
   const [padrinhos, setPadrinhos] = useState(estadoAtual?.padrinhos || 6);
   const [paroquiaDefinida, setParoquiaDefinida] = useState(estadoAtual?.paroquiaDefinida || false);
   const [nomeParoquia, setNomeParoquia] = useState(estadoAtual?.nomeParoquia || '');
+
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
+
+  const handleCardClick = (valor, setter, campo) => {
+    if (cardPulsando) return;
+    setCardPulsando(String(valor));
+    setter(valor);
+    setTimeout(() => {
+      setCardPulsando(null);
+    }, 350);
+  };
 
   const handleConfirmar = () => {
     onSelect('padrinhos', Number(padrinhos));
@@ -37,9 +51,26 @@ export default function Step07aCatolica({ onSelect, estadoAtual }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Já tem paróquia definida?</label>
           {[{v:true,l:'Sim'}, {v:false,l:'Ainda não'}].map(opcao => (
-            <Card key={String(opcao.v)} interactive selected={paroquiaDefinida === opcao.v} padding="md" onClick={() => setParoquiaDefinida(opcao.v)} role="radio" aria-checked={paroquiaDefinida === opcao.v}>
-              <span style={{ fontFamily: 'var(--font-body)' }}>{opcao.l}</span>
-            </Card>
+            <div
+              key={String(opcao.v)}
+              style={{
+                transition: 'transform 300ms ease, box-shadow 300ms ease',
+                transform: cardPulsando === String(opcao.v) ? 'scale(1.03)' : 'scale(1)',
+                boxShadow: cardPulsando === String(opcao.v) ? '0 0 0 3px var(--color-brand)' : 'none',
+                borderRadius: 'var(--radius-lg)',
+              }}
+            >
+              <Card
+                interactive
+                selected={paroquiaDefinida === opcao.v}
+                padding="md"
+                onClick={() => handleCardClick(opcao.v, setParoquiaDefinida, 'paroquiaDefinida')}
+                role="radio"
+                aria-checked={paroquiaDefinida === opcao.v}
+              >
+                <span style={{ fontFamily: 'var(--font-body)' }}>{opcao.l}</span>
+              </Card>
+            </div>
           ))}
         </div>
 
@@ -54,7 +85,8 @@ export default function Step07aCatolica({ onSelect, estadoAtual }) {
       </div>
 
       <button
-        aria-label="Confirmar resposta" onClick={handleConfirmar}
+        aria-label="Confirmar resposta"
+        onClick={handleConfirmar}
         style={{
           alignSelf: 'flex-start',
           padding: 'var(--space-3) var(--space-6)',

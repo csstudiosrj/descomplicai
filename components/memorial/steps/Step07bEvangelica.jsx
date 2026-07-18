@@ -5,12 +5,26 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import Input from '../../ui/Input';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 export default function Step07bEvangelica({ onSelect, estadoAtual }) {
+  const [cardPulsando, setCardPulsando] = React.useState(null);
   const [igrejaDefinida, setIgrejaDefinida] = useState(estadoAtual?.igrejaDefinida || false);
   const [nomeIgreja, setNomeIgreja] = useState(estadoAtual?.nomeIgreja || '');
   const [pastor, setPastor] = useState(estadoAtual?.pastor || '');
   const [musicaAoVivo, setMusicaAoVivo] = useState(estadoAtual?.musicaAoVivo ?? true);
+
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
+
+  const handleCardClick = (valor, setter) => {
+    if (cardPulsando) return;
+    setCardPulsando(String(valor));
+    setter(valor);
+    setTimeout(() => {
+      setCardPulsando(null);
+    }, 350);
+  };
 
   const handleConfirmar = () => {
     onSelect('igrejaDefinida', igrejaDefinida);
@@ -31,9 +45,26 @@ export default function Step07bEvangelica({ onSelect, estadoAtual }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Já tem igreja definida?</label>
           {[{v:true,l:'Sim'}, {v:false,l:'Ainda não'}].map(opcao => (
-            <Card key={String(opcao.v)} interactive selected={igrejaDefinida === opcao.v} padding="md" onClick={() => setIgrejaDefinida(opcao.v)} role="radio" aria-checked={igrejaDefinida === opcao.v}>
-              <span style={{ fontFamily: 'var(--font-body)' }}>{opcao.l}</span>
-            </Card>
+            <div
+              key={String(opcao.v)}
+              style={{
+                transition: 'transform 300ms ease, box-shadow 300ms ease',
+                transform: cardPulsando === String(opcao.v) ? 'scale(1.03)' : 'scale(1)',
+                boxShadow: cardPulsando === String(opcao.v) ? '0 0 0 3px var(--color-brand)' : 'none',
+                borderRadius: 'var(--radius-lg)',
+              }}
+            >
+              <Card
+                interactive
+                selected={igrejaDefinida === opcao.v}
+                padding="md"
+                onClick={() => handleCardClick(opcao.v, setIgrejaDefinida)}
+                role="radio"
+                aria-checked={igrejaDefinida === opcao.v}
+              >
+                <span style={{ fontFamily: 'var(--font-body)' }}>{opcao.l}</span>
+              </Card>
+            </div>
           ))}
         </div>
 
@@ -46,15 +77,33 @@ export default function Step07bEvangelica({ onSelect, estadoAtual }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           <label style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--font-medium)', color: 'var(--color-text-secondary)' }}>Música ao vivo na cerimônia?</label>
           {[{v:true,l:'Sim, banda/coral'}, {v:false,l:'Playlist/Spotify'}].map(opcao => (
-            <Card key={String(opcao.v)} interactive selected={musicaAoVivo === opcao.v} padding="md" onClick={() => setMusicaAoVivo(opcao.v)} role="radio" aria-checked={musicaAoVivo === opcao.v}>
-              <span style={{ fontFamily: 'var(--font-body)' }}>{opcao.l}</span>
-            </Card>
+            <div
+              key={String(opcao.v)}
+              style={{
+                transition: 'transform 300ms ease, box-shadow 300ms ease',
+                transform: cardPulsando === String(opcao.v) ? 'scale(1.03)' : 'scale(1)',
+                boxShadow: cardPulsando === String(opcao.v) ? '0 0 0 3px var(--color-brand)' : 'none',
+                borderRadius: 'var(--radius-lg)',
+              }}
+            >
+              <Card
+                interactive
+                selected={musicaAoVivo === opcao.v}
+                padding="md"
+                onClick={() => handleCardClick(opcao.v, setMusicaAoVivo)}
+                role="radio"
+                aria-checked={musicaAoVivo === opcao.v}
+              >
+                <span style={{ fontFamily: 'var(--font-body)' }}>{opcao.l}</span>
+              </Card>
+            </div>
           ))}
         </div>
       </div>
 
       <button
-        aria-label="Confirmar resposta" onClick={handleConfirmar}
+        aria-label="Confirmar resposta"
+        onClick={handleConfirmar}
         style={{
           alignSelf: 'flex-start',
           padding: 'var(--space-3) var(--space-6)',

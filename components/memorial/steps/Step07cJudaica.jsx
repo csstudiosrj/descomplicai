@@ -4,6 +4,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 const RITUAIS = [
   { key: 'chupa', label: 'Chupá (dossel nupcial)', desc: 'Sim, incluiremos' },
@@ -12,7 +13,10 @@ const RITUAIS = [
   { key: 'kosher', label: 'Alimentação kosher', desc: 'Adicionaremos aos fornecedores necessários' },
 ];
 
-export default function Step07cJudaica({ onSelect }) {
+export default function Step07cJudaica({ onSelect, estadoAtual }) {
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
+
   const handleConfirmar = () => {
     onSelect('detalhesJudaicos', true);
     onSelect('rituaisSimbolicos', ['Chupá', 'Ketubá', 'Quebra do copo']);
@@ -41,7 +45,8 @@ export default function Step07cJudaica({ onSelect }) {
       </div>
 
       <button
-        aria-label="Confirmar resposta" onClick={handleConfirmar}
+        aria-label="Confirmar resposta"
+        onClick={handleConfirmar}
         style={{
           alignSelf: 'flex-start',
           padding: 'var(--space-3) var(--space-6)',
