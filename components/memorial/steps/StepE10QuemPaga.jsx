@@ -36,11 +36,11 @@ export default function StepE10QuemPaga({ onSelect, estadoAtual }) {
     }
   };
   return (
-    <div role="radiogroup" aria-label="Quem paga o evento" style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', animation: 'fadeInUp 300ms ease-out' }}>
+    <div role="radiogroup" aria-label={`Quem paga o ${termos.celebracao}`} style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', animation: 'fadeInUp 300ms ease-out' }}>
       <style jsx>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>
-        Quem está pagando o evento?
+        {`Quem está pagando o ${termos.celebracao}?`}
       </h1>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--space-4)' }}>

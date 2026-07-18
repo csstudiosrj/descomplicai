@@ -1,9 +1,9 @@
-import { getTermos } from '../../../utils/linguagemCasal';
 // components/memorial/steps/StepI4AulasDanca.jsx
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
+import { getTermos } from '../../../utils/linguagemCasal';
 
 export default function StepI4AulasDanca({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
@@ -15,7 +15,7 @@ export default function StepI4AulasDanca({ onSelect, estadoAtual }) {
     {
       valor: true,
       label: 'Sim',
-      subtexto: 'Noivos + padrinhos juntos',
+      subtexto: `${termos.pessoa1}, ${termos.pessoa2} e padrinhos juntos`,
       icone: 'users',
     },
     {

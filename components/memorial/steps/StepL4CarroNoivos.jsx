@@ -5,11 +5,16 @@ import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
 import { getTermos } from '../../../utils/linguagemCasal';
 
-const OPCOES = [
+export default function StepL4CarroNoivos({ onSelect, estadoAtual }) {
+  const [cardPulsando, setCardPulsando] = React.useState(null);
+  const perfil = estadoAtual?.perfilCasal || 'nao-especificar';
+  const termos = getTermos(perfil);
+
+  const OPCOES = [
     {
       valor: 'sim',
       label: 'Sim',
-      subtexto: `Carro decorado para os ${termos.pessoa1} e ${termos.pessoa2}`,
+      subtexto: `Carro decorado para ${termos.pessoa1} e ${termos.pessoa2}`,
       icone: 'car',
     },
     {
@@ -24,15 +29,9 @@ const OPCOES = [
       subtexto: 'Ainda estamos decidindo',
       icone: 'help',
     },
-];
-
-export default function StepL4CarroNoivos({ onSelect, estadoAtual }) {
-  const [cardPulsando, setCardPulsando] = React.useState(null);
-  const perfil = estadoAtual?.perfilCasal || 'nao-especificar';
-  const termos = getTermos(perfil);
+  ];
 
   const selecionado = estadoAtual?.carroNoivos;
-
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
