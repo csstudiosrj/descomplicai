@@ -1,8 +1,9 @@
 // components/memorial/steps/StepL3TransporteEspecialNoivos.jsx
-import React, { useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
+import { getTermos } from '../../../utils/linguagemCasal';
 
 const OPCOES = [
     {
@@ -21,9 +22,10 @@ const OPCOES = [
 
 export default function StepL3TransporteEspecialNoivos({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
+  const perfil = estadoAtual?.perfilCasal || 'nao-especificar';
+  const termos = getTermos(perfil);
 
   const selecionado = estadoAtual?.transporteEspecialNoivos;
-
 
   const handleCardClick = (opcao) => {
     if (cardPulsando) return;
@@ -31,18 +33,20 @@ export default function StepL3TransporteEspecialNoivos({ onSelect, estadoAtual }
     setTimeout(() => {
       onSelect(opcao.campo || opcao.valor, opcao.valor, opcao.cor);
       setCardPulsando(null);
-    }, 350);
+    }, 300);
   };
+
   const handleKeyDown = (e, opcao) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       handleCardClick(opcao);
     }
   };
+
   return (
     <div
       role="radiogroup"
-      aria-label="Desejam transporte especial?"
+      aria-label={termos.perguntaTransporteEspecial || 'Desejam transporte especial?'}
       style={{
         maxWidth: '640px',
         margin: '0 auto',
@@ -61,69 +65,70 @@ export default function StepL3TransporteEspecialNoivos({ onSelect, estadoAtual }
 
       <div>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', lineHeight: 'var(--leading-tight)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>
-          Transporte especial
+          {termos.tituloTransporteEspecial || 'Transporte especial'}
         </h1>
         <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
-          Desejam transporte especial?
+          {termos.perguntaTransporteEspecial || 'Desejam transporte especial?'}
         </p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', gap: 'var(--space-4)' }}>
         {OPCOES.map((opcao) => {
           const isSelected = selecionado === opcao.valor;
+          const keyVal = String(opcao.valor);
           return (
             <div
-      key={opcao.valor}
-      style={{
-        transition: 'transform 300ms ease, box-shadow 300ms ease',
-        transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
-        boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
-        borderRadius: 'var(--radius-lg)',
-      }}
-    >
-      <Card
-              key={String(opcao.valor)}
-              interactive
-              selected={isSelected}
-              padding="lg"
-              onClick={() => handleCardClick(opcao)}
-              role="radio"
-              aria-checked={isSelected}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onSelect('transporteEspecialNoivos', opcao.valor);
-                }
+              key={keyVal}
+              style={{
+                transition: 'transform 300ms ease, box-shadow 300ms ease',
+                transform: cardPulsando === opcao.valor ? 'scale(1.03)' : 'scale(1)',
+                boxShadow: cardPulsando === opcao.valor ? `0 0 0 3px ${opcao.cor || 'var(--color-brand)'}` : 'none',
+                borderRadius: 'var(--radius-lg)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: 'var(--radius-lg)',
-                  backgroundColor: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-surface)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: isSelected ? 'var(--color-brand)' : 'var(--color-text-muted)',
-                  flexShrink: 0,
-                }}>
-                  <Icon name={opcao.icone} size={24} ariaHidden={true} />
-                </div>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>
-                    {opcao.label}
+              <Card
+                interactive
+                selected={isSelected}
+                padding="lg"
+                onClick={() => handleCardClick(opcao)}
+                role="radio"
+                aria-checked={isSelected}
+                aria-label={opcao.label}
+                tabIndex={0}
+                onKeyDown={(e) => handleKeyDown(e, opcao)}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: 'var(--radius-lg)',
+                    backgroundColor: isSelected ? 'var(--color-brand-lighter)' : 'var(--color-surface)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: isSelected ? 'var(--color-brand)' : 'var(--color-text-muted)',
+                    flexShrink: 0,
+                  }}>
+                    <Icon name={opcao.icone} size={24} ariaHidden={true} />
                   </div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
-                    {opcao.subtexto}
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--font-semibold)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>
+                      {opcao.label}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
+                      {opcao.subtexto}
+                    </div>
                   </div>
+                  {isSelected && (
+                    <span aria-hidden="true" style={{ marginLeft: 'auto', color: 'var(--color-brand)' }}>
+                      ✓
+                    </span>
+                  )}
                 </div>
-              </div>
-            </Card>
-    </div>
-  );
-})}
+              </Card>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
