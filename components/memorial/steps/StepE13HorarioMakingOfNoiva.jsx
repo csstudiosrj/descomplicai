@@ -22,7 +22,7 @@ export default function StepE13HorarioMakingOfNoiva({ onSelect, estadoAtual }) {
       <style jsx>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>
-        Horário do making of da 
+        {`Horário do making of da ${termos.pessoa1}`}
       </h1>
       <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
         Que horas começa a preparação?
