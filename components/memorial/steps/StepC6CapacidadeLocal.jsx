@@ -1,13 +1,22 @@
 // components/memorial/steps/StepC6CapacidadeLocal.jsx
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 export default function StepC6CapacidadeLocal({ onSelect, estadoAtual }) {
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
+
   const [valor, setValor] = useState(estadoAtual?.capacidadeLocal || '');
+  const [botaoPulsando, setBotaoPulsando] = React.useState(false);
 
   const handleConfirmar = () => {
     if (valor !== '') {
-      onSelect('capacidadeLocal', Number(valor));
+      setBotaoPulsando(true);
+      setTimeout(() => {
+        onSelect('capacidadeLocal', Number(valor));
+        setBotaoPulsando(false);
+      }, 350);
     }
   };
 
@@ -42,7 +51,8 @@ export default function StepC6CapacidadeLocal({ onSelect, estadoAtual }) {
           }}
         />
         <button
-          aria-label="Confirmar resposta" onClick={handleConfirmar}
+          aria-label="Confirmar resposta"
+          onClick={handleConfirmar}
           disabled={valor === ''}
           style={{
             alignSelf: 'flex-start',
@@ -55,6 +65,9 @@ export default function StepC6CapacidadeLocal({ onSelect, estadoAtual }) {
             fontSize: 'var(--text-base)',
             fontWeight: 'var(--font-medium)',
             cursor: valor !== '' ? 'pointer' : 'not-allowed',
+            transition: 'transform 300ms ease, box-shadow 300ms ease',
+            transform: botaoPulsando ? 'scale(1.03)' : 'scale(1)',
+            boxShadow: botaoPulsando ? '0 0 0 3px var(--color-brand)' : 'none',
           }}
         >
           Confirmar
