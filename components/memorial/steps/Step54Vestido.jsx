@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 const OPCOES = [
   { valor: 'princesa', label: 'Princesa', subtexto: 'Volumoso e romântico', icone: 'star' },
@@ -14,6 +15,10 @@ const OPCOES = [
 
 export default function Step54Vestido({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
+
+
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
 
   const selecionado = estadoAtual?.estiloVestido;
 

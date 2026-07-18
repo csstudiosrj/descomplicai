@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import { gerarFornecedoresNecessarios } from '../../../utils/fornecedores-inteligente';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 export default function Step60Fornecedores({ onConcluir, estado }) {
   // Array COMPLETO com todos os status (contratado, pendente, omitido)
@@ -263,3 +264,7 @@ Step60Fornecedores.propTypes = {
 };
 
 export { Step60Fornecedores };
+
+
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
