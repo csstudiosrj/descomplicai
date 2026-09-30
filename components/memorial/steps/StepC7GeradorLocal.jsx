@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
 import Icon from '../../ui/Icon';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 const OPCOES = [
     {
@@ -28,6 +29,9 @@ const OPCOES = [
 export default function StepC7GeradorLocal({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
 
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
+
   const selecionado = estadoAtual?.geradorLocal;
 
 
@@ -48,7 +52,7 @@ export default function StepC7GeradorLocal({ onSelect, estadoAtual }) {
   return (
     <div
       role="radiogroup"
-      aria-label="O local tem gerador?"
+      aria-label={termos?.geradorLocal || "O local tem gerador?"}
       style={{
         maxWidth: '640px',
         margin: '0 auto',
