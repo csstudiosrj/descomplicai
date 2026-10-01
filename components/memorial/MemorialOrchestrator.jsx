@@ -697,6 +697,7 @@ export default function MemorialOrchestrator() {
                     {StepComponent && (
                       <StepComponent
                         estado={estado}
+                        estadoAtual={estado} // FIX Tarefa 3: steps leem estadoAtual?.perfilCasal
                         onSelect={handleSelect}
                         onConcluir={handleConcluirMemorial}
                         disabled={modalAuthAberto && noAtual?.componente === 'Step00Casal'}
