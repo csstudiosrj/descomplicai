@@ -4,8 +4,12 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Input from '../../ui/Input';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 export default function StepE15DestinoLuaDeMel({ onSelect, estadoAtual }) {
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
+
   const [valor, setValor] = useState(estadoAtual?.destinoLuaDeMel || '');
 
   const handleConfirmar = () => {
@@ -30,7 +34,7 @@ export default function StepE15DestinoLuaDeMel({ onSelect, estadoAtual }) {
       </div>
 
       <button
-        aria-label="Confirmar resposta" onClick={handleConfirmar}
+        aria-label={termos?.DestinoLuaDeMelAria || "Confirmar resposta"} onClick={handleConfirmar}
         disabled={!podeAvancar}
         style={{
           alignSelf: 'flex-start',
