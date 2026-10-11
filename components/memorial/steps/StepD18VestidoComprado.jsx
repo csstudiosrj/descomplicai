@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 const OPCOES = [
   { valor: "sim", label: "Sim", desc: "Já tenho o vestido" },
@@ -13,6 +14,9 @@ const OPCOES = [
 
 export default function StepD18VestidoComprado({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
+
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
 
   const selecionado = estadoAtual?.vestidoComprado;
 
@@ -32,7 +36,7 @@ export default function StepD18VestidoComprado({ onSelect, estadoAtual }) {
     }
   };
   return (
-    <div role="radiogroup" aria-label="Vestido comprado" style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', animation: 'fadeInUp 300ms ease-out' }}>
+    <div role="radiogroup" aria-label={termos?.VestidoCompradoAria || "Vestido comprado"} style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', animation: 'fadeInUp 300ms ease-out' }}>
       <style jsx>{`@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)' }}>
