@@ -22,7 +22,7 @@ async function _handler(req, res) {
   try {
     const { data, error } = await supabaseAdmin
       .from('memoriais_draft')
-      .select('estado, email')
+      .select('estado, email, expira_em, criado_em')
       .eq('draft_token', draft_id)
       .maybeSingle();
 
@@ -30,6 +30,20 @@ async function _handler(req, res) {
 
     if (!data) {
       return res.status(404).json({ sucesso: false, erro: 'Draft nao encontrado' });
+    }
+
+    // Valida expiração se a coluna existir na tabela
+    if (data.expira_em && new Date(data.expira_em) < new Date()) {
+      return res.status(410).json({ sucesso: false, erro: 'Draft expirado' });
+    }
+
+    // Fallback: rejeita drafts com mais de 48h caso expira_em nao exista
+    if (!data.expira_em && data.criado_em) {
+      const criado = new Date(data.criado_em);
+      const limite = new Date(criado.getTime() + 48 * 60 * 60 * 1000);
+      if (limite < new Date()) {
+        return res.status(410).json({ sucesso: false, erro: 'Draft expirado' });
+      }
     }
 
     return res.status(200).json({

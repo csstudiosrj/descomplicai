@@ -17,8 +17,11 @@ function extrairDadosEvento(estado) {
   if (!estado || typeof estado !== 'object') return {};
 
   const nomes = [];
-  if (estado.nomeNoiva) nomes.push(estado.nomeNoiva);
-  if (estado.nomeNoivo) nomes.push(estado.nomeNoivo);
+  // Campos inclusivos primeiro (nomePessoa1/2), fallback para campos legados
+  const pessoa1 = estado.nomePessoa1 || estado.nomeNoiva || null;
+  const pessoa2 = estado.nomePessoa2 || estado.nomeNoivo || null;
+  if (pessoa1) nomes.push(pessoa1);
+  if (pessoa2) nomes.push(pessoa2);
 
   const nomeEvento = nomes.length > 0
     ? `Casamento de ${nomes.join(' e ')}`
