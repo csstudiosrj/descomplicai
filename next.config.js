@@ -19,6 +19,26 @@ const nextConfig = {
   async headers() {
     return [
       {
+        // Assets do Next.js sao imutaveis — hash no nome do arquivo garante cache longo
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        // Imagens e fontes publicas — cache de 7 dias com revalidacao
+        source: '/(:path(icons|fonts|images).*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=604800, stale-while-revalidate=86400',
+          },
+        ],
+      },
+      {
         source: '/:path*',
         headers: [
           {
