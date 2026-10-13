@@ -351,6 +351,7 @@ export default function MemorialOrchestrator() {
         setCorTransicao(null);
         setRespostaTransicao('');
         setCampoTransicao('');
+        try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
       }, 1400);
     }
   }, [user, carregandoAuth, evento?.id, selecaoPendente, arvore, estado, setRespostas, noAtualId]);
@@ -506,6 +507,7 @@ export default function MemorialOrchestrator() {
         setCorTransicao(null);
         setRespostaTransicao('');
         setCampoTransicao('');
+        try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
       }, BREATH_DURATION);
       return;
     }
@@ -537,6 +539,8 @@ export default function MemorialOrchestrator() {
       setCorTransicao(null);
       setRespostaTransicao('');
       setCampoTransicao('');
+      // Scroll ao topo ao avançar step — garante que o usuario veja o inicio da proxima pergunta
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
     }, BREATH_DURATION);
   }
 
@@ -648,11 +652,16 @@ export default function MemorialOrchestrator() {
       )}
 
       {carregandoDoBanco && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 9997,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          backgroundColor: 'rgba(255,255,255,0.8)',
-        }}>
+        <div
+          role="status"
+          aria-live="polite"
+          aria-label="Carregando progresso"
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9997,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backgroundColor: 'rgba(255,255,255,0.8)',
+          }}
+        >
           <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
             Carregando seu progresso...
           </p>
