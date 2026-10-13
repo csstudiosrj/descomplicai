@@ -105,11 +105,7 @@ export default function LoginCadastroModal({ isOpen, onLoginSuccess, onClose }) 
 
         if (insertError) {
           console.error('Erro ao criar evento automatico:', insertError);
-        } else {
-          console.log('Evento criado com sucesso para usuario:', session.user.id);
         }
-      } else {
-        console.log('Evento ja existente para usuario:', session.user.id);
       }
     } catch (e) {
       console.error('Erro no fluxo de criacao de evento:', e);

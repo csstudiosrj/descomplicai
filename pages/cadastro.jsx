@@ -62,8 +62,6 @@ export default function CadastroPage() {
             const result = await res.json();
             if (!res.ok) {
               console.warn('[cadastro] Erro ao criar evento:', result.erro || result.error);
-            } else {
-              console.log('[cadastro] Evento criado:', result.evento_id);
             }
           } catch (apiErr) {
             console.warn('[cadastro] Falha na API criar-evento:', apiErr);
@@ -95,7 +93,6 @@ export default function CadastroPage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.access_token) {
-          console.log('[cadastro] Sessão detectada via polling — processando login...');
           clearInterval(intervalId);
           await processarLoginComSessao(session);
         }

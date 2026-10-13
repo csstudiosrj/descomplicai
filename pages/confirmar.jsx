@@ -75,8 +75,6 @@ export default function ConfirmarPage() {
             const result = await res.json();
             if (!res.ok) {
               console.warn('[confirmar] Erro ao criar evento:', result.erro || result.error);
-            } else {
-              console.log('[confirmar] Evento criado:', result.evento_id);
             }
           } catch (apiErr) {
             console.warn('[confirmar] Falha na API criar-evento:', apiErr);

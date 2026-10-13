@@ -90,7 +90,6 @@ export default function ConclusaoPage() {
         const { data: sessionData } = await supabase.auth.getSession();
         const token = sessionData?.session?.access_token;
 
-        console.log('[Conclusao] Gerando memorial...', { hasToken: !!token, estadoKeys: Object.keys(estado).length });
 
         const resposta = await fetchAPI('/api/ia/gerar-memorial', {
           method: 'POST',
@@ -115,7 +114,6 @@ export default function ConclusaoPage() {
           throw new Error(data.erro || 'Erro desconhecido ao gerar memorial');
         }
 
-        console.log('[Conclusao] Memorial gerado com sucesso');
         setMemorial(data.memorial);
         setStatus('pronto');
       } catch (err) {

@@ -2,11 +2,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { temAcessoPainel } from '../../utils/acesso';
 import Logo from './Logo';
 import Icon from './Icon';
 
 export default function Header() {
-  const { user, carregando, signOut } = useAuth();
+  const { user, carregando, signOut, evento } = useAuth();
   const router = useRouter();
   const [menuAberto, setMenuAberto] = useState(false);
   const [dropdownAberto, setDropdownAberto] = useState(false);
@@ -43,14 +44,17 @@ export default function Header() {
 
   const handleLogoClick = () => {
     setMenuAberto(false);
-    if (noMemorial && user) {
-      // Logado no memorial: vai pro painel (SPA navigation, preserva estado)
-      router.push('/painel');
-    } else if (noMemorial) {
-      // Deslogado no memorial: reload completo pra home
-      window.location.href = '/';
+    if (noMemorial) {
+      if (user && temAcessoPainel(evento)) {
+        // Logado + assinatura ativa: vai pro painel
+        router.push('/painel');
+      } else {
+        // Deslogado ou sem assinatura: volta para o início do memorial
+        // Usa replace para não empilhar no histórico
+        router.replace('/memorial');
+      }
     } else {
-      // Fora do memorial: navegacao normal SPA pra home
+      // Fora do memorial: navegação normal para home
       router.push('/');
     }
   };
