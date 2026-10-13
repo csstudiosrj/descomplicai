@@ -220,39 +220,48 @@ const ARVORE_CASAMENTO = [
   { id: 'step14', titulo: 'Paleta de cores', bloco: 'D', componente: 'Step14Paleta', next: 'step15' },
   {
     id: 'step15', titulo: 'Tom do evento', bloco: 'D', componente: 'Step15Tom',
-    next: 'stepD1',
+    next: 'step17',
     condicional: (estado) => {
       if (estado.modoPlanejamento === 'ativo') return 'step16';
       return undefined;
     }
   },
-  { id: 'step16', titulo: 'Referências visuais', bloco: 'D', componente: 'Step16Referencias', next: 'stepD1' },
+  { id: 'step16', titulo: 'Referências visuais', bloco: 'D', componente: 'Step16Referencias', next: 'step17' },
 
-  // Expansão D
+  // Perguntas binárias de decoração — coletadas ANTES dos detalhes
+  { id: 'step17', titulo: 'Flores', bloco: 'D', componente: 'Step17Flores', next: 'stepD1' },
   {
     id: 'stepD1', titulo: 'Tipo de flores', bloco: 'D', componente: 'StepD1TipoFlores',
-    next: 'stepD2',
+    next: 'step18',
     condicional: (estado) => {
-      if (estado.flores !== true) return 'stepD2';
+      // só pergunta o tipo se o usuário disse que quer flores
+      if (estado.flores !== true) return 'step18';
       return undefined;
     }
   },
+  { id: 'step18', titulo: 'Iluminação', bloco: 'D', componente: 'Step18Iluminacao', next: 'stepD2' },
   {
     id: 'stepD2', titulo: 'Tipo de iluminação', bloco: 'D', componente: 'StepD2TipoIluminacao',
-    next: 'stepD3',
+    next: 'step20',
     condicional: (estado) => {
-      if (!estado.tipoIluminacao) return 'stepD3';
+      // só pergunta o tipo se o usuário escolheu iluminação (tipoIluminacao setado por step18)
+      if (!estado.tipoIluminacao) return 'step20';
       return undefined;
     }
   },
+  { id: 'step20', titulo: 'Mobiliário especial', bloco: 'D', componente: 'Step20Mobiliario', next: 'stepD3' },
   {
-    id: 'stepD3', titulo: 'Mobiliário especial', bloco: 'D', componente: 'StepD3MobiliarioQual',
-    next: 'stepD4',
+    id: 'stepD3', titulo: 'Qual mobiliário', bloco: 'D', componente: 'StepD3MobiliarioQual',
+    next: 'step19',
     condicional: (estado) => {
-      if (!estado.mobiliarioQual) return 'stepD4';
+      // mobiliarioEspecial é o campo setado pelo Step20Mobiliario (boolean)
+      if (estado.mobiliarioEspecial !== true) return 'step19';
       return undefined;
     }
   },
+  { id: 'step19', titulo: 'Velas', bloco: 'D', componente: 'Step19Velas', next: 'step21' },
+
+  // Expansão D — fornecedores contratados
   { id: 'stepD4', titulo: 'Fotógrafo contratado', bloco: 'D', componente: 'StepD4FotografoContratado', next: 'stepD5' },
   { id: 'stepD5', titulo: 'Filmagem contratada', bloco: 'D', componente: 'StepD5FilmagemContratada', next: 'stepD6' },
   { id: 'stepD6', titulo: 'Buffet contratado', bloco: 'D', componente: 'StepD6BuffetContratado', next: 'stepD7' },
@@ -272,13 +281,11 @@ const ARVORE_CASAMENTO = [
   { id: 'stepD20', titulo: 'Convites encomendados', bloco: 'D', componente: 'StepD20ConvitesEncomendados', next: 'stepD21' },
   { id: 'stepD21', titulo: 'Save the date', bloco: 'D', componente: 'StepD21SaveTheDate', next: 'stepD22' },
   { id: 'stepD22', titulo: 'Lembrancinhas', bloco: 'D', componente: 'StepD22Lembrancinhas', next: 'stepD23' },
-  { id: 'stepD23', titulo: 'Kit de saída', bloco: 'D', componente: 'StepD23KitSaida', next: 'step17' },
+  { id: 'stepD23', titulo: 'Kit de saída', bloco: 'D', componente: 'StepD23KitSaida', next: 'step21' },
 
-  // === BLOCO E: Decoração (desmembrado) ===
-  { id: 'step17', titulo: 'Flores', bloco: 'E', componente: 'Step17Flores', next: 'step18' },
-  { id: 'step18', titulo: 'Iluminação', bloco: 'E', componente: 'Step18Iluminacao', next: 'step19' },
-  { id: 'step19', titulo: 'Velas', bloco: 'E', componente: 'Step19Velas', next: 'step20' },
-  { id: 'step20', titulo: 'Mobiliário especial', bloco: 'E', componente: 'Step20Mobiliario', next: 'step21' },
+  // === BLOCO E: Acabamento decorativo ===
+  // step17 (flores), step18 (iluminação), step19 (velas), step20 (mobiliário) foram movidos
+  // para o Bloco D, antes dos steps de detalhe (stepD1, stepD2, stepD3).
   { id: 'step21', titulo: 'Backdrop', bloco: 'E', componente: 'Step21Backdrop', next: 'step22' },
   { id: 'step22', titulo: 'Tecidos', bloco: 'E', componente: 'Step22Tecidos', next: 'step23' },
 
