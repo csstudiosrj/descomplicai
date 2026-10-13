@@ -1,8 +1,12 @@
 // components/memorial/steps/StepI6QuantasMadrinhas.jsx
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { getTermos } from "../../../utils/linguagemCasal";
 
 export default function StepI6QuantasMadrinhas({ onSelect, estadoAtual }) {
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
+
   const [valor, setValor] = useState(estadoAtual?.quantasMadrinhas || '');
 
   const handleConfirmar = () => {
@@ -42,7 +46,7 @@ export default function StepI6QuantasMadrinhas({ onSelect, estadoAtual }) {
           }}
         />
         <button
-          aria-label="Confirmar resposta" onClick={handleConfirmar}
+          aria-label={termos?.QuantasMadrinhasAria || "Confirmar resposta"} onClick={handleConfirmar}
           disabled={valor === ''}
           style={{
             alignSelf: 'flex-start',

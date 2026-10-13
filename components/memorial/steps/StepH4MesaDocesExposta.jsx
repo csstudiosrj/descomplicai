@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
+import { getTermos } from "../../../utils/linguagemCasal";
 import Icon from '../../ui/Icon';
 
 const OPCOES = [
@@ -21,6 +22,9 @@ const OPCOES = [
 
 export default function StepH4MesaDocesExposta({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
+
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
 
   const selecionado = estadoAtual?.mesaDocesExposta;
 
@@ -42,7 +46,7 @@ export default function StepH4MesaDocesExposta({ onSelect, estadoAtual }) {
   return (
     <div
       role="radiogroup"
-      aria-label="Desejam mesa de doces exposta?"
+      aria-label={termos?.MesaDocesExpostaAria || "Desejam mesa de doces exposta?"}
       style={{
         maxWidth: '640px',
         margin: '0 auto',

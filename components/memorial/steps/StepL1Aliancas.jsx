@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Card from '../../ui/Card';
+import { getTermos } from "../../../utils/linguagemCasal";
 import Icon from '../../ui/Icon';
 
 const OPCOES = [
@@ -28,6 +29,9 @@ const OPCOES = [
 export default function StepL1Aliancas({ onSelect, estadoAtual }) {
   const [cardPulsando, setCardPulsando] = React.useState(null);
 
+  const perfil = estadoAtual?.perfilCasal || "nao-especificar";
+  const termos = getTermos(perfil);
+
   const selecionado = estadoAtual?.aliancasEscolhidas;
 
 
@@ -48,7 +52,7 @@ export default function StepL1Aliancas({ onSelect, estadoAtual }) {
   return (
     <div
       role="radiogroup"
-      aria-label="As alianças estão escolhidas?"
+      aria-label={termos?.AliancasAria || "As alianças estão escolhidas?"}
       style={{
         maxWidth: '640px',
         margin: '0 auto',
