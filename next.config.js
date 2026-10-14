@@ -29,16 +29,6 @@ const nextConfig = {
         ],
       },
       {
-        // Imagens e fontes publicas — cache de 7 dias com revalidacao
-        source: '/(:path(icons|fonts|images).*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=604800, stale-while-revalidate=86400',
-          },
-        ],
-      },
-      {
         source: '/:path*',
         headers: [
           {
