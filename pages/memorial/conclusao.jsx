@@ -215,8 +215,8 @@ export default function ConclusaoPage() {
       ...payloadMemorial,
       email: user?.email || 'teste@email.com',
       nomes: {
-        noiva: estado.nomeNoiva || estado.nomePessoa1 || 'Noiva',
-        noivo: estado.nomeNoivo || estado.nomePessoa2 || 'Noivo',
+        pessoa1: estado.nomePessoa1 || estado.nomeNoiva || null,
+        pessoa2: estado.nomePessoa2 || estado.nomeNoivo || null,
       }
     };
 
@@ -323,7 +323,11 @@ export default function ConclusaoPage() {
 
   return (
     <>
-      <Head><title>Seu memorial esta pronto — Descomplicai</title></Head>
+      <Head>
+        <title>Seu memorial esta pronto — Descomplicai</title>
+        <meta name="description" content="Seu plano personalizado de casamento foi gerado. Confira os detalhes e baixe o PDF completo." />
+        <meta name="robots" content="noindex, nofollow" />
+      </Head>
       <Header />
       <div style={{ maxWidth: '640px', margin: '0 auto', padding: 'var(--space-6) var(--space-4) var(--space-8)', fontFamily: 'var(--font-body)' }}>
         <div style={{ marginBottom: 'var(--space-6)' }}>
@@ -365,10 +369,10 @@ export default function ConclusaoPage() {
           {!temAcesso && (
             <>
               {pdfLiberado && (
-                <div style={{ padding: '24px', backgroundColor: 'rgba(16,185,129,0.05)', borderRadius: '16px', border: '1px solid rgba(16,185,129,0.35)', marginTop: '16px' }}>
-                  <p style={{ fontSize: '11px', color: '#0b7a56', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', fontFamily: 'var(--font-body)' }}>gestao completa</p>
-                  <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '21px', color: '#1a1714', marginBottom: '12px', lineHeight: '1.3', fontWeight: 600 }}>Coloque seu casamento no painel</h3>
-                  <p style={{ fontSize: '14px', color: '#5c534a', marginBottom: '20px', lineHeight: '1.5', fontFamily: 'var(--font-body)' }}>Fornecedores, orcamento e prazos, tudo num so lugar, ate o grande dia.</p>
+                <div style={{ padding: 'var(--space-6)', backgroundColor: 'var(--color-success-light)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-success)', marginTop: 'var(--space-4)' }}>
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-success)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 'var(--space-2)', fontFamily: 'var(--font-body)' }}>gestao completa</p>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-3)', lineHeight: '1.3', fontWeight: 600 }}>Coloque seu casamento no painel</h3>
+                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-5)', lineHeight: '1.5', fontFamily: 'var(--font-body)' }}>Fornecedores, orcamento e prazos, tudo num so lugar, ate o grande dia.</p>
 
                   {!trialJaIniciado ? (
                     <button
@@ -376,51 +380,51 @@ export default function ConclusaoPage() {
                       disabled={iniciandoTrial}
                       style={{
                         width: '100%',
-                        padding: '14px 20px',
-                        borderRadius: '12px',
-                        border: '1.5px solid #10B981',
+                        padding: 'var(--space-4) var(--space-5)',
+                        borderRadius: 'var(--radius-lg)',
+                        border: '1.5px solid var(--color-success)',
                         backgroundColor: 'transparent',
-                        color: '#0b7a56',
+                        color: 'var(--color-success)',
                         fontFamily: 'var(--font-body)',
-                        fontSize: '15px',
+                        fontSize: 'var(--text-base)',
                         fontWeight: 600,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '8px',
+                        gap: 'var(--space-2)',
                         opacity: iniciandoTrial ? 0.7 : 1,
                       }}
                     >
                       {iniciandoTrial ? 'Iniciando...' : 'Testar gratis por 7 dias'}
-                      {!iniciandoTrial && <span style={{ fontSize: '18px' }}>→</span>}
+                      {!iniciandoTrial && <span aria-hidden="true">→</span>}
                     </button>
                   ) : (
                     <button
                       onClick={() => setModalPlanos(true)}
                       style={{
                         width: '100%',
-                        padding: '14px 20px',
-                        borderRadius: '12px',
-                        border: '1.5px solid #10B981',
+                        padding: 'var(--space-4) var(--space-5)',
+                        borderRadius: 'var(--radius-lg)',
+                        border: '1.5px solid var(--color-success)',
                         backgroundColor: 'transparent',
-                        color: '#0b7a56',
+                        color: 'var(--color-success)',
                         fontFamily: 'var(--font-body)',
-                        fontSize: '15px',
+                        fontSize: 'var(--text-base)',
                         fontWeight: 600,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '8px',
+                        gap: 'var(--space-2)',
                       }}
                     >
                       Assinar painel — escolha seu plano
-                      <span style={{ fontSize: '18px' }}>→</span>
+                      <span aria-hidden="true">→</span>
                     </button>
                   )}
 
-                  <p style={{ textAlign: 'center', fontSize: '12px', color: '#8b7e6e', marginTop: '12px', fontFamily: 'var(--font-body)' }}>sem cartao de credito · sem compromisso</p>
+                  <p style={{ textAlign: 'center', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-3)', fontFamily: 'var(--font-body)' }}>sem cartao de credito · sem compromisso</p>
                 </div>
               )}
 
@@ -431,33 +435,33 @@ export default function ConclusaoPage() {
                       {iniciandoTrial ? 'Iniciando...' : 'Gerenciar meu casamento — 7 dias gratis'}
                     </Button>
                   ) : (
-                    <div style={{ padding: '24px', backgroundColor: 'rgba(16,185,129,0.05)', borderRadius: '16px', border: '1px solid rgba(16,185,129,0.35)', marginTop: '16px' }}>
-                      <p style={{ fontSize: '11px', color: '#0b7a56', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', fontFamily: 'var(--font-body)' }}>gestao completa</p>
-                      <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '21px', color: '#1a1714', marginBottom: '12px', lineHeight: '1.3', fontWeight: 600 }}>Coloque seu casamento no painel</h3>
-                      <p style={{ fontSize: '14px', color: '#5c534a', marginBottom: '20px', lineHeight: '1.5', fontFamily: 'var(--font-body)' }}>Fornecedores, orcamento e prazos, tudo num so lugar, ate o grande dia.</p>
+                    <div style={{ padding: 'var(--space-6)', backgroundColor: 'var(--color-success-light)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-success)', marginTop: 'var(--space-4)' }}>
+                      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-success)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 'var(--space-2)', fontFamily: 'var(--font-body)' }}>gestao completa</p>
+                      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)', color: 'var(--color-text-primary)', marginBottom: 'var(--space-3)', lineHeight: '1.3', fontWeight: 600 }}>Coloque seu casamento no painel</h3>
+                      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-5)', lineHeight: '1.5', fontFamily: 'var(--font-body)' }}>Fornecedores, orcamento e prazos, tudo num so lugar, ate o grande dia.</p>
                       <button
                         onClick={() => setModalPlanos(true)}
                         style={{
                           width: '100%',
-                          padding: '14px 20px',
-                          borderRadius: '12px',
-                          border: '1.5px solid #10B981',
+                          padding: 'var(--space-4) var(--space-5)',
+                          borderRadius: 'var(--radius-lg)',
+                          border: '1.5px solid var(--color-success)',
                           backgroundColor: 'transparent',
-                          color: '#0b7a56',
+                          color: 'var(--color-success)',
                           fontFamily: 'var(--font-body)',
-                          fontSize: '15px',
+                          fontSize: 'var(--text-base)',
                           fontWeight: 600,
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: '8px',
+                          gap: 'var(--space-2)',
                         }}
                       >
                         Assinar painel — escolha seu plano
-                        <span style={{ fontSize: '18px' }}>→</span>
+                        <span aria-hidden="true">→</span>
                       </button>
-                      <p style={{ textAlign: 'center', fontSize: '12px', color: '#8b7e6e', marginTop: '12px', fontFamily: 'var(--font-body)' }}>sem cartao de credito · sem compromisso</p>
+                      <p style={{ textAlign: 'center', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-3)', fontFamily: 'var(--font-body)' }}>sem cartao de credito · sem compromisso</p>
                     </div>
                   )}
                 </>
@@ -514,6 +518,6 @@ export default function ConclusaoPage() {
 }
 
 const styles = {
-  btnPrimary: { display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--color-primary)', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 },
-  btnSecondary: { background: 'var(--color-secondary)', color: 'var(--color-text)', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
+  btnPrimary: { display: 'flex', alignItems: 'center', gap: 'var(--space-2)', background: 'var(--color-brand)', color: 'var(--color-white)', border: 'none', padding: 'var(--space-3) var(--space-5)', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 600, fontFamily: 'var(--font-body)' },
+  btnSecondary: { background: 'var(--color-surface)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)', padding: 'var(--space-3) var(--space-5)', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontFamily: 'var(--font-body)' },
 };
